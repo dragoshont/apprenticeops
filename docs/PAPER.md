@@ -314,6 +314,63 @@ future / community work:
 
 Released with the harness so these are reproducible, not just asserted.
 
+### 7c. Cross-hardware extrapolation (roofline transfer)
+
+The harness already logs, per request, the model's `parameter_count`,
+`quantization`, on-disk `size_bytes`, the **achieved** DRAM bandwidth
+(`membw.peak_mb_s` + the 1 Hz `membw.series`), the prefill/decode phase split, and
+`energy_wh`. That is the full feature set to **transfer** throughput to an unseen
+CPU from first principles — **without re-running the suite** (the fields are
+already captured; only a re-projection is needed).
+
+Small-model autoregressive **decode is memory-bandwidth-bound**: each token streams
+the weights through the memory bus once, so
+
+$$\text{decode tok/s} \approx \text{MBU}\cdot\frac{B}{W},\qquad W \approx p\cdot b + \text{KV}(c)$$
+
+where $B$ is achievable DRAM bandwidth, $W$ the bytes moved per token, $p$ the
+**active** parameter count, $b$ the bytes/weight of the quant, $\text{KV}(c)$ the
+key/value traffic at context length $c$, and $\text{MBU}\in(0,1]$ the achieved/peak
+bandwidth efficiency. To first order, for a **fixed model+quant+context+ISA**,
+moving to another CPU scales throughput by the **bandwidth ratio** — not the clock
+or a CPU-mark score:
+
+$$\text{tok/s}_{\text{new}} \approx \text{tok/s}_{\text{old}}\cdot\frac{\text{MBU}_{\text{new}}}{\text{MBU}_{\text{old}}}\cdot\frac{B_{\text{new}}}{B_{\text{old}}}$$
+
+**Prefill** (TTFT) is the compute-bound complement and scales with cores × SIMD
+width × clock (FLOPs), so it is modelled separately. **Recipe** for a target box:
+run `calibrate.py` once to get its STREAM bandwidth + peak GFLOPs (minutes), then
+predict tok/s for every model from the curve here; **validate** by running 2–3
+models on the target and reporting predicted-vs-actual error.
+
+**Adversarial review (this method was attacked before shipping).** The surviving,
+load-bearing caveats — stated so the claim is not over-read:
+
+1. **Single node ⇒ no hardware-coefficient fit.** With one machine every hardware
+   feature has zero variance, so *no regression can learn the hardware-transfer
+   coefficients from this data.* The model-axis curve (tok/s vs params/quant/bytes)
+   is **fitted**; the cross-hardware step is a **physically-motivated first-order
+   extrapolation**, not a learned result — a **hypothesis until validated
+   out-of-sample on ≥1 distinct CPU.** We report it as a method + validation
+   protocol, never as a measured cross-hardware result. (Subsumes the n=1 threat.)
+2. **Bandwidth-bound regime only.** Tiny models / short generations hit a **fixed
+   per-request floor** (tokenization, sampling, framework overhead, prefill) that
+   does **not** scale with bandwidth; the ratio rule holds in the decode-dominated
+   regime and degrades for sub-1B models and very short outputs.
+3. **MBU is class-stable, not universal.** It depends on cache sizes, prefetchers,
+   channel count, and the kernel — so transfer is trustworthy **within an ISA +
+   memory-topology class** (AVX2 dual-channel → AVX2 dual-channel) and earns
+   **wider error bars** across classes (AVX-512, ARM NEON, NUMA).
+4. **bytes/token grows with context.** $W$ includes KV traffic, which rises with
+   context length and can rival weight traffic at long $c$ — extrapolate at
+   **fixed context**, or model KV explicitly.
+5. **Report intervals, not point estimates**, and require the on-target spot-check;
+   clock / CPU-mark alone is explicitly **not** a valid predictor.
+
+This makes "predict an unseen CPU's throughput/energy from a 2-number target
+calibration" a documented, falsifiable **method with its own validation gate** —
+not an unearned generalisation.
+
 **Positioning vs public hardware/telemetry datasets.** The closest public
 references collect related-but-different data, which sharpens the contribution:
 
@@ -422,6 +479,8 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 | Thinking-model unfairness | Internal | Separate track + token/latency budget |
 | Multiple comparisons → false winners | Conclusion | Holm–Bonferroni; pre-registered analysis |
 | Hardware specificity | External | Report exact node; note bandwidth-bound caveat; invite GPU re-runs |
+| **Cross-hardware extrapolation over-reach** (§7c) — predicting another CPU's tok/s from a single node | External/construct | **Disclosed + gated.** One node ⇒ hardware coefficients are **not** fittable; transfer is a first-order roofline rule (scale by **bandwidth**, not clock/CPU-mark), reported as a **method requiring out-of-sample validation on ≥1 distinct CPU**, with **prediction intervals** and a 2–3-model on-target spot-check — never as a measured result |
+| **Regime / ISA boundary of the transfer rule** (§7c) | Construct | The bandwidth-ratio rule holds only in the **decode-bandwidth-bound** regime and **within an ISA+memory-topology class**; sub-1B / short-output fixed-overhead floor and AVX-512/ARM/NUMA shifts widen the error; extrapolate at **fixed context** (KV traffic grows with $c$) |
 | Small R inflates variance | Conclusion | R≥5, bootstrap CIs, report CI widths honestly |
 | **RAG-lift confound** (grounded vs closed-book are *different task classes*, not the same task with/without a doc) | Internal/construct | **Open issue.** Current `rag_lift` mixes retrieval effect with task-difficulty. Fix before the RQ6 claim: author **paired variants** (same scenario, reference-doc present vs absent) so the within-scenario delta isolates retrieval. Until then, report closed-book and grounded **separately**; do not claim a causal RAG lift. |
 | **Judge egress** (real cluster telemetry sent to a 3rd-party cloud judge) | Construct/opsec | System-under-test stays sovereign; but scrub/anonymize released scenarios, disclose the egress, and prefer a self-hosted judge (§0b) |
