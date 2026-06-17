@@ -119,7 +119,7 @@ hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M
 # bracket: 4-5GB
 # (~12, 7-8B at q4 footprint) Falcon3, EXAONE 3.5/Deep, Cohere Command-R7B/
 # Aya-Expanse, Granite 3.3, AI2 OLMo2, InternLM2, Meta Llama3.1, Qwen3,
-# DeepSeek-R1-distill + 1 HF (Qwen 1p).
+# DeepSeek-R1-distill + 1 HF (Unsloth faithful quant of Llama-3.1-8B).
 falcon3:7b
 exaone3.5:7.8b
 exaone-deep:7.8b
@@ -131,4 +131,4 @@ internlm2:7b
 llama3.1:8b
 qwen3:8b
 deepseek-r1:8b
-hf.co/Qwen/Qwen2.5-7B-Instruct-GGUF:Q4_K_M
+hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M
