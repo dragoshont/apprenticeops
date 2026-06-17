@@ -1,10 +1,14 @@
 # Experimental Design Spec — workshop-paper / arXiv target
 
-> Status: **active spec for the powered study (Pass 2).** Supersedes the Pass-1
-> pilot framing in [`PLAN.md`](PLAN.md) for publication purposes; PLAN.md remains
-> the operational how-to. Pass-1 (the n=1/class run) is the **pilot** that de-risks
-> the harness and yields the speed/RAM/safety profile; Pass-2 is the **study** that
-> produces the publishable, statistically-defensible result.
+> Status: **WIP / DRAFT (not submitted)** and active spec for the powered study
+> (Pass 2). Supersedes the Pass-1 pilot framing in [`PLAN.md`](PLAN.md) for
+> publication purposes; PLAN.md remains the operational how-to. Pass-1 (the
+> n=1/class run) is the **pilot** that de-risks the harness and yields the
+> speed/RAM/safety profile; Pass-2 is the **study** that produces the
+> publishable, statistically-defensible result.
+>
+> Submission workflow, phase gates, and pre-submit checklist are tracked in
+> [`PAPER_PHASES.md`](PAPER_PHASES.md).
 
 ## 0. One-paragraph thesis (the contribution)
 
@@ -457,6 +461,29 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 - **Reproducibility appendix:** exact model digests, Ollama version, node spec,
   seeds, prompts (already byte-frozen in `MODEL-PROMPTS.md`), and the analysis
   notebook.
+
+## 8b. Submission-readiness checklist (best-practice aligned)
+
+Before submission, this manuscript must satisfy all of the following:
+
+- **Claims discipline:** abstract/introduction claims match measured evidence and
+  explicitly separate achieved results from roadmap motivation.
+- **Limitations first-class:** a standalone limitations/threats section remains
+  explicit about external validity, judge bias, egress, and hardware specificity.
+- **Statistical reporting:** CIs, paired tests, correction for multiple
+  comparisons, and judge-human agreement are reported for the main claims.
+- **Compute disclosure:** per-run compute budget, hardware details, runtime
+  envelope, and total experimental cost are reported.
+- **Code/data reproducibility path:** commands, environment, data schema, and
+  artifact locations are complete enough for an external team to rerun.
+- **Artifact packaging quality:** documented, complete, and exercisable artifact
+  bundle (scripts + data + analysis + figure generation) with pinned versions.
+- **Licensing and provenance:** model/data/tool licenses and restrictions are
+  enumerated; supply-chain pinning by digest is documented.
+- **Responsible release:** dual-use and privacy risks are disclosed with concrete
+  safeguards (scenario scrubbing/anonymization, endpoint safety posture).
+
+These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](PAPER_PHASES.md).
 
 ## 9. Build status (this spec → code)
 
