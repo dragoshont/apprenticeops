@@ -31,7 +31,26 @@ The axis we care about — reasoning per GB of model, on commodity hardware, in 
 
 ---
 
-## The key idea: "offline" is not information-starvation
+## What we instrument per inference call
+
+Every request emits a structured record aligned with [OpenTelemetry GenAI semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai). A short summary of the main groups:
+
+| Group | Signals captured |
+|---|---|
+| **Latency** | TTFT · prefill tok/s · decode tok/s · wall time · cold-load warmup |
+| **Token budget** | In/out tokens and chars · think-vs-answer split (reasoning models get separated chain-of-thought time so they are neither rewarded nor penalised for it) |
+| **Stream quality** | Inter-token jitter p50/p95/max — a model with a good mean tok/s but a high p95 *stutters* the UX |
+| **Energy** | Intel RAPL `package-0` joules → Wh/task · Wh/correct-answer · tok/s-per-watt |
+| **Memory** | RSS start→peak · peak swap (MB) · minor/major page faults · context switches |
+| **CPU microarchitecture** | IPC · LLC miss rate · branch miss count — a low IPC + high LLC-miss is the fingerprint of memory-bandwidth-bound decode |
+| **DRAM bandwidth** | IMC requestor split: IA (CPU) / GT (iGPU) / IO — confirms the bottleneck is memory, not compute |
+| **Model internals** | Parameter count · quantisation · MoE expert count/active · native context length (from Ollama `/api/show` and `/api/ps`) |
+| **Ollama runtime** | `load` / `eval` / `total` durations from the response payload — authoritative, not inferred |
+
+This telemetry depth is unusual for LLM evaluation. The reason is simple: on CPU-only inference, "why is this model slower?" is a non-trivial question. The numbers above let you answer it.
+
+---
+
 
 There is a common conflation between *inference sovereignty* (no external model API) and *information poverty* (no external data). We reject the second. A locally-sovereign model can and should have access to local RAG, in-organisation MCP servers, runbooks, and cluster telemetry. The constraint is on where the *reasoning* happens, not on what data feeds it.
 
