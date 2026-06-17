@@ -1,4 +1,3 @@
----
 **Research paper · open benchmark · arXiv / workshop target**
 
 # ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
