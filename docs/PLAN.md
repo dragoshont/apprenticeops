@@ -201,6 +201,30 @@ tokens, wall, peak RAM, peak swap, DNF?, finish_reason.
 - **Re-runnable:** one command per phase; results are append-only JSONL so a
   partial run resumes.
 
+## 8b. Wave-2 bracket cost/value gate (pre-registered)
+
+Expansion waves cost real node-time, and that cost is **not** uniform: on this
+box the per-model burn-through is roughly **0-1B ≈ 16 min**, **1-2B ≈ 34 min**,
+**2-3B ≈ 42 min**, **3-4B ≈ 89 min**, **4-5GB ≈ 113 min** (from the live
+snapshot). The **4-5GB** bracket is ~3× the 1-2B bracket per model, so we gate
+its expansion instead of paying for it blindly.
+
+**Pre-registered rule (decide BEFORE looking at expansion data):**
+
+1. Run the cheaper brackets (0-1B → 3-4B) and **judge wave-1** with the frontier
+   model on the **complete** 4-5GB set (no partial-run pruning).
+2. **Expand 4-5GB in wave 2 iff** its **judged %-of-frontier** beats **3-4B** by
+   **≥ 5 percentage points** *and* their bootstrap **95 % CIs do not overlap**.
+3. Otherwise **HOLD** the 4-5GB expansion and report **"≤5 GB adds cost without
+   judged lift on this CPU"** as a finding (the 3-4B Pareto knee).
+
+**Guards:** the decision uses the **judge** metric, not deterministic checks
+(thinking models score low on det but may recover under the judge); and the
+**`guard` (safety) class is always run** for every bracket regardless of the
+gate, because safety is non-monotonic in size and cheap to keep. The gate is
+implemented in [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb)
+(it stays PENDING until a judged snapshot exists).
+
 ## 9. How to start (operator)
 
 > Multi-hour: downloads (~tens of GB across brackets) + runs (minutes/model ×

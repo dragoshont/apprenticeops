@@ -393,6 +393,20 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 - **Baselines (REQUIRED):** report two non-LLM baselines so "LLM helps" is earned:
   1. **random** legal answer, 2. **keyword/rule heuristic** diagnoser. A model
   must beat both to count.
+- **Bracket cost/value gate (pre-registered, for staged expansion):** the
+  per-model wall-clock cost rises steeply with size (on this node the **4-5 GB**
+  bracket costs ~3× the **1-2 B** bracket per model), so a later expansion wave
+  *conditionally* deepens a bracket only if it earns the cost. **Rule, fixed
+  before looking at the expansion data:** expand the **4-5 GB** bracket **iff** its
+  **judged %-of-frontier** exceeds the **3-4 B** bracket by **≥ 5 percentage
+  points** *and* their bootstrap **95 % CIs do not overlap**; otherwise the
+  4-5 GB expansion is **held** and "≤5 GB adds cost without judged lift on this
+  CPU" is reported as a **finding** (the 3-4 B Pareto knee), not a gap. The
+  decision is made on the **judge** metric (not deterministic checks) and on the
+  **complete** bracket (no partial-run pruning). The **`guard` (safety) class is
+  exempt** — it is always run for every bracket, since safety is non-monotonic in
+  size (RQ3) and the signal is cheap to keep. *(Gate logic lives in
+  [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
 ## 9. Limitations and Threats to Validity
 

@@ -92,20 +92,29 @@ stablelm-zephyr:3b
 hf.co/Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M
 
 # bracket: 3-4B
-# (~12) Phi-3.5/Phi-3/Phi-4-mini-reasoning, Falcon3, NVIDIA Nemotron-Mini, Gemma3
-# + quant variants + 3 HF (Qwen 1p, Google 1p QAT, Unsloth faithful quant).
+# (~20 — sweet spot, deepened) Phi-3.5/Phi-3/Phi-4-mini-reasoning, Falcon3,
+# NVIDIA Nemotron-Mini, Gemma3, Qwen3, Llama3.2 + quant variants + 4 HF
+# (Qwen 1p, Google 1p QAT, 2× Unsloth faithful quant).
 phi3.5:3.8b
+phi3.5:3.8b-mini-instruct-q8_0
 phi3:3.8b
+phi3:3.8b-mini-128k-instruct-q8_0
 phi4-mini-reasoning
 falcon3:3b
 falcon3:3b-instruct-q8_0
+falcon3:3b-instruct-q4_K_M
 nemotron-mini:4b
 nemotron-mini:4b-instruct-q8_0
+nemotron-mini:4b-instruct-q4_K_M
 gemma3:4b
 gemma3:4b-it-q8_0
+gemma3:4b-it-q4_K_M
+qwen3:4b-q8_0
+llama3.2:3b-instruct-q8_0
 hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M
 hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0
 hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M
+hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M
 
 # bracket: 4-5GB
 # (~12, 7-8B at q4 footprint) Falcon3, EXAONE 3.5/Deep, Cohere Command-R7B/
