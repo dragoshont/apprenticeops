@@ -16,6 +16,7 @@ review -> submission package. This prevents scope drift and over-claiming.
 - Manuscript status: DRAFT / WIP (not submitted)
 - Experiment status: Pass-2 design mostly locked; scenario expansion still open
 - Submission intent: arXiv preprint + workshop submission (venue TBD)
+- Intent memo: [`PAPER_INTENT.md`](./PAPER_INTENT.md)
 
 ## Phase model
 

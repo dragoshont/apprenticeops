@@ -1,16 +1,26 @@
-# Experimental Design Spec — workshop-paper / arXiv target
+# ApprenticeOps Paper Draft (Design and Analysis Plan)
 
-> Status: **WIP / DRAFT (not submitted)** and active spec for the powered study
-> (Pass 2). Supersedes the Pass-1 pilot framing in [`PLAN.md`](PLAN.md) for
-> publication purposes; PLAN.md remains the operational how-to. Pass-1 (the
-> n=1/class run) is the **pilot** that de-risks the harness and yields the
-> speed/RAM/safety profile; Pass-2 is the **study** that produces the
+Target: workshop paper + arXiv preprint.
+
+> **Status:** WIP / DRAFT (not submitted).
+>
+> **Study phase:** active spec for the powered study (Pass 2).
+>
+> **Relationship to pilot:** supersedes the Pass-1 pilot framing in
+> [`PLAN.md`](./PLAN.md) for publication purposes; [`PLAN.md`](./PLAN.md)
+> remains the operational how-to.
+>
+> **Pass split:** Pass-1 (n=1/class) is the pilot that de-risks the harness and
+> yields the speed/RAM/safety profile; Pass-2 is the study that produces the
 > publishable, statistically-defensible result.
 >
-> Submission workflow, phase gates, and pre-submit checklist are tracked in
-> [`PAPER_PHASES.md`](PAPER_PHASES.md).
+> **Submission workflow:** phase gates and pre-submit checklist are tracked in
+> [`PAPER_PHASES.md`](./PAPER_PHASES.md).
+>
+> **Intent memo:** peer-alignment scope and claims are tracked in
+> [`PAPER_INTENT.md`](./PAPER_INTENT.md).
 
-## 0. One-paragraph thesis (the contribution)
+## Abstract (Draft)
 
 We present **ApprenticeOps**, an open, reproducible benchmark and telemetry method
 for evaluating **small, locally-run LLMs (≤ ~5 GB)** as **homelab/edge operations
@@ -30,7 +40,7 @@ grounding-faithfulness, calibration, and safety**. The artifact (harness +
 real-incident scenarios + telemetry schema) is the primary contribution; the
 model ranking is the demonstration.
 
-## 0a. The offline operating contract (what a locally-sovereign model must do)
+## 1. Introduction and Scope
 
 "Offline" removes three crutches an online agent leans on — but **only the
 first is about the model**; the other two are about *information*, which a local
@@ -73,7 +83,7 @@ That boundary is itself a finding.
 >    our grounded numbers are the **ceiling** of what local RAG buys, not the
 >    expected value. We measure "perfect retrieval"; real deployments do worse.
 
-## 0b. Public-service dependency map (what touches the network, and when)
+## 2. System Boundaries and Dependency Disclosure
 
 The sovereignty claim is about the **inference path only**, and we state its
 bounds explicitly so a reviewer cannot mistake "eval scaffolding uses the cloud"
@@ -92,7 +102,7 @@ for "the system is not sovereign."
 because it sees real telemetry, the released scenarios must be scrubbed and the
 egress disclosed. The deployed apprentice itself makes **zero** external calls.
 
-## 1. Research questions & hypotheses
+## 3. Research Questions and Hypotheses
 
 > **Scope honesty (state up front):** this paper benchmarks the **reactive +
 > early-proactive reasoning FOUNDATION** of the AIOps ladder (detect, diagnose,
@@ -112,7 +122,7 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 | **RQ6** | How much does **local grounding (RAG)** lift a small model vs closed-book? | H6: grounded − closed-book gap is **large for small models** and shrinks with size — i.e. local RAG substitutes for parameters. |
 | **RQ7** | What is the **energy cost per task** (Wh/answer, tok/s-per-watt) and how does it scale with model size on CPU? | H7: energy/answer rises with params; the **3–4B** knee is also the **energy-efficiency** sweet spot (best correct-answers-per-watt on this box). |
 
-## 2. Factors & design
+## 4. Methodology and Experimental Design
 
 - **Primary factor:** model (the 25, grouped by **parameter bracket**: 0-1B, 1-2B,
   2-3B, 3-4B, 4-5 GB).
@@ -161,9 +171,9 @@ entries in `data/models.txt`):
   page-cache, resets swap, compacts memory, and waits for the package temp to
   settle — so every model starts from an identical machine state. CPU clock is
   **logged at 1 Hz** (aggregate + per-core) as throttle evidence; DRAM clock is
-  fixed (2400 MT/s) and recorded once in ENVIRONMENT.md. *(Locked.)*
+  fixed (2400 MT/s) and recorded once in [`ENVIRONMENT.md`](./ENVIRONMENT.md). *(Locked.)*
 
-## 3. Scenarios — coverage & provenance
+## 5. Scenario Corpus and Provenance
 
 - **Current frozen snapshot:** **19 scenarios** total (from `data/scenarios.json`).
 - **Target for the expanded benchmark release:** k ≥ 6 scenarios per class.
@@ -192,7 +202,7 @@ entries in `data/models.txt`):
   table (report.py): if mean score doesn't fall easy→hard, the label is wrong and
   gets revised. This shows the benchmark is neither saturated nor trivial.
 
-## 4. Measures
+## 6. Metrics and Instrumentation
 
 **Quality**
 - `det_score` — deterministic-check pass rate (unambiguous facts; no judge).
@@ -275,13 +285,13 @@ evidence of no GPU offload (Ollama runs `llama-server`, no `-ngl`). RAM/swap
 - **Accuracy by difficulty** (easy/medium/hard author labels) — holding up on
   `hard` is reasoning, not pattern-matching the easy tail.
 
-The full field-by-field schema is **TELEMETRY.md** (data dictionary + pipeline
+The full field-by-field schema is [`TELEMETRY.md`](./TELEMETRY.md) (data dictionary + pipeline
 diagram); it is released with the harness so the dataset is reusable.
 
-## 4b. Released telemetry dataset & derivative tasks
+## 7. Released Dataset and Derivative Tasks
 
 Every run emits a row-per-`(model, scenario, rep)` JSONL with an aligned 1 Hz
-multivariate time series (schema: TELEMETRY.md). Beyond the headline ranking,
+multivariate time series (schema: [`TELEMETRY.md`](./TELEMETRY.md)). Beyond the headline ranking,
 this is a **public, reproducible dataset** of small-model behaviour-under-load on
 commodity CPU hardware, and it enables derivative tasks the paper flags as
 future / community work:
@@ -331,7 +341,7 @@ Richer microarchitectural features (IPC, cache-/LLC-miss rates via `perf stat`,
 as in Alibaba AMTrace; i915 `rcs0-busy`/`rc6-residency` via `intel_gpu_top`) are a
 documented **next capture** (env-gated) to deepen the contention/offload signals.
 
-## 5. Statistical analysis plan (pre-registered — write this BEFORE looking at Pass-2 data)
+## 8. Statistical Analysis Plan (Pre-registered)
 
 - **Point estimates:** per (model, class) mean of `det_score` and `judge_score`
   with **95 % CI** (bootstrap, 10k resamples — robust to non-normal small-n).
@@ -384,7 +394,7 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
   1. **random** legal answer, 2. **keyword/rule heuristic** diagnoser. A model
   must beat both to count.
 
-## 6. Threats to validity (state these explicitly in the paper)
+## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
 |---|---|---|
@@ -411,7 +421,7 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 | **Dual-/single-channel flex region not attributable per test** — the 8 GB+16 GB asymmetric DIMMs run the first 16 GB interleaved (dual-channel ~38 GB/s) and the top ~8 GB single-channel (~19 GB/s), but the OS doesn't expose which region a process's pages occupy | Construct | **Disclosed.** The IMC PMU counts by *requestor* (ia/gt/io), not per channel; per-page channel mapping isn't authoritative. We capture the **effect** (achieved bandwidth / MBU) + the requestor split + working-set-vs-16 GB spill risk — not a per-region label |
 | **MoE dynamic routing not observable** — we capture the *static* sparsity (experts active/total per token, e.g. 6/64) but not *which* experts fire per token or the routing load-balance | Construct | **Disclosed.** Ollama/llama.cpp don't expose the router (`ffn_gate_inp`) logits; per-token expert selection needs engine instrumentation. `expert_used_count` bounds the active-compute; dynamic routing is future work |
 
-## 7. Contributions (what the paper claims)
+## 10. Claimed Contributions
 
 1. **ApprenticeOps: a reproducible, open benchmark** for *small, locally-sovereign*
    ops-reasoning with **real-incident** scenarios + a **safety gate**, framed on
@@ -428,7 +438,7 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
    **safety non-monotonicity** result, and the local-RAG lift.
 5. **Artifact**: harness + scenarios + data released (Apache-2.0).
 
-## 7b. Related work & positioning
+## 11. Related Work and Positioning
 
 - **Operational taxonomy blueprint** ([`TAXONOMY.md`](TAXONOMY.md)) grounds our
   test classes in **Google SRE** (Monitoring/Troubleshooting/Emergency-Response/
@@ -453,16 +463,16 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 - **Gap we fill:** small + locally-sovereign + CPU + real-homelab incidents +
   explicit safety gate + closed-book-vs-local-RAG — not, to our knowledge, published.
 
-## 8. Venue & format
+## Appendix A. Submission Target and Format (Out-of-manuscript)
 
 - **Target:** arXiv preprint (cs.SE / cs.AI) → a **workshop** (MLSys, NeurIPS
   ENLSP efficient-NLP, an on-device/edge-LLM or AIOps workshop). Format = short
   paper / experience report (4–8 pp).
 - **Reproducibility appendix:** exact model digests, Ollama version, node spec,
-  seeds, prompts (already byte-frozen in `MODEL-PROMPTS.md`), and the analysis
+  seeds, prompts (already byte-frozen in [`data/MODEL-PROMPTS.md`](../data/MODEL-PROMPTS.md)), and the analysis
   notebook.
 
-## 8b. Submission-readiness checklist (best-practice aligned)
+## Appendix B. Submission-readiness Checklist (Out-of-manuscript)
 
 Before submission, this manuscript must satisfy all of the following:
 
@@ -483,13 +493,13 @@ Before submission, this manuscript must satisfy all of the following:
 - **Responsible release:** dual-use and privacy risks are disclosed with concrete
   safeguards (scenario scrubbing/anonymization, endpoint safety posture).
 
-These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](PAPER_PHASES.md).
+These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](./PAPER_PHASES.md).
 
-## 9. Build status (this spec → code)
+## Appendix C. Implementation Status (Spec -> Code)
 
 | Need | State |
 |---|---|
-| Byte-frozen prompts | ✅ `MODEL-PROMPTS.md` (regenerated, all 19) |
+| Byte-frozen prompts | ✅ [`data/MODEL-PROMPTS.md`](../data/MODEL-PROMPTS.md) (regenerated, all 19) |
 | Telemetry capture | ✅ `run.py` (validated: OTel fields, RAM/swap series, progress trace) |
 | Watchdog / DNF taxonomy | ✅ `run.py` |
 | Repetitions + seed + temp control | ✅ `run.py` (`--repeats/--temp/--seed-base`) |
@@ -501,4 +511,4 @@ These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](PAPER_P
 | Stats (CI, Friedman, κ) | ✅ `report.py` (bootstrap CI + Friedman via numpy/scipy; κ stdlib). Wilcoxon/Holm gated on R=5 data |
 | Pilot judging run (populate judge columns) | ⏳ **not yet run** (Copilot AI-Credit spend — confirm budget) |
 | ≥6 scenarios/class + held-out | ⏳ **needs authoring** (secure=5, capacity=4 done; others thin) |
-| 2nd reviewer for gold/rubric | ⏳ run `gold-review-prompt.md` (regenerated for 19) + adjudicate |
+| 2nd reviewer for gold/rubric | ⏳ run [`gold-review-prompt.md`](./gold-review-prompt.md) (regenerated for 19) + adjudicate |
