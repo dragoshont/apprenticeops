@@ -21,10 +21,13 @@ tinyllama:1.1b
 llama3.2:1b-instruct-q8_0
 
 # bracket: 1-2B
-# falcon3:1b [new]; internlm2:1.8b [new]; qwen2.5 q8 [quant];
-# deepseek-r1 distill q8 [quant][think].
+# falcon3:1b [new]; internlm2:1.8b [new]; qwen2:1.5b [new, older-gen version];
+# tinydolphin:1.1b [new]; qwen2.5 q8 [quant]; deepseek-r1 distill q8 [quant][think].
+# (tinyllama:1.1b lives in the 0-1B slot above.)
 falcon3:1b
 internlm2:1.8b
+qwen2:1.5b
+tinydolphin:1.1b
 qwen2.5:1.5b-instruct-q8_0
 deepseek-r1:1.5b-qwen-distill-q8_0
 
