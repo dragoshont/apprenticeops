@@ -1,0 +1,39 @@
+# Model manifest — one tag per line, grouped by bracket.
+# The runner pulls (if absent), evals, and can unload+free each in turn.
+# Comment out any you don't want. `# bracket:` lines are parsed as group labels.
+# See MODELS.md for sizes/licenses/provenance. Official tags only here.
+
+# bracket: 0-1B
+qwen2.5:0.5b
+qwen3:0.6b
+llama3.2:1b
+granite4:1b-h
+smollm2:360m
+
+# bracket: 1-2B
+qwen3:1.7b
+smollm2:1.7b
+qwen2.5:1.5b
+deepseek-r1:1.5b
+stablelm2:1.6b
+
+# bracket: 2-3B
+granite4:micro
+qwen2.5:3b
+phi:2.7b
+gemma2:2b
+ministral-3:3b
+
+# bracket: 3-4B
+phi4-mini
+qwen3:4b-instruct-2507-q4_K_M
+gemma3:4b-it-qat
+llama3.2:3b
+qwen3:4b
+
+# bracket: 4-5GB
+granite4:tiny-h
+mistral:7b-instruct-q4_K_M
+qwen2.5:7b
+deepseek-r1:7b
+qwen3:4b-instruct-2507-q8_0
