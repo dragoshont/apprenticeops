@@ -1,0 +1,59 @@
+# Model manifest — WAVE 2. One tag per line, grouped by bracket.
+# Same slots as wave 1 (data/models.txt); 4-6 NEW models or official quant
+# variants per bracket. No tag here duplicates wave 1.
+# Every tag below was verified to exist in the Ollama registry (manifest 200).
+# `# bracket:` lines are parsed as group labels. Tags must be the WHOLE line
+# (the runner does NOT strip inline comments), so notes live on their own lines.
+#
+# Legend: [new]=new family/version · [quant]=official higher/QAT quant of a
+# wave-1 model · [moe]=mixture-of-experts · [think]=reasoning variant.
+# License flags (serving caution; fine for offline eval): command-r7b = CC-BY-NC,
+# exaone* = non-commercial research. Others Apache-2.0 / MIT / permissive.
+
+# bracket: 0-1B
+# gemma3:1b [new]; gemma3:1b-it-qat [quant]; smollm2:135m [new floor];
+# granite3.1-moe:1b [new][moe]; tinyllama:1.1b [new]; llama3.2 q8 [quant].
+gemma3:1b
+gemma3:1b-it-qat
+smollm2:135m
+granite3.1-moe:1b
+tinyllama:1.1b
+llama3.2:1b-instruct-q8_0
+
+# bracket: 1-2B
+# falcon3:1b [new]; internlm2:1.8b [new]; qwen2.5 q8 [quant];
+# deepseek-r1 distill q8 [quant][think].
+falcon3:1b
+internlm2:1.8b
+qwen2.5:1.5b-instruct-q8_0
+deepseek-r1:1.5b-qwen-distill-q8_0
+
+# bracket: 2-3B
+# granite3.3:2b + granite3.2:2b [new, version-sensitivity]; exaone3.5:2.4b [new];
+# exaone-deep:2.4b [new][think]; cogito:3b [new][think]; granite3.1-moe:3b [new][moe].
+granite3.3:2b
+granite3.2:2b
+exaone3.5:2.4b
+exaone-deep:2.4b
+cogito:3b
+granite3.1-moe:3b
+
+# bracket: 3-4B
+# phi3.5:3.8b [new]; phi4-mini-reasoning [new][think]; falcon3:3b [new];
+# nemotron-mini:4b [new]; gemma3:4b [quant non-QAT]; gemma3:4b-it-q8_0 [quant].
+phi3.5:3.8b
+phi4-mini-reasoning
+falcon3:3b
+nemotron-mini:4b
+gemma3:4b
+gemma3:4b-it-q8_0
+
+# bracket: 4-5GB
+# falcon3:7b [new]; exaone3.5:7.8b [new]; exaone-deep:7.8b [new][think];
+# command-r7b [new, CC-BY-NC]; granite3.3:8b [new]; olmo2:7b [new, fully open].
+falcon3:7b
+exaone3.5:7.8b
+exaone-deep:7.8b
+command-r7b:latest
+granite3.3:8b
+olmo2:7b
