@@ -97,6 +97,7 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 > (closed-loop self-healing). The maturity ladder is the **roadmap/motivation**;
 > what we *prove* is the apprentice's footing on the bottom rungs. Claiming
 > autonomy would be overreach.
+
 | RQ | Question | Hypothesis (falsifiable) |
 |---|---|---|
 | **RQ1** | Does ops-reasoning quality scale with model size in the 0.5–8B range on CPU? | H1: quality rises with params but with **diminishing returns**; a knee around **3–4B**. |

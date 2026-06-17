@@ -133,7 +133,7 @@ This level of measurement depth is unusual for LLM evaluation. The reason: on CP
 
 ## Hardware: the 2018 ThinkPad is not a weakness
 
-The node is a **ThinkPad T480s, Intel i5-8350U** (4C/8T, base 1.70 GHz, 15 W TDP, AVX2, no AVX-512), **24 GiB DDR4-2400 dual-channel** (asymmetric flex mode, ~38.4 GB/s theoretical peak). It costs roughly €200 second-hand. It is representative of the low end of what a serious homelab practitioner actually has — not the median cloud instance, not a MacBook Pro M-series.
+The node is a **ThinkPad T480s, Intel i5-8350U** (4C/8T, base 1.70 GHz, 15 W TDP, AVX2, no AVX-512), **24 GiB DDR4-2400 dual-channel** (asymmetric flex mode, ~38.4 GB/s theoretical peak). It costs roughly **150 USD** second-hand. It is representative of the low end of what a serious homelab practitioner actually has — not the median cloud instance, not a MacBook Pro M-series.
 
 Running the benchmark on this hardware is not a limitation to apologise for. It is the *measurement point*. A model that performs well here works on the hardware you can afford to dedicate to local inference. A model that struggles here tells you exactly what you are giving up.
 
