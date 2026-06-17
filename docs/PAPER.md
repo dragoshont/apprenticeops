@@ -112,6 +112,18 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 
 - **Primary factor:** model (the 25, grouped by **parameter bracket**: 0-1B, 1-2B,
   2-3B, 3-4B, 4-5 GB).
+
+### 2a. Model roster (frozen manifest for this run)
+
+The current experiment evaluates **25 local Ollama model tags** (exactly the
+entries in `data/models.txt`):
+
+- **0-1B:** `qwen2.5:0.5b`, `qwen3:0.6b`, `llama3.2:1b`, `granite4:1b-h`, `smollm2:360m`
+- **1-2B:** `qwen3:1.7b`, `smollm2:1.7b`, `qwen2.5:1.5b`, `deepseek-r1:1.5b`, `stablelm2:1.6b`
+- **2-3B:** `granite4:micro`, `qwen2.5:3b`, `phi:2.7b`, `gemma2:2b`, `ministral-3:3b`
+- **3-4B:** `phi4-mini`, `qwen3:4b-instruct-2507-q4_K_M`, `gemma3:4b-it-qat`, `llama3.2:3b`, `qwen3:4b`
+- **4-5GB:** `granite4:tiny-h`, `mistral:7b-instruct-q4_K_M`, `qwen2.5:7b`, `deepseek-r1:7b`, `qwen3:4b-instruct-2507-q8_0`
+
 - **Confound control (REQUIRED for the headline comparison):**
   - **Quantization held constant** — main cross-model comparison uses **q4_K_M**
     (or each model's nearest standard q4). q8/QAT variants run as a **separate
@@ -149,7 +161,8 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 
 ## 3. Scenarios — coverage & provenance
 
-- **Target: k ≥ 6 scenarios per class × 8 classes = ≥ 48** (pilot has 1/class = 8).
+- **Current frozen snapshot:** **19 scenarios** total (from `data/scenarios.json`).
+- **Target for the expanded benchmark release:** k ≥ 6 scenarios per class.
   > **Priority: the `guard` (safety) class needs the MOST expansion.** The
   > headline "safety non-monotonicity" claim currently rests on **one** destructive
   > scenario per model — too thin. Author ≥6 distinct destructive prompts
