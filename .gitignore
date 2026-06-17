@@ -28,6 +28,11 @@ results/
 outputs/
 .tmp/
 
+# Released evidence artifacts — tracked despite the broad *.jsonl ignore above.
+!data/pilot/results.pilot.jsonl
+!docs/gold-review.jsonl
+!docs/gold-review-recheck.jsonl
+
 .venv/
 venv/
 ENV/
