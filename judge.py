@@ -285,7 +285,7 @@ def gold_review_one(judge, scen):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--scenarios", default="scenarios.json")
+    ap.add_argument("--scenarios", default="data/scenarios.json")
     ap.add_argument("--results", default="results.jsonl")
     ap.add_argument("--out")
     ap.add_argument("--judge", action="store_true")

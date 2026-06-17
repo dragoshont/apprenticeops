@@ -1088,8 +1088,8 @@ def load_models(path, only_bracket=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--models", default="models.txt")
-    ap.add_argument("--scenarios", default="scenarios.json")
+    ap.add_argument("--models", default="data/models.txt")
+    ap.add_argument("--scenarios", default="data/scenarios.json")
     ap.add_argument("--bracket", help="only run this bracket label (e.g. 0-1B)")
     ap.add_argument("--out", default="results.jsonl")
     ap.add_argument("--outputs-dir", default="outputs")

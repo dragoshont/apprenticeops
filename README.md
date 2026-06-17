@@ -38,11 +38,11 @@ So "offline" isn't dumb—it just redraws the lines: *retrieval is the operator'
 
 | Doc | Purpose |
 |-----|---------|
-| [`PAPER.md`](PAPER.md) | **Experimental design spec** — read this first for the science (RQs, threats, stats plan). |
+| [`docs/PAPER.md`](docs/PAPER.md) | **Experimental design spec** — read this first for the science (RQs, threats, stats plan). |
 | [`REPRODUCE.md`](REPRODUCE.md) | **Reproducibility contract** — clone, run, regenerate every number. Covers dependencies, commands, pinning, and caveats. |
-| [`MODELS.md`](MODELS.md) | The vetted model list — size, quant, license, capability, source for every model tested. |
-| [`PLAN.md`](PLAN.md) | Operational how-to — task taxonomy, scoring logic, judge backend, watchdog, repeatability. |
-| [`MARKET.md`](MARKET.md) | Adversarial take — reasoning claims in the wild, benchmark contamination, supply-chain risks. |
+| [`docs/MODELS.md`](docs/MODELS.md) | The vetted model list — size, quant, license, capability, source for every model tested. |
+| [`docs/PLAN.md`](docs/PLAN.md) | Operational how-to — task taxonomy, scoring logic, judge backend, watchdog, repeatability. |
+| [`docs/MARKET.md`](docs/MARKET.md) | Adversarial take — reasoning claims in the wild, benchmark contamination, supply-chain risks. |
 
 ## Quick start
 
@@ -122,4 +122,4 @@ Apache 2.0. See [`LICENSE`](LICENSE).
 
 **Questions?** File an issue. **Want to contribute a model or scenario?** PRs welcome. **Found a bug in the harness?** Let's fix it together.
 
-**Next: read [`PAPER.md`](PAPER.md) to understand the research questions, or [`REPRODUCE.md`](REPRODUCE.md) to run it yourself.**
+**Next: read [`docs/PAPER.md`](docs/PAPER.md) to understand the research questions, or [`REPRODUCE.md`](REPRODUCE.md) to run it yourself.**

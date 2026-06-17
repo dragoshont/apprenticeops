@@ -197,10 +197,10 @@ This folder is self-contained and meant to become its own public repo. To lift i
 ```
 apprenticeops/                     # new public repo (Apache-2.0)
 ├── README.md                      # <- README.md (this folder)
-├── PAPER.md  PLAN.md  MARKET.md   # design + method + adversarial
-├── MODELS.md  models.txt          # model manifest
-├── scenarios.json                 # the benchmark (frozen real incidents)
-├── MODEL-PROMPTS.md               # byte-frozen prompts
+├── PAPER.md  PLAN.md  MARKET.md   # design + method + adversarial  (docs/)
+├── MODELS.md  models.txt          # model manifest  (docs/ and data/)
+├── scenarios.json                 # the benchmark (frozen real incidents)  (data/)
+├── MODEL-PROMPTS.md               # byte-frozen prompts  (data/)
 ├── run.py  baselines.py  judge.py  report.py
 ├── REPRODUCE.md                   # <- this file
 ├── LICENSE                        # Apache-2.0 (add on extraction)

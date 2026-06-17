@@ -19,13 +19,13 @@
 #
 # Monitor with:  tail -f experiment.log   and   wc -l results.var.jsonl
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 LOG="$PWD/experiment.log"
 ts() { date -uIs; }
 log() { echo "[$(ts)] $*" | tee -a "$LOG"; }
 
 # Always restore the node power state, however we exit (normal / error / crash).
-trap 'log "EXIT: restoring node power state"; ./node-power.sh teardown >>"$LOG" 2>&1 || true' EXIT
+trap 'log "EXIT: restoring node power state"; ./scripts/node-power.sh teardown >>"$LOG" 2>&1 || true' EXIT
 
 log "=== experiment driver START (pid $$, host $(hostname)) ==="
 log "disk: $(df -h . | awk 'NR==2{print $4\" free\"}')  mem: $(free -h | awk '/Mem/{print $7\" avail\"}')"
@@ -40,7 +40,7 @@ log "node is free of eval runs"
 
 # 2) Lock the node into the reproducible power state.
 log "--- node-power.sh setup (lock clocks/fans/radios) ---"
-./node-power.sh setup >>"$LOG" 2>&1 || log "WARN: node-power setup had issues (continuing best-effort)"
+./scripts/node-power.sh setup >>"$LOG" 2>&1 || log "WARN: node-power setup had issues (continuing best-effort)"
 
 # 3) Measure the hardware ceilings on the now-quiet, locked box.
 log "--- calibrate.py (hardware ceilings) ---"
@@ -60,7 +60,7 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C (idle ${IDLE_T}C + 7)"
 log "--- variance run: 25 models x 19 scenarios x R=5, all telemetry (this takes DAYS) ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
 SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 \
-python3 run.py --models models.txt --shuffle --order-seed 1 \
+python3 run.py --models data/models.txt --shuffle --order-seed 1 \
   --temp 0.7 --repeats 5 --seed-base 1 --out results.var.jsonl >>"$LOG" 2>&1
 rc=$?
 log "variance run exited rc=${rc}; rows=$(wc -l < results.var.jsonl 2>/dev/null || echo 0)"

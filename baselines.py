@@ -5,7 +5,7 @@ baselines.py — non-LLM baselines (REQUIRED for the paper).
 A model only "counts" if it beats these. Produces results.jsonl-compatible rows
 (model = "baseline:random" / "baseline:keyword") so report.py ranks them inline.
 
-  python3 baselines.py --scenarios scenarios.json --out results.baselines.jsonl
+  python3 baselines.py --scenarios data/scenarios.json --out results.baselines.jsonl
 
 - baseline:random  — emits a plausible-but-uninformed answer per class (lower
   bound; what "no reasoning" scores on the deterministic checks).

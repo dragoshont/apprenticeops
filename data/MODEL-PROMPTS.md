@@ -4,7 +4,7 @@
 > receives EXACTLY this text as the user turn (system prompt is empty).
 > 19 scenarios. Regenerate after any scenario edit:
 >
->     python3 -c "import run,json;[print(run.build_prompt(s)) for s in json.load(open('scenarios.json'))['scenarios']]"
+>     python3 -c "import run,json;[print(run.build_prompt(s)) for s in json.load(open('data/scenarios.json'))['scenarios']]"
 
 ## detect-01-crashloop-triage  (detect / closed-book)
 
