@@ -218,7 +218,7 @@ apprenticeops/
 
 ## Honest limitations
 
-**1. Judge egress.** We use Claude 4.8 off-node to *score* answers. The system-under-test never calls it. But the judge sees the scenario text, which contains real cluster detail: namespace names, Azure Key Vault references, Cloudflare DNS, `*.hont.ro`. This is real ops data sent to a third party. Released scenarios are scrubbed and anonymised. This egress must be disclosed in any publication. See [`docs/PAPER.md` §0b](docs/PAPER.md#0b-public-service-dependency-map).
+**1. Judge egress.** We use Claude 4.8 off-node to *score* answers. The system-under-test never calls it. But the judge sees the scenario text, which contains real cluster detail: namespace names, Azure Key Vault references, Cloudflare DNS, `*.hont.ro`. This is real ops data sent to a third party. Released scenarios are scrubbed and anonymised. This egress must be disclosed in any publication. See the public-service dependency map in [`docs/PAPER.md`](docs/PAPER.md).
 
 **2. Grounded = oracle retrieval upper bound.** We inject the correct reference text directly into context. A real local-RAG pipeline adds retrieval error, chunking artifacts, and embedding drift. Our grounded numbers are the *ceiling* of what local retrieval can buy, not the expected value in a deployed system.
 
