@@ -1,12 +1,7 @@
-# ApprenticeOps
+---
+**Research paper · open benchmark · arXiv / workshop target**
 
-**An open, reproducible benchmark for evaluating small, locally-sovereign LLMs on real operations tasks.**
-
-> *Every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a closet — because that's where the interesting question lives.*
-
-# ApprenticeOps
-
-**An open, reproducible benchmark for evaluating small, locally-sovereign LLMs on real operations tasks.**
+# ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
 
 > *Every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a closet — because that's where the interesting question lives.*
 
