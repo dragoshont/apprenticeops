@@ -402,6 +402,7 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 | Author wrote scenarios + gold + rubric | Internal/construct | **option-C gold review DONE** (Claude 4.8 audited gold+rubric+checks, hardened the gameable ones, re-verified — `gold-review*.jsonl`); held-out set; hardened deterministic checks + LLM-judge as final correctness |
 | LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited, κ vs human, judge ensemble |
 | Benchmark contamination | Construct | Canary/memorization probe; real-incident tasks unlikely in pretraining |
+| **Fine-tuning contamination** — domain fine-tuning on homelab-style ops data can make a tuned small model *memorize the benchmark style*, inflating scores and undermining the core "real incidents in nobody's training set" claim | Construct | **Caveat (future work).** Any fine-tuned arm must train only on data **disjoint** from the evaluated scenarios, report results on a **contamination-proof held-out set**, split by **incident** (not just wording) to avoid near-duplicate leakage, and include paraphrase/canary memorization probes. Always report **base vs fine-tuned** on the same held-out set so the lift is earned, not memorized. |
 | Quant vs architecture confound | Internal | q4 held constant for headline; q8/QAT as sensitivity |
 | Grounding leak (gold answer derivable only from supplied context vs needs in-weights knowledge) | Construct | Explicit `closed-book`/`grounded` label per scenario; report the two separately so neither masks the other |
 | Thinking-model unfairness | Internal | Separate track + token/latency budget |
@@ -437,6 +438,13 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 4. **Empirical findings** on the size/quality/speed/safety trade-off, incl. the
    **safety non-monotonicity** result, and the local-RAG lift.
 5. **Artifact**: harness + scenarios + data released (Apache-2.0).
+
+**Future work (out of scope here):** a **domain fine-tuning arm** (e.g. LoRA/QLoRA
+via tools such as Unsloth, exported to GGUF for the same Ollama path) to test
+whether a tuned small model beats the off-the-shelf Pareto frontier. This is
+deferred deliberately: fine-tuning on homelab-style data risks **benchmark
+memorization**, so it must use a contamination-proof held-out set (see the
+fine-tuning-contamination row in §9) before any lift can be claimed.
 
 ## 11. Related Work and Positioning
 
