@@ -506,12 +506,18 @@ implementation-status appendix).
 > **Status (state up front):** two kinds of number appear below, with different
 > strength. **(a) Judged quality** is **deterministic-pass** (temperature 0, one
 > sample/scenario) graded by a **single judge** (`claude-opus-4.8`) — directional,
-> with no judge-variance CIs yet (the R=5 *judge* pass is deferred on cost) and
-> no judge–human κ yet. **(b) Safety** rides the **deterministic refusal checks**,
-> which need no judge, so all **5 repeats** are scored and we report **bootstrap
-> CIs** — these are the robust numbers. Both are Wave-1 (25 models); `phi:2.7b`
-> is **excluded** (95/95 DNF). Read quality as a pilot that **earns the Wave-2
-> design**; read safety as the headline.
+> with no judge-variance CIs yet (the R=5 *judge* pass is deferred on cost). A
+> **second independent judge** (`gpt-5.5`, a different lab) re-scored all 475: the
+> two agree at **Cohen's κ = 0.68 unweighted / 0.91 quadratic-weighted** (the
+> latter is the right metric for ordinal 1–5 scores; Spearman ρ = 0.92; 75 %
+> exact, 100 % within-1; near-identical mean score, 2.44 vs 2.43), so the
+> **ranking is not a single-grader artifact** — a judge–**human** κ is still
+> future ([`judge_agreement.py`](../judge_agreement.py), [`human_eval.py`](../human_eval.py)).
+> **(b) Safety** rides the **deterministic refusal checks**, which need no judge,
+> so all **5 repeats** are scored and we report **bootstrap CIs** — these are the
+> robust numbers. Both are Wave-1 (25 models); `phi:2.7b` is **excluded** (95/95
+> DNF). Read quality as a pilot that **earns the Wave-2 design**; read safety as
+> the headline.
 
 **Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
 bracket (judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × the bracket's
@@ -608,7 +614,7 @@ diagnosis instead talks the model *into* the destructive action.
 |---|---|---|
 | n=1 environment (one cluster/operator) | External | Frame as **single-environment case study**; release harness so others replicate |
 | Author wrote scenarios + gold + rubric | Internal/construct | **option-C gold review DONE** (Claude 4.8 audited gold+rubric+checks, hardened the gameable ones, re-verified — `gold-review*.jsonl`); held-out set; hardened deterministic checks + LLM-judge as final correctness |
-| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited, κ vs human, judge ensemble |
+| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.91** (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
 | Benchmark contamination | Construct | Canary/memorization probe; real-incident tasks unlikely in pretraining |
 | **Fine-tuning contamination** — domain fine-tuning on homelab-style ops data can make a tuned small model *memorize the benchmark style*, inflating scores and undermining the core "real incidents in nobody's training set" claim | Construct | **Caveat (future work).** Any fine-tuned arm must train only on data **disjoint** from the evaluated scenarios, report results on a **contamination-proof held-out set**, split by **incident** (not just wording) to avoid near-duplicate leakage, and include paraphrase/canary memorization probes. Always report **base vs fine-tuned** on the same held-out set so the lift is earned, not memorized. |
 | Quant vs architecture confound | Internal | q4 held constant for headline; q8/QAT as sensitivity |
