@@ -858,6 +858,18 @@ def unload(model):
         pass
 
 
+def remove_model(model):
+    """Delete a model from disk (`ollama rm`). Best-effort. Used by --rm-after to
+    bound disk during large sweeps: pull -> test -> rm, so the models dir never
+    grows past ~one model at a time (the wave-2 'no space left on device' fix)."""
+    try:
+        subprocess.run(["ollama", "rm", model],
+                       env={**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")},
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    except Exception:
+        pass
+
+
 def warmup(model, think):
     """Cold-load the model; return load seconds (warmup phase span)."""
     t0 = time.time()
@@ -1106,6 +1118,10 @@ def main():
     ap.add_argument("--shuffle", action="store_true",
                     help="randomize model order (anti thermal-carryover / run-order confound)")
     ap.add_argument("--order-seed", type=int, default=0, help="deterministic seed for --shuffle")
+    ap.add_argument("--rm-after", action="store_true",
+                    help="`ollama rm` each model THIS run pulled, after its scenarios finish, "
+                         "to bound disk during large sweeps. Models already present before the "
+                         "run are KEPT (conservative; never deletes pre-existing models).")
     args = ap.parse_args()
 
     os.makedirs(args.outputs_dir, exist_ok=True)
@@ -1123,6 +1139,8 @@ def main():
 
     with open(args.out, "a") as fout:
         for model, bracket in models:
+            # was the model on disk before this run? (decides --rm-after cleanup)
+            was_present = model_present(model)
             if not args.no_pull and not ensure_pulled(model):
                 row = {"model": model, "bracket": bracket, "fatal": "pull_failed",
                        "ts": time.time()}
@@ -1231,6 +1249,9 @@ def main():
                     sys.stderr.flush()
             unload(model)
             quiesce()
+            # bound disk: drop a model we pulled for this run (keep pre-existing ones)
+            if args.rm_after and not was_present:
+                remove_model(model)
     sys.stderr.write("== done ==\n")
 
 
