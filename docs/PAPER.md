@@ -688,8 +688,47 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   **classical ML, not LLMs, and not the homelab→scale maturity arc**. We extend
   that lineage to small local LLMs.
 - **Open LLM Leaderboard v2** (lm-eval-harness) anchors the generic-reasoning axis.
+- **The frontier sets a high ops bar — which reframes the question for a small
+  model.** **ITBench** (Jha et al., arXiv 2502.05352) reports that agents on
+  *state-of-the-art* models resolve only **13.8 % of SRE, 25.2 % of CISO, and 0 %
+  of FinOps** scenarios; **AIOpsLab** (above) frames the *autonomous* end-state.
+  If the frontier struggles at autonomous ops, the useful question for a *small,
+  local, last-line* model is not "can it run the cluster" but "**where is its
+  reasoning floor, and is it safe enough to trust there**" — exactly what we measure.
+- **The SLM case — for and against — turns on training, not size.** The pro-SLM
+  position (Belcak et al., NVIDIA, arXiv 2506.02153, *"Small Language Models are
+  the Future of Agentic AI"*) argues SLMs are sufficient and economical for the
+  narrow, repetitive calls agents actually make — our setting. **ThinkSLM**
+  (Srivastava et al., EMNLP 2025, arXiv 2502.11569) independently finds SLM
+  reasoning is "**strongly influenced by training methods and data quality rather
+  than solely model scale**" and that "**quantization preserves reasoning
+  capability**" — corroborating, from a different benchmark, both our *quant > params*
+  quality result (§8b) and our *training-type-over-size* safety result. The
+  "emergent abilities" intuition is itself contested (Schaeffer et al., arXiv
+  2304.15004, *"Are Emergent Abilities … a Mirage?"*): apparent capability jumps
+  can be an artifact of metric choice — which is why we report **continuous**
+  judged %-of-frontier with CIs, not a thresholded "can/can't."
+- **Reasoning-distillation degrades safety — our headline corroborates a fast-growing
+  literature.** Our deterministic result (R1-distilled "thinking" models refuse
+  destructive actions ~31 pts less than instruct siblings; §8b) is the *exact*
+  phenomenon of **Self-Jailbreaking** (Yong & Bach, ICLR 2026, arXiv 2510.20956):
+  after benign math/code reasoning training, reasoning LMs "**reason themselves out
+  of safety alignment**," inventing benign intent to justify harmful requests —
+  named explicitly for **DeepSeek-R1-distilled**, Phi-4-mini-reasoning, and
+  Nemotron (the very family that drags our 4-5 GB bracket down). **The Hidden Risks
+  of R1** (Zhou et al., arXiv 2502.12659) finds "**the stronger the reasoning
+  ability, the greater the potential harm**," with the *thinking trace* less safe
+  than the final answer; **SafeChain** (Jiang et al., arXiv 2502.12025) confirms
+  "**LRMs are not safe compared to their reasoning advance**." **Honesty (state up
+  front):** the same papers show the defect is *fixable* (SafeChain training;
+  minimal safety-reasoning data in Self-Jailbreaking), so we scope our claim to
+  models **as shipped** to a homelab via Ollama — **not** that reasoning is
+  inherently unsafe. Our addition: this holds **at 0.5–8B, on CPU, in an ops
+  setting**, where the unsafe model is also the one a practitioner is most tempted
+  to pick.
 - **Gap we fill:** small + locally-sovereign + CPU + real-homelab incidents +
-  explicit safety gate + closed-book-vs-local-RAG — not, to our knowledge, published.
+  **behavioural safety as the selection criterion** + closed-book-vs-local-RAG —
+  not, to our knowledge, published.
 
 ## Appendix A. Submission Target and Format (Out-of-manuscript)
 
