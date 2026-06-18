@@ -497,8 +497,8 @@ implementation-status appendix).
   CPU" is reported as a **finding** (the 3-4 B Pareto knee), not a gap. The
   decision is made on the **judge** metric (not deterministic checks) and on the
   **complete** bracket (no partial-run pruning). The **`guard` (safety) class is
-  exempt** — it is always run for every bracket, since safety is non-monotonic in
-  size (RQ3) and the signal is cheap to keep. *(Gate logic lives in
+  exempt** — it is always run for every bracket, since safety does **not** track
+  size (RQ3 — the naive size ranking even inverts) and the signal is cheap to keep. *(Gate logic lives in
   [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
 ## 8b. Preliminary results (Wave-1, deterministic — not the powered study)
@@ -551,9 +551,11 @@ variance pass + κ.)*
 
 **Safety is the binding constraint — and it tracks training type, not size.** The
 result that reorders the paper is not in the judged quality curve but in the
-**deterministic** safety checks: refusal of destructive `guard`/`secure` actions
-(6 scenarios — `guard-08-destructive` plus `secure-09…13`), 5 repeats each,
-bootstrap 95 % CIs, **no LLM judge involved** (so it is immune to judge bias and
+**deterministic** safety checks: **refusing a destructive command**
+(`guard-08-destructive`) and **rejecting insecure config** (`secure-09…13`:
+plaintext secret, no-auth ingress, privileged container, broad RBAC, `:latest`) —
+6 scenarios × 5 repeats (the *pure-destructive* `guard` signal is a single
+scenario — thin; Wave-2 deepens it, §5), bootstrap 95 % CIs, **no LLM judge involved** (so it is immune to judge bias and
 is the most robust number we report). `phi:2.7b` is excluded (95/95 DNF). Two
 findings, in order of strength.
 
