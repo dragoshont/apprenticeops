@@ -36,9 +36,26 @@ local telemetry**. Unlike existing AIOps agent benchmarks (AIOpsLab, ITBench,
 OpsEval) — frontier/cloud models, live agentic fault-injection, server hardware —
 we measure the **reasoning floor of a last-line local model on commodity offline
 hardware** along the axes retrieval *can't* fix: **reasoning,
-grounding-faithfulness, calibration, and safety**. The artifact (harness +
-real-incident scenarios + telemetry schema) is the primary contribution; the
-model ranking is the demonstration.
+grounding-faithfulness, calibration, and safety**.
+
+Our headline finding reorders those axes. Across a 25-model Wave-1 sweep (0.5–8B,
+CPU-only, offline), judged ops-reasoning quality climbs with size to a **knee at
+3–4B** and then flattens — but **capability is not the binding constraint on
+trusting a small model with real infrastructure; safety is.** On **deterministic**
+refusal-of-destructive-action checks (which need no LLM judge and are therefore
+our most robust numbers), even the safest size bracket plateaus near **82 %** —
+*one destructive prompt in five still slips through* — so size alone never reaches
+"safe." And the dominant driver of refusal is not size but **training type**: the
+two **reasoning-distilled ("thinking", R1-style)** models refuse at **43.9 %**
+[36.8, 51.2] versus **75.0 %** [73.0, 76.9] for instruct models — a gap wide
+enough that a **0.36 B** instruct model out-refuses a **7.6 B** reasoning model.
+That reasoning penalty is what turns the naive "pick the biggest model" heuristic
+**non-monotonic**: the largest, "reasoning"-badged model in the study is its
+*least* safe. The operational consequence is concrete — choose an offline ops
+model by **measured refusal behaviour**, not by size, benchmark score, a
+"reasoning" badge, or perplexity. The artifact (harness + real-incident scenarios
++ telemetry schema) is the primary contribution; the model ranking — and the
+safety result that overturns the size heuristic — is the demonstration.
 
 ## 1. Introduction and Scope
 
@@ -62,6 +79,23 @@ This yields the **reordered requirement stack** a small local ops model is grade
    inventing (the prerequisite for safety).
 4. **Safety-by-default** — refuse destructive actions; no external reviewer catches it.
 5. **Fit + speed** on owned hardware.
+
+> **Thesis (state up front).** The stack above is ordered by *requirement*; the
+> data reorders it by *where small models actually fail*. They clear the
+> **capability** bar earlier than folklore expects — a usable ops-reasoning floor
+> arrives at **3–4B** — and the bar they do **not** clear is **#4, safety**. Two
+> results carry the paper, both on **deterministic** refusal checks (no LLM
+> judge): (i) instruct-model refusal *rises with size then plateaus near 82 %*,
+> so a fifth of destructive prompts survive even the best bracket — **size alone
+> never buys safe**; and (ii) the real driver of refusal is **training type, not
+> size** — **reasoning-distilled** models refuse roughly **30 points less** than
+> instruct siblings, enough that the largest "reasoning"-badged model here is the
+> *least* safe of all 25. So the binding constraint on fielding a last-line local
+> model is not whether it is *smart enough* but whether it is *safe enough* — and
+> the heuristics that pick a smart model (*biggest that fits*, *best benchmark*,
+> *has a "reasoning" mode*) are uncorrelated with, or actively opposed to, the
+> safe one. This paper's spine is that reordering; §8b is its first evidence
+> (Wave-1, deterministic; the reasoning arm is only two models — Wave-2 deepens it).
 
 **Grounding modes (a measured factor, not a caveat).** Each scenario is labelled
 `closed-book` (answer from in-weights ops knowledge; incident data given, no
@@ -469,13 +503,15 @@ implementation-status appendix).
 
 ## 8b. Preliminary results (Wave-1, deterministic — not the powered study)
 
-> **Status (state up front):** these are **deterministic-pass** numbers
-> (temperature 0, one sample/scenario), graded by a **single judge**
-> (`claude-opus-4.8`), from the Wave-1 25-model run. They are **directional, not
-> the powered result** — no variance CIs from repeats yet (the R=5 variance
-> judge is deferred on cost), no judge–human κ yet, and `phi:2.7b` is **excluded**
-> (it failed to serve: 95/95 DNF). Read them as a pilot that **earns the Wave-2
-> design**, not as the final ranking.
+> **Status (state up front):** two kinds of number appear below, with different
+> strength. **(a) Judged quality** is **deterministic-pass** (temperature 0, one
+> sample/scenario) graded by a **single judge** (`claude-opus-4.8`) — directional,
+> with no judge-variance CIs yet (the R=5 *judge* pass is deferred on cost) and
+> no judge–human κ yet. **(b) Safety** rides the **deterministic refusal checks**,
+> which need no judge, so all **5 repeats** are scored and we report **bootstrap
+> CIs** — these are the robust numbers. Both are Wave-1 (25 models); `phi:2.7b`
+> is **excluded** (95/95 DNF). Read quality as a pilot that **earns the Wave-2
+> design**; read safety as the headline.
 
 **Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
 bracket (judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × the bracket's
@@ -506,6 +542,65 @@ its own **q8** sibling (73.7 %) — and beats `qwen2.5:7b` (71.6 %). A 4B at **q
 on the knee matches a 7B; the marginal quality lives in the **quantization**, not
 the parameter jump. *(Deterministic, single-judge — to be confirmed by the
 variance pass + κ.)*
+
+**Safety is the binding constraint — and it tracks training type, not size.** The
+result that reorders the paper is not in the judged quality curve but in the
+**deterministic** safety checks: refusal of destructive `guard`/`secure` actions
+(6 scenarios — `guard-08-destructive` plus `secure-09…13`), 5 repeats each,
+bootstrap 95 % CIs, **no LLM judge involved** (so it is immune to judge bias and
+is the most robust number we report). `phi:2.7b` is excluded (95/95 DNF). Two
+findings, in order of strength.
+
+***(1) Instruct safety rises with size, then plateaus below 100 %.*** Restricting
+to the 22 instruct models (non-reasoning, non-`phi`), refusal climbs and then
+flattens — the *same* diminishing-returns shape as quality:
+
+| Bracket (instruct only) | det. refusal rate | 95 % CI |
+|---|---|---|
+| 0-1B | 62.4 % | [58.0, 66.7] |
+| 1-2B | 73.5 % | [68.8, 78.0] |
+| 2-3B | 79.2 % | [75.1, 83.0] |
+| **3-4B** | **81.6 %** | [77.8, 85.2] |
+| 4-5GB | 79.8 % | [75.4, 84.0] |
+
+The plateau is the point: the safest bracket still **endorses roughly one
+destructive action in five**. Behind a human, on low-stakes tasks, that is a
+manageable apprentice risk; for autonomy it is disqualifying. **Size alone never
+reaches "safe."**
+
+***(2) Reasoning-distillation degrades refusal — and that, not size, drives the
+non-monotonicity.*** Splitting every model into *instruct* vs *reasoning/"thinking"*
+(the R1-distilled arm, `deepseek-r1:1.5b` and `deepseek-r1:7b`, run in their
+native thinking mode):
+
+| Arm | det. refusal rate | 95 % CI | n |
+|---|---|---|---|
+| instruct | **75.0 %** | [73.0, 76.9] | 660 |
+| reasoning ("thinking", R1-distill) | **43.9 %** | [36.8, 51.2] | 60 |
+
+The CIs are nowhere near overlapping — a **~31-point** safety penalty for the
+"reasoning" training sold as an upgrade. Concretely, **`smollm2:360m` (0.36 B,
+instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
+47.2 %)** — a 21× smaller model is the safer operator, and `deepseek-r1:7b` is
+the **least-safe model in the entire study**. The mechanism is corroborated in
+the LRM-safety literature: R1-distilled models *rationalize* harmful actions
+through their chain-of-thought (Self-Jailbreaking, arXiv 2510.20956; SafeChain
+2502.12025; Hidden Risks of R1 2502.12659) — the "thinking" that should aid
+diagnosis instead talks the model *into* the destructive action.
+
+> **Honesty: the size non-monotonicity is mostly the reasoning confound (state up
+> front).** Over *all 25 models* the bracket curve is **non-monotonic** —
+> 62.4 / 66.9 / 79.2 / 81.6 / **73.3 %** — appearing to say "the biggest bracket
+> is *less* safe." It is **not** an intrinsic size effect: the two reasoning
+> models happen to sit in the 1-2B and 4-5GB brackets and drag those averages
+> down; remove them (table 1 above) and the curve is monotonic-then-flat. So we
+> do **not** claim "bigger is less safe." We claim the decision-relevant thing:
+> the model a practitioner is most likely to *reach for as an upgrade* — the
+> biggest one, the one with the "reasoning" badge — is, in this study, the **least
+> safe**, which is why the naive size ranking inverts. The reasoning arm is only
+> **two models (n=60)**; Wave-2 deepens it. The headline survives either way:
+> **refusal must be measured behaviourally, because every size / benchmark /
+> "reasoning" proxy points the wrong way.**
 
 ## 9. Limitations and Threats to Validity
 
@@ -550,8 +645,12 @@ variance pass + κ.)*
 3. **A telemetry method** (OTel-GenAI-aligned per-request resource + behavioural
    trace, incl. **measured wall-power / energy-per-task** via a smart plug) for
    profiling on-device LLM ops, reusable beyond this study.
-4. **Empirical findings** on the size/quality/speed/safety trade-off, incl. the
-   **safety non-monotonicity** result, and the local-RAG lift.
+4. **Empirical findings** on the size/quality/speed/safety trade-off — the **knee
+   at 3–4B** in judged quality, and the headline **safety result: refusal is the
+   binding constraint, governed by *training type* not size** (reasoning-distilled
+   models refuse ~31 pts less than instruct; the naive "biggest / ‘reasoning’"
+   pick is the least safe), on judge-independent **deterministic** checks — plus
+   the local-RAG lift.
 5. **Artifact**: harness + scenarios + data released (Apache-2.0).
 
 **Future work (out of scope here):** a **domain fine-tuning arm** (e.g. LoRA/QLoRA
