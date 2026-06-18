@@ -147,15 +147,19 @@ entries in `data/models.txt`):
     instruct models on the same axis without labelling.
 - **Within-subject:** every model sees every scenario (paired design → paired
   stats, higher power).
-- **Repetitions (the power fix):** **R = 5** samples per (model × scenario) at
-  **temperature = 0.7** with **fixed, distinct seeds** (1..R) → enables
-  mean ± 95 % CI and variance (the **variance run**). A **separate temperature = 0**
-  pass — **greedy decoding**, where the model always takes the highest-probability
-  token, so its output is (near-)reproducible — gives the point estimate for the
-  deterministic checks; we call this the **deterministic ("det") run**. *(Locked: R=5.)*
+- **Two passes, two questions.** We run each (model × scenario) twice over,
+  because a deployer asks a model two different things. The **deterministic pass**
+  (temperature 0, greedy decoding — the model always takes the highest-probability
+  token) asks *“what does this model do when it stops guessing?”* and yields a
+  near-reproducible point estimate. The **variance pass** (temperature 0.7,
+  **R = 5** seeded repeats) asks the harder, more honest question — *“how much does
+  the answer change if I simply run it again?”* — and turns that wobble into
+  mean ± 95 % CI error bars. A model that is excellent on average but swings wildly
+  between runs is not the same product as one that is merely good and steady; only
+  the variance pass can tell them apart. *(Locked: R=5.)*
   > **temp-0 caveat:** greedy decode on Ollama/llama.cpp is *mostly* but **not
-  > bit-exactly** reproducible across CPU threads/batch; fixed seeds reduce but do
-  > not eliminate this — hence we still report CIs even on the "deterministic" pass.
+  > bit-exactly** reproducible across CPU threads/batch, so we still report CIs
+  > even on the “deterministic” pass.
 - **Hardware operating point (held fixed; disclosed):** single node — ThinkPad
   T480s, **Intel i5-8350U** (4C/8T, base 1.70 GHz, turbo 3.60 GHz, AVX2, no
   AVX-512, 15 W TDP), **24 GiB DDR4-2400 dual-channel** (asymmetric 8 GB Micron +
@@ -418,24 +422,22 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
   unlike 20 % of all 6 k judgments) and report **Cohen's κ** (judge vs human) +
   **Krippendorff's α** if a 2nd human rates. If κ < 0.6, down-weight judge-only
   claims.
-- **Primary judge / reference:** **Claude 4.8 Max** = **`claude-opus-4.8`** via
-  the official GitHub Copilot CLI *(locked)*. Judge ensemble adds a **2nd distinct
-  family** — **`gpt-5.5`** through the same CLI — for bias control.
-  > **Implementation status:** judge wiring **RESOLVED** (2026-06-16). `judge.py`
-  > has a `copilot` backend driving the official Copilot CLI; `claude-opus-4.8`
-  > is confirmed live (an end-to-end judge call scored a sample 5/5 with cited
-  > evidence) and `--ensemble copilot:gpt-5.5` gives the 2nd family. GitHub Models
-  > carries **no** Claude (verified) and Anthropic keys are not used. **Caveat:**
-  batch judging spends Copilot AI Credits — **measured ~7.7 credits/call** for
-  `claude-opus-4.8` via the CLI (dominated by the cached system/tool context, so
-  ~6 k calls is a real, non-trivial cost). The harness now **records exact
-  per-call billing** (AI credits + token in/out + prompt-cache read/write) from
-  the CLI footer into judged.jsonl, with a cost/cache rollup in report.py — so the
-  evaluation cost is measured, not estimated. The **pilot judging
-  > has not been run yet**, so the pilot's `judge/5` / `% frontier` columns are
-  > still empty — pilot findings remain **deterministic-only** until that pass runs.
-- **Judge-bias probes:** position-randomized, identity-blinded; run a **2-model
-  judge ensemble** and report agreement; disagreements flagged.
+**Grading the open-ended part — and distrusting the grader.** Deterministic checks
+settle the unambiguous part of an answer (right component, refused command, valid
+JSON); the rest of ops reasoning is open-ended, where two correct diagnoses can
+read nothing alike. For that we use an LLM judge — and we treat the judge as a
+source of bias to be controlled, not a neutral oracle. A single grader inherits
+its own preferences (for its own style, for longer answers, for whichever option
+it reads first), so no model is certified by one judge: we grade every answer with
+**two judges from different families — Claude Opus 4.8 and GPT-5.5** — and report
+their **agreement (Cohen's κ)**. Where they agree we trust the score; where they
+split we **flag** the answer rather than average two opinions into a false
+consensus. To blunt the known biases we **randomise answer order, blind the model
+identity, and require the judge to cite evidence** from the supplied context. The
+deterministic checks remain the backstop — they carry the parts where truth is not
+a matter of taste. The judges run **off-node**; the system-under-test never calls
+them (the Copilot-CLI wiring, per-call credit cost, and run status are in the
+implementation-status appendix).
 - **Gold/rubric de-biasing (option C — DONE):** the frontier judge (Claude 4.8)
   adversarially reviewed every gold answer + rubric + deterministic check; the
   operator adjudicates (`gold-review.jsonl`). **Outcome:** the gold *answers* held
