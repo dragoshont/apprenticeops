@@ -129,12 +129,84 @@ def label(kp):
     return "poor"
 
 
+def fleiss_kappa(ratings, cats):
+    """Fleiss' kappa for >=3 raters. `ratings` is a list of per-item rating lists
+    (one score per rater, every item rated by the SAME number of raters)."""
+    idx = {c: n for n, c in enumerate(cats)}
+    k = len(cats)
+    N = len(ratings)
+    if N == 0:
+        return None
+    n = len(ratings[0])
+    if n < 2 or any(len(r) != n for r in ratings):
+        return None  # Fleiss needs a fixed rater count per item
+    # n_ij: count of raters assigning item i to category j
+    counts = [[0] * k for _ in range(N)]
+    for i, r in enumerate(ratings):
+        for s in r:
+            counts[i][idx[s]] += 1
+    # per-item agreement P_i
+    P = [(sum(c * c for c in counts[i]) - n) / (n * (n - 1)) for i in range(N)]
+    Pbar = sum(P) / N
+    # category marginals p_j
+    pj = [sum(counts[i][j] for i in range(N)) / (N * n) for j in range(k)]
+    Pe = sum(p * p for p in pj)
+    if Pe >= 1.0:
+        return 1.0
+    return (Pbar - Pe) / (1 - Pe)
+
+
+def _nick(path):
+    """Short judge name from a judged-file path (…judged.det.gpt55.jsonl -> gpt55)."""
+    base = os.path.basename(path).replace(".jsonl", "")
+    for pre in ("judged.det.", "judged."):
+        if base.startswith(pre):
+            tail = base[len(pre):]
+            return tail or "claude"
+    return base
+
+
+def multi_rater_report(named):
+    """named: list of (name, {key->score}). Prints all pairwise quadratic kappas,
+    Fleiss' kappa over the common items, and median-of-N self-agreement."""
+    names = [n for n, _ in named]
+    common = set(named[0][1])
+    for _, d in named[1:]:
+        common &= set(d)
+    common = sorted(common)
+    print(f"\n# Multi-judge agreement  ({len(names)} judges: {', '.join(names)})")
+    print(f"  items rated by ALL judges: {len(common)}\n")
+    if not common:
+        print("  no items shared by all judges yet.")
+        return
+    # pairwise quadratic-weighted kappa
+    for i in range(len(named)):
+        for j in range(i + 1, len(named)):
+            (na, da), (nb, db) = named[i], named[j]
+            pairs = [(da[k], db[k]) for k in common]
+            cats = sorted(set(s for p in pairs for s in p))
+            kq = cohen_kappa(pairs, cats, "quadratic")
+            print(f"  {na:>8} <-> {nb:<8} kappa_quad = {kq:+.3f}  [{label(kq)}]")
+    # Fleiss over all raters
+    ratings = [[d[k] for _, d in named] for k in common]
+    cats = sorted(set(s for r in ratings for s in r))
+    fk = fleiss_kappa(ratings, cats)
+    print(f"\n  Fleiss' kappa (all {len(names)} judges) = {fk:+.3f}  [{label(fk)}]")
+    # how often the judges split 3 ways / agree exactly
+    import statistics as _st
+    exact = sum(1 for r in ratings if len(set(r)) == 1) / len(ratings)
+    print(f"  all-judges-exact-agree: {exact:.0%}   "
+          f"(median-of-{len(names)} is the robust combined score)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--a", default=".tmp/judge/judged.det.jsonl",
                     help="judge A jsonl (default: claude)")
     ap.add_argument("--b", default=".tmp/judge/judged.det.gpt55.jsonl",
                     help="judge B jsonl (default: gpt-5.5)")
+    ap.add_argument("--c", default="",
+                    help="optional judge C jsonl (e.g. gemini) -> adds Fleiss' kappa")
     ap.add_argument("--good", type=int, default=4,
                     help="binarize threshold: score >= this counts as 'good' (default 4)")
     args = ap.parse_args()
@@ -181,6 +253,11 @@ def main():
     print(f"\n  verdict: quadratic-weighted kappa = {kq:+.3f} "
           f"({'>=' if kq >= 0.6 else '<'} 0.60 bar -> "
           f"{'ranking is judge-robust' if kq >= 0.6 else 'judge-sensitive; report as single-judge'}).")
+
+    # third judge present -> full multi-rater report (pairwise + Fleiss)
+    if args.c and os.path.exists(args.c):
+        C = load(args.c)
+        multi_rater_report([(_nick(args.a), A), (_nick(args.b), B), (_nick(args.c), C)])
 
 
 if __name__ == "__main__":
