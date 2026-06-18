@@ -465,6 +465,46 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
   size (RQ3) and the signal is cheap to keep. *(Gate logic lives in
   [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
+## 8b. Preliminary results (Wave-1, deterministic — not the powered study)
+
+> **Status (state up front):** these are **deterministic-pass** numbers
+> (temperature 0, one sample/scenario), graded by a **single judge**
+> (`claude-opus-4.8`), from the Wave-1 25-model run. They are **directional, not
+> the powered result** — no variance CIs from repeats yet (the R=5 variance
+> judge is deferred on cost), no judge–human κ yet, and `phi:2.7b` is **excluded**
+> (it failed to serve: 95/95 DNF). Read them as a pilot that **earns the Wave-2
+> design**, not as the final ranking.
+
+**Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
+bracket (judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × the bracket's
+models):
+
+| Bracket | judged % of frontier | 95 % CI |
+|---|---|---|
+| 0-1B | 32.6 % | [29.3, 36.0] |
+| 1-2B | 43.2 % | [38.5, 47.8] |
+| 2-3B | 52.4 % | [47.6, 57.3] |
+| **3-4B** | **57.1 %** | [52.4, 61.7] |
+| 4-5GB | 58.7 % | [53.5, 64.0] |
+
+The curve rises steeply through 2-3B and then **flattens**: 4-5GB adds only
+**+1.7 points** over 3-4B, and their **CIs overlap**. This is the
+diminishing-returns **knee** H1 predicted — and ignoring it is **costly**, since
+4-5GB costs ~3× the per-model wall-clock of the 1-2B bracket (§4 hardware).
+
+**Pre-registered gate verdict → HOLD 4-5GB.** Applying the §8 cost/value gate
+(expand 4-5GB only if it beats 3-4B by ≥ 5 pts with non-overlapping CIs): the
+lift is +1.7 pts with overlapping CIs, so Wave-2 **deepens 0-1B…3-4B and holds
+4-5GB**. "**≤5 GB adds cost without judged lift on this CPU**" is the **finding**,
+not a gap.
+
+**The win is the quant, not the bracket.** The best 3-4B model
+(`qwen3:4b-instruct-2507-q4_K_M`, 71.6 %) essentially ties the best 4-5GB entry —
+its own **q8** sibling (73.7 %) — and beats `qwen2.5:7b` (71.6 %). A 4B at **q4**
+on the knee matches a 7B; the marginal quality lives in the **quantization**, not
+the parameter jump. *(Deterministic, single-judge — to be confirmed by the
+variance pass + κ.)*
+
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
