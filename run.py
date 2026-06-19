@@ -842,13 +842,26 @@ def model_runtime(model):
     return {}
 
 
-def ensure_pulled(model):
+def ensure_pulled(model, retries=4, backoff_s=10):
+    """Pull a model, retrying transient failures. `ollama pull` against the
+    registry (esp. hf.co GGUF repos) intermittently drops the connection
+    ("Error: EOF"); a single attempt then marks the model pull_failed and skips
+    it. Retry with linear backoff so a flaky network doesn't DNF a model that is
+    actually available (the wave-2 'Error: EOF' fix)."""
     if model_present(model):
         return True
-    sys.stderr.write(f"  pulling {model} …\n"); sys.stderr.flush()
-    rc = subprocess.run(["ollama", "pull", model],
-                        env={**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")})
-    return rc.returncode == 0
+    env = {**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")}
+    for attempt in range(1, retries + 1):
+        sys.stderr.write(f"  pulling {model} (attempt {attempt}/{retries}) …\n")
+        sys.stderr.flush()
+        rc = subprocess.run(["ollama", "pull", model], env=env)
+        if rc.returncode == 0 or model_present(model):
+            return True
+        if attempt < retries:
+            time.sleep(backoff_s * attempt)  # 10s, 20s, 30s — let the registry settle
+    sys.stderr.write(f"  pull FAILED after {retries} attempts: {model}\n")
+    sys.stderr.flush()
+    return False
 
 
 def unload(model):
