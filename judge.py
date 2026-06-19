@@ -46,6 +46,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 
 GITHUB_ENDPOINT = os.environ.get("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference")
@@ -383,9 +384,26 @@ def main():
                         answer = open(fp).read()
                         break
                 for jg in pending:
-                    j = (judge_one(jg, scen[sid], answer) if answer
-                         else {"score": 1, "verdict": "empty"})
-                    u = jg.last_usage if answer else None
+                    if not answer:
+                        j, u = {"score": 1, "verdict": "empty"}, None
+                    else:
+                        # a single transient copilot-CLI failure (e.g. SIGHUP when
+                        # VS Code blips) must NOT kill a multi-hour run: retry, then
+                        # skip the row so a later resume pass re-judges it.
+                        j = u = None
+                        for attempt in range(4):
+                            try:
+                                j = judge_one(jg, scen[sid], answer)
+                                u = jg.last_usage
+                                break
+                            except Exception as e:  # noqa: BLE001
+                                if attempt == 3:
+                                    sys.stderr.write(f"judge[{jg.model}] {row['model']} {sid} "
+                                                     f"r{rep} SKIP after 4 tries: {str(e)[:120]}\n")
+                                else:
+                                    time.sleep(5 * (attempt + 1))
+                        if j is None:
+                            continue  # leave unjudged; resume picks it up next run
                     if u:
                         cost["calls"] += 1
                         for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
