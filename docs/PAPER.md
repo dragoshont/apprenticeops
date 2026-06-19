@@ -35,27 +35,38 @@ locally-sovereign model may use **local RAG, in-org MCP servers, runbooks, and
 local telemetry**. Unlike existing AIOps agent benchmarks (AIOpsLab, ITBench,
 OpsEval) — frontier/cloud models, live agentic fault-injection, server hardware —
 we measure the **reasoning floor of a last-line local model on commodity offline
-hardware** along the axes retrieval *can't* fix: **reasoning,
-grounding-faithfulness, calibration, and safety**.
+hardware** along the axes retrieval *can't* fix — **reasoning,
+grounding-faithfulness, calibration, and safety** — and the deployment cost you
+pay regardless: **energy and fit on hardware you own**.
 
-Our headline finding reorders those axes. Across a 25-model Wave-1 sweep (0.5–8B,
-CPU-only, offline), judged ops-reasoning quality climbs with size to a **knee at
-3–4B** and then flattens — but **capability is not the binding constraint on
-trusting a small model with real infrastructure; safety is.** On **deterministic**
-refusal-of-destructive-action checks (which need no LLM judge and are therefore
-our most robust numbers), even the safest size bracket plateaus near **82 %** —
-*one destructive prompt in five still slips through* — so size alone never reaches
-"safe." And the dominant driver of refusal is not size but **training type**: the
-two **reasoning-distilled ("thinking", R1-style)** models refuse at **43.9 %**
-[36.8, 51.2] versus **75.0 %** [73.0, 76.9] for instruct models — a gap wide
-enough that a **0.36 B** instruct model out-refuses a **7.6 B** reasoning model.
-That reasoning penalty is what turns the naive "pick the biggest model" heuristic
-**non-monotonic**: the largest, "reasoning"-badged model in the study is its
-*least* safe. The operational consequence is concrete — choose an offline ops
-model by **measured refusal behaviour**, not by size, benchmark score, a
-"reasoning" badge, or perplexity. The artifact (harness + real-incident scenarios
-+ telemetry schema) is the primary contribution; the model ranking — and the
-safety result that overturns the size heuristic — is the demonstration.
+Our finding is a **selection problem**, not a leaderboard: the proxies a
+practitioner reaches for — **parameter count, benchmark score, a "reasoning"
+badge, perplexity** — each mislead, and they mislead on **different axes**, so no
+one of them orders the choice. We profile three axes at once in a single
+offline, CPU-only harness. **Quality:** across a 25-model Wave-1 sweep (0.5–8B),
+judged ops-reasoning climbs with size to a **knee at 3–4B**, then flattens, and
+**quantization largely preserves it** — so "biggest that fits" buys little above
+the knee. **Safety:** on **deterministic** refusal-of-destructive-action checks
+(no LLM judge, our most robust numbers) the safest size bracket still plateaus
+near **82 %** — one destructive prompt in five survives — and the dominant driver
+of refusal is **training type, not size**: **reasoning-distilled ("thinking",
+R1-style)** models refuse at **43.9 %** [36.8, 51.2] versus **75.0 %** [73.0,
+76.9] for instruct, a gap wide enough that a **0.36 B** instruct model out-refuses
+a **7.6 B** reasoning model and the largest "reasoning"-badged model in the study
+is its *least* safe. We are explicit that this safety result **corroborates** a
+fast-growing agent-/SLM-safety literature (reasoning-distillation and
+quantization degrade safety; text-refusal ≠ action-refusal) rather than
+discovering it — its weight here is that it **replicates offline, on CPU, at
+homelab scale**, where the unsafe model is also the one the size heuristic picks.
+**Energy:** we meter **Wh per answer, tokens/s-per-watt, and thermal headroom** on
+owned hardware, so the bigger model's bill for capability *above* the knee is
+counted in watts, not adjectives. The contribution is the **integration** —
+quality × safety × energy measured **together** for the
+offline/CPU/locally-sovereign model-selection decision, a regime no prior
+benchmark targets whole — released as a reproducible artifact (harness +
+real-incident scenarios + telemetry schema). The model ranking is the
+demonstration; the artifact, and the three-axis selection method, are the
+contribution.
 
 ## 1. Introduction and Scope
 
@@ -80,22 +91,28 @@ This yields the **reordered requirement stack** a small local ops model is grade
 4. **Safety-by-default** — refuse destructive actions; no external reviewer catches it.
 5. **Fit + speed** on owned hardware.
 
-> **Thesis (state up front).** The stack above is ordered by *requirement*; the
-> data reorders it by *where small models actually fail*. They clear the
-> **capability** bar earlier than folklore expects — a usable ops-reasoning floor
-> arrives at **3–4B** — and the bar they do **not** clear is **#4, safety**. Two
-> results carry the paper, both on **deterministic** refusal checks (no LLM
-> judge): (i) instruct-model refusal *rises with size then plateaus near 82 %*,
-> so a fifth of destructive prompts survive even the best bracket — **size alone
-> never buys safe**; and (ii) the real driver of refusal is **training type, not
-> size** — **reasoning-distilled** models refuse roughly **30 points less** than
-> instruct siblings, enough that the largest "reasoning"-badged model here is the
-> *least* safe of all 25. So the binding constraint on fielding a last-line local
-> model is not whether it is *smart enough* but whether it is *safe enough* — and
-> the heuristics that pick a smart model (*biggest that fits*, *best benchmark*,
-> *has a "reasoning" mode*) are uncorrelated with, or actively opposed to, the
-> safe one. This paper's spine is that reordering; §8b is its first evidence
-> (Wave-1, deterministic; the reasoning arm is only two models — Wave-2 deepens it).
+> **Thesis (state up front).** For a **locally-sovereign** ops assistant —
+> offline, CPU-only, ≤5 GB, the last line with no frontier to escalate to and no
+> reviewer downstream — **model selection is the whole game, and every proxy a
+> practitioner reaches for (parameter count, benchmark score, a "reasoning" badge,
+> perplexity) misleads on a *different* axis.** We measure three axes in one
+> harness. **(1) Quality:** the capability bar is cleared earlier than folklore
+> expects — a usable ops-reasoning floor arrives at **3–4B** — and *quantization
+> largely preserves it*, so param-count and a "reasoning" badge over-predict what
+> the job needs. **(2) Safety:** on **deterministic** refusal checks (no LLM
+> judge) instruct-model refusal *rises with size then plateaus near 82 %* — a
+> fifth of destructive prompts survive even the best bracket — and the real driver
+> is **training type, not size**: **reasoning-distilled** models refuse roughly
+> **30 points less** than instruct siblings, so the largest "reasoning"-badged
+> model here is the *least* safe of all 25. We state plainly that this
+> **corroborates** a fast-growing agent-/SLM-safety literature (§11) rather than
+> discovering it; the delta is that it **replicates offline, on CPU, at homelab
+> scale**, where the unsafe model is also the one the size heuristic picks.
+> **(3) Energy:** the bigger model bills you in **watts and tokens/s** for
+> capability above the knee you may never use. The spine is that consequence —
+> **no single axis, and no single proxy, orders the choice; the integration
+> does.** §8b is the first evidence (Wave-1, deterministic; the reasoning arm is
+> only two models — Wave-2 deepens it).
 
 **Grounding modes (a measured factor, not a caveat).** Each scenario is labelled
 `closed-book` (answer from in-weights ops knowledge; incident data given, no
@@ -517,7 +534,8 @@ implementation-status appendix).
 > so all **5 repeats** are scored and we report **bootstrap CIs** — these are the
 > robust numbers. Both are Wave-1 (25 models); `phi:2.7b` is **excluded** (95/95
 > DNF). Read quality as a pilot that **earns the Wave-2 design**; read safety as
-> the headline.
+> the **most robust axis** (judge-free) and a **replication** of the
+> agent-/SLM-safety literature (§11), not a discovery.
 
 **Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
 bracket (judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × the bracket's
@@ -549,9 +567,9 @@ on the knee matches a 7B; the marginal quality lives in the **quantization**, no
 the parameter jump. *(Deterministic, single-judge — to be confirmed by the
 variance pass + κ.)*
 
-**Safety is the binding constraint — and it tracks training type, not size.** The
-result that reorders the paper is not in the judged quality curve but in the
-**deterministic** safety checks: **refusing a destructive command**
+**Safety (axis #2) tracks training type, not size — replicating a known effect in
+the offline/CPU regime.** The sharpest behavioural signal is not in the judged
+quality curve but in the **deterministic** safety checks: **refusing a destructive command**
 (`guard-08-destructive`) and **rejecting insecure config** (`secure-09…13`:
 plaintext secret, no-auth ingress, privileged container, broad RBAC, `:latest`) —
 6 scenarios × 5 repeats (the *pure-destructive* `guard` signal is a single
@@ -606,7 +624,7 @@ diagnosis instead talks the model *into* the destructive action.
 > the model a practitioner is most likely to *reach for as an upgrade* — the
 > biggest one, the one with the "reasoning" badge — is, in this study, the **least
 > safe**, which is why the naive size ranking inverts. The reasoning arm is only
-> **two models (n=60)**; Wave-2 deepens it. The headline survives either way:
+> **two models (n=60)**; Wave-2 deepens it. The conclusion survives either way:
 > **refusal must be measured behaviourally, because every size / benchmark /
 > "reasoning" proxy points the wrong way.**
 
@@ -653,12 +671,17 @@ diagnosis instead talks the model *into* the destructive action.
 3. **A telemetry method** (OTel-GenAI-aligned per-request resource + behavioural
    trace, incl. **measured wall-power / energy-per-task** via a smart plug) for
    profiling on-device LLM ops, reusable beyond this study.
-4. **Empirical findings** on the size/quality/speed/safety trade-off — the **knee
-   at 3–4B** in judged quality, and the headline **safety result: refusal is the
-   binding constraint, governed by *training type* not size** (reasoning-distilled
-   models refuse ~31 pts less than instruct; the naive "biggest / ‘reasoning’"
-   pick is the least safe), on judge-independent **deterministic** checks — plus
-   the local-RAG lift.
+4. **Empirical findings — the three-axis selection map.** In one offline/CPU
+   harness: a judged-**quality** knee at **3–4B** (where *quantization*, not
+   parameter count, carries the marginal lift); a **safety** axis on
+   judge-independent **deterministic** checks where refusal is governed by
+   *training type, not size* (reasoning-distilled models refuse ~31 pts less than
+   instruct; the naive "biggest / ‘reasoning’" pick is the least safe) —
+   **corroborating** the agent-/SLM-safety literature (§11) in the offline/CPU
+   regime rather than discovering the effect; and an **energy** axis (Wh/answer,
+   tokens/s-per-watt) that prices capability above the knee. The contribution is
+   that no prior benchmark reports the three **together** for the model-selection
+   decision — plus the local-RAG lift.
 5. **Artifact**: harness + scenarios + data released (Apache-2.0).
 
 **Future work (out of scope here):** a **domain fine-tuning arm** (e.g. LoRA/QLoRA
@@ -710,8 +733,8 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   2304.15004, *"Are Emergent Abilities … a Mirage?"*): apparent capability jumps
   can be an artifact of metric choice — which is why we report **continuous**
   judged %-of-frontier with CIs, not a thresholded "can/can't."
-- **Reasoning-distillation degrades safety — our headline corroborates a fast-growing
-  literature.** Our deterministic result (R1-distilled "thinking" models refuse
+- **Reasoning-distillation degrades safety — we corroborate it at homelab scale,
+  not discover it.** Our deterministic result (R1-distilled "thinking" models refuse
   destructive actions ~31 pts less than instruct siblings; §8b) is the *exact*
   phenomenon of **Self-Jailbreaking** (Yong & Bach, ICLR 2026, arXiv 2510.20956):
   after benign math/code reasoning training, reasoning LMs "**reason themselves out
@@ -728,9 +751,41 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   inherently unsafe. Our addition: this holds **at 0.5–8B, on CPU, in an ops
   setting**, where the unsafe model is also the one a practitioner is most tempted
   to pick.
-- **Gap we fill:** small + locally-sovereign + CPU + real-homelab incidents +
-  **behavioural safety as the selection criterion** + closed-book-vs-local-RAG —
-  not, to our knowledge, published.
+- **Agent / action safety — the cluster we corroborate, positioned against.** A
+  fast-maturing line establishes that *behavioural* safety must be measured on
+  **actions, not text**: **GAP** (arXiv 2602.16943, 17,420 datapoints) shows
+  text-refusal does **not** transfer to tool-call refusal; **OS-Harm** (NeurIPS
+  2025 D&B Spotlight, arXiv 2506.14866) and **Owner-Harm** (arXiv 2604.18658)
+  build automated judges and deterministic post-audit gates against agents
+  harming their own deployer; **AgentHarm** (ICLR 2025, arXiv 2410.09024, 440
+  tasks) and **AgentHazard** (arXiv 2604.02947, 2,653 cases) score
+  malicious-action refusal at scale. These run **frontier/cloud or GPU-edge
+  agents on synthetic agentic tasks**. We share their *action-over-text* stance
+  and deterministic-check methodology but occupy the regime they do not: **≤8B,
+  quantized, CPU-only, fully offline**, on **frozen real GitOps incidents**, with
+  refusal measured **beside energy and quality** for the *selection* decision
+  rather than as a standalone safety score.
+- **Small-model & quantization safety — established at larger scale; we replicate
+  offline.** That *small, compressed, distilled* models shed safety is documented:
+  **Beyond the Tip of Efficiency** (ACL 2025 findings, arXiv 2502.19883, 13 SLMs)
+  ties compression/quantization/distillation to safety loss; **Q-resafe** (ICML
+  2025, arXiv 2506.20251) and **CAQ** (arXiv 2511.07842) show quantization
+  degrades safety and that **perplexity is a misleading deployment-readiness
+  proxy** (almost our words); **EASE** (AAAI 2026, arXiv 2511.06512) and
+  **GUARD-SLM** (arXiv 2603.28817) add SLM-specific safeguards. Our numbers
+  *replicate* these in the offline/CPU/ops regime, with one twist they don't
+  jointly report: **quantization largely preserves *quality* (§8b) while *training
+  type* — instruct vs reasoning-distilled — governs *safety***, so the two
+  pressures act on different axes of the same selection.
+- **Gap we fill:** no prior work measures **quality × safety × energy *together***
+  for the **offline / CPU-only / locally-sovereign** model-selection decision on
+  **commodity hardware** and **real-homelab incidents**. The agent-safety
+  benchmarks run frontier/cloud agents and don't meter watts; the systems/SLM
+  papers don't score destructive-action refusal against **Wh/answer and
+  tokens/s-per-watt**. The defensible delta is the **integration** — and the
+  question it answers, *"what does choosing the **safe**, good-enough offline
+  model cost you in watts and tokens/s?"* — not any single axis, each of which
+  (we say plainly) is already known.
 
 ## Appendix A. Submission Target and Format (Out-of-manuscript)
 
