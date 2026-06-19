@@ -212,6 +212,7 @@ See [`REPRODUCE.md`](REPRODUCE.md) for the full pipeline — including locking t
 | [`docs/TELEMETRY.md`](docs/TELEMETRY.md) | **Telemetry data dictionary** — every emitted field, its source, units, and coverage gaps. Aligned with OTel GenAI semantic conventions. |
 | [`docs/MODELS.md`](docs/MODELS.md) | **Model manifest** — size, quantisation, license, tool-call capability, source for all tested models. |
 | [`docs/MARKET.md`](docs/MARKET.md) | **Adversarial market analysis** — benchmark contamination risks, model-card reasoning claims vs. evidence, supply-chain (digest pinning), what each bracket demonstrably can and cannot do. |
+| [`data/SCENARIOS.md`](data/SCENARIOS.md) | **Scenario book (human-readable)** — all 19 scenarios with context, task, **gold answer, deterministic checks, and judge rubric**. Auto-generated from `scenarios.json` by [`render_scenarios.py`](render_scenarios.py); the file a human reviewer actually reads. |
 | [`data/MODEL-PROMPTS.md`](data/MODEL-PROMPTS.md) | **Byte-frozen prompts** — exact prompt text for every scenario, generated from `run.build_prompt()`. Reproducibility requires these to be immutable after the run begins. |
 
 ---

@@ -115,9 +115,11 @@ The relevant standard is **ACM's Artifact Review & Badging** (Available /
 Functional / Reusable / Results Reproduced / Replicated). Where we stand:
 
 - **Available** — code, scenarios, telemetry schema, and the analysis notebook are
-  in this public repo (Apache-2.0). For the D&B track we will additionally host
-  the dataset on an ML data repository with **Croissant** metadata by camera-ready
-  (tracked as an open item, see §7).
+  in this public repo (Apache-2.0). The 19 scenarios are human-readable — context,
+  task, **gold answer, deterministic checks, and judge rubric** — in
+  [`data/SCENARIOS.md`](data/SCENARIOS.md) (generated from `scenarios.json`). For
+  the D&B track we will additionally host the dataset on an ML data repository with
+  **Croissant** metadata by camera-ready (tracked as an open item, see §7).
 - **Functional / Reusable** — the harness is stdlib-first; [`REPRODUCE.md`](REPRODUCE.md)
   lists every command to regenerate every number, plus the node-locking protocol.
   The judge-free **deterministic** safety/quality checks and the analysis in
