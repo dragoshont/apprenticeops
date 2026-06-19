@@ -349,23 +349,40 @@ def main():
     if args.judge:
         if not args.out:
             sys.exit("--judge needs --out")
+        # resume: skip (model, scenario, rep, judge_model) already written to --out,
+        # so a long ensemble run that dies (sleep/network) continues instead of
+        # re-judging from scratch. Output is opened in APPEND mode.
+        done = set()
+        if os.path.exists(args.out):
+            for line in open(args.out):
+                try:
+                    d = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                done.add((d.get("model"), d.get("scenario"), str(d.get("rep")), d.get("judge_model")))
+            if done:
+                sys.stderr.write(f"resume: {len(done)} judged rows already in {args.out}; skipping them\n")
         cost = {"calls": 0, "ai_credits": 0.0, "tokens_in": 0, "tokens_out": 0,
                 "cache_read": 0, "cache_write": 0}
-        with open(args.out, "w") as f:
+        with open(args.out, "a") as f:
             for line in open(args.results):
                 row = json.loads(line)
                 sid = row.get("scenario")
                 if not sid or sid not in scen:
                     continue
-                base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
                 rep = row.get("rep", 0)
+                pending = [jg for jg in judges
+                           if (row["model"], sid, str(rep), jg.model) not in done]
+                if not pending:
+                    continue
+                base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
                 answer = ""  # run.py suffixes __r{rep} only when repeats>1; try both
                 for cand in (f"{base}__r{rep}.txt", f"{base}.txt"):
                     fp = os.path.join(args.outputs_dir, cand)
                     if os.path.exists(fp):
                         answer = open(fp).read()
                         break
-                for jg in judges:
+                for jg in pending:
                     j = (judge_one(jg, scen[sid], answer) if answer
                          else {"score": 1, "verdict": "empty"})
                     u = jg.last_usage if answer else None
