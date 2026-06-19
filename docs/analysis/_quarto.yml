@@ -2,6 +2,7 @@ project:
   type: website
   output-dir: _site
   render:
+    - index.qmd
     - wave_analysis.ipynb
     - judge_comparison.ipynb
 
@@ -19,6 +20,8 @@ website:
   navbar:
     background: dark
     left:
+      - text: "Home"
+        href: index.qmd
       - text: "The sovereign selection"
         href: wave_analysis.ipynb
       - text: "Judge agreement"

@@ -1,0 +1,66 @@
+---
+title: "ApprenticeOps"
+subtitle: "Which small, offline LLM do you actually run? Choose on quality × safety × energy — not a proxy."
+---
+
+## The question
+
+For a **locally-sovereign** ops assistant — offline (no frontier to escalate to),
+CPU-only, ≤ 5 GB, the last line — every proxy a practitioner reaches for
+(parameter count, benchmark score, a "reasoning" badge, perplexity) misleads on a
+*different* axis. So we measure three axes directly and choose on the **Pareto
+front**.
+
+::: {.callout-note appearance="simple"}
+### Headline
+
+- **8 of 24 models are Pareto-optimal** on (quality ↑, safety ↑, energy ↓); the
+  other **16** are dominated.
+- Judged quality knees at **3–4B** (57.1% vs 58.7% at 4–5GB — only **+1.7 pts**);
+  the marginal lift is *quantization*, not parameter count.
+- Safety tracks **training type, not size**: **75.0%** instruct vs **43.9%**
+  reasoning-distilled destructive-action refusal.
+- The sovereign pick is **`qwen3:4b-instruct-2507-q4_K_M`** — not the biggest, not
+  "reasoning". Worst case: **`deepseek-r1:7b`** (least safe *and* most
+  energy-expensive).
+:::
+
+## The Pareto front {#pareto}
+
+The short-list a practitioner should actually choose from — non-dominated on all
+three axes. The *biggest* and *"reasoning"* picks are **not** here.
+
+<!-- mirrors data/site/pareto.csv -->
+
+| model | bracket | quality | safety | mWh / answer |
+|:--|:-:|--:|--:|--:|
+| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 73.7% | 90.8% | 155 |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 71.6% | 90.8% | 106 |
+| `granite4:micro` | 2-3B | 64.2% | 79.2% | 81 |
+| `qwen3:1.7b` | 1-2B | 61.1% | 83.6% | 36 |
+| `granite4:1b-h` | 0-1B | 36.8% | 67.8% | 30 |
+| `llama3.2:1b` | 0-1B | 36.8% | 60.6% | 26 |
+| `qwen3:0.6b` | 0-1B | 34.7% | 64.7% | 15 |
+| `smollm2:360m` | 0-1B | 26.3% | 65.6% | 23 |
+
+: The two 4B-instruct variants (q4, q8) are *mutually* non-dominated — a quality-vs-energy trade at identical safety.
+
+## Read the analysis
+
+- [**The sovereign selection →**](wave_analysis.ipynb) — quality, safety, energy,
+  and the integrated quality × safety × energy Pareto, with the systems context.
+- [**Judge agreement →**](judge_comparison.ipynb) — how much the two LLM judges
+  agree (Cohen's κ, ICC, Bland–Altman).
+
+Machine-readable exports live in [`data/site/`](https://github.com/dragoshont/apprenticeops/tree/main/data/site);
+the methods and full caveats are in the
+[paper](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
+
+::: {.callout-warning appearance="simple"}
+**Honesty.** The **quality** axis is a provisional single-judge deterministic
+pass; **safety** and **energy** are judge-free / measured. Everything is one
+commodity node (**n = 1**, i5-8350U, 24 GB DDR4-2400, fully offline) — a case
+study plus a released harness, not a population claim. The variance pass (5 reps
+× 2 judges, κ_quad = 0.91) tightens the quality CIs; this page updates itself
+when the exports are regenerated.
+:::
