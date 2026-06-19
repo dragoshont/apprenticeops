@@ -12,22 +12,37 @@ Small local LLMs are attractive for homelab/edge operations because they are che
 private, and always available, but current evidence is weak on whether they can
 reason safely and usefully on real operations tasks without cloud fallback.
 
-## Core claim (the thesis the paper proves) — LOCKED 2026-06-18
+## Core claim (the thesis the paper proves) — reframed 2026-06-19
 
-Small, quantized, offline local models cross a usable homelab-ops reasoning floor
-at ~3-4B — but **capability is not the binding constraint; safety is.** Refusal of
-destructive actions is the universal weak spot, it is **non-monotonic in size**,
-and it is **actively degraded by reasoning-distillation**. Therefore an offline
-ops model must be selected on **behavioral safety evaluation**, not on size,
-benchmark accuracy, a “reasoning” badge, or perplexity.
+> Supersedes the safety-led claim locked 2026-06-18; see
+> [`PAPER_POSITIONING.md`](PAPER_POSITIONING.md) for the decision and the
+> competing-work scan that motivated it (the safety finding is saturated in the
+> literature, so it cannot lead).
+
+For a **locally-sovereign** ops assistant — offline (no frontier to escalate to),
+CPU-only, ≤5 GB, the last line — **model selection is the whole game, and every
+proxy a practitioner reaches for (parameter count, benchmark score, a “reasoning”
+badge, perplexity) misleads on a *different* axis.** We profile **quality × safety
+× energy together** on commodity offline hardware and reduce the choice to a
+**measured Pareto front**. The three axes: a judged-quality knee at ~3-4B (where
+*quantization*, not parameters, carries the lift); **safety** as the judge-free
+deterministic refusal axis, governed by *training type, not size* — a result that
+**corroborates** a saturated agent-/SLM-safety literature rather than discovering
+it; and **energy** (Wh/answer, tok/s-per-watt) you pay to run it yourself. The
+contribution is the **integration**: on the front, the “biggest” and “reasoning”
+picks come out **dominated**.
 
 ## Top contributions (proposed)
 
 1. ApprenticeOps benchmark artifact (scenario corpus + scoring + telemetry schema).
 2. Controlled empirical results across 25 local models and 19 scenarios on one
    commodity node, with explicit uncertainty/statistical treatment.
-3. Safety and grounding findings: refusal behavior is non-monotonic by model size,
-   and grounded context materially changes outcomes for some task classes.
+3. **The three-axis selection map and its Pareto front** — quality × safety ×
+   energy measured *together* for the offline/CPU model-selection decision, a
+   regime no prior benchmark targets whole. Safety is **one axis** of three
+   (judge-free deterministic refusal, governed by training type not size) and is
+   presented as **corroboration** of the agent-/SLM-safety literature, not
+   discovery; energy is the under-reported axis that prices capability above the knee.
 
 ## Wave-1 findings (data-grounded, 2026-06-18)
 
@@ -41,7 +56,7 @@ check scores across 5 repeats, plus a deterministic single-judge quality pass):
    71.6 %) ties its own q8 and beats `qwen2.5:7b` and a 6.9B Granite.
 3. **Capability is perception-first.** Strong on detect/localize/monitor/test
    (80-100 %), weak on guard/expand/upgrade (38-55 %).
-4. **Safety is non-monotonic and reasoning-degraded (the headline).** Guard+secure
+4. **Safety (axis #2) tracks training type, not size — a *replication*, not a discovery.** Guard+secure
    refusal by bracket: 62 / 67 / 79 / 82 / 73 % — peaks at 3-4B, **drops** at
    4-5GB. Reasoning/“thinking” models refuse at **43.9 % [36.7, 51.2]** vs
    instruct **75.0 % [73.1, 76.9]** (n = 60 vs 660). A 0.36B model (`smollm2:360m`,
@@ -49,6 +64,12 @@ check scores across 5 repeats, plus a deterministic single-judge quality pass):
    on the **deterministic** refusal check (not the LLM judge) — methodologically
    cleaner and bias-free.
 5. **`phi:2.7b` failed to serve** (95/95 DNF) — excluded as DNF, not performance.
+6. **The headline is the integration: a quality × safety × energy Pareto.** Treating
+   each model as a point in (judged quality ↑, refusal ↑, energy ↓), **8 of 24
+   models are Pareto-optimal**; the other 16 are dominated. The “biggest” and
+   “reasoning” picks land **off** the front — `deepseek-r1:7b` is simultaneously the
+   least safe (47 %) and the most energy-expensive (303 mWh/answer). The selection
+   short-list is found only by measuring all three axes together.
 
 ## Literature positioning (scan 2026-06-18)
 
@@ -66,7 +87,8 @@ check scores across 5 repeats, plus a deterministic single-judge quality pass):
   (2505.11574, low-bit hard-math collapse — scope to q4/q8 + ops judgment).
 - **The gap we fill:** AIOpsLab (2501.06706), ITBench (2502.05352; frontier solves
   only ~14 % SRE / 0 % FinOps), OpsEval (2310.07637, MCQ) — none occupy small +
-  local + CPU + offline + real-incident + safety-as-first-class + consistency.
+  local + CPU + offline + real-incident + **quality × safety × energy measured
+  together** + consistency.
 - **Pro-SLM momentum (frame, don’t conflate):** NVIDIA 2506.02153, SLM survey
   2409.15790, Phi-3 2404.14219.
 
@@ -97,8 +119,11 @@ check scores across 5 repeats, plus a deterministic single-judge quality pass):
 ## Target audience and venues
 
 - Primary readers: systems/ML practitioners evaluating local LLM operations use.
-- First release: arXiv preprint.
-- Submission targets: workshop track in MLSys / NeurIPS-adjacent efficient/on-device/ops venues.
+- First release: arXiv preprint (moderated, **not** peer-reviewed — see
+  [`REVIEWER.md`](../REVIEWER.md) for what that means and how to review this work).
+- Submission targets: **NeurIPS Datasets & Benchmarks track** (single-blind
+  allowed; code + data must be accessible to reviewers at submission; Croissant
+  metadata) as the natural venue; MLSys / on-device & efficiency workshops as alternates.
 
 ## Readiness bar for submission
 

@@ -1,4 +1,5 @@
-**Research paper · open benchmark · arXiv / workshop target**
+**Research paper · open benchmark · arXiv preprint → NeurIPS Datasets & Benchmarks track**
+**Reviewing this work? Start with [`REVIEWER.md`](REVIEWER.md).**
 
 # ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
 
@@ -78,6 +79,35 @@ Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PA
 | RQ5 | How far below a **frontier reference** do the best small models land? | ~60–80 % of frontier on structured tasks; less on open-ended diagnosis. |
 | RQ6 | How much does **local grounding (RAG)** lift a small model? | The gap is large for small models and shrinks with size — local RAG substitutes for parameters. |
 | RQ7 | What is the **energy cost per task**, and where is the efficiency sweet spot? | Energy/answer rises with params; the 3–4B knee is also the energy-efficiency optimum. |
+
+---
+
+## Headline result — the quality × safety × energy Pareto
+
+The contribution is not any single axis; it is choosing on **all three together**.
+Treat each model as a point in **(judged quality ↑, destructive-action refusal ↑,
+energy-per-answer ↓)** and compute the **Pareto-optimal set** — the models nothing
+else beats on every axis at once. On the Wave-1 data, **8 of 24 models are
+Pareto-optimal; the other 16 are dominated**, and the two heuristics a practitioner
+reaches for — *biggest that fits* and *has a “reasoning” mode* — select **dominated**
+models. `deepseek-r1:7b` is the worst case: simultaneously the **least safe** and the
+**most energy-expensive** model in the study.
+
+The three axes, briefly:
+
+- **Quality** — judged %-of-frontier knees at **3–4B**; *quantization*, not parameter
+  count, carries the marginal lift.
+- **Safety (axis #2)** — judge-free deterministic refusal, governed by **training
+  type, not size**. This **corroborates** a saturated agent-/SLM-safety literature
+  (GAP, OS-Harm, Beyond-the-Tip, Q-resafe, …); we replicate it offline, we do not
+  claim to discover it.
+- **Energy** — the under-reported axis: Wh/answer and tok/s-per-watt you pay to run
+  the model yourself.
+
+Figures and the dominance computation live in
+[`docs/analysis/wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb) §7–§8; the
+full result is [`docs/PAPER.md`](docs/PAPER.md) §8b. Quality CIs are provisional
+until the variance pass completes (see [`REVIEWER.md`](REVIEWER.md) §7).
 
 ---
 
@@ -174,6 +204,7 @@ See [`REPRODUCE.md`](REPRODUCE.md) for the full pipeline — including locking t
 
 | File | What it is |
 |------|-----------|
+| [`REVIEWER.md`](REVIEWER.md) | **Reviewer's guide** — what the paper claims, how it was produced (human-guided, AI-assisted), the review rubric mapped to NeurIPS dimensions, how to reproduce safely, and AI-assisted-review etiquette. **Start here if you were asked to review.** |
 | [`docs/PAPER.md`](docs/PAPER.md) | **Experimental design spec** — the science: all 7 RQs with falsifiable hypotheses, full factor table, scenario design rationale, threat-to-validity analysis, stats plan (bootstrap CIs, Friedman test, Cohen's κ), honesty caveats. Read this before interpreting any number. |
 | [`REPRODUCE.md`](REPRODUCE.md) | **Reproducibility contract** — every command to regenerate every number, dependency pinning, environment capture script, node-locking protocol, caveats for non-Linux and GPU hardware. |
 | [`docs/PLAN.md`](docs/PLAN.md) | **Operational how-to** — task taxonomy, scoring rubrics, judge backend configuration, watchdog, repeatability mechanics. |
@@ -248,6 +279,29 @@ The broader motivation: where does a local small model sit on the path toward au
 A model that can reliably detect, diagnose, and safely refuse on rung 1 has earned the right to be *considered* for higher-trust work. This benchmark provides the evidence base for that judgment — and makes the evidence falsifiable and reproducible.
 
 ---
+
+## For reviewers
+
+This repo is built to be **easy to review — including with AI assistance — with a
+human in charge of the judgement.** If you were invited to review the paper, start
+with **[`REVIEWER.md`](REVIEWER.md)**: it maps your assessment onto the NeurIPS
+review dimensions (quality / clarity / significance / originality), tells you which
+numbers reproduce on any laptop vs. which need the specific node, and covers
+confidentiality etiquette for AI-assisted review.
+
+> **arXiv is moderated, not peer-reviewed.** The first release is an arXiv preprint
+> (a moderation check on scholarly standards and format — *not* peer review); the
+> intended peer-reviewed venue is the **NeurIPS Datasets & Benchmarks track**.
+
+## Use of AI in this work
+
+This benchmark, its analysis, and its prose were produced with **substantial AI
+assistance under human direction**. A human author directs the work and **takes full
+responsibility for every claim, number, and line of code**, regardless of how it was
+generated; no AI system is listed as an author. This follows arXiv's policy on
+authors' use of generative-AI language tools. Every headline number is reproducible
+from released artifacts ([`REPRODUCE.md`](REPRODUCE.md)), so the work can be checked
+independently of the prose.
 
 ## Standards
 

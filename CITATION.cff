@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use ApprenticeOps (benchmark, harness, or data), please cite it as below."
+title: "ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants"
+abstract: >-
+  An open, reproducible benchmark and CPU-telemetry method for evaluating small
+  (0.5-8B), quantized, fully-offline local LLMs as homelab/edge operations
+  assistants. It profiles judged quality, destructive-action safety, and energy
+  together on commodity offline hardware over frozen real GitOps incidents, and
+  reduces model selection to a measured quality x safety x energy Pareto front on
+  which the usual proxies (parameter count, benchmark score, a "reasoning" badge,
+  perplexity) select dominated models.
+type: software
+authors:
+  - family-names: Hont
+    given-names: Dragos
+license: Apache-2.0
+repository-code: "https://github.com/dragoshont/apprenticeops"
+url: "https://github.com/dragoshont/apprenticeops"
+keywords:
+  - local LLM
+  - small language models
+  - quantization
+  - AIOps
+  - benchmark
+  - CPU inference
+  - energy efficiency
+  - LLM safety
+  - reproducibility
+  - homelab
+version: "0.1.0"
+date-released: 2026-06-19
