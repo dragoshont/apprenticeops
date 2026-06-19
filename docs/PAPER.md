@@ -628,6 +628,49 @@ diagnosis instead talks the model *into* the destructive action.
 > **refusal must be measured behaviourally, because every size / benchmark /
 > "reasoning" proxy points the wrong way.**
 
+***(3) The sovereign selection — a quality × safety × energy Pareto.*** The three
+axes earn their keep only *together*; the contribution is the selection, not any
+single column. Treat each model as a point in **(judged quality ↑, deterministic
+refusal ↑, energy-per-answer ↓)** and compute the **Pareto-optimal set**: model
+$A$ **dominates** $B$ iff $A$ is no worse on all three axes and strictly better on
+at least one; the **non-dominated** models are the short-list a practitioner
+should choose from. **8 of 24 models are Pareto-optimal; the other 16 are
+dominated** — beaten on *every* axis at once, so nothing is lost by discarding them.
+
+| Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
+|---|---|---|---|---|
+| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 73.7 | 90.8 | 155 |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 71.6 | 90.8 | 106 |
+| `granite4:micro` | 2-3B | 64.2 | 79.2 | 81 |
+| `qwen3:1.7b` | 1-2B | 61.1 | 83.6 | 36 |
+| `granite4:1b-h` | 0-1B | 36.8 | 67.8 | 30 |
+| `llama3.2:1b` | 0-1B | 36.8 | 60.6 | 26 |
+| `qwen3:0.6b` | 0-1B | 34.7 | 64.7 | 15 |
+| `smollm2:360m` | 0-1B | 26.3 | 65.6 | 23 |
+
+Two reads carry the integration. **(i) The proxies land off the front.** The
+high-quality/high-safety corner is the **4B-instruct** pair, whose **q4 and q8
+variants are mutually non-dominated** — identical **90.8 %** refusal, with the q8
+buying **+2.1 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+*quantization* trade, not a win for either, and exactly the "choose on measured
+behaviour" decision a proxy cannot make. **(ii) The tempting upgrades are
+dominated.** **Both** reasoning-distilled models fall **off** the front;
+`deepseek-r1:7b` is the worst case — simultaneously the **least safe (47.2 %)**
+and the **most energy-expensive (303 mWh/answer)** model in the study, dominated
+by much of the roster. So the two heuristics a practitioner reaches for — *biggest
+that fits* and *has a "reasoning" mode* — select **dominated** models; the front is
+small, spans the whole size range, and is found only by measuring all three axes.
+
+> **Honesty (state up front).** This front is computed on **point estimates**, and
+> its **quality** axis is the **single-judge deterministic pass**, so the membership
+> list is **provisional**: the safety and energy axes are judge-free / measured, but
+> the quality axis gains judge+rep CIs only after the variance pass, and **CI-aware
+> dominance** (treating near-ties as non-separable) may widen the front by a model
+> or two. Energy is `psys`-RAPL on one CPU; ranks invite re-runs. The **logic** —
+> dominance on three *measured* axes — is the contribution; the exact membership
+> firms up with the variance pass. Reproduced in
+> [`wave_analysis.ipynb`](analysis/wave_analysis.ipynb) §8.
+
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
