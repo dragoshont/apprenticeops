@@ -1,0 +1,14 @@
+{
+  "n_models": 24,
+  "n_pareto": 8,
+  "n_dominated": 16,
+  "quality_knee_bracket": "3-4B",
+  "quality_3_4B_pct": 57.1,
+  "quality_4_5GB_pct": 58.7,
+  "safety_instruct_pct": 75.0,
+  "safety_reasoning_pct": 43.9,
+  "sovereign_pick": "qwen3:4b-instruct-2507-q4_K_M",
+  "worst_case_model": "deepseek-r1:7b",
+  "provisional_quality_axis": true,
+  "data_node": "i5-8350U / 24GB DDR4-2400, fully offline"
+}

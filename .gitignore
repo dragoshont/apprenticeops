@@ -45,3 +45,9 @@ env/
 *~
 
 .vscode/
+
+# analysis site render artifacts (the notebook outputs + data/site/ exports ARE tracked)
+docs/analysis/_site/
+docs/analysis/*.html
+.quarto/
+*.quarto_ipynb

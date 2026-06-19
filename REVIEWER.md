@@ -125,7 +125,10 @@ Functional / Reusable / Results Reproduced / Replicated). Where we stand:
   The judge-free **deterministic** safety/quality checks and the analysis in
   [`docs/analysis/wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb) re-run
   from the committed snapshot (`data/snapshots/`) on any machine with Python +
-  pandas + matplotlib — **no special hardware, no model downloads**.
+  pandas + matplotlib — **no special hardware, no model downloads**. The notebook
+  also exports machine-readable result tables to [`data/site/`](data/site) and
+  builds a static site via `scripts/build-analysis-site.sh` (see
+  [`docs/analysis/`](docs/analysis)).
 - **Results Reproduced** — the systems telemetry (energy, tok/s, memory bandwidth)
   requires the specific Linux node (RAPL/`/proc`/IMC counters); quality and safety
   scores reproduce anywhere. We disclose exactly which numbers are node-bound.

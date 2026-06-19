@@ -1,0 +1,43 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - wave_analysis.ipynb
+    - judge_comparison.ipynb
+
+# Use the committed cell outputs — do NOT re-execute on render (the systems
+# telemetry needs the specific node; re-run locally with build-analysis-site.sh).
+execute:
+  enabled: false
+
+website:
+  title: "ApprenticeOps"
+  description: >-
+    Small locally-sovereign LLMs as homelab ops assistants —
+    quality × safety × energy, on commodity offline hardware.
+  reader-mode: true
+  navbar:
+    background: dark
+    left:
+      - text: "The sovereign selection"
+        href: wave_analysis.ipynb
+      - text: "Judge agreement"
+        href: judge_comparison.ipynb
+    right:
+      - icon: github
+        href: https://github.com/dragoshont/apprenticeops
+  page-footer:
+    center: "Apache-2.0 · human-guided, AI-assisted · arXiv preprint → NeurIPS D&B"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-expand: true
+    code-fold: true
+    code-tools: true
+    code-summary: "show code"
+    fig-align: center
+    df-print: paged
+    smooth-scroll: true
