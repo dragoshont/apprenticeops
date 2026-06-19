@@ -45,3 +45,9 @@ quarto render docs/analysis                                                     
 > commodity node (n = 1). See the notebook intro for provenance and the variance-
 > pass upgrade path. Render artifacts (`_site/`, `*.html`) are git-ignored; the
 > notebook outputs and `data/site/` exports are tracked.
+
+**Accessibility.** Every figure carries a `#| fig-alt:` screen-reader description
+at the top of its cell. Quarto applies these as `<img alt="…">` on `quarto render`
+(the accessible build). The plain `nbconvert` HTML preview does **not** carry them
+(nbconvert doesn't read Quarto cell directives) — use the Quarto site for the
+accessible version.
