@@ -1,4 +1,5 @@
 **Research paper · open benchmark · arXiv preprint → NeurIPS Datasets & Benchmarks track**
+**📊 Live analysis site — figures, the sovereign-selection Pareto, and judge agreement: [dragoshont.github.io/apprenticeops](https://dragoshont.github.io/apprenticeops/)**
 **Reviewing this work? Start with [`REVIEWER.md`](REVIEWER.md).**
 
 # ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
