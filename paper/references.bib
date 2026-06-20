@@ -1,0 +1,233 @@
+% ApprenticeOps — bibliography
+% Entries transcribed faithfully from the cited works in docs/PAPER.md (sec. 7c, 11).
+% Where the source gives only a first author + "et al.", the author field uses "and others".
+
+% ---- AIOps / ops benchmarks & frameworks ----
+@article{notaro2021survey,
+  title   = {A Survey of {AIOps} Methods for Failure Management},
+  author  = {Notaro, Paolo and Cardoso, Jorge and Gerndt, Michael},
+  journal = {ACM Transactions on Intelligent Systems and Technology},
+  year    = {2021}
+}
+
+@inproceedings{aiopslab2025,
+  title     = {{AIOpsLab}: A Holistic Framework to Evaluate {AI} Agents for Enabling Autonomous Clouds},
+  author    = {Chen and Shetty and others},
+  booktitle = {Proceedings of Machine Learning and Systems (MLSys)},
+  year      = {2025},
+  note      = {arXiv:2407.12165; arXiv:2501.06706}
+}
+
+@misc{itbench2025,
+  title        = {{ITBench}: Evaluating {AI} Agents on Real-World {IT} Automation Tasks},
+  author       = {Jha and others},
+  year         = {2025},
+  howpublished = {arXiv:2502.05352}
+}
+
+@misc{bendimerad2023onprem,
+  title        = {On-prem {AIOps} for an {SME}: An Experience Report},
+  author       = {Bendimerad and others},
+  year         = {2023},
+  howpublished = {arXiv:2308.11225}
+}
+
+% ---- Small language models / reasoning / scaling ----
+@misc{belcak2025slm,
+  title        = {Small Language Models are the Future of Agentic {AI}},
+  author       = {Belcak and others},
+  year         = {2025},
+  howpublished = {arXiv:2506.02153},
+  note         = {NVIDIA}
+}
+
+@inproceedings{srivastava2025thinkslm,
+  title     = {{ThinkSLM}: Towards Reasoning in Small Language Models},
+  author    = {Srivastava and others},
+  booktitle = {Findings of EMNLP},
+  year      = {2025},
+  note      = {arXiv:2502.11569}
+}
+
+@misc{schaeffer2023emergent,
+  title        = {Are Emergent Abilities of Large Language Models a Mirage?},
+  author       = {Schaeffer, Rylan and Miranda, Brando and Koyejo, Sanmi},
+  year         = {2023},
+  howpublished = {arXiv:2304.15004},
+  note         = {NeurIPS 2023}
+}
+
+% ---- Reasoning-distillation degrades safety ----
+@inproceedings{yong2026selfjailbreak,
+  title     = {Self-Jailbreaking: Reasoning Language Models Reason Themselves Out of Safety Alignment},
+  author    = {Yong, Zheng-Xin and Bach, Stephen H.},
+  booktitle = {ICLR},
+  year      = {2026},
+  note      = {arXiv:2510.20956}
+}
+
+@misc{zhou2025hiddenrisks,
+  title        = {The Hidden Risks of Large Reasoning Models: A Safety Assessment of {R1}},
+  author       = {Zhou and others},
+  year         = {2025},
+  howpublished = {arXiv:2502.12659}
+}
+
+@misc{jiang2025safechain,
+  title        = {{SafeChain}: Safety of Language Models with Long Chain-of-Thought Reasoning Capabilities},
+  author       = {Jiang and others},
+  year         = {2025},
+  howpublished = {arXiv:2502.12025}
+}
+
+% ---- Agent / action safety ----
+@misc{gap2026,
+  title        = {{GAP}: Generation-to-Action Refusal Gap in Tool-Using Agents},
+  year         = {2026},
+  howpublished = {arXiv:2602.16943}
+}
+
+@inproceedings{osharm2025,
+  title     = {{OS-Harm}: Benchmarking Safety of Computer-Use Agents},
+  author    = {and others},
+  booktitle = {NeurIPS Datasets and Benchmarks Track},
+  year      = {2025},
+  note      = {Spotlight; arXiv:2506.14866}
+}
+
+@misc{ownerharm2026,
+  title        = {{Owner-Harm}: Auditing Agents That Harm Their Own Deployer},
+  year         = {2026},
+  howpublished = {arXiv:2604.18658}
+}
+
+@inproceedings{agentharm2025,
+  title     = {{AgentHarm}: A Benchmark for Measuring Harmfulness of {LLM} Agents},
+  author    = {and others},
+  booktitle = {ICLR},
+  year      = {2025},
+  note      = {arXiv:2410.09024}
+}
+
+@misc{agenthazard2026,
+  title        = {{AgentHazard}: Measuring Malicious-Action Refusal at Scale},
+  year         = {2026},
+  howpublished = {arXiv:2604.02947}
+}
+
+% ---- Small-model & quantization safety ----
+@inproceedings{beyondtip2025,
+  title     = {Beyond the Tip of Efficiency: Compression and the Safety of Small Language Models},
+  author    = {and others},
+  booktitle = {Findings of ACL},
+  year      = {2025},
+  note      = {arXiv:2502.19883}
+}
+
+@inproceedings{qresafe2025,
+  title     = {{Q-resafe}: Quantization Degrades Safety and Perplexity Misleads Deployment Readiness},
+  author    = {and others},
+  booktitle = {ICML},
+  year      = {2025},
+  note      = {arXiv:2506.20251}
+}
+
+@misc{caq2025,
+  title        = {{CAQ}: Calibration-Aware Quantization and the Safety of Compressed Models},
+  year         = {2025},
+  howpublished = {arXiv:2511.07842}
+}
+
+@inproceedings{ease2026,
+  title     = {{EASE}: Efficient Alignment Safeguards for Small Language Models},
+  author    = {and others},
+  booktitle = {AAAI},
+  year      = {2026},
+  note      = {arXiv:2511.06512}
+}
+
+@misc{guardslm2026,
+  title        = {{GUARD-SLM}: Guardrails for Small Language Models},
+  year         = {2026},
+  howpublished = {arXiv:2603.28817}
+}
+
+% ---- Systems / telemetry / roofline ----
+@article{williams2009roofline,
+  title   = {Roofline: An Insightful Visual Performance Model for Multicore Architectures},
+  author  = {Williams, Samuel and Waterman, Andrew and Patterson, David},
+  journal = {Communications of the ACM},
+  volume  = {52},
+  number  = {4},
+  pages   = {65--76},
+  year    = {2009}
+}
+
+@misc{otel_genai,
+  title        = {Semantic Conventions for Generative {AI} Systems},
+  author       = {{OpenTelemetry Authors}},
+  howpublished = {\url{https://github.com/open-telemetry/semantic-conventions}},
+  note         = {gen\_ai.* conventions}
+}
+
+@misc{backblaze_drivestats,
+  title        = {Backblaze Hard Drive Data and Stats},
+  author       = {{Backblaze}},
+  howpublished = {\url{https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data}}
+}
+
+@inproceedings{borg2020power,
+  title     = {Borg: The Next Generation},
+  author    = {Tirmazi, Muhammad and others},
+  booktitle = {EuroSys},
+  year      = {2020},
+  note      = {Google cluster + power-domain traces}
+}
+
+@inproceedings{mlperf_inference,
+  title     = {{MLPerf} Inference Benchmark},
+  author    = {Reddi, Vijay Janapa and others},
+  booktitle = {ISCA},
+  year      = {2020}
+}
+
+% ---- Inter-rater agreement / statistics (judge methodology) ----
+@article{cohen1968weighted,
+  title   = {Weighted Kappa: Nominal Scale Agreement with Provision for Scaled Disagreement or Partial Credit},
+  author  = {Cohen, Jacob},
+  journal = {Psychological Bulletin},
+  volume  = {70},
+  number  = {4},
+  pages   = {213--220},
+  year    = {1968}
+}
+
+@article{landis1977kappa,
+  title   = {The Measurement of Observer Agreement for Categorical Data},
+  author  = {Landis, J. Richard and Koch, Gary G.},
+  journal = {Biometrics},
+  volume  = {33},
+  number  = {1},
+  pages   = {159--174},
+  year    = {1977}
+}
+
+@article{shrout1979icc,
+  title   = {Intraclass Correlations: Uses in Assessing Rater Reliability},
+  author  = {Shrout, Patrick E. and Fleiss, Joseph L.},
+  journal = {Psychological Bulletin},
+  volume  = {86},
+  number  = {2},
+  pages   = {420--428},
+  year    = {1979}
+}
+
+@article{blandaltman1986,
+  title   = {Statistical Methods for Assessing Agreement Between Two Methods of Clinical Measurement},
+  author  = {Bland, J. Martin and Altman, Douglas G.},
+  journal = {The Lancet},
+  volume  = {327},
+  number  = {8476},
+  pages   = {307--310},
+  year    = {1986}
+}

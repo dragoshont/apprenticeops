@@ -1,0 +1,7 @@
+# Quarto render artifacts (regenerate with: quarto render paper/paper.qmd)
+/.quarto/
+paper.html
+paper.pdf
+/paper_files/
+/*_files/
+*.tex

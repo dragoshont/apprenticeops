@@ -1,0 +1,508 @@
+---
+title: "ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants"
+subtitle: "A quality × safety × energy benchmark for the offline, CPU-only model-selection decision"
+author:
+  - name: Dragos Hont
+    email: dragos.hont@gmail.com
+date: 2026-06-20
+abstract: |
+  We present **ApprenticeOps**, an open, reproducible benchmark and telemetry
+  method for evaluating **small, locally-run LLMs (≤ ~5 GB, ≤ 8B)** as
+  **homelab/edge operations assistants** — detect, diagnose, monitor, expand,
+  upgrade, test, augment, and *safely refuse*. We define **offline =
+  locally-sovereign inference** (no external *model* API), explicitly **not**
+  information-starvation: a sovereign model may still use local RAG, in-org MCP
+  servers, runbooks, and local telemetry. Unlike existing AIOps agent benchmarks
+  (AIOpsLab, ITBench, OpsEval) — frontier models, live agentic fault-injection,
+  server hardware — we measure the **reasoning floor of a last-line local model
+  on commodity offline hardware** along three axes a practitioner must trade off
+  *together*: **judged quality**, **destructive-action refusal**, and **energy**.
+  Across a 25-model Wave-1 sweep (0.5–8B), judged ops-reasoning climbs to a
+  **knee at 3–4B** and then flattens (the 4–5 GB bracket adds −0.3 points), and
+  *quantization* — not parameter count — carries the marginal lift. On
+  judge-free **deterministic** refusal checks the safest bracket still plateaus
+  near **82 %**, and the dominant driver of refusal is **training type, not
+  size**: reasoning-distilled models refuse at **43.9 %** versus **75.0 %** for
+  instruct, so a 0.36 B instruct model out-refuses a 7.6 B reasoning model. We
+  are explicit that this safety result **corroborates** a fast-growing
+  agent-/SLM-safety literature rather than discovering it; its weight is that it
+  **replicates offline, on CPU, at homelab scale**, where the unsafe model is
+  also the one the size heuristic picks. Treating each model as a point in
+  (quality ↑, refusal ↑, energy ↓), **7 of 24 models are Pareto-optimal**; the
+  "biggest that fits" and "has a reasoning mode" heuristics both select
+  **dominated** models. The contribution is the **integration** — quality ×
+  safety × energy measured together for the offline/CPU/sovereign selection
+  decision — released as a reproducible artifact.
+keywords:
+  - small language models
+  - AIOps
+  - on-device inference
+  - benchmark
+  - agent safety
+  - energy efficiency
+  - quantization
+bibliography: references.bib
+number-sections: true
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    theme: cosmo
+    fig-align: center
+  typst:
+    toc: true
+    section-numbering: "1.1.1"
+    papersize: us-letter
+---
+
+::: {.callout-note}
+**Draft status.** This is a Wave-1 working draft (not submitted). The judged-quality
+axis is the 5-rep × 2-judge ensemble; safety and energy are deterministic/measured.
+The pre-registration and full analysis plan live in `docs/PAPER.md`; every headline
+number reproduces from the released snapshot via `docs/analysis/wave_analysis.ipynb`.
+:::
+
+# Introduction {#sec-intro}
+
+Every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a
+closet — because that is where an under-asked question lives. The AIOps community
+has produced impressive results: benchmarks with live fault-injection, frontier
+models with tool-calling, thousand-node clusters as the arena
+[@aiopslab2025; @itbench2025]. All of it points at what AI *can* do given
+unlimited resources and a cloud account. This paper asks the inverse: **what can
+a small local model do when there is no escape hatch?** No frontier escalation —
+just commodity hardware running Ollama and a real production cluster's worth of
+incidents. The model is the last line; it must reason with what it has, or admit
+that it cannot.
+
+We call this the **locally-sovereign inference constraint**: the brain runs on
+*your* hardware. "Offline" removes three crutches an online agent leans on — but
+**only the first is about the model**; the other two are about *information*,
+which a local setup can still supply.
+
+| Crutch removed | Axis | Locally-sovereign equivalent |
+|---|---|---|
+| Escalate to a frontier model | **inference** (forbidden) | None — the model **is** the last line. |
+| Look up external docs | information | Local RAG / in-org MCP / runbooks feed it. |
+| Fetch more telemetry on demand | information | The operator/harness retrieves; the model reasons. |
+
+: The sovereignty contract: *retrieval is the operator's job; reasoning is the
+model's.* {#tbl-crutches}
+
+This yields the **reordered requirement stack** a small local ops model is graded
+on: (1) reason without an external model; (2) **grounding-faithfulness** — use
+supplied local context and do not hallucinate beyond it; (3) **calibration** —
+say "I don't know" instead of inventing; (4) **safety-by-default** — refuse
+destructive actions, with no reviewer downstream; (5) **fit and speed** on owned
+hardware.
+
+> **Thesis (stated up front).** For a locally-sovereign ops assistant — offline,
+> CPU-only, ≤ 5 GB, the last line — **model selection is the whole game, and every
+> proxy a practitioner reaches for (parameter count, benchmark score, a "reasoning"
+> badge, perplexity) misleads on a *different* axis.** We measure three axes in one
+> harness. **(1) Quality:** a usable ops-reasoning floor arrives at **3–4B**, and
+> quantization largely preserves it, so param-count over-predicts what the job
+> needs. **(2) Safety:** on deterministic refusal checks the real driver is
+> **training type, not size** — reasoning-distilled models refuse roughly 30 points
+> less than instruct siblings, so the largest "reasoning"-badged model here is the
+> *least* safe of all 25. **(3) Energy:** the bigger model bills you in watts and
+> tokens/s for capability above the knee you may never use. No single axis, and no
+> single proxy, orders the choice; the integration does.
+
+Two honesty caveats hold throughout. First, **the judge is eval-time scaffolding,
+not a system dependency**: we use a frontier model to *score* answers, but the
+system-under-test never calls it; "offline" describes the deployed system, not the
+grading rig. Second, **`grounded` is an oracle-retrieval upper bound**: we inject
+the correct reference text directly, so grounded numbers are the *ceiling* of what
+local RAG buys, not the expected value.
+
+**Contributions.** (1) A reproducible, open benchmark for *small,
+locally-sovereign* ops-reasoning with **real-incident** scenarios and a safety
+gate, framed on the AIOps maturity ladder. (2) An **offline operating contract +
+grounding split** (closed-book vs local-RAG-grounded) that isolates what
+retrieval cannot fix. (3) A **telemetry method** (OpenTelemetry-GenAI-aligned
+[@otel_genai], with measured per-task energy) for profiling on-device LLM ops.
+(4) The **three-axis selection map** — a quality knee at 3–4B (where quantization
+carries the lift), a safety axis governed by training type, and an energy axis —
+reported *together* for the model-selection decision, which no prior benchmark
+does. (5) The released artifact (harness + scenarios + data, Apache-2.0).
+
+# Related Work and Positioning {#sec-related}
+
+**AIOps benchmarks.** The maturity ladder (reactive → proactive →
+predictive/preventive → autonomous) frames the *apprentice → operator* arc
+[@notaro2021survey]. **AIOpsLab** [@aiopslab2025] provides an agent–cloud
+interface with live fault injection across detection/localization/analysis/
+mitigation; we reuse its task taxonomy but target *small local* models on *frozen
+real* incidents rather than frontier agents on synthetic faults. The on-prem SME
+experience report [@bendimerad2023onprem] is closest in spirit (on-premise, small
+org) but is classical ML, not LLMs. Critically, the frontier itself sets a hard
+bar that *reframes* the small-model question: **ITBench** [@itbench2025] reports
+that agents on state-of-the-art models resolve only **13.8 % of SRE, 25.2 % of
+CISO, and 0 % of FinOps** scenarios. If the frontier struggles at autonomous ops,
+the useful question for a small, local, last-line model is not "can it run the
+cluster" but "**where is its reasoning floor, and is it safe enough to trust
+there.**"
+
+**The SLM case turns on training, not size.** The pro-SLM position
+[@belcak2025slm] argues small models are sufficient and economical for the narrow,
+repetitive calls agents actually make — our setting. **ThinkSLM**
+[@srivastava2025thinkslm] independently finds SLM reasoning is "strongly
+influenced by training methods and data quality rather than solely model scale"
+and that "quantization preserves reasoning capability" — corroborating, from a
+different benchmark, both our *quant > params* quality result and our
+*training-type-over-size* safety result. The "emergent abilities" intuition is
+itself contested [@schaeffer2023emergent], which is why we report **continuous**
+judged %-of-frontier with confidence intervals, not a thresholded can/can't.
+
+**Reasoning-distillation degrades safety — we corroborate, not discover.** Our
+deterministic result (reasoning-distilled models refuse destructive actions ~31
+points less than instruct siblings; @sec-results) is the phenomenon of
+**Self-Jailbreaking** [@yong2026selfjailbreak]: after benign reasoning training,
+models "reason themselves out of safety alignment," named explicitly for the
+DeepSeek-R1-distilled family that drags our 4–5 GB bracket down. **The Hidden
+Risks of R1** [@zhou2025hiddenrisks] finds "the stronger the reasoning ability,
+the greater the potential harm," with the thinking trace less safe than the final
+answer; **SafeChain** [@jiang2025safechain] confirms LRMs are not safe relative to
+their reasoning advance. These same papers show the defect is *fixable*, so we
+scope our claim to models **as shipped** to a homelab via Ollama — not that
+reasoning is inherently unsafe.
+
+**Agent / action safety — the cluster we corroborate.** A fast-maturing line
+establishes that behavioural safety must be measured on **actions, not text**:
+**GAP** [@gap2026] shows text-refusal does not transfer to tool-call refusal;
+**OS-Harm** [@osharm2025] and **Owner-Harm** [@ownerharm2026] build automated
+judges and deterministic post-audit gates against agents harming their own
+deployer; **AgentHarm** [@agentharm2025] and **AgentHazard** [@agenthazard2026]
+score malicious-action refusal at scale. These run frontier/cloud or GPU-edge
+agents on synthetic agentic tasks. We share their action-over-text stance and
+deterministic-check methodology but occupy the regime they do not: **≤ 8B,
+quantized, CPU-only, fully offline**, on **frozen real GitOps incidents**, with
+refusal measured *beside* energy and quality for the *selection* decision.
+
+**Small-model & quantization safety — established at larger scale; we replicate
+offline.** That small, compressed, distilled models shed safety is documented:
+**Beyond the Tip of Efficiency** [@beyondtip2025] ties
+compression/quantization/distillation to safety loss; **Q-resafe** [@qresafe2025]
+and **CAQ** [@caq2025] show quantization degrades safety and that *perplexity is a
+misleading deployment-readiness proxy*; **EASE** [@ease2026] and **GUARD-SLM**
+[@guardslm2026] add SLM-specific safeguards. Our numbers replicate these in the
+offline/CPU/ops regime, with one twist they do not jointly report: **quantization
+largely preserves *quality* while *training type* governs *safety*** — the two
+pressures act on different axes of the same selection.
+
+**Gap we fill.** No prior work measures **quality × safety × energy *together***
+for the **offline / CPU-only / locally-sovereign** model-selection decision on
+commodity hardware and real-homelab incidents. The agent-safety benchmarks run
+frontier/cloud agents and do not meter watts; the systems/SLM papers do not score
+destructive-action refusal against Wh/answer and tokens/s-per-watt. The defensible
+delta is the **integration** — and the question it answers: *what does choosing
+the safe, good-enough offline model cost you in watts and tokens/s?*
+
+# The ApprenticeOps Benchmark {#sec-benchmark}
+
+## System boundaries and the sovereignty contract {#sec-boundaries}
+
+The sovereignty claim is about the **inference path only**, stated explicitly so a
+reviewer cannot mistake "eval scaffolding uses the cloud" for "the system is not
+sovereign."
+
+| Path | Public service | Touches inference? | Disposition |
+|---|---|---|---|
+| Model inference (`run.py`) | None — local Ollama on `127.0.0.1` | — | **Sovereign. The claim rests here.** Zero egress during graded inference. |
+| Model acquisition (`ollama pull`) | registry | No — one-time, pre-run | Supply-chain surface; pin the **digest**. |
+| Judge + reference (`judge.py`) | GitHub Models (off-node) | **No** — post-hoc, on a separate machine | **Eval scaffolding.** Sees scenario text → egress of ops data; release scenarios scrubbed. |
+| Stats / analysis | PyPI (off-node) | No | None at runtime. |
+
+: The only public service in the experiment is the off-node judge, and it is
+grading scaffolding. The deployed apprentice makes **zero** external calls.
+{#tbl-boundaries}
+
+## Scenario corpus and provenance {#sec-scenarios}
+
+The frozen Wave-1 snapshot is **19 scenarios** drawn from real `home.hont.ro`
+signals (kube events, crashloops, ESO/Flux/Helm/probe failures) plus a held-out
+set authored *after* the harness froze, to test generalization. Tasks span six
+operational pillars — **Observe → Diagnose → Respond → Change → Secure →
+Foresee** — grounded in Google SRE, DORA, the observability three pillars, and
+ITIL change management, which makes the task set defensible rather than ad-hoc.
+
+Each scenario carries two orthogonal labels. **Grounding mode** is `closed-book`
+(answer from in-weights ops knowledge) or `grounded` (reference material supplied
+in-context, simulating local RAG/MCP); reporting the two separately quantifies how
+much local retrieval closes the gap. **Difficulty** (easy/medium/hard; current
+5/9/5) is validated empirically — if mean score does not fall easy→hard, the label
+is wrong and is revised. The hard tier deliberately pits a *misleading healthy
+surface signal* against the real problem (SMART `PASSED` while reallocated sectors
+climb; a certificate `Ready=True` while DNS-01 auto-renewal has 403'd for days).
+Gold answers and rubrics were adversarially reviewed by a frontier model and the
+operator adjudicated; the review found several **gameable** deterministic checks,
+which were hardened (negation-aware excludes, deep-value `json_equals`,
+word-boundary tokens) and re-verified (4 major issues → 0).
+
+## Metrics and instrumentation {#sec-metrics}
+
+**Quality** uses `det_score` (deterministic pass rate on unambiguous facts; no
+judge) and `judge_score` (1–5, reported as % of frontier). **Safety** is the
+binary refusal on the `guard`/`secure` classes. **Efficiency** follows the
+OpenTelemetry GenAI conventions [@otel_genai] per request: time-to-first-token,
+prefill/decode tok/s, a separated think/answer split for reasoning models,
+inter-token jitter (p50/p95/max), and CPU-microarchitecture counters (IPC, LLC-
+and branch-miss rates) that fingerprint a memory-bandwidth-bound decode. A 1 Hz
+on-device profile records RAM/swap, runner RSS, RAPL power with a core/uncore/dram
+breakdown, per-core temperature/frequency, and disk/net I/O — where net ≈ 0
+throughout inference is an *empirical egress proof* of the offline contract.
+**Energy per task** comes from Intel RAPL on-die joule counters
+(`package-0` domain, to avoid the battery-charge confound), yielding Wh/task,
+tok/s-per-watt, and a net-over-idle baseline; a smart plug is an optional
+wall-power cross-check. The full field-by-field schema is released with the
+harness so the dataset is reusable.
+
+# Experimental Setup {#sec-setup}
+
+**Model roster.** We evaluate **25 local Ollama tags** grouped by parameter
+bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB (5 models each). For the headline
+comparison, **quantization is held constant** at q4_K_M, with q8/QAT variants run
+as a separate sensitivity analysis; **thinking and instruct models run on separate
+tracks** (thinking models get `think=true`, a larger token budget, and a longer
+timeout). Every model sees every scenario (paired, within-subject design).
+
+**Hardware operating point.** A single node — ThinkPad T480s, Intel i5-8350U (4C/
+8T, AVX2, no AVX-512, 15 W TDP), 24 GiB DDR4-2400 dual-channel, Ollama 0.30.8, on
+AC. For the systems pass the node is **locked**: governor `performance`, **turbo
+off**, clock pinned to base (~1.70 GHz, sustainable, zero throttle), Wi-Fi/
+Bluetooth disabled. Between models a `quiesce()` step drives the fan to max, drops
+the page-cache, resets swap, and waits for the package temperature to settle, so
+every model starts from an identical machine state.
+
+**Two passes, two questions.** Each (model × scenario) runs twice over. The
+**deterministic pass** (temperature 0, greedy decoding) asks *what does this model
+do when it stops guessing?* and yields a near-reproducible point estimate. The
+**variance pass** (temperature 0.7, **R = 5** seeded repeats) asks the harder
+question — *how much does the answer change if I simply run it again?* — and turns
+that wobble into mean ± 95 % CI error bars. Greedy decoding on llama.cpp is mostly
+but not bit-exactly reproducible across CPU threads, so we report CIs even on the
+deterministic pass.
+
+**Judging — and distrusting the grader.** Deterministic checks settle the
+unambiguous part of an answer; open-ended ops reasoning is graded by an LLM judge,
+which we treat as a source of bias to be controlled. A single grader inherits its
+own preferences (for its style, for longer answers, for whichever option it reads
+first), so no model is certified by one judge: we grade every answer with **two
+judges from different families — Claude Opus 4.8 and GPT-5.5** — randomise answer
+order, blind the model identity, and require evidence citation. Where they agree
+we trust the score; where they split we flag rather than average. On the full
+Wave-1 set the two judges agree at **Cohen's κ = 0.71 unweighted / 0.92
+quadratic-weighted** over **2,374 pairs** (the weighted variant is the right
+metric for ordinal 1–5 scores [@cohen1968weighted; @landis1977kappa]; Spearman ρ =
+0.92; 77.9 % exact, 99.9 % within-1; near-identical means, 2.39 vs 2.38), so the
+ranking is judge-robust. A judge–**human** κ remains future work.
+
+**Statistical analysis plan (pre-registered).** Per (model, class) means of
+`det_score` and `judge_score` with bootstrap 95 % CIs (10k resamples); paired
+Wilcoxon signed-rank for pairwise comparisons and Friedman across models, with
+Holm–Bonferroni correction. With R = 5 and ~300 pairwise comparisons,
+individual-model distinctions mostly will not survive correction, so we frame
+primary conclusions at the **bracket level** (5 well-powered groups) and treat
+per-model ranks as descriptive. A **cost/value gate** was fixed before looking at
+the expansion data: expand the 4–5 GB bracket *only if* its judged %-of-frontier
+beats 3–4B by ≥ 5 points with non-overlapping CIs; otherwise the 4–5 GB expansion
+is held and "≤ 5 GB adds cost without judged lift" is reported as a **finding**.
+The `guard` (safety) class is exempt and always run, since safety does not track
+size.
+
+# Results {#sec-results}
+
+## Quality scales to a 3–4B knee {#sec-quality}
+
+Judged % of frontier per bracket (consensus judge score ÷ 5; bootstrap 95 % CI
+over 19 scenarios × 5 reps × the bracket's models — the 5-rep × 2-judge ensemble):
+
+| Bracket | judged % of frontier | 95 % CI |
+|---|---|---|
+| 0–1B | 34.6 % | [33.1, 36.2] |
+| 1–2B | 40.4 % | [38.5, 42.3] |
+| 2–3B | 49.7 % | [47.7, 51.8] |
+| **3–4B** | **57.1 %** | [55.2, 59.0] |
+| 4–5GB | 56.8 % | [54.6, 58.9] |
+
+: Quality rises steeply through 2–3B, then flattens. {#tbl-quality}
+
+The curve rises steeply through 2–3B and then flattens: the 4–5 GB bracket adds
+**nothing** — a slight **−0.3 points** below 3–4B, with overlapping CIs. Applying
+the pre-registered gate, the lift is below the 5-point bar with overlapping CIs,
+so the verdict is **HOLD 4–5 GB**, and "≤ 5 GB adds cost without judged lift on
+this CPU" is the finding, not a gap — costly to ignore, since the 4–5 GB bracket
+costs ~3× the per-model wall-clock of the 1–2B bracket. **The win is the quant,
+not the bracket:** the best 3–4B model (`qwen3:4b-instruct-2507-q4_K_M`, 68.6 %)
+essentially ties its own **q8** sibling (71.3 %) and matches the best 7B entry —
+the marginal quality lives in the quantization, not the parameter jump.
+
+## Safety tracks training type, not size {#sec-safety}
+
+The sharpest behavioural signal is in the **deterministic** safety checks —
+refusing a destructive command and rejecting insecure config (6 scenarios × 5
+repeats, bootstrap CIs, **no LLM judge**, so immune to judge bias and the most
+robust numbers we report). Two findings, in order of strength.
+
+**(1) Instruct safety rises with size, then plateaus below 100 %.** Restricting to
+the 22 instruct models:
+
+| Bracket (instruct only) | det. refusal rate | 95 % CI |
+|---|---|---|
+| 0–1B | 62.4 % | [58.0, 66.7] |
+| 1–2B | 73.5 % | [68.8, 78.0] |
+| 2–3B | 79.2 % | [75.1, 83.0] |
+| **3–4B** | **81.6 %** | [77.8, 85.2] |
+| 4–5GB | 79.8 % | [75.4, 84.0] |
+
+: The safest bracket still endorses roughly one destructive action in five.
+{#tbl-safety-instruct}
+
+The plateau is the point: the safest bracket still endorses **roughly one
+destructive action in five**. Behind a human on low-stakes tasks that is a
+manageable apprentice risk; for autonomy it is disqualifying. **Size alone never
+reaches "safe."**
+
+**(2) Reasoning-distillation degrades refusal — and that, not size, drives the
+non-monotonicity.** Splitting every model into *instruct* vs *reasoning* (the
+R1-distilled arm, run in native thinking mode):
+
+| Arm | det. refusal rate | 95 % CI | n |
+|---|---|---|---|
+| instruct | **75.0 %** | [73.0, 76.9] | 660 |
+| reasoning (R1-distill) | **43.9 %** | [36.8, 51.2] | 60 |
+
+: A ~31-point safety penalty for the "reasoning" training sold as an upgrade.
+{#tbl-safety-arm}
+
+The CIs are nowhere near overlapping. Concretely, `smollm2:360m` (0.36 B,
+instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
+47.2 %) — a 21× smaller model is the safer operator, and `deepseek-r1:7b` is the
+**least-safe model in the entire study**. The mechanism is the one named in the
+LRM-safety literature [@yong2026selfjailbreak; @zhou2025hiddenrisks;
+@jiang2025safechain]: the "thinking" that should aid diagnosis instead talks the
+model *into* the destructive action.
+
+> **Honesty: the size non-monotonicity is mostly the reasoning confound.** Over
+> all 25 models the bracket curve appears to say "the biggest bracket is *less*
+> safe." It is not an intrinsic size effect — the two reasoning models happen to
+> sit in the 1–2B and 4–5 GB brackets and drag those averages down; remove them
+> (@tbl-safety-instruct) and the curve is monotonic-then-flat. We therefore do
+> **not** claim "bigger is less safe." We claim the decision-relevant thing: the
+> model a practitioner is most likely to *reach for as an upgrade* — the biggest,
+> the one with the "reasoning" badge — is, in this study, the **least safe**. The
+> reasoning arm is only two models (n = 60); Wave-2 deepens it.
+
+## The sovereign selection: a quality × safety × energy Pareto {#sec-pareto}
+
+The three axes earn their keep only *together*. Treating each model as a point in
+(judged quality ↑, deterministic refusal ↑, energy-per-answer ↓), model $A$
+**dominates** $B$ iff $A$ is no worse on all three axes and strictly better on at
+least one; the non-dominated models are the short-list. **7 of 24 models are
+Pareto-optimal; the other 17 are dominated** — beaten on *every* axis at once, so
+nothing is lost by discarding them.
+
+| Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
+|---|---|---|---|---|
+| `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 71.3 | 90.8 | 155 |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3–4B | 68.6 | 90.8 | 106 |
+| `granite4:tiny-h` | 4–5GB | 63.5 | 74.2 | 54 |
+| `qwen3:1.7b` | 1–2B | 61.5 | 83.6 | 36 |
+| `granite4:1b-h` | 0–1B | 45.3 | 67.8 | 30 |
+| `qwen3:0.6b` | 0–1B | 36.6 | 64.7 | 15 |
+| `smollm2:360m` | 0–1B | 27.8 | 65.6 | 23 |
+
+: The Pareto front spans the whole size range. {#tbl-pareto}
+
+Two reads carry the integration. **(i) The proxies land off the front.** The
+high-quality/high-safety corner is the **4B-instruct** pair, whose q4 and q8
+variants are **mutually non-dominated** — identical 90.8 % refusal, with the q8
+buying **+2.7 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+*quantization* trade, not a win for either, and exactly the decision a proxy
+cannot make. **(ii) The tempting upgrades are dominated.** Both reasoning-distilled
+models fall off the front; `deepseek-r1:7b` is the worst case — simultaneously the
+**least safe (47.2 %)** and the **most energy-expensive (303 mWh/answer)** model in
+the study. So the two heuristics a practitioner reaches for — *biggest that fits*
+and *has a reasoning mode* — select **dominated** models; the front is small, spans
+the whole size range, and is found only by measuring all three axes.
+
+> **Honesty.** This front is computed on point estimates; its quality axis is the
+> 5-rep × 2-judge ensemble (κ_quad = 0.92), and safety and energy are
+> judge-free/measured. **CI-aware dominance** (treating near-ties as non-separable)
+> may widen the front by a model or two. The *logic* — dominance on three measured
+> axes — is the contribution; the exact membership would only shift under CI-aware
+> dominance.
+
+# Limitations and Threats to Validity {#sec-limitations}
+
+We name the load-bearing threats up front; the full table (with concrete,
+file-level mitigations) is in `docs/PAPER.md` §9.
+
+- **n = 1 environment.** One operator, one cluster, one node. We frame this as a
+  **single-environment case study plus a released harness**, and invite re-runs;
+  it is not a population claim.
+- **Author-written scenarios.** The author wrote scenarios, gold answers, and
+  rubrics; mitigated by an adversarial frontier-model gold review (which hardened
+  several gameable deterministic checks and was re-verified), a held-out set, and
+  the LLM judge as final correctness.
+- **LLM-judge bias.** Mitigated by blinding, order-randomisation, evidence
+  citation, and the two-judge ensemble (κ_quad = 0.92 on 2,374 pairs); a
+  judge–human κ and an optional third judge for a Fleiss pass are wired and
+  pending.
+- **The safety arm is thin.** The reasoning vs instruct contrast rests on **two**
+  reasoning models (n = 60) and the pure-destructive signal on a single scenario;
+  Wave-2 deepens the `guard` class. The conclusion (refusal must be measured
+  behaviourally) survives either way, since every size/benchmark/"reasoning" proxy
+  points the wrong way.
+- **Energy is SoC RAPL, not wall power**, on one CPU; we report the idle baseline
+  and net-over-idle, and energy ranks are this-chip-specific.
+- **Telemetry is Linux/Intel-specific** (RAPL, `/proc`, IMC counters); quality and
+  safety scores reproduce on any OS, the systems numbers do not.
+
+# Conclusion {#sec-conclusion}
+
+For a locally-sovereign ops assistant, **model selection is the whole game**, and
+the proxies a practitioner reaches for each mislead on a different axis. In one
+offline, CPU-only harness over 25 small models and real GitOps incidents, judged
+quality knees at **3–4B** (quantization, not parameter count, carrying the lift);
+deterministic refusal is governed by **training type, not size** (the
+reasoning-badged upgrade is the least safe); and energy prices capability above
+the knee in watts. Put together, **7 of 24 models are Pareto-optimal**, and the
+"biggest that fits" and "has a reasoning mode" heuristics both select dominated
+models. The model ranking is the demonstration; the **three-axis selection
+method** and the released, reproducible artifact are the contribution. We invite
+re-runs on new clusters, new hardware, and a deeper safety corpus — the fastest
+way to attack the single-environment limitation this work states plainly.
+
+# Appendix {.appendix}
+
+## Reproducibility and artifacts {#sec-repro}
+
+Code, the 19 scenarios (with gold answers, deterministic checks, and judge
+rubrics), the telemetry schema, and the analysis notebook are in the public repo
+(Apache-2.0). The judge-free deterministic safety/quality checks and the analysis
+reproduce from the committed snapshot on any machine with Python + pandas +
+matplotlib — no special hardware, no model downloads. The systems telemetry
+(energy, tok/s, memory bandwidth) requires the specific Linux node; we disclose
+exactly which numbers are node-bound. Following standard reviewer guidance, treat
+the harness as untrusted research code and run it in a container or
+network-isolated instance.
+
+## Cross-hardware roofline transfer {#sec-roofline}
+
+Small-model autoregressive **decode is memory-bandwidth-bound**: each token
+streams the weights through the memory bus once, so
+
+$$\text{decode tok/s} \approx \text{MBU}\cdot\frac{B}{W},\qquad W \approx p\cdot b + \text{KV}(c)$$
+
+where $B$ is achievable DRAM bandwidth, $W$ the bytes moved per token, $p$ the
+*active* parameter count, $b$ the bytes/weight of the quant, $\text{KV}(c)$ the
+key/value traffic at context length $c$, and $\text{MBU}\in(0,1]$ the achieved/peak
+bandwidth efficiency. To first order, for a fixed model+quant+context+ISA, moving
+to another CPU scales throughput by the **bandwidth ratio**, not the clock
+[@williams2009roofline]. This is reported as a **method with a validation gate**,
+not a measured cross-hardware result: with a single node the hardware coefficients
+are not fittable, the rule holds only in the decode-bandwidth-bound regime and
+within an ISA + memory-topology class, and it requires an on-target spot-check on
+≥ 1 distinct CPU with reported prediction intervals.
