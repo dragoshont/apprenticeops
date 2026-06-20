@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the paper (live)
+    url: https://dragoshont.github.io/apprenticeops/paper.html
+    about: The full manuscript with figures — read this before filing feedback.
+  - name: Reviewer guide
+    url: https://dragoshont.github.io/apprenticeops/reviewers.html
+    about: What we are asking you to check, and the acceptance bar.
+  - name: Reproduce the numbers
+    url: https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md
+    about: Regenerate every headline number from the committed snapshot.

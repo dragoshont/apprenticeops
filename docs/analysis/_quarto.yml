@@ -6,6 +6,7 @@ project:
     - paper.qmd
     - wave_analysis.ipynb
     - judge_comparison.ipynb
+    - reviewers.qmd
 
 # Use the committed cell outputs — do NOT re-execute on render (the systems
 # telemetry needs the specific node; re-run locally with build-analysis-site.sh).
@@ -30,6 +31,8 @@ website:
         href: wave_analysis.ipynb
       - text: "Judge agreement"
         href: judge_comparison.ipynb
+      - text: "For reviewers"
+        href: reviewers.qmd
     right:
       - icon: github
         href: https://github.com/dragoshont/apprenticeops

@@ -1,0 +1,64 @@
+name: Reviewer feedback
+description: Structured feedback on the ApprenticeOps paper and benchmark (for invited reviewers).
+title: "[review] "
+labels: ["review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reviewing. This form mirrors the **NeurIPS review dimensions**
+        so your notes port straight to the intended venue. Every field is optional —
+        even one filled box is useful. This repository is public, so nothing here is
+        confidential. Please read the [paper](https://dragoshont.github.io/apprenticeops/paper.html)
+        and the [reviewer guide](https://dragoshont.github.io/apprenticeops/reviewers.html) first.
+  - type: dropdown
+    id: area
+    attributes:
+      label: What does this feedback concern?
+      options:
+        - Quality / soundness
+        - Clarity
+        - Significance
+        - Originality / differentiation
+        - Reproducibility
+        - Limitations / ethics
+        - A specific number or figure
+        - A specific citation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: finding
+    attributes:
+      label: The finding
+      description: What is wrong, unclear, or over-claimed? Point at a section, figure, or number if you can.
+      placeholder: "e.g. §5.2 claims X, but the data in fig-safety supports only Y because ..."
+    validations:
+      required: true
+  - type: textarea
+    id: raise-score
+    attributes:
+      label: What single result or change would raise your score?
+      description: The most actionable thing you can tell us. Concrete beats vague ("deepen the safety arm to n≥6" > "more experiments").
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Blocking (fix before submission)
+        - Major
+        - Minor
+        - Nit / typo
+    validations:
+      required: true
+  - type: input
+    id: ack
+    attributes:
+      label: Acknowledgement preference
+      description: A name to credit in the paper, or leave blank for anonymous.
+  - type: checkboxes
+    id: ai
+    attributes:
+      label: Disclosure
+      options:
+        - label: I used AI tools to help prepare this review, and a human verified it (optional, matches the paper's own AI-use disclosure).

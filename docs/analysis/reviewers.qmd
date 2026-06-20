@@ -1,0 +1,76 @@
+---
+title: "For reviewers"
+subtitle: "What we are asking you to check — and a one-click way to tell us."
+---
+
+Thank you for looking at **ApprenticeOps**. This page is the short version; the
+full guide is [`REVIEWER.md`](https://github.com/dragoshont/apprenticeops/blob/main/REVIEWER.md).
+If you read nothing else, read **the claim**, **what to check**, and **how to give
+feedback**.
+
+## The claim, in one breath
+
+A reproducible benchmark and CPU-telemetry method that profiles small (≤ 8B),
+quantized, **fully-offline** local LLMs as homelab/edge ops assistants on
+**quality × safety × energy together**, and reduces model choice to a measured
+**Pareto front** that the usual proxies (parameter count, benchmark score, a
+"reasoning" badge, perplexity) get wrong. **The contribution is the integration,
+not any single axis.** The safety result is framed as **corroboration** of the
+agent-/SLM-safety literature, *not* discovery — please hold us to not
+overclaiming there.
+
+This is an **empirical benchmark paper**, first released as an **arXiv preprint**
+(moderated, *not* peer-reviewed) and aimed at the **NeurIPS Datasets & Benchmarks**
+track. Your review is the pre-submission peer feedback arXiv does not provide.
+
+## What we are asking you to check
+
+We map onto the NeurIPS dimensions so your assessment ports to the venue.
+
+| Dimension | The specific thing to scrutinise here |
+|---|---|
+| **Quality / soundness** | Are the deterministic checks genuinely judge-free? Do the bootstrap CIs support the bracket claims? Is the quality axis (the 5-rep × 2-judge ensemble, κ_quad ≈ 0.92) honest about residual judge↔human uncertainty? |
+| **Clarity** | Is the sovereign constraint unambiguous (offline = no external *model* API, not information-poverty)? Are the Pareto/dominance definitions precise? |
+| **Significance** | Is the offline/CPU/commodity + energy-coupled-selection regime useful to practitioners and researchers? Is the harness reusable? |
+| **Originality** | Is the *integration* genuinely unoccupied by prior work, and is the safety axis honestly scoped as **replication**? (NeurIPS explicitly values originality-by-integration.) |
+| **Reproducibility** | Can you regenerate a headline number from a clean checkout? Is anything node-bound disclosed as such? |
+| **Limitations / ethics** | Are n=1, judge egress, Linux-only telemetry, and the thin safety arm stated up front? |
+
+**The most useful review** names the *single result or change that would raise
+your score*. "The safety arm is n=60 on two models — deepen it or soften the
+claim" is gold; "needs more experiments" is hard to act on.
+
+## Where we most want pushback
+
+1. Is the contribution **differentiated enough** from existing AIOps / agent-safety benchmarks?
+2. Is **any claim over-scoped** versus the evidence (especially the n=60 safety arm)?
+3. **Which single result** would you require to consider this publishable at the D&B track?
+4. Is the honesty framing (safety = corroboration, not discovery) convincing, or does it under/oversell?
+5. Is the **energy axis** a real contribution or a nice-to-have?
+
+## How to give feedback (one click)
+
+::: {.callout-tip appearance="simple"}
+**[→ Open the structured feedback form](https://github.com/dragoshont/apprenticeops/issues/new?template=reviewer-feedback.yml)**
+
+It mirrors the dimensions above — pick an area, describe the finding, and (most
+useful of all) tell us the one change that would raise your score. Even one filled
+box helps. Prefer freeform? A plain
+[GitHub issue](https://github.com/dragoshont/apprenticeops/issues/new) or a PR is
+equally welcome. New **scenarios, models, and hardware re-runs** attack the n=1
+limitation most directly.
+:::
+
+You may use your own AI tools to help you read and re-derive numbers — the repo is
+public. A human should write and stand behind the review; disclose substantial AI
+assistance if your venue asks (the same standard we hold ourselves to).
+
+## A note on trust
+
+Before release, **every quantitative claim was re-derived from the committed
+snapshot** (`data/snapshots/`) by an independent clean-room audit, and **every
+reference was resolved against arXiv / CrossRef**. That audit corrected one
+over-stated safety superlative and surfaced an undisclosed served-failure (both
+fixed). The figures on this site are generated from the same committed exports, so
+you can regenerate every number *and* every graph yourself —
+see [`REPRODUCE.md`](https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md).

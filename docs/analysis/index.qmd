@@ -21,9 +21,12 @@ front**.
 - Safety tracks **training type, not size**: **75.0%** instruct vs **43.9%**
   reasoning-distilled destructive-action refusal.
 - The sovereign pick is **`qwen3:4b-instruct-2507-q4_K_M`** — not the biggest, not
-  "reasoning". Worst case: **`deepseek-r1:7b`** (least safe *and* most
-  energy-expensive).
+  "reasoning". Worst *combined* case: **`deepseek-r1:7b`** — the most
+  energy-expensive model in the study, and among the least-safe reasoning-distilled
+  refusers.
 :::
+
+![The sovereign selection: of the 24 functional models, 7 are Pareto-optimal on quality × safety × energy (filled markers); the other 17 are dominated (hollow). Marker area is energy per answer. The "biggest that fits" and "reasoning" picks fall off the front.](figures/fig-pareto.png){#fig-landing-pareto fig-alt="Scatter of 24 models by quality and refusal; seven filled Pareto points; deepseek models sit low with large markers."}
 
 ## The Pareto front {#pareto}
 
@@ -44,16 +47,26 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
 
 : The two 4B-instruct variants (q4, q8) are *mutually* non-dominated — a quality-vs-energy trade at identical safety.
 
-## Read the analysis
+## Read it
 
-- [**The sovereign selection →**](wave_analysis.ipynb) — quality, safety, energy,
-  and the integrated quality × safety × energy Pareto, with the systems context.
+- [**The full paper →**](paper.html) — the manuscript: method, results, the five
+  figures, limitations, ethics, and a verification statement.
+- [**The sovereign selection →**](wave_analysis.ipynb) — the executable analysis:
+  quality, safety, energy, and the integrated Pareto, with the systems context.
 - [**Judge agreement →**](judge_comparison.ipynb) — how much the two LLM judges
   agree (Cohen's κ, ICC, Bland–Altman).
+- [**For reviewers →**](reviewers.html) — what we are asking you to check, and a
+  one-click way to send structured feedback.
 
 Machine-readable exports live in [`data/site/`](https://github.com/dragoshont/apprenticeops/tree/main/data/site);
-the methods and full caveats are in the
-[paper](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
+the pre-registration and full threats-to-validity table are in
+[`docs/PAPER.md`](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
+
+::: {.callout-tip appearance="simple"}
+**Every number and figure here was verified.** Each value was re-derived from the
+committed snapshot (`data/snapshots/`) on 2026-06-20, and every reference resolved
+against arXiv / CrossRef. See the paper's [verification statement](paper.html#sec-verification).
+:::
 
 ::: {.callout-warning appearance="simple"}
 **Honesty.** The **quality** axis is the **5-rep × 2-judge ensemble**
