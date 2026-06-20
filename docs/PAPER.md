@@ -518,54 +518,52 @@ implementation-status appendix).
   size (RQ3 — the naive size ranking even inverts) and the signal is cheap to keep. *(Gate logic lives in
   [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
-## 8b. Preliminary results (Wave-1, deterministic — not the powered study)
+## 8b. Wave-1 results (quality: 2-judge × 5-rep ensemble; safety/energy: deterministic)
 
 > **Status (state up front):** two kinds of number appear below, with different
-> strength. **(a) Judged quality** is **deterministic-pass** (temperature 0, one
-> sample/scenario) graded by a **single judge** (`claude-opus-4.8`) — directional,
-> with no judge-variance CIs yet (the R=5 *judge* pass is deferred on cost). A
-> **second independent judge** (`gpt-5.5`, a different lab) re-scored all 475: the
-> two agree at **Cohen's κ = 0.68 unweighted / 0.91 quadratic-weighted** (the
-> latter is the right metric for ordinal 1–5 scores; Spearman ρ = 0.92; 75 %
-> exact, 100 % within-1; near-identical mean score, 2.44 vs 2.43), so the
-> **ranking is not a single-grader artifact** — a judge–**human** κ is still
-> future ([`judge_agreement.py`](../judge_agreement.py), [`human_eval.py`](../human_eval.py)).
+> strength. **(a) Judged quality** is the **5-rep × 2-judge ensemble** (temperature 0.7, R=5
+> samples/scenario, graded by `claude-opus-4.8` **and** `gpt-5.5` — the consensus
+> mean per rep). The two judges agree at **Cohen's κ = 0.71 unweighted / 0.92
+> quadratic-weighted** on the full **2,374-pair** set (the latter is the right
+> metric for ordinal 1–5 scores; Spearman ρ = 0.92; 77.9 % exact, 99.9 % within-1;
+> near-identical mean, 2.39 vs 2.38), so the **ranking is judge-robust** — a
+> judge–**human** κ is still future ([`judge_agreement.py`](../judge_agreement.py), [`human_eval.py`](../human_eval.py)).
 > **(b) Safety** rides the **deterministic refusal checks**, which need no judge,
 > so all **5 repeats** are scored and we report **bootstrap CIs** — these are the
 > robust numbers. Both are Wave-1 (25 models); `phi:2.7b` is **excluded** (95/95
-> DNF). Read quality as a pilot that **earns the Wave-2 design**; read safety as
-> the **most robust axis** (judge-free) and a **replication** of the
+> DNF). Read quality as the **powered axis** (5-rep × 2-judge ensemble; the
+> single-judge deterministic pass is preserved at `judged_snapshot.det.csv`) and
+> safety as the **most robust** (judge-free) and a **replication** of the
 > agent-/SLM-safety literature (§11), not a discovery.
 
 **Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
-bracket (judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × the bracket's
-models):
+bracket (consensus judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × 5 reps ×
+the bracket's models — the **5-rep × 2-judge** ensemble):
 
 | Bracket | judged % of frontier | 95 % CI |
 |---|---|---|
-| 0-1B | 32.6 % | [29.3, 36.0] |
-| 1-2B | 43.2 % | [38.5, 47.8] |
-| 2-3B | 52.4 % | [47.6, 57.3] |
-| **3-4B** | **57.1 %** | [52.4, 61.7] |
-| 4-5GB | 58.7 % | [53.5, 64.0] |
+| 0-1B | 34.6 % | [33.1, 36.2] |
+| 1-2B | 40.4 % | [38.5, 42.3] |
+| 2-3B | 49.7 % | [47.7, 51.8] |
+| **3-4B** | **57.1 %** | [55.2, 59.0] |
+| 4-5GB | 56.8 % | [54.6, 58.9] |
 
-The curve rises steeply through 2-3B and then **flattens**: 4-5GB adds only
-**+1.7 points** over 3-4B, and their **CIs overlap**. This is the
+The curve rises steeply through 2-3B and then **flattens**: 4-5GB adds **nothing**
+— a slight **−0.3 points** below 3-4B, with **overlapping CIs**. This is the
 diminishing-returns **knee** H1 predicted — and ignoring it is **costly**, since
 4-5GB costs ~3× the per-model wall-clock of the 1-2B bracket (§4 hardware).
 
 **Pre-registered gate verdict → HOLD 4-5GB.** Applying the §8 cost/value gate
 (expand 4-5GB only if it beats 3-4B by ≥ 5 pts with non-overlapping CIs): the
-lift is +1.7 pts with overlapping CIs, so Wave-2 **deepens 0-1B…3-4B and holds
+lift is **−0.3 pts** (4-5GB ties-or-below 3-4B) with overlapping CIs, so Wave-2 **deepens 0-1B…3-4B and holds
 4-5GB**. "**≤5 GB adds cost without judged lift on this CPU**" is the **finding**,
 not a gap.
 
 **The win is the quant, not the bracket.** The best 3-4B model
-(`qwen3:4b-instruct-2507-q4_K_M`, 71.6 %) essentially ties the best 4-5GB entry —
-its own **q8** sibling (73.7 %) — and beats `qwen2.5:7b` (71.6 %). A 4B at **q4**
+(`qwen3:4b-instruct-2507-q4_K_M`, 68.6 %) essentially ties the best 4-5GB entry —
+its own **q8** sibling (71.3 %) — and matches the best 7B entry. A 4B at **q4**
 on the knee matches a 7B; the marginal quality lives in the **quantization**, not
-the parameter jump. *(Deterministic, single-judge — to be confirmed by the
-variance pass + κ.)*
+the parameter jump. *(Confirmed by the 5-rep × 2-judge variance pass, κ_quad = 0.92.)*
 
 **Safety (axis #2) tracks training type, not size — replicating a known effect in
 the offline/CPU regime.** The sharpest behavioural signal is not in the judged
@@ -634,24 +632,23 @@ single column. Treat each model as a point in **(judged quality ↑, determinist
 refusal ↑, energy-per-answer ↓)** and compute the **Pareto-optimal set**: model
 $A$ **dominates** $B$ iff $A$ is no worse on all three axes and strictly better on
 at least one; the **non-dominated** models are the short-list a practitioner
-should choose from. **8 of 24 models are Pareto-optimal; the other 16 are
+should choose from. **7 of 24 models are Pareto-optimal; the other 17 are
 dominated** — beaten on *every* axis at once, so nothing is lost by discarding them.
 
 | Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
 |---|---|---|---|---|
-| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 73.7 | 90.8 | 155 |
-| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 71.6 | 90.8 | 106 |
-| `granite4:micro` | 2-3B | 64.2 | 79.2 | 81 |
-| `qwen3:1.7b` | 1-2B | 61.1 | 83.6 | 36 |
-| `granite4:1b-h` | 0-1B | 36.8 | 67.8 | 30 |
-| `llama3.2:1b` | 0-1B | 36.8 | 60.6 | 26 |
-| `qwen3:0.6b` | 0-1B | 34.7 | 64.7 | 15 |
-| `smollm2:360m` | 0-1B | 26.3 | 65.6 | 23 |
+| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3 | 90.8 | 155 |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 68.6 | 90.8 | 106 |
+| `granite4:tiny-h` | 4-5GB | 63.5 | 74.2 | 54 |
+| `qwen3:1.7b` | 1-2B | 61.5 | 83.6 | 36 |
+| `granite4:1b-h` | 0-1B | 45.3 | 67.8 | 30 |
+| `qwen3:0.6b` | 0-1B | 36.6 | 64.7 | 15 |
+| `smollm2:360m` | 0-1B | 27.8 | 65.6 | 23 |
 
 Two reads carry the integration. **(i) The proxies land off the front.** The
 high-quality/high-safety corner is the **4B-instruct** pair, whose **q4 and q8
 variants are mutually non-dominated** — identical **90.8 %** refusal, with the q8
-buying **+2.1 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+buying **+2.7 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
 *quantization* trade, not a win for either, and exactly the "choose on measured
 behaviour" decision a proxy cannot make. **(ii) The tempting upgrades are
 dominated.** **Both** reasoning-distilled models fall **off** the front;
@@ -661,14 +658,13 @@ by much of the roster. So the two heuristics a practitioner reaches for — *big
 that fits* and *has a "reasoning" mode* — select **dominated** models; the front is
 small, spans the whole size range, and is found only by measuring all three axes.
 
-> **Honesty (state up front).** This front is computed on **point estimates**, and
-> its **quality** axis is the **single-judge deterministic pass**, so the membership
-> list is **provisional**: the safety and energy axes are judge-free / measured, but
-> the quality axis gains judge+rep CIs only after the variance pass, and **CI-aware
-> dominance** (treating near-ties as non-separable) may widen the front by a model
-> or two. Energy is `psys`-RAPL on one CPU; ranks invite re-runs. The **logic** —
+> **Honesty (state up front).** This front is computed on **point estimates**; its
+> **quality** axis is now the **5-rep × 2-judge ensemble** (κ_quad = 0.92), and
+> safety and energy are judge-free / measured. The membership is still a point
+> estimate — **CI-aware dominance** (treating near-ties as non-separable) may widen
+> the front by a model or two. Energy is `psys`-RAPL on one CPU; ranks invite re-runs. The **logic** —
 > dominance on three *measured* axes — is the contribution; the exact membership
-> firms up with the variance pass. Reproduced in
+> would only shift under **CI-aware dominance**. Reproduced in
 > [`wave_analysis.ipynb`](analysis/wave_analysis.ipynb) §8.
 
 ## 9. Limitations and Threats to Validity
@@ -677,7 +673,7 @@ small, spans the whole size range, and is found only by measuring all three axes
 |---|---|---|
 | n=1 environment (one cluster/operator) | External | Frame as **single-environment case study**; release harness so others replicate |
 | Author wrote scenarios + gold + rubric | Internal/construct | **option-C gold review DONE** (Claude 4.8 audited gold+rubric+checks, hardened the gameable ones, re-verified — `gold-review*.jsonl`); held-out set; hardened deterministic checks + LLM-judge as final correctness |
-| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.91** (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
+| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** (full variance pass) — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.92** on 2,374 pairs (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
 | Benchmark contamination | Construct | Canary/memorization probe; real-incident tasks unlikely in pretraining |
 | **Fine-tuning contamination** — domain fine-tuning on homelab-style ops data can make a tuned small model *memorize the benchmark style*, inflating scores and undermining the core "real incidents in nobody's training set" claim | Construct | **Caveat (future work).** Any fine-tuned arm must train only on data **disjoint** from the evaluated scenarios, report results on a **contamination-proof held-out set**, split by **incident** (not just wording) to avoid near-duplicate leakage, and include paraphrase/canary memorization probes. Always report **base vs fine-tuned** on the same held-out set so the lift is earned, not memorized. |
 | Quant vs architecture confound | Internal | q4 held constant for headline; q8/QAT as sensitivity |

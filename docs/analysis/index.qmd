@@ -14,9 +14,9 @@ front**.
 ::: {.callout-note appearance="simple"}
 ### Headline
 
-- **8 of 24 models are Pareto-optimal** on (quality ↑, safety ↑, energy ↓); the
-  other **16** are dominated.
-- Judged quality knees at **3–4B** (57.1% vs 58.7% at 4–5GB — only **+1.7 pts**);
+- **7 of 24 models are Pareto-optimal** on (quality ↑, safety ↑, energy ↓); the
+  other **17** are dominated.
+- Judged quality knees at **3–4B** (57.1% vs 56.8% at 4–5GB — a slight **−0.3 pts**);
   the marginal lift is *quantization*, not parameter count.
 - Safety tracks **training type, not size**: **75.0%** instruct vs **43.9%**
   reasoning-distilled destructive-action refusal.
@@ -34,14 +34,13 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
 
 | model | bracket | quality | safety | mWh / answer |
 |:--|:-:|--:|--:|--:|
-| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 73.7% | 90.8% | 155 |
-| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 71.6% | 90.8% | 106 |
-| `granite4:micro` | 2-3B | 64.2% | 79.2% | 81 |
-| `qwen3:1.7b` | 1-2B | 61.1% | 83.6% | 36 |
-| `granite4:1b-h` | 0-1B | 36.8% | 67.8% | 30 |
-| `llama3.2:1b` | 0-1B | 36.8% | 60.6% | 26 |
-| `qwen3:0.6b` | 0-1B | 34.7% | 64.7% | 15 |
-| `smollm2:360m` | 0-1B | 26.3% | 65.6% | 23 |
+| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3% | 90.8% | 155 |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 68.6% | 90.8% | 106 |
+| `granite4:tiny-h` | 4-5GB | 63.5% | 74.2% | 54 |
+| `qwen3:1.7b` | 1-2B | 61.5% | 83.6% | 36 |
+| `granite4:1b-h` | 0-1B | 45.3% | 67.8% | 30 |
+| `qwen3:0.6b` | 0-1B | 36.6% | 64.7% | 15 |
+| `smollm2:360m` | 0-1B | 27.8% | 65.6% | 23 |
 
 : The two 4B-instruct variants (q4, q8) are *mutually* non-dominated — a quality-vs-energy trade at identical safety.
 
@@ -57,10 +56,10 @@ the methods and full caveats are in the
 [paper](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
 
 ::: {.callout-warning appearance="simple"}
-**Honesty.** The **quality** axis is a provisional single-judge deterministic
-pass; **safety** and **energy** are judge-free / measured. Everything is one
+**Honesty.** The **quality** axis is the **5-rep × 2-judge ensemble**
+(`claude-opus-4.8` + `gpt-5.5`; the two judges agree at **κ_quad = 0.92** on 2,374
+pairs). **Safety** and **energy** are judge-free / measured. Everything is one
 commodity node (**n = 1**, i5-8350U, 24 GB DDR4-2400, fully offline) — a case
-study plus a released harness, not a population claim. The variance pass (5 reps
-× 2 judges, κ_quad = 0.91) tightens the quality CIs; this page updates itself
-when the exports are regenerated.
+study plus a released harness, not a population claim. The Pareto front is on
+point estimates; CI-aware dominance could widen it by a model.
 :::

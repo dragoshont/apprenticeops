@@ -2,7 +2,7 @@
   {
     "model":"deepseek-r1:1.5b",
     "bracket":"1-2B",
-    "quality":0.3052631579,
+    "quality":0.2515789474,
     "safety":0.4055333333,
     "energy_wh":0.0871033684,
     "mWh":87.1033684211,
@@ -11,7 +11,7 @@
   {
     "model":"deepseek-r1:7b",
     "bracket":"4-5GB",
-    "quality":0.3473684211,
+    "quality":0.3178947368,
     "safety":0.4721333333,
     "energy_wh":0.30319625,
     "mWh":303.19625,
@@ -20,7 +20,7 @@
   {
     "model":"gemma2:2b",
     "bracket":"2-3B",
-    "quality":0.5157894737,
+    "quality":0.5126315789,
     "safety":0.7723,
     "energy_wh":0.0716829474,
     "mWh":71.6829473684,
@@ -29,7 +29,7 @@
   {
     "model":"gemma3:4b-it-qat",
     "bracket":"3-4B",
-    "quality":0.5578947368,
+    "quality":0.5557894737,
     "safety":0.8056,
     "energy_wh":0.0864403158,
     "mWh":86.4403157895,
@@ -38,7 +38,7 @@
   {
     "model":"granite4:1b-h",
     "bracket":"0-1B",
-    "quality":0.3684210526,
+    "quality":0.4526315789,
     "safety":0.6778666667,
     "energy_wh":0.0298106316,
     "mWh":29.8106315789,
@@ -47,34 +47,34 @@
   {
     "model":"granite4:micro",
     "bracket":"2-3B",
-    "quality":0.6421052632,
+    "quality":0.6147368421,
     "safety":0.7917333333,
     "energy_wh":0.0806221053,
     "mWh":80.6221052632,
-    "pareto":true
+    "pareto":false
   },
   {
     "model":"granite4:tiny-h",
     "bracket":"4-5GB",
-    "quality":0.6,
+    "quality":0.6347368421,
     "safety":0.7417333333,
     "energy_wh":0.0539513684,
     "mWh":53.9513684211,
-    "pareto":false
+    "pareto":true
   },
   {
     "model":"llama3.2:1b",
     "bracket":"0-1B",
-    "quality":0.3684210526,
+    "quality":0.3568421053,
     "safety":0.6056666667,
     "energy_wh":0.0255378947,
     "mWh":25.5378947368,
-    "pareto":true
+    "pareto":false
   },
   {
     "model":"llama3.2:3b",
     "bracket":"3-4B",
-    "quality":0.5368421053,
+    "quality":0.5336842105,
     "safety":0.8000666667,
     "energy_wh":0.0597232632,
     "mWh":59.7232631579,
@@ -83,7 +83,7 @@
   {
     "model":"ministral-3:3b",
     "bracket":"2-3B",
-    "quality":0.6947368421,
+    "quality":0.5936842105,
     "safety":0.8222666667,
     "energy_wh":0.1309957895,
     "mWh":130.9957894737,
@@ -92,7 +92,7 @@
   {
     "model":"mistral:7b-instruct-q4_K_M",
     "bracket":"4-5GB",
-    "quality":0.5368421053,
+    "quality":0.5094736842,
     "safety":0.7056333333,
     "energy_wh":0.1793931034,
     "mWh":179.3931034483,
@@ -101,7 +101,7 @@
   {
     "model":"phi4-mini",
     "bracket":"3-4B",
-    "quality":0.5789473684,
+    "quality":0.5547368421,
     "safety":0.7611666667,
     "energy_wh":0.0984010526,
     "mWh":98.4010526316,
@@ -110,7 +110,7 @@
   {
     "model":"qwen2.5:0.5b",
     "bracket":"0-1B",
-    "quality":0.2842105263,
+    "quality":0.2768421053,
     "safety":0.5334333333,
     "energy_wh":0.0309130526,
     "mWh":30.9130526316,
@@ -119,7 +119,7 @@
   {
     "model":"qwen2.5:1.5b",
     "bracket":"1-2B",
-    "quality":0.4842105263,
+    "quality":0.4410526316,
     "safety":0.7500333333,
     "energy_wh":0.0511770526,
     "mWh":51.1770526316,
@@ -128,7 +128,7 @@
   {
     "model":"qwen2.5:3b",
     "bracket":"2-3B",
-    "quality":0.5684210526,
+    "quality":0.5652631579,
     "safety":0.7806333333,
     "energy_wh":0.0995525263,
     "mWh":99.5525263158,
@@ -137,7 +137,7 @@
   {
     "model":"qwen2.5:7b",
     "bracket":"4-5GB",
-    "quality":0.7157894737,
+    "quality":0.6642105263,
     "safety":0.8361666667,
     "energy_wh":0.1546286813,
     "mWh":154.6286813187,
@@ -146,7 +146,7 @@
   {
     "model":"qwen3:0.6b",
     "bracket":"0-1B",
-    "quality":0.3473684211,
+    "quality":0.3663157895,
     "safety":0.6473,
     "energy_wh":0.0150512632,
     "mWh":15.0512631579,
@@ -155,7 +155,7 @@
   {
     "model":"qwen3:1.7b",
     "bracket":"1-2B",
-    "quality":0.6105263158,
+    "quality":0.6147368421,
     "safety":0.8361333333,
     "energy_wh":0.0357187368,
     "mWh":35.7187368421,
@@ -164,7 +164,7 @@
   {
     "model":"qwen3:4b",
     "bracket":"3-4B",
-    "quality":0.4631578947,
+    "quality":0.5231578947,
     "safety":0.8028,
     "energy_wh":0.2350675789,
     "mWh":235.0675789474,
@@ -173,7 +173,7 @@
   {
     "model":"qwen3:4b-instruct-2507-q4_K_M",
     "bracket":"3-4B",
-    "quality":0.7157894737,
+    "quality":0.6863157895,
     "safety":0.9083333333,
     "energy_wh":0.1057415789,
     "mWh":105.7415789474,
@@ -182,7 +182,7 @@
   {
     "model":"qwen3:4b-instruct-2507-q8_0",
     "bracket":"4-5GB",
-    "quality":0.7368421053,
+    "quality":0.7126315789,
     "safety":0.9083333333,
     "energy_wh":0.1549285263,
     "mWh":154.9285263158,
@@ -191,7 +191,7 @@
   {
     "model":"smollm2:1.7b",
     "bracket":"1-2B",
-    "quality":0.4105263158,
+    "quality":0.4021052632,
     "safety":0.689,
     "energy_wh":0.0617566316,
     "mWh":61.7566315789,
@@ -200,7 +200,7 @@
   {
     "model":"smollm2:360m",
     "bracket":"0-1B",
-    "quality":0.2631578947,
+    "quality":0.2778947368,
     "safety":0.6556,
     "energy_wh":0.0234843158,
     "mWh":23.4843157895,
@@ -209,7 +209,7 @@
   {
     "model":"stablelm2:1.6b",
     "bracket":"1-2B",
-    "quality":0.3473684211,
+    "quality":0.3126315789,
     "safety":0.6639666667,
     "energy_wh":0.0548336842,
     "mWh":54.8336842105,
