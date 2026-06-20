@@ -1,6 +1,6 @@
 **Research paper · open benchmark · arXiv preprint → NeurIPS Datasets & Benchmarks track**
-**📊 Live analysis site — figures, the sovereign-selection Pareto, and judge agreement: [dragoshont.github.io/apprenticeops](https://dragoshont.github.io/apprenticeops/)**
-**Reviewing this work? Start with [`REVIEWER.md`](REVIEWER.md).**
+**📊 Live paper, figures & analysis: [dragoshont.github.io/apprenticeops](https://dragoshont.github.io/apprenticeops/)** · reviewing this work? [start here](https://dragoshont.github.io/apprenticeops/reviewers.html) or [`REVIEWER.md`](REVIEWER.md)
+**✓ Verified (2026-06-20):** every number was re-derived from the committed snapshot and every citation resolved against arXiv / CrossRef.
 
 # ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
 
@@ -91,8 +91,8 @@ energy-per-answer ↓)** and compute the **Pareto-optimal set** — the models n
 else beats on every axis at once. On the Wave-1 data, **7 of 24 models are
 Pareto-optimal; the other 17 are dominated**, and the two heuristics a practitioner
 reaches for — *biggest that fits* and *has a “reasoning” mode* — select **dominated**
-models. `deepseek-r1:7b` is the worst case: simultaneously the **least safe** and the
-**most energy-expensive** model in the study.
+models. `deepseek-r1:7b` is the worst *combined* case: the **most energy-expensive**
+model in the study, and among the two least-safe reasoning-distilled refusers.
 
 The three axes, briefly:
 

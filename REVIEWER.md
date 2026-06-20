@@ -10,6 +10,18 @@ preprint standards (sources at the bottom), not in our own preferences.
 If you read nothing else, read **§1 (the claim)**, **§4 (what to check)**, and
 **§6 (AI-assisted review etiquette)**.
 
+> **TL;DR for the impatient.**
+>
+> - **Live paper + figures:** <https://dragoshont.github.io/apprenticeops/paper.html>
+>   · **compact reviewer page:** <https://dragoshont.github.io/apprenticeops/reviewers.html>
+> - **The claim:** a quality × safety × energy benchmark for choosing a small,
+>   offline, CPU-only ops LLM. The contribution is the *integration*; the safety
+>   result is **corroboration, not discovery** — hold us to that.
+> - **Most useful feedback:** the *single change that would raise your score* —
+>   file it in one click via the **[structured form](https://github.com/dragoshont/apprenticeops/issues/new?template=reviewer-feedback.yml)**.
+> - **Trust:** every number was re-derived from `data/snapshots/` and every
+>   citation resolved against arXiv / CrossRef on 2026-06-20 (§5).
+
 ---
 
 ## 1. What the paper claims (the 90-second version)
@@ -111,6 +123,15 @@ soften the claim" is gold.
 
 ## 5. Reproducibility & artifacts (how to verify, safely)
 
+> **Pre-submission verification (2026-06-20).** Every quantitative claim in the
+> paper was **re-derived from the committed snapshot** (`data/snapshots/`) by an
+> independent clean-room audit, and **every reference was resolved against
+> arXiv / CrossRef / Semantic Scholar**. The audit reproduced the quality knee,
+> the safety arms, the cross-judge κ_quad = 0.92, and the full 7-of-24 Pareto
+> front *exactly*; it also corrected one over-stated safety superlative and
+> surfaced an undisclosed served-failure (both fixed). You can repeat it from a
+> clean checkout — the figures on the site are generated from the same exports.
+
 The relevant standard is **ACM's Artifact Review & Badging** (Available /
 Functional / Reusable / Results Reproduced / Replicated). Where we stand:
 
@@ -203,8 +224,10 @@ differ by context:
 
 ## 9. How to give feedback
 
-- Open a GitHub **issue** (preferred for anything specific/actionable) or a PR.
-- For freeform notes, append to [`feedback.md`](feedback.md) or email the author.
+- **Preferred — one click:** the [structured reviewer form](https://github.com/dragoshont/apprenticeops/issues/new?template=reviewer-feedback.yml)
+  (area · the finding · the single change that would raise your score · severity).
+- A plain [GitHub issue](https://github.com/dragoshont/apprenticeops/issues/new)
+  or a pull request is equally welcome.
 - New **scenarios, models, and hardware re-runs** are especially welcome — they
   directly attack the n=1 limitation.
 
