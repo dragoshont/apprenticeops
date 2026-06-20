@@ -1,0 +1,54 @@
+name: Publish analysis site
+
+# Render the Quarto analysis site (docs/analysis) and publish it to GitHub Pages.
+# Rendering uses the COMMITTED cell outputs — `_quarto.yml` sets
+# `execute: enabled: false`, so CI never runs the notebooks (and never needs the
+# gitignored raw judge/run data). Quarto-only; no Python kernel required.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/analysis/**'
+      - '.github/workflows/publish-analysis.yml'
+  workflow_dispatch:
+
+# Least-privilege token + the OIDC/Pages perms the deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; let an in-flight deploy finish (Pages best practice).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render site (committed outputs; execute disabled)
+        run: quarto render docs/analysis
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/analysis/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

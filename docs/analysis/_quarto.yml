@@ -13,6 +13,7 @@ execute:
 
 website:
   title: "ApprenticeOps"
+  site-url: https://dragoshont.github.io/apprenticeops/
   description: >-
     Small locally-sovereign LLMs as homelab ops assistants —
     quality × safety × energy, on commodity offline hardware.
