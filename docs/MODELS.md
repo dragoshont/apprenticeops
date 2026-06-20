@@ -280,3 +280,24 @@ on how much quality the knee actually loses to quantization.
 > GGUF file or runtime needs a manual confirm before pulling (four HF listings
 > were bot-blocked; BitNet needs `bitnet.cpp`; gemma3n is over-footprint). **No
 > tag was invented** — every ⚠️ names the exact uncertainty to resolve.
+
+## W3 · Wave-2 backfill (re-run the transient pull-failures)
+
+> Wave 2 finished **71/80 models complete**; **9 had zero usable rows** — all
+> transient pull-failures (Ollama's intermittent `hf.co` redirect bug
+> [#15661](https://github.com/ollama/ollama/issues/15661) + registry blips),
+> **not** missing models. `hf.co` pulls were re-verified working on the node
+> (2026-06-20), so these ride along in the Wave-3 sweep to complete Wave 2.
+> Brackets are their **original Wave-2** assignment (backfill, not new W3 picks).
+
+| Bracket | Pull tag | why it was missing |
+|---|---|---|
+| 0–1B | `granite3.1-moe:1b` | registry blip |
+| 0–1B | `granite3.1-moe:1b-instruct-q8_0` | registry blip |
+| 0–1B | `hf.co/google/gemma-3-1b-it-qat-q4_0-gguf:Q4_0` | hf.co redirect bug |
+| 2–3B | `exaone3.5:2.4b` | registry blip |
+| 2–3B | `exaone3.5:2.4b-instruct-q4_K_M` | registry blip |
+| 2–3B | `exaone3.5:2.4b-instruct-q8_0` | registry blip |
+| 2–3B | `exaone-deep:2.4b` | registry blip |
+| 2–3B | `stablelm-zephyr:3b` | registry blip |
+| 3–4B | `hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0` | hf.co redirect bug |

@@ -39,8 +39,9 @@ sailor2:1b
 yi-coder:1.5b
 # ⚠️ hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M   # EU 24-lang; HF listing bot-blocked
 
-# bracket: 2-3B  (thinnest: the strong general 2-3B models are ALREADY tested,
-#                 so what's new here is mostly architectural / specialist — a finding)
+# 2-3B is the THINNEST bracket: the strong general 2-3B models are ALREADY tested,
+# so what's new here is mostly architectural / specialist (a finding in itself).
+# bracket: 2-3B
 codegemma:2b
 codegemma:2b-code-q6_K
 granite4:micro-h
@@ -79,10 +80,30 @@ granite-code:3b-instruct-q8_0
 starcoder2:3b-q6_K
 starcoder2:3b-q8_0
 
-# bracket: 4-5GB footprint  (only 3, per request)
+# bracket: 4-5GB
+# (footprint bracket: quantized 7-8B GGUFs; only 3, per request)
 olmo2:7b
 cogito:8b
 deepseek-r1:8b-0528-qwen3-q4_K_M
 # alternates if a slot frees: granite3.3:8b (4.9GB) · falcon3:7b-instruct-q4_K_M (4.6GB) · internlm2:7b
 # EXCLUDED (non-commercial weights, would taint the Apache-2.0 shareable artifact):
 #   command-r7b, aya-expanse:8b, exaone3.5:7.8b
+
+# ============================================================================
+# WAVE-2 BACKFILL — 9 models that transiently PULL-FAILED in Wave 2 (0 usable rows;
+# hf.co bug #15661 + registry blips). Re-verified pulling on the node 2026-06-20
+# (hf.co works again), so re-run them here to complete Wave 2. Brackets match their
+# ORIGINAL Wave-2 assignment. These are BACKFILL, not new Wave-3 discoveries.
+# ============================================================================
+# bracket: 0-1B
+granite3.1-moe:1b
+granite3.1-moe:1b-instruct-q8_0
+hf.co/google/gemma-3-1b-it-qat-q4_0-gguf:Q4_0
+# bracket: 2-3B
+exaone3.5:2.4b
+exaone3.5:2.4b-instruct-q4_K_M
+exaone3.5:2.4b-instruct-q8_0
+exaone-deep:2.4b
+stablelm-zephyr:3b
+# bracket: 3-4B
+hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0
