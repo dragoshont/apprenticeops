@@ -50,7 +50,7 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
 ## Read it
 
 - [**The full paper →**](paper.html) — the manuscript: method, results, the five
-  figures, limitations, ethics, and a verification statement.
+  figures, limitations, ethics, and a verification statement ([PDF](paper.pdf)).
 - [**The sovereign selection →**](wave_analysis.ipynb) — the executable analysis:
   quality, safety, energy, and the integrated Pareto, with the systems context.
 - [**Judge agreement →**](judge_comparison.ipynb) — how much the two LLM judges
