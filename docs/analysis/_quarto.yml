@@ -3,6 +3,7 @@ project:
   output-dir: _site
   render:
     - index.qmd
+    - paper.qmd
     - wave_analysis.ipynb
     - judge_comparison.ipynb
 
@@ -23,6 +24,8 @@ website:
     left:
       - text: "Home"
         href: index.qmd
+      - text: "The paper"
+        href: paper.qmd
       - text: "The sovereign selection"
         href: wave_analysis.ipynb
       - text: "Judge agreement"

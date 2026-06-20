@@ -49,5 +49,7 @@ env/
 # analysis site render artifacts (the notebook outputs + data/site/ exports ARE tracked)
 docs/analysis/_site/
 docs/analysis/*.html
+docs/analysis/paper.pdf
+docs/analysis/*_files/
 .quarto/
 *.quarto_ipynb

@@ -65,24 +65,6 @@ The pre-registration and full analysis plan live in `docs/PAPER.md`; every headl
 number reproduces from the released snapshot via `docs/analysis/wave_analysis.ipynb`.
 :::
 
-```{python}
-#| include: false
-# Every figure below is generated at render time from the COMMITTED, verified
-# exports in data/site/ (per-model aggregates + the 2-judge score pairs) — the
-# same snapshot the in-text numbers are computed from. No hidden kernel state.
-import pandas as pd, numpy as np, matplotlib.pyplot as plt
-from pathlib import Path
-plt.rcParams.update({"figure.dpi": 120, "font.size": 10, "axes.grid": True,
-                     "grid.alpha": 0.25, "axes.spines.top": False,
-                     "axes.spines.right": False})
-SITE = next(p for p in [Path("data/site"), Path("../data/site")] if p.exists())
-models = pd.read_csv(SITE / "models.csv")
-aq  = pd.read_csv(SITE / "axis_quality.csv")
-asb = pd.read_csv(SITE / "axis_safety_bracket.csv")
-asa = pd.read_csv(SITE / "axis_safety_arm.csv")
-pairs = pd.read_csv(SITE / "judge_pairs.csv")
-```
-
 # Introduction {#sec-intro}
 
 Nearly every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a
@@ -340,27 +322,7 @@ same way: unweighted κ = 0.71, Spearman ρ = 0.92, 77.9 % exact agreement, 99.9
 within one point, and near-identical means (2.39 vs 2.38). The quality ranking is
 therefore not a single-grader artifact. A judge–**human** κ remains future work.
 
-```{python}
-#| label: fig-judge
-#| code-fold: true
-#| fig-cap: "Cross-judge agreement (Claude Opus 4.8 vs GPT-5.5) over the 2,374 graded answers. Mass on the diagonal gives quadratic-weighted κ = 0.92 (77.9% exact, 99.9% within one point): the quality ranking is not a single-grader artifact."
-#| fig-alt: "A 5 by 5 confusion heatmap of the two judges' 1-to-5 scores, with counts concentrated on the diagonal."
-cats = [1, 2, 3, 4, 5]; ix = {c: i for i, c in enumerate(cats)}
-O = np.zeros((5, 5))
-for x, y in zip(pairs.claude, pairs.gpt):
-    O[ix[x], ix[y]] += 1
-fig, ax = plt.subplots(figsize=(4.7, 4.2))
-ax.imshow(O, cmap="Blues")
-ax.set_xticks(range(5), cats); ax.set_yticks(range(5), cats)
-ax.set_xlabel("GPT-5.5 score"); ax.set_ylabel("Claude Opus 4.8 score")
-for i in range(5):
-    for j in range(5):
-        if O[i, j]:
-            ax.text(j, i, int(O[i, j]), ha="center", va="center", fontsize=8,
-                    color="white" if O[i, j] > O.max() / 2 else "black")
-ax.set_title("Two judges agree: quadratic κ = 0.92")
-plt.tight_layout(); plt.show()
-```
+![Cross-judge agreement (Claude Opus 4.8 vs GPT-5.5) over the 2,374 graded answers. Mass on the diagonal gives quadratic-weighted κ = 0.92 (77.9% exact, 99.9% within one point): the quality ranking is not a single-grader artifact.](figures/fig-judge.png){#fig-judge fig-alt="A 5 by 5 confusion heatmap of the two judges' 1-to-5 scores, with counts concentrated on the diagonal."}
 
 **Statistical analysis plan (pre-registered).** Per (model, class) means of
 `det_score` and `judge_score` with bootstrap 95 % CIs (10k resamples); paired
@@ -411,24 +373,7 @@ not the bracket:** the best 3–4B model (`qwen3:4b-instruct-2507-q4_K_M`, 68.6 
 essentially ties its own **q8** sibling (71.3 %) and matches the best 7B entry —
 the marginal quality lives in the quantization, not the parameter jump.
 
-```{python}
-#| label: fig-quality
-#| code-fold: true
-#| fig-cap: "Judged quality (% of frontier) by parameter bracket, with bootstrap 95% confidence intervals. The curve knees at 3-4B; the 4-5 GB bracket adds nothing (-0.3 points, overlapping intervals)."
-#| fig-alt: "A line plot rising from 34.6% at 0-1B to a plateau at 57.1% (3-4B) and 56.8% (4-5GB); the top two brackets' error bars overlap."
-m = aq["mean"] * 100; lo = aq["lo"] * 100; hi = aq["hi"] * 100
-x = range(len(aq))
-fig, ax = plt.subplots(figsize=(6.2, 3.5))
-ax.axvspan(2.5, 4.5, color="#2b6cb0", alpha=0.06)
-ax.errorbar(x, m, yerr=[m - lo, hi - m], marker="o", capsize=4, lw=2, color="#2b6cb0")
-for i, v in enumerate(m):
-    ax.annotate(f"{v:.1f}%", (i, v), textcoords="offset points", xytext=(0, 9),
-                ha="center", fontsize=9)
-ax.set_xticks(list(x)); ax.set_xticklabels(aq["bracket"])
-ax.set_xlabel("parameter bracket"); ax.set_ylabel("judged % of frontier")
-ax.set_title("Quality knees at 3-4B; 4-5 GB adds no lift")
-plt.tight_layout(); plt.show()
-```
+![Judged quality (% of frontier) by parameter bracket, with bootstrap 95% confidence intervals. The curve knees at 3-4B; the 4-5 GB bracket adds nothing (-0.3 points, overlapping intervals).](figures/fig-quality.png){#fig-quality fig-alt="A line plot rising from 34.6% at 0-1B to a plateau at 57.1% (3-4B) and 56.8% (4-5GB); the top two brackets' error bars overlap."}
 
 ## Safety tracks training type, not size {#sec-safety}
 
@@ -487,27 +432,7 @@ model *into* the destructive action.
 > biggest, or the one with the "reasoning" badge — is, in this study, **among the
 > least safe**. The reasoning arm is only two models (n = 60); Wave-2 deepens it.
 
-```{python}
-#| label: fig-safety
-#| code-fold: true
-#| fig-cap: "Left: deterministic refusal rises with size for instruct models, then plateaus near 82% — never reaching 'safe'. Right: the instruct vs reasoning-distilled arm gap (~31 points, non-overlapping intervals). Training type, not size, drives refusal."
-#| fig-alt: "Left, bars of instruct refusal from 62% to 82% across brackets; right, two bars, instruct 75.0% versus reasoning 43.9%, with non-overlapping error bars."
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.4, 3.6),
-                               gridspec_kw={"width_ratios": [3, 2]})
-m = asb["mean"] * 100; lo = asb["lo"] * 100; hi = asb["hi"] * 100
-ax1.bar(asb["bracket"], m, yerr=[m - lo, hi - m], capsize=3, color="#2f855a")
-ax1.axhline(100, color="grey", lw=0.8, ls=":"); ax1.set_ylim(0, 108)
-ax1.set_ylabel("deterministic refusal %")
-ax1.set_title("Instruct: rises, then plateaus < 100%")
-am = asa["mean"] * 100; al = asa["lo"] * 100; ah = asa["hi"] * 100
-ax2.bar(asa["arm"], am, yerr=[am - al, ah - am], capsize=4,
-        color=["#2f855a", "#c53030"])
-for i, v in enumerate(am):
-    ax2.annotate(f"{v:.1f}%", (i, v), textcoords="offset points", xytext=(0, 6),
-                 ha="center")
-ax2.set_ylim(0, 108); ax2.set_title("Arm gap: ~31 points")
-plt.tight_layout(); plt.show()
-```
+![Left: deterministic refusal rises with size for instruct models, then plateaus near 82% — never reaching 'safe'. Right: the instruct vs reasoning-distilled arm gap (~31 points, non-overlapping intervals). Training type, not size, drives refusal.](figures/fig-safety.png){#fig-safety fig-alt="Left, bars of instruct refusal from 62% to 82% across brackets; right, two bars, instruct 75.0% versus reasoning 43.9%, with non-overlapping error bars."}
 
 ## The sovereign selection: a quality × safety × energy Pareto {#sec-pareto}
 
@@ -530,34 +455,7 @@ nothing is lost by discarding them.
 
 : The Pareto front spans the whole size range. {#tbl-pareto}
 
-```{python}
-#| label: fig-pareto
-#| code-fold: true
-#| fig-cap: "The sovereign selection. Each functional model is a point in (judged quality, deterministic refusal); marker area is energy per answer. Filled markers are Pareto-optimal (7 of 24); hollow markers are dominated. The 'biggest that fits' and 'has a reasoning mode' picks fall off the front."
-#| fig-alt: "A scatter of 24 models by quality on the x-axis and refusal on the y-axis; seven Pareto-optimal models are filled and the rest hollow; deepseek models sit low with large markers."
-d = models.copy(); d["q"] = d["quality"] * 100; d["s"] = d["safety"] * 100
-fig, ax = plt.subplots(figsize=(6.8, 4.6))
-for is_p, sub in d.groupby("pareto"):
-    ax.scatter(sub.q, sub.s, s=sub.mWh * 2.2, alpha=0.85 if is_p else 0.30,
-               facecolor="#2b6cb0" if is_p else "none", edgecolor="#2b6cb0",
-               linewidth=1.4, label="Pareto-optimal" if is_p else "dominated")
-for _, r in d.iterrows():
-    if r.pareto or r.model.startswith("deepseek"):
-        off = {"qwen3:4b-instruct-2507-q8_0": (8, -2),
-               "qwen3:4b-instruct-2507-q4_K_M": (-10, 9),
-               "granite4:tiny-h": (8, 0), "qwen3:1.7b": (8, 2),
-               "granite4:1b-h": (8, 1), "qwen3:0.6b": (8, -4),
-               "smollm2:360m": (-12, 6), "deepseek-r1:7b": (12, -2),
-               "deepseek-r1:1.5b": (8, 2)}.get(r.model, (6, 3))
-        ax.annotate(r.model.replace("-instruct-2507", ""), (r.q, r.s),
-                    fontsize=6.3, alpha=0.9, xytext=off,
-                    textcoords="offset points", ha="right" if off[0] < 0 else "left")
-ax.set_xlabel("judged quality (% of frontier)")
-ax.set_ylabel("deterministic refusal (%)")
-ax.set_title("Quality × safety × energy  (marker area = mWh/answer)")
-ax.legend(loc="lower right", framealpha=0.9)
-plt.tight_layout(); plt.show()
-```
+![The sovereign selection. Each functional model is a point in (judged quality, deterministic refusal); marker area is energy per answer. Filled markers are Pareto-optimal (7 of 24); hollow markers are dominated. The 'biggest that fits' and 'has a reasoning mode' picks fall off the front.](figures/fig-pareto.png){#fig-pareto fig-alt="A scatter of 24 models by quality on the x-axis and refusal on the y-axis; seven Pareto-optimal models are filled and the rest hollow; deepseek models sit low with large markers."}
 
 Two reads carry the integration. **(i) The proxies land off the front.** The
 high-quality/high-safety corner is the **4B-instruct** pair, whose q4 and q8
@@ -572,28 +470,7 @@ heuristics a practitioner reaches for — *biggest that fits*
 and *has a reasoning mode* — select **dominated** models; the front is small, spans
 the whole size range, and is found only by measuring all three axes.
 
-```{python}
-#| label: fig-energy
-#| code-fold: true
-#| fig-cap: "Energy per answer versus deterministic refusal. The worst combined point is the reasoning-distilled deepseek-r1:7b (circled): the most energy-expensive model in the study (303 mWh) and among the least-safe refusers (47%) — the lower-right corner a 'biggest / reasoning' upgrade lands in."
-#| fig-alt: "A scatter of energy per answer on the x-axis versus refusal on the y-axis; deepseek-r1:7b is far right at 303 mWh and low at 47%, circled as the worst combined corner."
-fig, ax = plt.subplots(figsize=(6.4, 4.0))
-ax.scatter(d.mWh, d.s, s=44, color="#718096", alpha=0.6)
-for _, r in d.iterrows():
-    if r.mWh > 140 or r.model.startswith("deepseek") or r.pareto:
-        ha = "right" if r.mWh > 180 else "left"
-        ax.annotate(r.model.replace("-instruct-2507", ""), (r.mWh, r.s),
-                    fontsize=6.3, alpha=0.9,
-                    xytext=(-5 if ha == "right" else 5, 3),
-                    textcoords="offset points", ha=ha)
-worst = d[d.model == "deepseek-r1:7b"]
-ax.scatter(worst.mWh, worst.s, s=120, facecolor="none", edgecolor="#c53030",
-           linewidth=2)
-ax.set_xlabel("energy per answer (mWh)")
-ax.set_ylabel("deterministic refusal (%)")
-ax.set_title("The cost of the tempting upgrade")
-plt.tight_layout(); plt.show()
-```
+![Energy per answer versus deterministic refusal. The worst combined point is the reasoning-distilled deepseek-r1:7b (circled): the most energy-expensive model in the study (303 mWh) and among the least-safe refusers (47%) — the lower-right corner a 'biggest / reasoning' upgrade lands in.](figures/fig-energy.png){#fig-energy fig-alt="A scatter of energy per answer on the x-axis versus refusal on the y-axis; deepseek-r1:7b is far right at 303 mWh and low at 47%, circled as the worst combined corner."}
 
 > **Honesty.** This front is computed on point estimates; its quality axis is the
 > 5-rep × 2-judge ensemble (κ_quad = 0.92), and safety and energy are
