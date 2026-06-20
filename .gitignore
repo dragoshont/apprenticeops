@@ -53,3 +53,6 @@ docs/analysis/paper.pdf
 docs/analysis/*_files/
 .quarto/
 *.quarto_ipynb
+
+# stray local scratch (unrelated chat transcript)
+feedback.md
