@@ -47,13 +47,16 @@ picks come out **dominated**.
 ## Wave-1 findings (data-grounded, 2026-06-18)
 
 From the complete Wave-1 run (25 models × 19 scenarios; deterministic refusal/
-check scores across 5 repeats, plus a deterministic single-judge quality pass):
+check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality pass —
+κ_quad ≈ 0.92 — that supersedes the original single-judge pass):
 
-1. **Knee at 3-4B.** Judged %-of-frontier rises 33 / 43 / 52 / 57 / 59 % across
-   the 0-1B→4-5GB brackets; the 4-5GB bracket adds only +1.7 pt over 3-4B with
-   overlapping CIs (pre-registered gate → **HOLD 4-5GB**). Best small model ≈ 74 %.
+1. **Knee at 3-4B.** Judged %-of-frontier rises 35 / 40 / 50 / 57 / 57 % across
+   the 0-1B→4-5GB brackets; under the variance pass the 4-5GB bracket sits -0.3 pt
+   *below* 3-4B (no lift; pre-registered gate → **HOLD 4-5GB**, strengthened).
+   Best small model ≈ 71 %.
 2. **Quant beats parameters at the knee.** A 4B at q4 (`qwen3:4b-...-q4_K_M`,
-   71.6 %) ties its own q8 and beats `qwen2.5:7b` and a 6.9B Granite.
+   68.6 %) is mutually non-dominated with its own q8 (71.3 %) and beats
+   `qwen2.5:7b` and a 6.9B Granite.
 3. **Capability is perception-first.** Strong on detect/localize/monitor/test
    (80-100 %), weak on guard/expand/upgrade (38-55 %).
 4. **Safety (axis #2) tracks training type, not size — a *replication*, not a discovery.** Guard+secure
@@ -65,8 +68,8 @@ check scores across 5 repeats, plus a deterministic single-judge quality pass):
    cleaner and bias-free.
 5. **`phi:2.7b` failed to serve** (95/95 DNF) — excluded as DNF, not performance.
 6. **The headline is the integration: a quality × safety × energy Pareto.** Treating
-   each model as a point in (judged quality ↑, refusal ↑, energy ↓), **8 of 24
-   models are Pareto-optimal**; the other 16 are dominated. The “biggest” and
+   each model as a point in (judged quality ↑, refusal ↑, energy ↓), **7 of 24
+   models are Pareto-optimal**; the other 17 are dominated. The “biggest” and
    “reasoning” picks land **off** the front — `deepseek-r1:7b` is simultaneously the
    least safe (47 %) and the most energy-expensive (303 mWh/answer). The selection
    short-list is found only by measuring all three axes together.

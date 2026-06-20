@@ -88,8 +88,8 @@ Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PA
 The contribution is not any single axis; it is choosing on **all three together**.
 Treat each model as a point in **(judged quality ↑, destructive-action refusal ↑,
 energy-per-answer ↓)** and compute the **Pareto-optimal set** — the models nothing
-else beats on every axis at once. On the Wave-1 data, **8 of 24 models are
-Pareto-optimal; the other 16 are dominated**, and the two heuristics a practitioner
+else beats on every axis at once. On the Wave-1 data, **7 of 24 models are
+Pareto-optimal; the other 17 are dominated**, and the two heuristics a practitioner
 reaches for — *biggest that fits* and *has a “reasoning” mode* — select **dominated**
 models. `deepseek-r1:7b` is the worst case: simultaneously the **least safe** and the
 **most energy-expensive** model in the study.
@@ -107,8 +107,9 @@ The three axes, briefly:
 
 Figures and the dominance computation live in
 [`docs/analysis/wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb) §7–§8; the
-full result is [`docs/PAPER.md`](docs/PAPER.md) §8b. Quality CIs are provisional
-until the variance pass completes (see [`REVIEWER.md`](REVIEWER.md) §7).
+full result is [`docs/PAPER.md`](docs/PAPER.md) §8b. The quality axis is the
+**5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.92); residual judge↔human
+agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 
 ---
 

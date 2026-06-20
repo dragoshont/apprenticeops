@@ -24,7 +24,7 @@ score, a "reasoning" badge, perplexity) get wrong.
   benchmark measures judged quality *beside* destructive-action refusal *beside*
   energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only, ≤8B**
   model-selection decision on commodity hardware and real GitOps incidents. The
-  headline result is the **energy × safety × quality Pareto**: 8 of 24 models are
+  headline result is the **energy × safety × quality Pareto**: 7 of 24 models are
   non-dominated; the "biggest" and "reasoning" picks come out **dominated**.
 - **Safety is axis #2, framed as corroboration — not discovery.** That
   reasoning-distillation and quantization degrade destructive-action refusal, and
@@ -95,7 +95,7 @@ the intended venue. For each, the specific thing to scrutinise here:
 
 | Dimension | What to check in *this* work |
 |---|---|
-| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks actually judge-free and correct? Do the bootstrap CIs support the bracket/arm claims? Is the single-judge quality axis honestly flagged as provisional (the variance pass)? |
+| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks actually judge-free and correct? Do the bootstrap CIs support the bracket/arm claims? Is the quality axis — now the **5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.92) — honest about the *residual* judge↔human uncertainty? |
 | **Clarity** (can an expert reproduce from the text?) | Is the sovereign constraint defined unambiguously (offline = no external *model* API, not information-poverty)? Are the Pareto/dominance definitions precise? |
 | **Significance** (will others use or build on it?) | Is the offline/CPU/commodity regime + energy-coupled selection useful to practitioners and researchers? Is the released harness reusable? |
 | **Originality** (new insight, clearly differentiated, well-cited?) | Is the *integration* genuinely unoccupied by prior work, and is the safety axis honestly scoped as **replication**? Note: per NeurIPS, *"originality does not necessarily require introducing an entirely new method… novel insights by evaluating existing methods… is equally valuable."* Please judge the contribution as an integration/evaluation, and tell us if that integration is **not** novel enough. |
@@ -166,11 +166,13 @@ differ by context:
 
 ## 7. What is provisional, and known limitations (stated up front)
 
-- **Quality CIs are provisional.** The judged-quality axis currently uses a
-  single-judge deterministic pass; a 5-rep × 2-judge **variance pass** is running
-  (cross-judge agreement is already κ_quad = 0.91). It tightens the Pareto
-  membership but does not change the structure. Treat quality point-estimates as
-  directional until then.
+- **Quality is now the variance pass (no longer provisional).** The judged-quality
+  axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 2,375 judgements;
+  cross-judge agreement κ_quad ≈ 0.92, 77 % exact, 99.9 % within-1). It firmed the
+  Pareto membership (8 → 7 non-dominated) and *strengthened* the 3–4 B knee — the
+  4–5 GB bracket now sits -0.3 pt below 3–4 B (no lift) — without changing the
+  structure. What remains open is **judge↔human** agreement and an optional third
+  judge for a Fleiss pass.
 - **n = 1 environment.** One operator, one cluster, one node (i5-8350U). We frame
   this as a **single-environment case study plus a released harness**, and invite
   re-runs — not a population claim.
@@ -180,8 +182,8 @@ differ by context:
 - **Telemetry is Linux/Intel-specific** (RAPL, `/proc`, IMC counters); quality and
   safety scores reproduce on any OS, the systems numbers do not.
 - **Open items toward camera-ready:** Croissant dataset metadata + archival
-  hosting (DOI); the variance-pass CIs; a judge↔human agreement κ; an optional
-  third judge for a Fleiss pass.
+  hosting (DOI); a judge↔human agreement κ; an optional third judge for a Fleiss
+  pass.
 
 ---
 

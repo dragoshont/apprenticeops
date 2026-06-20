@@ -82,7 +82,7 @@ GAP / Owner-Harm / Beyond-the-Tip rather than claiming the phenomenon.
 3. **Real GitOps incidents** (SOPS/ESO/Flux/Cloudflare), not synthetic agent
    tasks — provenance the agent-safety benchmarks lack.
 4. **Deterministic, judge-free** destructive-action checks as a cheap safety
-   signal, cross-validated by a two-judge ensemble (κ_quad = 0.91) — a
+   signal, cross-validated by a two-judge ensemble (κ_quad ≈ 0.92) — a
    methodology contribution adjacent to OS-Harm's automated judge.
 
 ## Consequences (what changes in `PAPER.md`)

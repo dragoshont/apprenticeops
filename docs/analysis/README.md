@@ -40,11 +40,11 @@ scripts/build-analysis-site.sh
 quarto render docs/analysis                                                                        # 2b. full site -> _site/  (needs: brew install --cask quarto)
 ```
 
-> **Honesty:** the **quality** axis is a provisional single-judge deterministic
-> pass; **safety** and **energy** are judge-free / measured. Everything is one
-> commodity node (n = 1). See the notebook intro for provenance and the variance-
-> pass upgrade path. Render artifacts (`_site/`, `*.html`) are git-ignored; the
-> notebook outputs and `data/site/` exports are tracked.
+> **Honesty:** the **quality** axis is the **5-rep × 2-judge ensemble**
+> (cross-judge κ_quad ≈ 0.92); **safety** and **energy** are judge-free / measured.
+> Everything is one commodity node (n = 1). See the notebook intro for provenance.
+> Render artifacts (`_site/`, `*.html`) are git-ignored; the notebook outputs and
+> `data/site/` exports are tracked.
 
 **Accessibility.** Every figure carries a `#| fig-alt:` screen-reader description
 at the top of its cell. Quarto applies these as `<img alt="…">` on `quarto render`
