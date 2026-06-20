@@ -217,6 +217,32 @@ confirm the exact GGUF file / runtime before pulling (see notes).
 | Cogito v1 3B q8 | `cogito:3b-v1-preview-llama-q8_0` | 3.8 | ✅ | ✅ | Llama-3.2 | q8 pair of `cogito:3b` (quant axis) |
 | StarCoder2 3B | `starcoder2:3b` | 1.7 | ❌ | ❌ | BigCode OpenRAIL-M | (listed in 2–3B; also fits here) |
 
+## W3+ · 3–4B quant-degradation sweep at the knee (expansion)
+
+> 3–4B is the **quality plateau** of the whole study, so it is the most valuable
+> place to measure *quantization* precisely. Net-new 3–4B families are genuinely
+> scarce (the same finding as 2–3B), so this expansion goes **deep, not wide**: a
+> `q4`→`q8` (+ I-quant) curve on four reputable anchors already in Wave 3. Every
+> tag was fetched + size-verified; all official or reputable-quantizer.
+
+| Anchor | Pull tag | GB | quant | prov. | note |
+|---|---|---|---|---|---|
+| Llama-3.2-3B | `hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q6_K` | 2.64 | Q6_K | bartowski (imatrix) | high-K point; pairs w/ tested `llama3.2:3b` q4+q8 |
+| Llama-3.2-3B | `hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q5_K_M` | 2.32 | Q5_K_M | bartowski | mid-K point |
+| Llama-3.2-3B | `hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:IQ4_XS` | 1.83 | IQ4_XS | bartowski | **I-quant** point (CPU-viable) |
+| Llama-3.2-3B | `hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q3_K_L` | 1.82 | Q3_K_L | bartowski | low-bit edge (degradation tail) |
+| SmolLM3-3B | `hf.co/ggml-org/SmolLM3-3B-GGUF:Q8_0` | 3.28 | Q8_0 | official (ggml-org) | q8 pair of the Wave-3 q4_K_M |
+| Hermes-3-3B | `hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q8_0` | 3.42 | Q8_0 | official (Nous) | q8 pair of the Wave-3 q4_K_M |
+| Granite-Code 3B | `granite-code:3b-instruct-q6_K` | 2.9 | q6_K | official (IBM) | coder q6 point |
+| Granite-Code 3B | `granite-code:3b-instruct-q8_0` | 3.7 | q8_0 | official (IBM) | coder q8 point |
+| StarCoder2 3B | `starcoder2:3b-q6_K` | 2.5 | q6_K | official (BigCode) | coder q6 point |
+| StarCoder2 3B | `starcoder2:3b-q8_0` | 3.2 | q8_0 | official (BigCode) | coder q8 point |
+
+Together with the `q4` endpoints already in the roster this yields a **6-point
+Llama-3.2-3B curve** (q3→IQ4→q4→q5→q6→q8), **2-point** SmolLM3 and Hermes-3
+(q4↔q8), and **3-point** Granite-Code and StarCoder2 (q4→q6→q8) — a clean read
+on how much quality the knee actually loses to quantization.
+
 ## W3 · 4–5 GB footprint *(only 3, per request)*
 
 | Model | Pull tag | GB | tools | think | License | Note |
