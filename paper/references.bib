@@ -1,6 +1,7 @@
 % ApprenticeOps — bibliography
-% Entries transcribed faithfully from the cited works in docs/PAPER.md (sec. 7c, 11).
-% Where the source gives only a first author + "et al.", the author field uses "and others".
+% All arXiv entries VERIFIED against arXiv.org on 2026-06-20: title, authors,
+% year, and venue checked against each paper's abstract page. Citation keys are
+% stable (the manuscript's @cite keys depend on them).
 
 % ---- AIOps / ops benchmarks & frameworks ----
 @article{notaro2021survey,
@@ -10,24 +11,24 @@
   year    = {2021}
 }
 
-@inproceedings{aiopslab2025,
-  title     = {{AIOpsLab}: A Holistic Framework to Evaluate {AI} Agents for Enabling Autonomous Clouds},
-  author    = {Chen and Shetty and others},
-  booktitle = {Proceedings of Machine Learning and Systems (MLSys)},
-  year      = {2025},
-  note      = {arXiv:2407.12165; arXiv:2501.06706}
+@misc{aiopslab2025,
+  title        = {{AIOpsLab}: A Holistic Framework to Evaluate {AI} Agents for Enabling Autonomous Clouds},
+  author       = {Chen, Yinfang and Shetty, Manish and Somashekar, Gagan and Ma, Minghua and Simmhan, Yogesh and Mace, Jonathan and Bansal, Chetan and Wang, Rujia and Rajmohan, Saravan},
+  year         = {2025},
+  howpublished = {arXiv:2501.06706},
+  note         = {Precursor vision paper: Shetty et al., ``Building AI Agents for Autonomous Clouds,'' arXiv:2407.12165 (2024)}
 }
 
 @misc{itbench2025,
-  title        = {{ITBench}: Evaluating {AI} Agents on Real-World {IT} Automation Tasks},
-  author       = {Jha and others},
+  title        = {{ITBench}: Evaluating {AI} Agents across Diverse Real-World {IT} Automation Tasks},
+  author       = {Jha, Saurabh and Arora, Rohan and Watanabe, Yuji and Yanagawa, Takumi and Chen, Yinfang and Clark, Jackson and Bhavya, Bhavya and Verma, Mudit and others},
   year         = {2025},
   howpublished = {arXiv:2502.05352}
 }
 
 @misc{bendimerad2023onprem,
-  title        = {On-prem {AIOps} for an {SME}: An Experience Report},
-  author       = {Bendimerad and others},
+  title        = {On-Premise {AIOps} Infrastructure for a Software Editor {SME}: An Experience Report},
+  author       = {Bendimerad, Anes and Remil, Youcef and Mathonat, Romain and Kaytoue, Mehdi},
   year         = {2023},
   howpublished = {arXiv:2308.11225}
 }
@@ -35,18 +36,18 @@
 % ---- Small language models / reasoning / scaling ----
 @misc{belcak2025slm,
   title        = {Small Language Models are the Future of Agentic {AI}},
-  author       = {Belcak and others},
+  author       = {Belcak, Peter and Heinrich, Greg and Diao, Shizhe and Fu, Yonggan and Dong, Xin and Muralidharan, Saurav and Lin, Yingyan Celine and Molchanov, Pavlo},
   year         = {2025},
   howpublished = {arXiv:2506.02153},
   note         = {NVIDIA}
 }
 
 @inproceedings{srivastava2025thinkslm,
-  title     = {{ThinkSLM}: Towards Reasoning in Small Language Models},
-  author    = {Srivastava and others},
-  booktitle = {Findings of EMNLP},
+  title     = {Towards Reasoning Ability of Small Language Models},
+  author    = {Srivastava, Gaurav and Cao, Shuxiang and Wang, Xuan},
+  booktitle = {Proceedings of EMNLP (Main Conference)},
   year      = {2025},
-  note      = {arXiv:2502.11569}
+  note      = {Introduces the ThinkSLM benchmark; arXiv:2502.11569}
 }
 
 @misc{schaeffer2023emergent,
@@ -59,95 +60,101 @@
 
 % ---- Reasoning-distillation degrades safety ----
 @inproceedings{yong2026selfjailbreak,
-  title     = {Self-Jailbreaking: Reasoning Language Models Reason Themselves Out of Safety Alignment},
+  title     = {Self-Jailbreaking: Language Models Can Reason Themselves Out of Safety Alignment After Benign Reasoning Training},
   author    = {Yong, Zheng-Xin and Bach, Stephen H.},
-  booktitle = {ICLR},
+  booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
   note      = {arXiv:2510.20956}
 }
 
 @misc{zhou2025hiddenrisks,
   title        = {The Hidden Risks of Large Reasoning Models: A Safety Assessment of {R1}},
-  author       = {Zhou and others},
+  author       = {Zhou, Kaiwen and Liu, Chengzhi and Zhao, Xuandong and Jangam, Shreedhar and Srinivasa, Jayanth and Liu, Gaowen and Song, Dawn and Wang, Xin Eric},
   year         = {2025},
   howpublished = {arXiv:2502.12659}
 }
 
 @misc{jiang2025safechain,
   title        = {{SafeChain}: Safety of Language Models with Long Chain-of-Thought Reasoning Capabilities},
-  author       = {Jiang and others},
+  author       = {Jiang, Fengqing and Xu, Zhangchen and Li, Yuetai and Niu, Luyao and Xiang, Zhen and Li, Bo and Lin, Bill Yuchen and Poovendran, Radha},
   year         = {2025},
   howpublished = {arXiv:2502.12025}
 }
 
 % ---- Agent / action safety ----
 @misc{gap2026,
-  title        = {{GAP}: Generation-to-Action Refusal Gap in Tool-Using Agents},
+  title        = {Mind the {GAP}: Text Safety Does Not Transfer to Tool-Call Safety in {LLM} Agents},
+  author       = {Cartagena, Arnold and Teixeira, Ariane},
   year         = {2026},
   howpublished = {arXiv:2602.16943}
 }
 
 @inproceedings{osharm2025,
-  title     = {{OS-Harm}: Benchmarking Safety of Computer-Use Agents},
-  author    = {and others},
-  booktitle = {NeurIPS Datasets and Benchmarks Track},
+  title     = {{OS-Harm}: A Benchmark for Measuring Safety of Computer Use Agents},
+  author    = {Kuntz, Thomas and Duzan, Agatha and Zhao, Hao and Croce, Francesco and Kolter, Zico and Flammarion, Nicolas and Andriushchenko, Maksym},
+  booktitle = {NeurIPS Datasets and Benchmarks Track (Spotlight)},
   year      = {2025},
-  note      = {Spotlight; arXiv:2506.14866}
+  note      = {arXiv:2506.14866}
 }
 
 @misc{ownerharm2026,
-  title        = {{Owner-Harm}: Auditing Agents That Harm Their Own Deployer},
+  title        = {{Owner-Harm}: A Missing Threat Model for {AI} Agent Safety},
+  author       = {Zhang, Dongcheng and Jiang, Yiqing},
   year         = {2026},
   howpublished = {arXiv:2604.18658}
 }
 
 @inproceedings{agentharm2025,
   title     = {{AgentHarm}: A Benchmark for Measuring Harmfulness of {LLM} Agents},
-  author    = {and others},
-  booktitle = {ICLR},
+  author    = {Andriushchenko, Maksym and Souly, Alexandra and Dziemian, Mateusz and Duenas, Derek and Lin, Maxwell and Wang, Justin and Hendrycks, Dan and Zou, Andy and others},
+  booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2025},
   note      = {arXiv:2410.09024}
 }
 
 @misc{agenthazard2026,
-  title        = {{AgentHazard}: Measuring Malicious-Action Refusal at Scale},
+  title        = {{AgentHazard}: A Benchmark for Evaluating Harmful Behavior in Computer-Use Agents},
+  author       = {Feng, Yunhao and Ding, Yifan and Tan, Yingshui and Ma, Xingjun and Li, Yige and Wu, Yutao and Gao, Yifeng and Zhai, Kun and others},
   year         = {2026},
   howpublished = {arXiv:2604.02947}
 }
 
 % ---- Small-model & quantization safety ----
 @inproceedings{beyondtip2025,
-  title     = {Beyond the Tip of Efficiency: Compression and the Safety of Small Language Models},
-  author    = {and others},
+  title     = {Beyond the Tip of Efficiency: Uncovering the Submerged Threats of Jailbreak Attacks in Small Language Models},
+  author    = {Yi, Sibo and Cong, Tianshuo and He, Xinlei and Li, Qi and Song, Jiaxing},
   booktitle = {Findings of ACL},
   year      = {2025},
   note      = {arXiv:2502.19883}
 }
 
 @inproceedings{qresafe2025,
-  title     = {{Q-resafe}: Quantization Degrades Safety and Perplexity Misleads Deployment Readiness},
-  author    = {and others},
-  booktitle = {ICML},
+  title     = {{Q-resafe}: Assessing Safety Risks and Quantization-aware Safety Patching for Quantized Large Language Models},
+  author    = {Chen, Kejia and Zhang, Jiawen and Hu, Jiacong and Wang, Yu and Lou, Jian and Feng, Zunlei and Song, Mingli},
+  booktitle = {International Conference on Machine Learning (ICML)},
   year      = {2025},
   note      = {arXiv:2506.20251}
 }
 
 @misc{caq2025,
-  title        = {{CAQ}: Calibration-Aware Quantization and the Safety of Compressed Models},
+  title        = {Safety-Preserving {PTQ} via Contrastive Alignment Loss},
+  author       = {Wee, Sunghyun and Kim, Suyoung and Kim, Hyeonjin and Hwang, Kyomin and Kwak, Nojun},
   year         = {2025},
-  howpublished = {arXiv:2511.07842}
+  howpublished = {arXiv:2511.07842},
+  note         = {Proposes Contrastive Alignment Quantization (CAQ)}
 }
 
 @inproceedings{ease2026,
-  title     = {{EASE}: Efficient Alignment Safeguards for Small Language Models},
-  author    = {and others},
-  booktitle = {AAAI},
+  title     = {{EASE}: Practical and Efficient Safety Alignment for Small Language Models},
+  author    = {Shi, Haonan and Wang, Guoli and Ouyang, Tu and Wang, An},
+  booktitle = {AAAI Conference on Artificial Intelligence},
   year      = {2026},
   note      = {arXiv:2511.06512}
 }
 
 @misc{guardslm2026,
-  title        = {{GUARD-SLM}: Guardrails for Small Language Models},
+  title        = {{GUARD-SLM}: Token Activation-Based Defense Against Jailbreak Attacks for Small Language Models},
+  author       = {Mia, Md Jueal and Molto, Joaquin and Wu, Yanzhao and Amini, M. Hadi},
   year         = {2026},
   howpublished = {arXiv:2603.28817}
 }

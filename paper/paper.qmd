@@ -144,16 +144,20 @@ the useful question for a small, local, last-line model is not "can it run the
 cluster" but "**where is its reasoning floor, and is it safe enough to trust
 there.**"
 
-**The SLM case turns on training, not size.** The pro-SLM position
-[@belcak2025slm] argues small models are sufficient and economical for the narrow,
-repetitive calls agents actually make — our setting. **ThinkSLM**
-[@srivastava2025thinkslm] independently finds SLM reasoning is "strongly
-influenced by training methods and data quality rather than solely model scale"
-and that "quantization preserves reasoning capability" — corroborating, from a
-different benchmark, both our *quant > params* quality result and our
-*training-type-over-size* safety result. The "emergent abilities" intuition is
-itself contested [@schaeffer2023emergent], which is why we report **continuous**
-judged %-of-frontier with confidence intervals, not a thresholded can/can't.
+**The small-model debate turns on training, not scale — and our data adjudicates.**
+Two positions stand in tension. The folk intuition, echoed by *emergent-abilities*
+narratives, holds that capability arrives with scale; the pro-SLM position
+[@belcak2025slm] counters that small models are already sufficient and more
+economical for the narrow, repetitive calls agents actually make — our setting.
+The empirical evidence sides with the latter: **ThinkSLM** [@srivastava2025thinkslm]
+finds SLM reasoning is "strongly influenced by training methods and data quality
+rather than solely model scale" and that "quantization preserves reasoning
+capability," while [@schaeffer2023emergent] shows the apparent capability *jumps*
+of the scaling view are partly an artifact of discontinuous metrics. **Our take:**
+our Wave-1 curve adjudicates in this regime — judged quality knees at 3–4B and
+quantization preserves it (@sec-quality), corroborating ThinkSLM from an ops
+benchmark — which is why we report **continuous** judged %-of-frontier with
+confidence intervals, not a thresholded can/can't.
 
 **Reasoning-distillation degrades safety — we corroborate, not discover.** Our
 deterministic result (reasoning-distilled models refuse destructive actions ~31
@@ -168,27 +172,37 @@ their reasoning advance. These same papers show the defect is *fixable*, so we
 scope our claim to models **as shipped** to a homelab via Ollama — not that
 reasoning is inherently unsafe.
 
-**Agent / action safety — the cluster we corroborate.** A fast-maturing line
-establishes that behavioural safety must be measured on **actions, not text**:
-**GAP** [@gap2026] shows text-refusal does not transfer to tool-call refusal;
-**OS-Harm** [@osharm2025] and **Owner-Harm** [@ownerharm2026] build automated
-judges and deterministic post-audit gates against agents harming their own
-deployer; **AgentHarm** [@agentharm2025] and **AgentHazard** [@agenthazard2026]
-score malicious-action refusal at scale. These run frontier/cloud or GPU-edge
-agents on synthetic agentic tasks. We share their action-over-text stance and
-deterministic-check methodology but occupy the regime they do not: **≤ 8B,
-quantized, CPU-only, fully offline**, on **frozen real GitOps incidents**, with
-refusal measured *beside* energy and quality for the *selection* decision.
+**Agent / action safety — the methodology we adopt, the regime we move it to.** A
+fast-maturing line establishes that behavioural safety must be measured on
+**actions, not text**: **GAP** [@gap2026] shows text-level refusal does not
+transfer to tool-call refusal — a model's prose refuses while its tool call
+executes the forbidden action. **OS-Harm** [@osharm2025] builds an automated judge
+for computer-use-agent safety across deliberate misuse, prompt injection, and
+model misbehaviour; **Owner-Harm** [@ownerharm2026] formalises the distinct
+*deployer-harm* threat model and shows that a **deterministic post-audit gate**
+lifts detection where a semantic judge alone fails. **AgentHarm** [@agentharm2025]
+(110 malicious agent tasks) and **AgentHazard** [@agenthazard2026] (2,653 cases of
+harm emerging across individually-plausible steps) score malicious-action refusal
+at scale. These run frontier or GPU-edge agents on synthetic agentic tasks. **Our
+take:** we adopt their action-over-text stance and deterministic-check
+methodology, but move them to the regime they do not occupy — **≤ 8B, quantized,
+CPU-only, fully offline**, on **frozen real GitOps incidents** — and, unlike any
+of them, measure refusal *beside* energy and quality for the *selection* decision
+rather than as a standalone safety score.
 
 **Small-model & quantization safety — established at larger scale; we replicate
 offline.** That small, compressed, distilled models shed safety is documented:
-**Beyond the Tip of Efficiency** [@beyondtip2025] ties
-compression/quantization/distillation to safety loss; **Q-resafe** [@qresafe2025]
-and **CAQ** [@caq2025] show quantization degrades safety and that *perplexity is a
-misleading deployment-readiness proxy*; **EASE** [@ease2026] and **GUARD-SLM**
-[@guardslm2026] add SLM-specific safeguards. Our numbers replicate these in the
-offline/CPU/ops regime, with one twist they do not jointly report: **quantization
-largely preserves *quality* while *training type* governs *safety*** — the two
+**Beyond the Tip of Efficiency** [@beyondtip2025] ties architecture-compression,
+quantization, and distillation to safety loss across 13 SLMs; **Q-resafe**
+[@qresafe2025] shows quantization degrades safety and proposes a quantization-aware
+*patch* to restore it; and **CAQ** [@caq2025] makes the proxy point sharply — a
+model can keep low perplexity yet lose safety alignment, so *perplexity alone is a
+misleading deployment-readiness proxy*. A complementary line proposes SLM-specific
+safeguards (**EASE** [@ease2026]; **GUARD-SLM** [@guardslm2026]). **Our take:**
+these works largely study how to *fix* the defect, whereas we measure models **as a
+homelab actually pulls them** — off-the-shelf via Ollama, unpatched — and add a
+twist they do not jointly report: **quantization largely preserves *quality*
+(@sec-quality) while *training type* governs *safety* (@sec-safety)** — the two
 pressures act on different axes of the same selection.
 
 **Gap we fill.** No prior work measures **quality × safety × energy *together***
