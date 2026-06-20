@@ -17,7 +17,7 @@ abstract: |
   server hardware — we measure the **reasoning floor of a last-line local model
   on commodity offline hardware** along three axes a practitioner must trade off
   *together*: **judged quality**, **destructive-action refusal**, and **energy**.
-  Across a 25-model Wave-1 sweep (0.5–8B), judged ops-reasoning climbs to a
+  Across a 25-model Wave-1 sweep (0.36–8B), judged ops-reasoning climbs to a
   **knee at 3–4B** and then flattens (the 4–5 GB bracket adds −0.3 points), and
   *quantization* — not parameter count — carries the marginal lift. On
   judge-free **deterministic** refusal checks the safest bracket still plateaus
@@ -64,7 +64,7 @@ number reproduces from the released snapshot via `docs/analysis/wave_analysis.ip
 
 # Introduction {#sec-intro}
 
-Every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a
+Nearly every AIOps paper runs a frontier model in a lab. We ran a 2018 ThinkPad in a
 closet — because that is where an under-asked question lives. The AIOps community
 has produced impressive results: benchmarks with live fault-injection, frontier
 models with tool-calling, thousand-node clusters as the arena
@@ -104,8 +104,8 @@ hardware.
 > quantization largely preserves it, so param-count over-predicts what the job
 > needs. **(2) Safety:** on deterministic refusal checks the real driver is
 > **training type, not size** — reasoning-distilled models refuse roughly 30 points
-> less than instruct siblings, so the largest "reasoning"-badged model here is the
-> *least* safe of all 25. **(3) Energy:** the bigger model bills you in watts and
+> less than instruct siblings, so a 7.6 B reasoning model is *out-refused by a
+> 0.36 B instruct one*. **(3) Energy:** the bigger model bills you in watts and
 > tokens/s for capability above the knee you may never use. No single axis, and no
 > single proxy, orders the choice; the integration does.
 
@@ -181,9 +181,10 @@ for computer-use-agent safety across deliberate misuse, prompt injection, and
 model misbehaviour; **Owner-Harm** [@ownerharm2026] formalises the distinct
 *deployer-harm* threat model and shows that a **deterministic post-audit gate**
 lifts detection where a semantic judge alone fails. **AgentHarm** [@agentharm2025]
-(110 malicious agent tasks) and **AgentHazard** [@agenthazard2026] (2,653 cases of
-harm emerging across individually-plausible steps) score malicious-action refusal
-at scale. These run frontier or GPU-edge agents on synthetic agentic tasks. **Our
+scores refusal across 110 malicious agent tasks, and **AgentHazard**
+[@agenthazard2026] measures harm that emerges across 2,653 sequences of
+individually-plausible steps. These run frontier or GPU-edge agents on synthetic
+agentic tasks. **Our
 take:** we adopt their action-over-text stance and deterministic-check
 methodology, but move them to the regime they do not occupy — **≤ 8B, quantized,
 CPU-only, fully offline**, on **frozen real GitOps incidents** — and, unlike any
@@ -274,10 +275,15 @@ harness so the dataset is reusable.
 
 # Experimental Setup {#sec-setup}
 
-**Model roster.** We evaluate **25 local Ollama tags** grouped by parameter
-bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB (5 models each). For the headline
-comparison, **quantization is held constant** at q4_K_M, with q8/QAT variants run
-as a separate sensitivity analysis; **thinking and instruct models run on separate
+**Model roster.** We evaluate a **25-model roster** of local Ollama tags grouped
+by parameter bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB (five tags each). One model,
+the 2–3B base model `phi:2.7b` (Phi-2), failed to serve on every attempt (95/95
+timeouts) and is reported as a **served-failure**: it is excluded from the
+instruct-vs-reasoning arm split and from the Pareto front — leaving **24 functional
+models** there — though its failed generations still count, near zero, in the
+quality bracket means. For the headline comparison, **quantization is held
+constant** at q4_K_M, with q8 and QAT (quantization-aware training) variants run as
+a separate sensitivity analysis; **thinking and instruct models run on separate
 tracks** (thinking models get `think=true`, a larger token budget, and a longer
 timeout). Every model sees every scenario (paired, within-subject design).
 
@@ -392,21 +398,22 @@ R1-distilled arm, run in native thinking mode):
 
 The CIs are nowhere near overlapping. Concretely, `smollm2:360m` (0.36 B,
 instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
-47.2 %) — a 21× smaller model is the safer operator, and `deepseek-r1:7b` is the
-**least-safe model in the entire study**. The mechanism is the one named in the
-LRM-safety literature [@yong2026selfjailbreak; @zhou2025hiddenrisks;
+47.2 %) — a 21× smaller model is the safer operator. Among the 24 functional
+models, the two reasoning-distilled models are the two least-safe refusers
+(`deepseek-r1:1.5b` 40.6 %, `deepseek-r1:7b` 47.2 %). The mechanism is the one
+named in the LRM-safety literature [@yong2026selfjailbreak; @zhou2025hiddenrisks;
 @jiang2025safechain]: the "thinking" that should aid diagnosis instead talks the
 model *into* the destructive action.
 
-> **Honesty: the size non-monotonicity is mostly the reasoning confound.** Over
-> all 25 models the bracket curve appears to say "the biggest bracket is *less*
-> safe." It is not an intrinsic size effect — the two reasoning models happen to
-> sit in the 1–2B and 4–5 GB brackets and drag those averages down; remove them
-> (@tbl-safety-instruct) and the curve is monotonic-then-flat. We therefore do
-> **not** claim "bigger is less safe." We claim the decision-relevant thing: the
-> model a practitioner is most likely to *reach for as an upgrade* — the biggest,
-> the one with the "reasoning" badge — is, in this study, the **least safe**. The
-> reasoning arm is only two models (n = 60); Wave-2 deepens it.
+> **Honesty: the size non-monotonicity is mostly the reasoning confound.** Across
+> the 24 functional models the bracket curve appears to say "the biggest bracket is
+> *less* safe." It is not an intrinsic size effect — the two reasoning models
+> happen to sit in the 1–2B and 4–5 GB brackets and drag those averages down;
+> remove them (@tbl-safety-instruct) and the curve is monotonic-then-flat. We
+> therefore do **not** claim "bigger is less safe." We claim the decision-relevant
+> thing: the model a practitioner is most likely to *reach for as an upgrade* — the
+> biggest, or the one with the "reasoning" badge — is, in this study, **among the
+> least safe**. The reasoning arm is only two models (n = 60); Wave-2 deepens it.
 
 ## The sovereign selection: a quality × safety × energy Pareto {#sec-pareto}
 
@@ -432,12 +439,13 @@ nothing is lost by discarding them.
 Two reads carry the integration. **(i) The proxies land off the front.** The
 high-quality/high-safety corner is the **4B-instruct** pair, whose q4 and q8
 variants are **mutually non-dominated** — identical 90.8 % refusal, with the q8
-buying **+2.7 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+buying **+2.6 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
 *quantization* trade, not a win for either, and exactly the decision a proxy
 cannot make. **(ii) The tempting upgrades are dominated.** Both reasoning-distilled
-models fall off the front; `deepseek-r1:7b` is the worst case — simultaneously the
-**least safe (47.2 %)** and the **most energy-expensive (303 mWh/answer)** model in
-the study. So the two heuristics a practitioner reaches for — *biggest that fits*
+models fall off the front; `deepseek-r1:7b` is the worst *combined* case — the
+**most energy-expensive model in the study** (303 mWh/answer) and, among the
+functional models, one of the two least-safe refusers (47.2 %). So the two
+heuristics a practitioner reaches for — *biggest that fits*
 and *has a reasoning mode* — select **dominated** models; the front is small, spans
 the whole size range, and is found only by measuring all three axes.
 
@@ -480,9 +488,9 @@ For a locally-sovereign ops assistant, **model selection is the whole game**, an
 the proxies a practitioner reaches for each mislead on a different axis. In one
 offline, CPU-only harness over 25 small models and real GitOps incidents, judged
 quality knees at **3–4B** (quantization, not parameter count, carrying the lift);
-deterministic refusal is governed by **training type, not size** (the
-reasoning-badged upgrade is the least safe); and energy prices capability above
-the knee in watts. Put together, **7 of 24 models are Pareto-optimal**, and the
+deterministic refusal is governed by **training type, not size** (a 7.6 B
+reasoning model is out-refused by a 0.36 B instruct one); and energy prices
+capability above the knee in watts. Put together, **7 of 24 models are Pareto-optimal**, and the
 "biggest that fits" and "has a reasoning mode" heuristics both select dominated
 models. The model ranking is the demonstration; the **three-axis selection
 method** and the released, reproducible artifact are the contribution. We invite

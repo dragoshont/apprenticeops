@@ -605,15 +605,18 @@ native thinking mode):
 The CIs are nowhere near overlapping — a **~31-point** safety penalty for the
 "reasoning" training sold as an upgrade. Concretely, **`smollm2:360m` (0.36 B,
 instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
-47.2 %)** — a 21× smaller model is the safer operator, and `deepseek-r1:7b` is
-the **least-safe model in the entire study**. The mechanism is corroborated in
+47.2 %)** — a 21× smaller model is the safer operator. Among the 24 functional
+models, the two reasoning-distilled models are the two least-safe refusers
+(`deepseek-r1:1.5b` 40.6 %, `deepseek-r1:7b` 47.2 %); the only model that refuses
+less, the base model `phi:2.7b` (20.8 %), is a 95/95 served-failure excluded as
+such. The mechanism is corroborated in
 the LRM-safety literature: R1-distilled models *rationalize* harmful actions
 through their chain-of-thought (Self-Jailbreaking, arXiv 2510.20956; SafeChain
 2502.12025; Hidden Risks of R1 2502.12659) — the "thinking" that should aid
 diagnosis instead talks the model *into* the destructive action.
 
 > **Honesty: the size non-monotonicity is mostly the reasoning confound (state up
-> front).** Over *all 25 models* the bracket curve is **non-monotonic** —
+> front).** Over the *24 functional models* the bracket curve is **non-monotonic** —
 > 62.4 / 66.9 / 79.2 / 81.6 / **73.3 %** — appearing to say "the biggest bracket
 > is *less* safe." It is **not** an intrinsic size effect: the two reasoning
 > models happen to sit in the 1-2B and 4-5GB brackets and drag those averages
@@ -648,13 +651,13 @@ dominated** — beaten on *every* axis at once, so nothing is lost by discarding
 Two reads carry the integration. **(i) The proxies land off the front.** The
 high-quality/high-safety corner is the **4B-instruct** pair, whose **q4 and q8
 variants are mutually non-dominated** — identical **90.8 %** refusal, with the q8
-buying **+2.7 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+buying **+2.6 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
 *quantization* trade, not a win for either, and exactly the "choose on measured
 behaviour" decision a proxy cannot make. **(ii) The tempting upgrades are
 dominated.** **Both** reasoning-distilled models fall **off** the front;
-`deepseek-r1:7b` is the worst case — simultaneously the **least safe (47.2 %)**
-and the **most energy-expensive (303 mWh/answer)** model in the study, dominated
-by much of the roster. So the two heuristics a practitioner reaches for — *biggest
+`deepseek-r1:7b` is the worst *combined* case — the **most energy-expensive
+model in the study** (303 mWh/answer) and, among the functional models, one of
+the two least-safe refusers (47.2 %), dominated by much of the roster. So the two heuristics a practitioner reaches for — *biggest
 that fits* and *has a "reasoning" mode* — select **dominated** models; the front is
 small, spans the whole size range, and is found only by measuring all three axes.
 
@@ -715,7 +718,7 @@ small, spans the whole size range, and is found only by measuring all three axes
    parameter count, carries the marginal lift); a **safety** axis on
    judge-independent **deterministic** checks where refusal is governed by
    *training type, not size* (reasoning-distilled models refuse ~31 pts less than
-   instruct; the naive "biggest / ‘reasoning’" pick is the least safe) —
+   instruct; the naive "biggest / ‘reasoning’" pick is among the least safe) —
    **corroborating** the agent-/SLM-safety literature (§11) in the offline/CPU
    regime rather than discovering the effect; and an **energy** axis (Wh/answer,
    tokens/s-per-watt) that prices capability above the knee. The contribution is
