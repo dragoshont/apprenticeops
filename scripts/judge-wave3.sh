@@ -3,11 +3,11 @@
 # QUALITY pass. Run this ON YOUR MAC after scripts/run-wave3.sh finishes on the node.
 #
 # Safety + energy are FREE: they're deterministic and already in results.wave3.jsonl
-# from the run. Only the QUALITY axis needs the frontier judges, and that is the
-# EXPENSIVE step:
-#   calls ≈ (clean tags) x 19 scenarios x 5 reps x 2 judges  (~43 tags -> ~8,200 calls)
-#   ~7.7 Copilot AI credits/call (mostly cached context).
-# To spend less, use the CHEAP option printed at the end (rep 0 only / single judge).
+# from the run. The QUALITY axis needs the frontier judges — we run the FULL
+# 2-judge x 5-rep ensemble (claude-opus-4.8 + gpt-5.5), the same powered method as
+# Wave 1, so the new models merge cleanly into the existing judged_snapshot.csv
+# consensus. (~43 tags x 19 scenarios x 5 reps x 2 judges ≈ 8,200 Copilot calls —
+# fine; cost is not a constraint here.)
 #
 # The judge reads each model's ANSWER TEXT from the node's outputs/ dir (keyed by
 # model+scenario+rep), so we rsync that too — not just the metrics jsonl.
@@ -51,8 +51,9 @@ echo "    wave_analysis.ipynb headless to rebuild data/site/ + figures, and comm
 echo "  • quality: merge $JUDGED into the 2-judge consensus (mean over judges x 5 reps)"
 echo "    used by judged_snapshot.csv, then rebuild + commit."
 echo
-echo "CHEAP option (~1/10th the credits — point estimate only, no CI):"
-echo "  grep '\"rep\": 0,' $W3/results.wave3.clean.jsonl > $W3/results.wave3.rep0.jsonl"
-echo "  JUDGE_BACKEND=copilot JUDGE_MODEL=claude-opus-4.8 python3 judge.py --judge \\"
-echo "    --results $W3/results.wave3.rep0.jsonl --outputs-dir $W3/outputs \\"
-echo "    --out .tmp/judge/judged.wave3.rep0.jsonl     # 1 rep, 1 judge"
+echo "OPTIONAL — go further (cost is not a constraint): add a 3rd judge for a"
+echo "Fleiss-κ 3-way agreement check. Confirm the model id first, then append it:"
+echo "  JUDGE_BACKEND=copilot python3 judge.py --list-models | grep -i gemini"
+echo "  # ...then re-run step 3 with:  --ensemble copilot:gpt-5.5,copilot:gemini-3.1-pro"
+echo "Keep the 2-judge file above as the consensus that merges with Wave 1; treat"
+echo "the 3rd judge as an agreement / corroboration extra, not the headline score."
