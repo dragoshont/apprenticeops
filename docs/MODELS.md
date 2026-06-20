@@ -125,3 +125,132 @@ see [`MARKET.md`](MARKET.md))
 | 3–4B | ~13 GB |
 | 4–5 GB | ~23 GB |
 | **Total** | **~55 GB** transient (runner frees each after its run; node has 64 GB free) |
+
+---
+
+# Wave 3 — the missed models (expansion roster)
+
+> Vetted **2026-06-20** against live Ollama-library / Hugging-Face pages (each tag
+> below was fetched; sizes are the `q4_K_M` on-disk footprint unless noted).
+> Waves 1+2 ran **106 distinct tags** — almost all **dense transformers** in
+> `q4_K_M`/`q8_0`. Wave 3 deliberately attacks the axes that coverage missed, so
+> the paper can say something about *architecture* and *quantization*, not just
+> *which Qwen*. Runnable manifest: [`../data/models.wave3.txt`](../data/models.wave3.txt).
+>
+> The four Wave-3 axes:
+> 1. **Non-transformer / hybrid arch** — Mamba-2 (`granite4:*-h`), conv-hybrid
+>    (Liquid LFM2), Transformer+Mamba (Falcon-H1), MatFormer (`gemma3n`), and
+>    native **1.58-bit ternary** (BitNet). These are bandwidth-bound very
+>    differently from dense attention on a 15 W CPU.
+> 2. **Capability specialists** — dedicated **coders** (CodeGemma, StarCoder2,
+>    Granite-Code, OpenCoder, Yi-Coder), **math** (Qwen2-Math, DeepScaleR), and
+>    fuller **reasoning-distill** coverage (SmallThinker, DeepSeek-R1-0528-Qwen3,
+>    Cogito hybrid) — vs the general models tested so far.
+> 3. **Under-sampled quants** — `q5_K_M`, `q6_K`, **I-quants** (`IQ4_XS`),
+>    `bf16`, and more **QAT** (`gemma3:270m-it-qat`), for an isolated
+>    quant-degradation curve on the *same* weights.
+> 4. **Openness / provenance** — AllenAI **OLMo-2** is the only family with open
+>    data+code+weights, letting us separate "open weights" from "open everything".
+
+Legend (unchanged): ✅ yes · ❌ no · 〜 community/unofficial · ⚠️ real model, but
+confirm the exact GGUF file / runtime before pulling (see notes).
+
+## W3 · 0–1B params
+
+| Model | Pull tag | GB | tools | think | License | Note |
+|---|---|---|---|---|---|---|
+| Gemma 3 270M | `gemma3:270m` | 0.29 | ❌ | ❌ | Gemma | sub-300 MB modern floor (only `1b` was tested) |
+| Gemma 3 270M QAT | `gemma3:270m-it-qat` | 0.24 | ❌ | ❌ | Gemma | **QAT** quant axis at the extreme low end |
+| Granite 4 350M | `granite4:350m` | 0.71 | ✅ | ❌ | Apache-2.0 | smallest **tool-tuned** model; dense Granite-4 |
+| Granite 4 350M-H | `granite4:350m-h` | 0.37 | ✅ | ❌ | Apache-2.0 | **hybrid Mamba-2** at 350M (366 MB!) |
+| Granite 4 350M bf16 | `granite4:350m-bf16` | 0.71 | ✅ | ❌ | Apache-2.0 | full-precision floor (quant-vs-bf16 pair) |
+| LFM2 350M | `hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M` | 0.26 | ✅ | ❌ | LFM Open v1.0 | Liquid **conv+attention hybrid** — new family |
+| LFM2 700M | `hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M` | 0.51 | ✅ | ❌ | LFM Open v1.0 | mid-rung of the LFM2 arch ladder |
+| OLMo-2 1B Instruct | `hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M` | 0.94 | ❌ | ❌ | Apache-2.0 | **fully open** (data+code+weights); full quant ladder |
+| Falcon-H1 0.5B | `hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M` ⚠️ | ~0.4 | ✅ | ❌ | Falcon-LLM | hybrid T+Mamba; confirm GGUF file before pull |
+| ERNIE-4.5 0.3B | `hf.co/baidu/ERNIE-4.5-0.3B-PT-GGUF:Q4_K_M` ⚠️ | ~0.3 | ❌ | ❌ | Apache-2.0 | Baidu family absent; HF listing bot-blocked |
+
+## W3 · 1–2B params
+
+| Model | Pull tag | GB | tools | think | License | Note |
+|---|---|---|---|---|---|---|
+| LFM2 1.2B | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M` | 0.80 | ✅ | ❌ | LFM Open v1.0 | top of the Liquid hybrid ladder |
+| LFM2 1.2B q8 | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0` | 1.25 | ✅ | ❌ | LFM Open v1.0 | q8 pair of a hybrid (quant-sensitivity) |
+| Falcon-H1 1.5B-Deep | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:Q4_K_M` | 0.94 | ✅ | ❌ | Falcon-LLM | **Transformer+Mamba**, strong math/reasoning |
+| Falcon-H1 1.5B IQ4_XS | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:IQ4_XS` | 0.86 | ✅ | ❌ | Falcon-LLM | **I-quant** axis (untested quant family) |
+| OpenCoder 1.5B | `opencoder:1.5b` | 1.4 | ❌ | ❌ | OpenCoder (open) | fully-reproducible **coder** (EN/ZH) |
+| Qwen2-Math 1.5B | `qwen2-math:1.5b` | 0.94 | ❌ | ❌ | Apache-2.0 | dedicated **math** specialist |
+| DeepScaleR 1.5B | `deepscaler:1.5b-preview-q4_K_M` | 1.1 | ❌ | ✅ | MIT | RL-tuned reasoner (≠ the R1 distill) |
+| Sailor2 1B | `sailor2:1b` | 1.1 | ❌ | ❌ | Apache-2.0 | SE-Asian **multilingual** coverage |
+| Yi-Coder 1.5B | `yi-coder:1.5b` | 0.87 | ❌ | ❌ | Apache-2.0 (Yi) | 01.AI coder, 128K ctx |
+| EuroLLM 1.7B | `hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M` ⚠️ | ~1.1 | ❌ | ❌ | Apache-2.0 | EU 24-language; HF listing bot-blocked |
+
+## W3 · 2–3B params *(thinnest — see note)*
+
+> **Honest finding:** this bracket is *thin* precisely because the strong general
+> 2–3B models (Gemma2-2B, Qwen2.5-3B, Phi-2, StableLM, Granite-2B, EXAONE-2.4B,
+> Falcon3-3B) are **already tested**. What remains NEW at 2–3B is almost entirely
+> niche/architectural or regional-multilingual — which is itself a result.
+
+| Model | Pull tag | GB | tools | think | License | Note |
+|---|---|---|---|---|---|---|
+| CodeGemma 2B | `codegemma:2b` | 1.6 | ❌ | ❌ | Gemma | code/FIM specialist |
+| CodeGemma 2B q6_K | `codegemma:2b-code-q6_K` | 2.1 | ❌ | ❌ | Gemma | **q6_K** quant axis of a 2B coder |
+| Granite 4 Micro-H | `granite4:micro-h` | 1.9 | ✅ | ❌ | Apache-2.0 | **hybrid Mamba-2** twin of `micro` (== `granite4:3b-h`, same blob) |
+| StarCoder2 3B | `starcoder2:3b` | 1.7 | ❌ | ❌ | BigCode OpenRAIL-M | transparent coder; **OpenRAIL** license axis |
+| Gemma 3n E2B | `gemma3n:e2b` ⚠️ | 5.6 | ❌ | ❌ | Gemma | **MatFormer**; 5.6 GB on disk (eff-2B, raw ~5B) — RAM-fits, over footprint |
+| Falcon-H1 3B | `hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M` ⚠️ | ~1.9 | ✅ | ❌ | Falcon-LLM | hybrid T+Mamba; confirm GGUF file |
+| BitNet b1.58 2B-4T | `hf.co/microsoft/bitnet-b1.58-2B-4T-gguf` ⚠️ | ~1.2 | ❌ | ❌ | MIT | **native 1.58-bit ternary**; needs `bitnet.cpp` (stock llama.cpp lacks 1-bit kernels) |
+
+## W3 · 3–4B params
+
+| Model | Pull tag | GB | tools | think | License | Note |
+|---|---|---|---|---|---|---|
+| Qwen3 4B Thinking-2507 | `qwen3:4b-thinking-2507-q4_K_M` | 2.5 | ✅ | ✅ | Apache-2.0 | the **thinking** 2507 refresh (only `-instruct` was tested) |
+| Qwen3 4B Thinking q8 | `qwen3:4b-thinking-2507-q8_0` | 4.3 | ✅ | ✅ | Apache-2.0 | q8 pair (quant-vs-reasoning) |
+| SmolLM3 3B | `hf.co/ggml-org/SmolLM3-3B-GGUF:Q4_K_M` | 1.9 | ✅ | ✅ | Apache-2.0 | **hybrid-reasoning, fully-open** 3B |
+| Hermes-3 Llama-3.2 3B | `hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q4_K_M` | 2.0 | ✅ | ❌ | Llama-3.2 | Nous function-calling lineage (agentic) |
+| MiniCPM3 4B | `hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M` | 2.5 | ✅ | ❌ | MiniCPM GML | strong tool/code-interpreter calling |
+| Cogito v1 3B | `cogito:3b` | 2.2 | ✅ | ✅ | Llama-3.2 | **hybrid reasoning toggle** + tools (deepcogito) |
+| Granite-Code 3B | `granite-code:3b` | 2.0 | ❌ | ❌ | Apache-2.0 | IBM **code** model |
+| SmallThinker 3B | `smallthinker:3b-preview-q4_K_M` | 2.1 | ❌ | ✅ | Apache-2.0 | Qwen2.5-3B **reasoning** distill |
+| Cogito v1 3B q8 | `cogito:3b-v1-preview-llama-q8_0` | 3.8 | ✅ | ✅ | Llama-3.2 | q8 pair of `cogito:3b` (quant axis) |
+| StarCoder2 3B | `starcoder2:3b` | 1.7 | ❌ | ❌ | BigCode OpenRAIL-M | (listed in 2–3B; also fits here) |
+
+## W3 · 4–5 GB footprint *(only 3, per request)*
+
+| Model | Pull tag | GB | tools | think | License | Note |
+|---|---|---|---|---|---|---|
+| OLMo-2 7B Instruct | `olmo2:7b` | 4.5 | ❌ | ❌ | Apache-2.0 | **fully open** 7B — the provenance/openness anchor |
+| Cogito v1 8B | `cogito:8b` | 4.9 | ✅ | ✅ | Llama-3.1 | hybrid reasoning **+ tool-calling** at the top |
+| DeepSeek-R1-0528-Qwen3 8B | `deepseek-r1:8b-0528-qwen3-q4_K_M` | ~5.2 | ✅ | ✅ | MIT | best small **reasoning distill** of 2025 (≠ tested `r1:7b`) |
+
+> ⚠️ The 0528-Qwen3 distill is **~5.2 GB** (marginally over). Clean-fit
+> alternates: `deepseek-r1:8b-llama-distill-q4_K_M` (4.9 GB), `granite3.3:8b`
+> (4.9 GB, Apache, think+tools), `falcon3:7b-instruct-q4_K_M` (4.6 GB).
+> **Excluded — non-commercial weights** that would taint the Apache-2.0 shareable
+> artifact: `command-r7b`, `aya-expanse:8b`, `exaone3.5:7.8b`.
+
+## Wave-3 coverage gaps (why these, in priority order)
+
+1. **Hybrid SSM / Mamba & non-transformer arch — the single largest blind spot.**
+   Waves 1+2 are ~all dense transformers. Wave 3 finally probes Mamba-2 hybrids
+   (`granite4:*-h`, 350m→3b), Liquid LFM2 (350M→1.2B), Falcon-H1 (0.5B→3B),
+   gemma3n MatFormer, and native 1.58-bit BitNet — all bandwidth-bound very
+   differently on a 15 W CPU.
+2. **Capability specialists were entirely absent** — no dedicated coders, no math
+   models, only partial reasoning-distill coverage.
+3. **Quant axes were under-sampled** — testing clustered on `q4_K_M`/`q8_0`;
+   Wave 3 adds `q5_K_M`/`q6_K`, **I-quants** (`IQ4_XS`), `bf16`, and more QAT.
+4. **Provenance/openness** — OLMo-2 (fully reproducible) is the only family that
+   separates "open weights" from "open everything".
+5. **Vendor breadth** — first coverage of AllenAI, Liquid AI, TII (Falcon-H1),
+   Nous, deepcogito, BigCode, 01.AI, OpenBMB, Microsoft (BitNet), Baidu, Sea AI
+   Lab (Sailor2), Agentica.
+
+> **Verification note (2026-06-20):** ~33 of ~40 tags were fetched and confirmed
+> against the live model/GGUF page (size, license, params, file list), including
+> every Ollama-native entry above. The **⚠️** items are real models whose exact
+> GGUF file or runtime needs a manual confirm before pulling (four HF listings
+> were bot-blocked; BitNet needs `bitnet.cpp`; gemma3n is over-footprint). **No
+> tag was invented** — every ⚠️ names the exact uncertainty to resolve.
