@@ -7,32 +7,34 @@ author:
 date: 2026-06-20
 abstract: |
   We present **ApprenticeOps**, an open, reproducible benchmark and telemetry
-  method for evaluating **small, locally-run LLMs (≤ ~5 GB, ≤ 8B)** as
-  **homelab/edge operations assistants** — detect, diagnose, monitor, expand,
-  upgrade, test, augment, and *safely refuse*. We define **offline =
-  locally-sovereign inference** (no external *model* API), explicitly **not**
-  information-starvation: a sovereign model may still use local RAG, in-org MCP
-  servers, runbooks, and local telemetry. Unlike existing AIOps agent benchmarks
-  (AIOpsLab, ITBench, OpsEval) — frontier models, live agentic fault-injection,
-  server hardware — we measure the **reasoning floor of a last-line local model
-  on commodity offline hardware** along three axes a practitioner must trade off
-  *together*: **judged quality**, **destructive-action refusal**, and **energy**.
-  Across a 25-model Wave-1 sweep (0.36–8B), judged ops-reasoning climbs to a
-  **knee at 3–4B** and then flattens (the 4–5 GB bracket adds −0.3 points), and
-  *quantization* — not parameter count — carries the marginal lift. On
-  judge-free **deterministic** refusal checks the safest bracket still plateaus
-  near **82 %**, and the dominant driver of refusal is **training type, not
-  size**: reasoning-distilled models refuse at **43.9 %** versus **75.0 %** for
-  instruct, so a 0.36 B instruct model out-refuses a 7.6 B reasoning model. We
-  are explicit that this safety result **corroborates** a fast-growing
-  agent-/SLM-safety literature rather than discovering it; its weight is that it
-  **replicates offline, on CPU, at homelab scale**, where the unsafe model is
-  also the one the size heuristic picks. Treating each model as a point in
+  method for evaluating **small, locally-run LLMs (≤ 8B, ≤ ~5 GB)** as **homelab
+  and edge operations assistants** — models that detect, diagnose, monitor, change,
+  secure, and *safely refuse*. We define **offline** as **locally-sovereign
+  inference** (no external *model* API), explicitly *not* information-starvation: a
+  sovereign model may still use local RAG, in-org MCP servers, runbooks, and
+  telemetry. Existing AIOps agent benchmarks (AIOpsLab, ITBench, OpsEval) assume
+  frontier models, live fault-injection, and server hardware. We instead measure
+  the **reasoning floor of a last-line local model on commodity offline hardware**,
+  along three axes a practitioner must trade off *together*: **judged quality**,
+  **destructive-action refusal**, and **energy**.
+
+  Three findings emerge from a 25-model Wave-1 sweep (0.36–8B). **Quality:** judged
+  ops-reasoning climbs to a **knee at 3–4B** and then flattens — the 4–5 GB bracket
+  adds nothing — and *quantization*, not parameter count, carries the marginal lift.
+  **Safety:** on judge-free **deterministic** refusal checks the safest bracket
+  still plateaus near **82 %**, and the dominant driver of refusal is **training
+  type, not size** — reasoning-distilled models refuse at **43.9 %** versus **75.0
+  %** for instruct, so a 0.36 B instruct model out-refuses a 7.6 B reasoning one. We
+  are explicit that this safety result **corroborates** a fast-growing agent- and
+  SLM-safety literature rather than discovering it; its weight is that it
+  **replicates offline, on CPU, at homelab scale**. **Energy:** the bigger model
+  bills you in watts and tokens per second for capability you may never use.
+
+  The contribution is the **integration**. Treating each model as a point in
   (quality ↑, refusal ↑, energy ↓), **7 of 24 models are Pareto-optimal**; the
   "biggest that fits" and "has a reasoning mode" heuristics both select
-  **dominated** models. The contribution is the **integration** — quality ×
-  safety × energy measured together for the offline/CPU/sovereign selection
-  decision — released as a reproducible artifact.
+  **dominated** models. We release the harness, scenarios, and data so the
+  three-axis selection method is reproducible, not merely asserted.
 keywords:
   - small language models
   - AIOps
@@ -50,7 +52,6 @@ format:
     theme: cosmo
     fig-align: center
     code-fold: true
-    code-tools: true
   typst:
     toc: true
     section-numbering: "1.1.1"
@@ -332,11 +333,12 @@ first), so no model is certified by one judge: we grade every answer with **two
 judges from different families — Claude Opus 4.8 and GPT-5.5** — randomise answer
 order, blind the model identity, and require evidence citation. Where they agree
 we trust the score; where they split we flag rather than average. On the full
-Wave-1 set the two judges agree at **Cohen's κ = 0.71 unweighted / 0.92
-quadratic-weighted** over **2,374 pairs** (the weighted variant is the right
-metric for ordinal 1–5 scores [@cohen1968weighted; @landis1977kappa]; Spearman ρ =
-0.92; 77.9 % exact, 99.9 % within-1; near-identical means, 2.39 vs 2.38), so the
-ranking is judge-robust. A judge–**human** κ remains future work.
+Wave-1 set the two judges agree at **quadratic-weighted κ = 0.92** over **2,374
+pairs** — the weighted variant is the right metric for ordinal 1–5 scores
+[@cohen1968weighted; @landis1977kappa]. The supporting statistics all point the
+same way: unweighted κ = 0.71, Spearman ρ = 0.92, 77.9 % exact agreement, 99.9 %
+within one point, and near-identical means (2.39 vs 2.38). The quality ranking is
+therefore not a single-grader artifact. A judge–**human** κ remains future work.
 
 ```{python}
 #| label: fig-judge
@@ -372,6 +374,15 @@ beats 3–4B by ≥ 5 points with non-overlapping CIs; otherwise the 4–5 GB ex
 is held and "≤ 5 GB adds cost without judged lift" is reported as a **finding**.
 The `guard` (safety) class is exempt and always run, since safety does not track
 size.
+
+**Baselines and compute budget.** Two judge-free baselines anchor the LLM scores,
+so that "the model helps" is earned rather than assumed: a random legal answer
+(deterministic score ≈ 0.26) and a keyword/rule heuristic (≈ 0.73), both from
+`baselines.py`; a model must beat both to count. The sweep itself is deliberately
+modest — 25 models × 19 scenarios × (1 deterministic + 5 variance) samples ≈ 2,850
+graded generations on a single 15 W laptop CPU, plus the off-node two-judge
+ensemble (≈ 4,750 judge calls). No GPU and no cloud inference at any point in the
+graded path.
 
 # Results {#sec-results}
 
@@ -617,6 +628,20 @@ file-level mitigations) is in `docs/PAPER.md` §9.
 - **Telemetry is Linux/Intel-specific** (RAPL, `/proc`, IMC counters); quality and
   safety scores reproduce on any OS, the systems numbers do not.
 
+# Ethics and Responsible Release {#sec-ethics}
+
+The system under test is a *defensive* operations assistant, and the safety axis
+measures the **refusal** of destructive actions, not the capability to perform
+them. Two release risks are handled explicitly. **Operational-data egress:** the
+off-node judge sees scenario text drawn from a real cluster, so released scenarios
+are scrubbed and anonymised (namespaces, hostnames, secret references), and the
+egress is disclosed (@sec-boundaries). **Dual use:** the destructive-prompt corpus
+contains only realistic *operator* mistakes and well-known insecure configurations
+already documented in public security guides — not novel exploits — and it is
+released to *measure* refusal, the same posture as the agent-safety benchmarks we
+build on [@agentharm2025; @osharm2025]. We claim no societal benefit beyond
+helping operators choose a safer small model for their own hardware.
+
 # Conclusion {#sec-conclusion}
 
 For a locally-sovereign ops assistant, **model selection is the whole game**, and
@@ -644,7 +669,25 @@ matplotlib — no special hardware, no model downloads. The systems telemetry
 (energy, tok/s, memory bandwidth) requires the specific Linux node; we disclose
 exactly which numbers are node-bound. Following standard reviewer guidance, treat
 the harness as untrusted research code and run it in a container or
-network-isolated instance.
+network-isolated instance. The 19 scenarios ship as a human-readable scenario book
+(`data/SCENARIOS.md`) documenting, per scenario, the context, task, gold answer,
+deterministic checks, judge rubric, difficulty, and grounding mode; machine-readable
+**Croissant** metadata and an archival DOI are tracked for the camera-ready, as the
+Datasets & Benchmarks track requires.
+
+## Verification statement {#sec-verification}
+
+Before release, every quantitative claim in this paper was **re-derived from the
+committed snapshot** (`data/snapshots/`) by an independent clean-room audit, and
+every reference was **resolved against its primary source**. On 2026-06-20 the
+quality brackets, the 3–4B knee, the safety arms (instruct 75.0 % vs reasoning
+43.9 %), the cross-judge κ_quad = 0.92, and the full 7-of-24 Pareto front all
+reproduced exactly; the same audit corrected one over-stated safety superlative
+and surfaced the undisclosed `phi:2.7b` served-failure (both fixed above). All 20
+arXiv references were confirmed against arXiv.org (title, authors, venue) and the
+five non-arXiv references against CrossRef and Semantic Scholar. Every figure in
+this paper is generated at render time from those same committed exports, so a
+reader can regenerate every number *and* every graph from a clean checkout.
 
 ## Cross-hardware roofline transfer {#sec-roofline}
 
