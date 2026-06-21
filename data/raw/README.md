@@ -62,9 +62,12 @@ stubs and deduping `(model, scenario, rep)` on best det_score: **71 complete**
 intermittent `hf.co` redirect bug
 [#15661](https://github.com/ollama/ollama/issues/15661) + registry blips), not
 model failures. All 665 DNF rows are `DNF:error:HTTPError` (model not loaded
-because its pull failed). The 9 are **re-run as backfill in Wave 3**
-([`../models.wave3.txt`](../models.wave3.txt)). Wave 2 ran without membw
-calibration, so `membw_peak_mb_s` is empty here. Privacy: scanned (same synthetic
+because its pull failed). With **Wave 3 dropped from scope**, those 9 stay
+incomplete and are **excluded** from the analysis (treated like Wave-1's
+`phi:2.7b` served-failure). Wave 2 *does* carry the systems telemetry: raw
+`membw_peak_mb_s` / perf-core are present for **~88–90%** of rows (safety + energy
+are 100%); with no on-node `calibration.json`, the **MBU%** normalization reuses
+Wave-1's bandwidth ceiling (same hardware). Privacy: scanned (same synthetic
 fixtures as Wave 1 — `SuperSecret123`, `eso-verify-*`, example JWT — no new
 secrets).
 
