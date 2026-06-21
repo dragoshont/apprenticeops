@@ -1,17 +1,22 @@
-# Raw run data — Wave 1 (variance + deterministic)
+# Raw run data — Waves 1 & 2 (variance + deterministic)
 
-This directory is the released raw artifact for the Wave-1 ApprenticeOps run, so
-the headline tables and the analysis notebook are reproducible, **not just
-asserted**.
+This directory is the released raw artifact for the ApprenticeOps runs, so the
+headline tables and the analysis notebook are reproducible, **not just
+asserted**. **Wave 1** is the 25-model core; **Wave 2** is the additive coverage
+wave (a broader model set per bracket). Same protocol throughout: 19 scenarios,
+deterministic (temp 0) and variance (temp 0.7, R=5), one commodity node.
 
-## Files
+## Wave 1 files (25-model core)
 
 | File | What | Rows / notes |
 |---|---|---|
 | `results.var.jsonl.gz` | **Variance run** — temperature 0.7, R=5 reps/seed. One row per `(model, scenario, rep)` with the full OTel-GenAI + telemetry schema. | 2375 rows (25 models × 19 scenarios × 5 reps), 0 parse errors |
 | `results.det.jsonl.gz` | **Deterministic run** — temperature 0, greedy, 1 sample/(model×scenario). | 475 rows (25 × 19) |
-| `outputs.var.tar.gz` | The raw model **answer texts** for the variance run (`<model>__<scenario>.txt`). | — |
+| `outputs.var.tar.gz` / `outputs.det.tar.gz` | The raw model **answer texts** (`outputs/<model>__<scenario>[__r<rep>].txt`). | 2413 / 475 files |
+| `judged.var.claude.jsonl.gz` / `judged.var.gpt55.jsonl.gz` | **Variance judge** — per-judge 1–5 scores (`claude-opus-4.8` + `gpt-5.5`); `judged_snapshot.csv` is their per-rep mean (verified). | 2375 rows each |
+| `judged.det.jsonl.gz` / `judged.det.gpt55.jsonl.gz` | Deterministic-pass judge scores (`claude-opus-4.8` + `gpt-5.5`). | 475 rows each |
 | `experiment.var.log` / `experiment.det.log` | Run logs (per-scenario timings, det scores, finish reasons). | — |
+| `judge-logs.tar.gz` | Judge-run logs (cost/timing for the det + variance judge passes). | — |
 
 Field dictionary: [`docs/TELEMETRY.md`](../../docs/TELEMETRY.md). A flat,
 text-free per-result CSV (for quick analysis) lives at
@@ -40,8 +45,35 @@ ExternalSecret scenarios) — they are **not real credentials**. Any IP addresse
 in answers are model-generated examples, not the real node. The scenarios are
 **synthetic-but-repo-grounded**: real config *shapes*, no real secret *values*.
 
-## Judge columns
+## Wave 2 files (additive coverage wave)
 
-The frontier-judge (`judge_score` / `% of frontier`) is **not yet populated** in
-these files — that pass runs off-node post-hoc (`judge.py`). Until then, treat
-Wave-1 as **deterministic-only**.
+Same variance protocol (temp 0.7, R=5, 19 scenarios), a broader model set per
+bracket; run on the node 2026-06-19/20.
+
+| File | What | Rows / notes |
+|---|---|---|
+| `results.wave2.jsonl.gz` | Variance run, raw. Same schema as Wave 1. | 7543 lines = 7410 result rows + 133 `pull_failed` stubs |
+| `outputs.wave2.tar.gz` | Raw **answer texts** (`outputs/<model>__<scenario>__r<rep>.txt`). | 9728 files |
+| `experiment.wave2.log.gz` / `driver.wave2.out` | Run log + driver output. | — |
+
+**Completeness (Wave 2):** ~80 models attempted. After dropping `pull_failed`
+stubs and deduping `(model, scenario, rep)` on best det_score: **71 complete**
+(95 rows each); **9 with no usable rows** — **transient pull-failures** (Ollama's
+intermittent `hf.co` redirect bug
+[#15661](https://github.com/ollama/ollama/issues/15661) + registry blips), not
+model failures. All 665 DNF rows are `DNF:error:HTTPError` (model not loaded
+because its pull failed). The 9 are **re-run as backfill in Wave 3**
+([`../models.wave3.txt`](../models.wave3.txt)). Wave 2 ran without membw
+calibration, so `membw_peak_mb_s` is empty here. Privacy: scanned (same synthetic
+fixtures as Wave 1 — `SuperSecret123`, `eso-verify-*`, example JWT — no new
+secrets).
+
+**Quality (judged):** the Wave-2 2-judge pass (`claude-opus-4.8` + `gpt-5.5`)
+runs off-node post-hoc on the answer texts above; added as `judged.wave2.*.jsonl.gz`
+when complete.
+
+## Reproducing the snapshots
+
+`data/snapshots/*.csv` are derived from these raw files by
+[`../../scripts/merge-wave.py`](../../scripts/merge-wave.py). Field dictionary:
+[`docs/TELEMETRY.md`](../../docs/TELEMETRY.md).
