@@ -46,26 +46,28 @@ A row/model is **in the consolidated dataset** iff:
      `exaone-deep:2.4b`, `granite3.1-moe:1b(+q8)`, `stablelm-zephyr:3b`,
      `hf.co/google/gemma-3-{1b,4b}-it-qat-q4_0-gguf`;
    - **`phi:2.7b`** (Wave-1 served-failure, all 95 DNF);
+   - the **7 membw-gap models** (Wave-2 copies only) — full telemetry is required
+     (§3), so they are dropped to keep the dataset uniform;
    - any other all-DNF model surfaced at merge time.
 5. **Headline 3-axis (safety, energy, quality) must be 100%** for every included
    model. (It is.)
-6. **Systems axis (MBU / IPC / DRAM power)** is **89/96 models** (the 7 membw-gap
-   models excepted) **unless** Option A in §3 is taken.
+6. **Every axis (incl. MBU / IPC / DRAM power) is 100%** across the 88-model
+   dataset — the 7 membw-gap models are excluded (§3), so there are no holes.
 
-## 3. The 7 membw-gap models — **[DECIDE]**
+## 3. The 7 membw-gap models — **[DECIDED 2026-06-21: exclude them]**
 
-- **Option A — full parity (recommended if the systems section matters).**
-  Tonight, while the node is up: re-run `calibrate.py` (→ fresh `calibration.json`)
-  and re-run **only these 7 models** with `PERF_MEMBW=1 PERF_CORE=1` (they are
-  mostly tiny — 0.36–3B — so ~1–2 h total). Then **replace** their Wave-2 rows
-  (delete-then-merge, since the upsert keeps best `det_score`, not best
-  telemetry). Result: **96/96 membw.**
-- **Option B — accept + document.** Keep their headline axes (100%); mark membw
-  `unknown` for the systems section. `report.py` already returns
-  `"unknown (no membw)"` for these. Result: **89/96 membw**, headline unaffected.
+**Decision: full telemetry is required, so the 7 membw-gap models are EXCLUDED
+from the analysis dataset** (dropped, not re-run). This yields a **uniform
+88-model dataset** in which every model has every axis — safety, energy, quality,
+membw, IPC — with **no "membw unknown" exceptions**. The 7 stay in `data/raw/`
+for provenance and are named in the excluded appendix. (Re-running them later for
+a 95-model full-telemetry set — the old "Option A" — is deferred and not on the
+critical path.)
 
-Either way the **headline sovereign-selection result is identical** — MBU is a
-secondary systems lens.
+The 7 (Wave-2 copies): `falcon3:3b-instruct-q8_0`,
+`granite3.1-dense:2b-instruct-q8_0`, `qwen2:0.5b-instruct-q8_0`, `qwen3:0.6b-fp16`,
+`qwen3:1.7b-fp16`, `stablelm2:1.6b-zephyr`, `smollm2:360m` — note Wave-1's
+`smollm2:360m`, which **does** have membw, is **kept**.
 
 ## 4. MBU ceiling recovery (needed for both options)
 
@@ -112,10 +114,10 @@ ceiling in this order:
 The current upsert keys on `(model,scenario,rep)` and replaces on better
 `det_score`. Two additions for clean consolidation:
 
-- **`--exclude <model[,model…]>`** (or `--exclude-file`): drop these models from
-  the merge entirely → used for `phi:2.7b` and the Wave-2 overlap dup
-  `smollm2:360m`, and optionally the membw-gap models under Option B if you
-  choose to exclude rather than annotate.
+- **`--exclude <model[,model…]>`** (or `--exclude-file`): drop these from the
+  **Wave-2** merge entirely → the **7 membw-gap models** (this also covers the
+  `smollm2:360m` overlap, since Wave-1's copy with membw is the one we keep).
+  `phi:2.7b` is excluded at analysis time (already is).
 - **Overlap guard:** do **not** let a Wave-2 row replace an existing Wave-1 row
   for a model present in both (otherwise Wave-2's membw-less `smollm2:360m` could
   overwrite Wave-1's). Simplest: `--exclude smollm2:360m` covers it; or add
@@ -123,8 +125,9 @@ The current upsert keys on `(model,scenario,rep)` and replaces on better
 
 ## 7. Acceptance criteria (done = a single dataset)
 
-- One `results_snapshot.csv`: **N models**, 95 rows each (incl. DNF), headline
-  axes **100%**, systems **≥ 89/96** (or 96/96 under Option A).
+- One `results_snapshot.csv`: **88 models** (24 Wave-1 usable + 64 Wave-2 with
+  full membw), 95 rows each (incl. DNF), **every axis 100%** (safety, energy,
+  quality, membw, IPC) — a uniform full-telemetry dataset.
 - One `judged_snapshot.csv`: same N models, 2-judge consensus mean (1–5).
 - **No "wave" distinction** in the analysis — a single population.
 - Excluded models listed in one appendix with the reason each.
