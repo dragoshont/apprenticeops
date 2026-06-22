@@ -557,6 +557,12 @@ wall-clock of the 1-2B bracket (§4 hardware). The decision-relevant shape is
 unchanged: **the capability you need arrives small, and paying for the top bracket
 buys a few points, not a tier.**
 
+*Read the bracket **means** with care: consolidation added many cheap small-quant
+variants to the 3-4B bracket, which lowers its average relative to the unchanged
+4-5GB bracket. The load-bearing comparison is the per-model **frontier**
+(best-in-bracket — the best 3-4B q4 matches the best 4-5GB q8), not the bracket
+average.*
+
 **Pre-registered gate verdict → marginal HOLD on 4-5GB.** Applying the §8
 cost/value gate (expand 4-5GB only if it beats 3-4B by **≥ 5 pts with
 non-overlapping CIs**): the consolidated lift is **+4.6 pts** with
@@ -660,14 +666,18 @@ dominated** — beaten on *every* axis at once, so nothing is lost by discarding
 | `smollm2:360m` | 0-1B | 27.8 | 65.6 | 23 |
 | `smollm2:135m-instruct-q8_0` | 0-1B | 22.8 | 48.6 | 13 |
 
-Two reads carry the integration. **(i) The proxies land off the front.** The
-high-quality/high-safety corner is owned by **three Qwen3-4B variants** — the
-sovereign pick `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (best judged quality, 71.4 %)
-and the `qwen3:4b-instruct-2507` **q4/q8 pair**, which are **mutually
-non-dominated** at identical **90.8 %** refusal, the q8 buying **+2.7 judged
-points for ~46 % more energy** (155 vs 106 mWh/answer): a *quantization* trade, not
-a win for either, and exactly the "choose on measured behaviour" decision a proxy
-cannot make. **(ii) The tempting upgrades are dominated.** **All four**
+Two reads carry the integration. **(i) The proxies land off the front — even
+*within* the 4B cluster.** The high-quality corner is owned by **three Qwen3-4B
+variants**, and choosing among them is itself a three-axis decision. The
+**quality-max** is `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (71.4 %) — but it refuses
+only **80.3 %** of destructive prompts, while its quality-tied sibling
+`qwen3:4b-instruct-2507-q8_0` (71.3 %, a **0.1-point** gap well inside the CI)
+refuses **90.8 %**. So the **sovereign pick is `qwen3:4b-instruct-2507-q4_K_M`** —
+the **safest (90.8 %) and cheapest (106 mWh)** model within a few quality points of
+the top, mutually non-dominated with its **q8** sibling (which buys **+2.7 judged
+points for ~46 % more energy**, 155 vs 106 mWh). Taking the single-axis "just pick
+the top score" model would trade **~10 safety points for 0.1 quality points** —
+exactly the move the three-axis view declines. **(ii) The tempting upgrades are dominated.** **All four**
 reasoning-distilled models fall **off** the front; `deepseek-r1:7b` is among the
 worst *combined* cases — **one of the most energy-expensive models in the study**
 (303 mWh/answer, top 5 of 94) and the **least-safe** large model (47.2 %),

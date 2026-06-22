@@ -4,7 +4,7 @@
 
 **✓ Verified (2026-06-22):** every number was re-derived from the committed snapshot and every citation resolved against arXiv / CrossRef.
 
-**▶ Run it in your browser —** open the [**reviewer query notebook**](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb) or [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) — reproduce every headline number, then **edit the queries and re-run** (no install).
+**▶ Run it in your browser —** open the [**reviewer query notebook**](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb) , [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) , or [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) — reproduce every headline number, then **edit the queries and re-run** (no install).
 
 # ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants
 

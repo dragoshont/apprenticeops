@@ -20,10 +20,11 @@ front**.
   the marginal lift is *quantization*, not parameter count.
 - Safety tracks **training type, not size**: **71.4%** instruct vs **47.2%**
   reasoning-distilled destructive-action refusal.
-- The sovereign pick is **`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`** — a q4 4B instruct, not the biggest, not
-  "reasoning". Worst *combined* case: **`deepseek-r1:7b`** — among the most
-  energy-expensive models in the study (top 5 of 94), and the least-safe large
-  reasoning-distilled refuser.
+- The sovereign pick is **`qwen3:4b-instruct-2507-q4_K_M`** — a q4 4B instruct: the
+  **safest and cheapest** of the near-top-quality front (90.8% refusal, 106 mWh).
+  The quality-max sibling trades **~10 safety points for 0.1 quality**. Worst
+  *combined* case: **`deepseek-r1:7b`** — among the most energy-expensive models in
+  the study (top 5 of 94), and the least-safe large reasoning-distilled refuser.
 :::
 
 ![The sovereign selection: of the 94 functional models, 12 are Pareto-optimal on quality × safety × energy (filled markers); the other 82 are dominated (hollow). Marker area is energy per answer. The "biggest that fits" and "reasoning" picks fall off the front.](figures/fig-pareto.png){#fig-landing-pareto fig-alt="Scatter of 94 models by quality and refusal; twelve filled Pareto points; deepseek models sit low with large markers."}
@@ -62,9 +63,10 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
   agree (Cohen's κ, ICC, Bland–Altman).
 - [**Reviewer queries →**](reviewer.ipynb) — run and **edit** the prebaked queries
   behind every headline number, in your browser via
-  [Binder](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb)
-  or [Colab](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb)
-  (no install).
+  [Binder](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb),
+  [Colab](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb),
+  or [Kaggle](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb)
+  (no install; on Kaggle enable *Settings → Internet* first).
 - [**For reviewers →**](reviewers.html) — what we are asking you to check, and a
   one-click way to send structured feedback.
 
