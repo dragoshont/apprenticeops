@@ -710,6 +710,37 @@ reported on the **88-of-94** covered subset (available-case analysis), every oth
 axis stays at full $N$, and no otherwise-complete model is dropped to paper over an
 instrumentation gap. Models with *no* usable rows on *any* axis (`phi:2.7b` plus the
 registry pull-failures) are excluded entirely and named in the appendix.
+## 8c. Hypothesis outcomes (confirmatory) and deviations from the pre-registration
+
+Mapping each **pre-registered** hypothesis (§4, fixed before the run) to its result.
+Per the pre-registration / Registered-Reports convention (Nosek et al., *PNAS* 2018;
+Chambers, *Cortex* 2013), we report **every** registered prediction with an explicit
+verdict — including the ones the data did **not** cleanly test — rather than silently
+revising the hypotheses to fit the outcome.
+
+| # | Pre-registered prediction | Result | Verdict |
+|---|---|---|---|
+| **H1** | quality rises with params, diminishing returns, knee ~**3–4B** | steep climb to **2–3B**, flat 2–3B→3–4B (+0.8 pt), +4.6 pt to 4–5GB | **Supported** — knee one bracket *smaller* than predicted |
+| **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | the balanced pick is 3–4B (`2507-q4`), but the non-dominated front spans **all five** brackets | **Partially supported** — no single bracket dominates |
+| **H3** | safety is **not monotonic** in size; some small models endorse destructive actions | non-monotonic, driven by **training type** (instruct 71.4 % vs reasoning-distill 47.2 %), not size | **Supported** |
+| **H4** | thinking models gain on *diagnose/test* but at prohibitive CPU latency | reasoning models evaluated on safety + energy; a per-class accuracy × latency breakdown is not isolated here | **Not directly tested** (future work) |
+| **H5** | best ≤5 GB model reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline was run; the best small model reaches ≈ **71 %** of the judge's 1–5 ceiling (a proxy) | **Not directly tested** (proxy only) |
+| **H6** | local **RAG** lift is large for small models, shrinks with size | closed-book vs grounded are *different task classes* — the RAG-lift confound is disclosed (§9); reported descriptively | **Not causally tested** (confound open) |
+| **H7** | energy rises with params; the knee is also the **energy-efficiency** sweet spot | energy/answer rises with params; the **2–3B** quality knee sits near the tok/s-per-watt optimum | **Supported** — knee one bracket smaller |
+
+**Deviations from the pre-registration (transparent changes).** Following the
+guidance to *disclose* departures rather than rewrite the plan (Lakens, *Collabra*
+2024): **(1)** the roster grew from the pre-registered **25** to **94** models — a
+second collection batch on the *same* node, scenarios, and protocol, folded into
+one dataset (per-axis / available-case reporting for the single
+bandwidth-telemetry axis with gaps, see *Telemetry coverage* above); **(2)** the
+judged-quality axis was upgraded from a single judge to a **5-rep × 2-judge
+ensemble** (κ_quad = 0.91); **(3)** a planned third collection wave was **dropped**
+(the 94-model dataset was deemed sufficient). The H1–H7 tests above are
+**confirmatory** (pre-registered scenarios + protocol); analyses introduced *after*
+the plan — e.g. the within-`Qwen3-4B`-family safety comparison — are flagged as
+**exploratory**.
+
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |

@@ -516,6 +516,36 @@ the whole size range, and is found only by measuring all three axes.
 > axes — is the contribution; the exact membership would only shift under CI-aware
 > dominance.
 
+# Hypothesis outcomes and deviations from the pre-registration {#sec-outcomes}
+
+Mapping each **pre-registered** hypothesis (the analysis plan in `docs/PAPER.md`,
+fixed before the run) to its result. Per the pre-registration / Registered-Reports
+convention [@nosek2018prereg; @chambers2013registered], we report **every** registered
+prediction with an explicit verdict — including the ones the data did **not** cleanly
+test — rather than revising the hypotheses to fit the outcome.
+
+| # | Pre-registered prediction | Result | Verdict |
+|---|---|---|---|
+| **H1** | quality rises with params, diminishing returns, knee ~**3–4B** | steep climb to **2–3B**, flat 2–3B→3–4B (+0.8 pt), +4.6 pt to 4–5 GB | **Supported** — knee one bracket *smaller* |
+| **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | balanced pick is 3–4B (`2507-q4`), but the front spans **all five** brackets | **Partially supported** |
+| **H3** | safety is **not monotonic** in size | non-monotonic; driven by **training type** (instruct 71.4 % vs reasoning 47.2 %), not size | **Supported** |
+| **H4** | thinking models gain on *diagnose/test* at prohibitive CPU latency | not isolated as a per-class accuracy × latency test here | **Not directly tested** |
+| **H5** | best ≤5 GB reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline run; best small model ≈ **71 %** of the judge ceiling (proxy) | **Not directly tested** |
+| **H6** | local **RAG** lift large for small models, shrinks with size | closed-book vs grounded are different task classes — confound disclosed (@sec-limitations) | **Not causally tested** |
+| **H7** | energy rises with params; knee = **energy-efficiency** sweet spot | energy rises with params; the **2–3B** knee sits near the tok/s-per-watt optimum | **Supported** — knee one bracket smaller |
+
+: Confirmatory hypothesis outcomes against the pre-registered plan. {#tbl-outcomes}
+
+**Deviations (transparent changes).** Following the guidance to *disclose*
+departures rather than rewrite the plan [@lakens2024deviate]: (1) the roster grew
+from the pre-registered **25** to **94** models — a second collection batch on the
+same node, scenarios, and protocol, folded into one dataset (available-case
+reporting for the one bandwidth-telemetry axis with gaps); (2) the judged-quality
+axis was upgraded to a **5-rep × 2-judge ensemble** (κ_quad = 0.91); (3) a planned
+third collection wave was **dropped**. H1–H7 are **confirmatory**; analyses added
+*after* the plan (e.g. the within-`Qwen3-4B`-family safety comparison) are
+**exploratory**.
+
 # Limitations and Threats to Validity {#sec-limitations}
 
 We name the load-bearing threats up front; the full table (with concrete,
