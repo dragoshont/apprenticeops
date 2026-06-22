@@ -948,16 +948,16 @@ These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](./PAPER
 
 | Need | State |
 |---|---|
-| Byte-frozen prompts | ✅ [`data/MODEL-PROMPTS.md`](../data/MODEL-PROMPTS.md) (regenerated, all 19) |
-| Telemetry capture | ✅ `run.py` (validated: OTel fields, RAM/swap series, progress trace) |
-| Watchdog / DNF taxonomy | ✅ `run.py` |
-| Repetitions + seed + temp control | ✅ `run.py` (`--repeats/--temp/--seed-base`) |
-| Non-LLM baselines | ✅ `baselines.py` (random + keyword) |
-| Judge backend = Claude 4.8 Max | ✅ `judge.py` copilot backend → `claude-opus-4.8` (confirmed live) |
-| Judge ensemble + κ | ✅ `--ensemble copilot:gpt-5.5`; Cohen's κ in `report.py` |
-| Safety gate (sound) | ✅ judge-primary + majority-of-R + `must_not_endorse` check |
-| Paired closed-book/grounded (clean RAG lift) | ✅ 2 pairs + within-pair lift in `report.py` (more pairs = stronger) |
-| Stats (CI, Friedman, κ) | ✅ `report.py` (bootstrap CI + Friedman via numpy/scipy; κ stdlib). Wilcoxon/Holm gated on R=5 data |
-| Pilot judging run (populate judge columns) | ⏳ **not yet run** (Copilot AI-Credit spend — confirm budget) |
-| ≥6 scenarios/class + held-out | ⏳ **needs authoring** (secure=5, capacity=4 done; others thin) |
-| 2nd reviewer for gold/rubric | ⏳ run [`gold-review-prompt.md`](./gold-review-prompt.md) (regenerated for 19) + adjudicate |
+| Byte-frozen prompts | Done — [`data/MODEL-PROMPTS.md`](../data/MODEL-PROMPTS.md) (regenerated, all 19) |
+| Telemetry capture | Done — `run.py` (validated: OTel fields, RAM/swap series, progress trace) |
+| Watchdog / DNF taxonomy | Done — `run.py` |
+| Repetitions + seed + temp control | Done — `run.py` (`--repeats/--temp/--seed-base`) |
+| Non-LLM baselines | Done — `baselines.py` (random + keyword) |
+| Judge backend = Claude 4.8 Max | Done — `judge.py` copilot backend → `claude-opus-4.8` (confirmed live) |
+| Judge ensemble + κ | Done — `--ensemble copilot:gpt-5.5`; Cohen's κ in `report.py` |
+| Safety gate (sound) | Done — judge-primary + majority-of-R + `must_not_endorse` check |
+| Paired closed-book/grounded (clean RAG lift) | Done — 2 pairs + within-pair lift in `report.py` (more pairs = stronger) |
+| Stats (CI, Friedman, κ) | Done — `report.py` (bootstrap CI + Friedman via numpy/scipy; κ stdlib). Wilcoxon/Holm gated on R=5 data |
+| Pilot judging run (populate judge columns) | **Not yet run** (Copilot AI-Credit spend — confirm budget) |
+| ≥6 scenarios/class + held-out | **Needs authoring** (secure=5, capacity=4 done; others thin) |
+| 2nd reviewer for gold/rubric | **Pending** — run [`gold-review-prompt.md`](./gold-review-prompt.md) (regenerated for 19) + adjudicate |

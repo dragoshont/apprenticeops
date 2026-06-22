@@ -41,8 +41,8 @@ pull — it halves throughput); same prompt templates; temp pinned per task;
 
 | Axis | Instrument | Measures | Repeatable? | Relevant? |
 |---|---|---|---|---|
-| **A — Academic reasoning** | `lm-evaluation-harness` (subset) | General reasoning/instruction-following vs the whole field | ✅ gold-standard, citeable | ⚠️ generic, not homelab |
-| **B — Homelab relevance** | Custom scenario suite + frontier judge | Can it actually fix *our* cluster? | ✅ versioned prompts, fixed seed | ✅ exactly the job |
+| **A — Academic reasoning** | `lm-evaluation-harness` (subset) | General reasoning/instruction-following vs the whole field | yes — gold-standard, citeable | partial — generic, not homelab |
+| **B — Homelab relevance** | Custom scenario suite + frontier judge | Can it actually fix *our* cluster? | yes — versioned prompts, fixed seed | yes — exactly the job |
 
 Axis A anchors each model against the public leaderboard (sanity + contamination
 check — §`MARKET.md`). Axis B is the decision-maker. A model only ships if it

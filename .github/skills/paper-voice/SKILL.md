@@ -57,7 +57,7 @@ trusts it AND a homelab operator can read it.
 - `>` blockquotes for "state up front" honesty notes and caveats.
 - Math: inline `$...$`, display `$$...$$`; **define every symbol** right after.
 - Markers in active use: `*(Locked.)*`, "(REQUIRED)", "necessary-not-sufficient",
-  "finding, not a gap", "DONE"/"⏳ not yet run" for build status.
+  "finding, not a gap", "DONE"/"not yet run" for build status.
 - File references in backticks with a relative link when pointing at a repo file.
 
 ## Define-then-use (a signature move)

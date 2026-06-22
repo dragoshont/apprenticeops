@@ -329,7 +329,7 @@ def main():
                 ans = reference_one(primary, s)
                 f.write(json.dumps({"scenario": sid, "frontier_model": primary.model,
                                     "reference_answer": ans}) + "\n")
-                sys.stderr.write(f"ref {sid} ✓\n")
+                sys.stderr.write(f"ref {sid} done\n")
         return
 
     if args.gold_review:

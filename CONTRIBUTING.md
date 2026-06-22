@@ -45,4 +45,4 @@ We'll investigate together.
 
 ---
 
-**Thanks for helping make apprentice ops better.** 🛠️
+**Thanks for helping make apprentice ops better.**

@@ -11,7 +11,7 @@
 #   3. under-sampled QUANTS (q5_K_M, q6_K, IQ4_XS, bf16, more QAT)
 #   4. openness/provenance (AllenAI OLMo-2 = fully open data+code+weights)
 #
-# ⚠️ lines are commented out: real model, but the exact GGUF file / runtime needs a
+# Commented-out lines are real models, but the exact GGUF file / runtime needs a
 # manual confirm before pulling (HF bot-blocked the listing, or it needs a non-Ollama
 # runtime). Uncomment once verified.
 
@@ -24,8 +24,8 @@ granite4:350m-bf16
 hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M
 hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M
 hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M
-# ⚠️ hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M   # hybrid T+Mamba; confirm GGUF file
-# ⚠️ hf.co/baidu/ERNIE-4.5-0.3B-PT-GGUF:Q4_K_M          # Baidu; HF listing bot-blocked
+# hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M   # hybrid T+Mamba; confirm GGUF file
+# hf.co/baidu/ERNIE-4.5-0.3B-PT-GGUF:Q4_K_M          # Baidu; HF listing bot-blocked
 
 # bracket: 1-2B
 hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M
@@ -37,7 +37,7 @@ qwen2-math:1.5b
 deepscaler:1.5b
 sailor2:1b
 yi-coder:1.5b
-# ⚠️ hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M   # EU 24-lang; HF listing bot-blocked
+# hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M   # EU 24-lang; HF listing bot-blocked
 
 # 2-3B is the THINNEST bracket: the strong general 2-3B models are ALREADY tested,
 # so what's new here is mostly architectural / specialist (a finding in itself).
@@ -46,9 +46,9 @@ codegemma:2b
 codegemma:2b-code-q6_K
 granite4:micro-h
 starcoder2:3b
-# ⚠️ gemma3n:e2b                                   # MatFormer; 5.6 GB on disk (eff-2B, raw ~5B) — RAM-fits, over footprint
-# ⚠️ hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M  # hybrid T+Mamba; confirm GGUF file
-# ⚠️ hf.co/microsoft/bitnet-b1.58-2B-4T-gguf        # native 1.58-bit ternary; needs bitnet.cpp (no 1-bit kernels in stock llama.cpp)
+# gemma3n:e2b                                   # MatFormer; 5.6 GB on disk (eff-2B, raw ~5B) — RAM-fits, over footprint
+# hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M  # hybrid T+Mamba; confirm GGUF file
+# hf.co/microsoft/bitnet-b1.58-2B-4T-gguf        # native 1.58-bit ternary; needs bitnet.cpp (no 1-bit kernels in stock llama.cpp)
 
 # bracket: 3-4B
 qwen3:4b-thinking-2507-q4_K_M

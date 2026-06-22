@@ -40,7 +40,7 @@ trap 'log "EXIT: restoring node power state"; ./scripts/node-power.sh teardown >
 log "=== WAVE-3 driver START (pid $$, host $(hostname), dir $PWD) ==="
 [ -f "$MODELS" ] || { log "FATAL: manifest $MODELS not found — scp it to $SME/data/ first"; exit 1; }
 [ -f run.py ]   || { log "FATAL: run.py not in $SME (sync the repo files here first)"; exit 1; }
-log "manifest: $MODELS ($(n_active "$MODELS") active tags; commented ⚠️ tags are skipped)"
+log "manifest: $MODELS ($(n_active "$MODELS") active tags; commented-out tags are skipped)"
 log "disk: $(df -h . | awk 'NR==2{print $4\" free\"}')  mem: $(free -h | awk '/Mem/{print $7\" avail\"}')"
 
 # 1) Never contend: wait for the Wave-2 (or any) run.py to finish first.

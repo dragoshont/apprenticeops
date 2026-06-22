@@ -11,7 +11,7 @@
 > recorded because a tool-capable winner could also replace `tiny-h`.
 > `think` = native reasoning/thinking mode.
 
-Legend: ✅ yes · ❌ no · 〜 community/unofficial packaging (provenance risk —
+Legend: the **tools** / **think** columns show **yes** / **no** · ~ community/unofficial packaging (provenance risk —
 see [`MARKET.md`](MARKET.md))
 
 ---
@@ -20,13 +20,13 @@ see [`MARKET.md`](MARKET.md))
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Qwen2.5 0.5B | `qwen2.5:0.5b` | 0.40 | ✅ | ❌ | Apache-2.0 | strongest sub-1B all-rounder |
-| Qwen3 0.6B | `qwen3:0.6b` | 0.52 | ✅ | ✅ | Apache-2.0 | thinking at 0.6B (slow but interesting) |
-| Llama 3.2 1B | `llama3.2:1b` | 1.3 | ✅ | ❌ | Llama-3.2 (permissive) | Meta, tool-tuned |
-| Gemma 3 1B | `gemma3:1b` | 0.82 | ❌ | ❌ | Gemma | QAT variant `1b-it-qat` (1.0 GB) |
-| Granite 4 1B-H | `granite4:1b-h` | 1.6 | ✅ | ❌ | Apache-2.0 | hybrid-mamba, IBM, tool-tuned |
-| SmolLM2 360M | `smollm2:360m` | 0.73 | ✅ | ❌ | Apache-2.0 | HF, tiny + tool tag |
-| SmolLM2 135M | `smollm2:135m` | 0.27 | ✅ | ❌ | Apache-2.0 | absolute floor (sanity baseline) |
+| Qwen2.5 0.5B | `qwen2.5:0.5b` | 0.40 | yes | no | Apache-2.0 | strongest sub-1B all-rounder |
+| Qwen3 0.6B | `qwen3:0.6b` | 0.52 | yes | yes | Apache-2.0 | thinking at 0.6B (slow but interesting) |
+| Llama 3.2 1B | `llama3.2:1b` | 1.3 | yes | no | Llama-3.2 (permissive) | Meta, tool-tuned |
+| Gemma 3 1B | `gemma3:1b` | 0.82 | no | no | Gemma | QAT variant `1b-it-qat` (1.0 GB) |
+| Granite 4 1B-H | `granite4:1b-h` | 1.6 | yes | no | Apache-2.0 | hybrid-mamba, IBM, tool-tuned |
+| SmolLM2 360M | `smollm2:360m` | 0.73 | yes | no | Apache-2.0 | HF, tiny + tool tag |
+| SmolLM2 135M | `smollm2:135m` | 0.27 | yes | no | Apache-2.0 | absolute floor (sanity baseline) |
 
 **Pick 5:** qwen2.5:0.5b, qwen3:0.6b, llama3.2:1b, granite4:1b-h, smollm2:360m.
 
@@ -36,12 +36,12 @@ see [`MARKET.md`](MARKET.md))
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Qwen3 1.7B | `qwen3:1.7b` | 1.4 | ✅ | ✅ | Apache-2.0 | best tiny *thinking* candidate |
-| SmolLM2 1.7B | `smollm2:1.7b` | 1.8 | ✅ | ❌ | Apache-2.0 | strong for its size |
-| Qwen2.5 1.5B | `qwen2.5:1.5b` | 0.99 | ✅ | ❌ | Apache-2.0 | dense workhorse |
-| DeepSeek-R1 1.5B | `deepseek-r1:1.5b` | 1.1 | ❌ | ✅ | MIT | reasoning distill (Qwen2.5-1.5B base) |
-| StableLM2 1.6B | `stablelm2:1.6b` | 0.98 | ❌ | ❌ | StabilityAI (check) | diversity entry |
-| Llama 3.2 1B | (also fits) | 1.3 | ✅ | ❌ | Llama-3.2 | — |
+| Qwen3 1.7B | `qwen3:1.7b` | 1.4 | yes | yes | Apache-2.0 | best tiny *thinking* candidate |
+| SmolLM2 1.7B | `smollm2:1.7b` | 1.8 | yes | no | Apache-2.0 | strong for its size |
+| Qwen2.5 1.5B | `qwen2.5:1.5b` | 0.99 | yes | no | Apache-2.0 | dense workhorse |
+| DeepSeek-R1 1.5B | `deepseek-r1:1.5b` | 1.1 | no | yes | MIT | reasoning distill (Qwen2.5-1.5B base) |
+| StableLM2 1.6B | `stablelm2:1.6b` | 0.98 | no | no | StabilityAI (check) | diversity entry |
+| Llama 3.2 1B | (also fits) | 1.3 | yes | no | Llama-3.2 | — |
 
 **Pick 5:** qwen3:1.7b, smollm2:1.7b, qwen2.5:1.5b, deepseek-r1:1.5b, stablelm2:1.6b.
 
@@ -51,12 +51,12 @@ see [`MARKET.md`](MARKET.md))
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Granite 4 Micro (3B) | `granite4:micro` | 2.1 | ✅ | ❌ | Apache-2.0 | **incumbent fallback** — baseline to beat |
-| Qwen2.5 3B | `qwen2.5:3b` | 1.9 | ✅ | ❌ | Qwen (research/▲) | strong; check license for sharing |
-| Phi-2 2.7B | `phi:2.7b` | 1.6 | ❌ | ❌ | MIT | classic dense reasoner |
-| Gemma 2 2B | `gemma2:2b` | 1.6 | ❌ | ❌ | Gemma | Google small |
-| Ministral-3 3B | `ministral-3:3b` | ~2.0 | ✅ | 〜 | Mistral (check) | NEW edge family; official tag |
-| Llama 3.2 3B | `llama3.2:3b` | 2.0 | ✅ | ❌ | Llama-3.2 | (also fits 3–4B) |
+| Granite 4 Micro (3B) | `granite4:micro` | 2.1 | yes | no | Apache-2.0 | **incumbent fallback** — baseline to beat |
+| Qwen2.5 3B | `qwen2.5:3b` | 1.9 | yes | no | Qwen (research/restricted) | strong; check license for sharing |
+| Phi-2 2.7B | `phi:2.7b` | 1.6 | no | no | MIT | classic dense reasoner |
+| Gemma 2 2B | `gemma2:2b` | 1.6 | no | no | Gemma | Google small |
+| Ministral-3 3B | `ministral-3:3b` | ~2.0 | yes | ~ | Mistral (check) | NEW edge family; official tag |
+| Llama 3.2 3B | `llama3.2:3b` | 2.0 | yes | no | Llama-3.2 | (also fits 3–4B) |
 
 **Pick 5:** granite4:micro, qwen2.5:3b, phi:2.7b, gemma2:2b, ministral-3:3b.
 
@@ -66,12 +66,12 @@ see [`MARKET.md`](MARKET.md))
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Phi-4-mini 3.8B | `phi4-mini` | 2.5 | ✅ | ❌ | MIT | reasoning+math focus, *now* has function calling |
-| Qwen3 4B | `qwen3:4b` | 2.5 | ✅ | ✅ | Apache-2.0 | thinking; `4b-instruct-2507` refresh is stronger |
-| Qwen3 4B Instruct 2507 | `qwen3:4b-instruct-2507-q4_K_M` | 2.5 | ✅ | ❌ | Apache-2.0 | non-thinking, improved tool/IF |
-| Gemma 3 4B | `gemma3:4b` | 3.3 | ❌ | ❌ | Gemma | QAT `4b-it-qat` (4.0 GB) is the value pick |
-| Llama 3.2 3B | `llama3.2:3b` | 2.0 | ✅ | ❌ | Llama-3.2 | Meta |
-| DeepSeek-R1 (Qwen3-4B distill) | `deepseek-r1:4b`* | ~2.5 | ❌ | ✅ | MIT | *verify tag exists; reasoning distill |
+| Phi-4-mini 3.8B | `phi4-mini` | 2.5 | yes | no | MIT | reasoning+math focus, *now* has function calling |
+| Qwen3 4B | `qwen3:4b` | 2.5 | yes | yes | Apache-2.0 | thinking; `4b-instruct-2507` refresh is stronger |
+| Qwen3 4B Instruct 2507 | `qwen3:4b-instruct-2507-q4_K_M` | 2.5 | yes | no | Apache-2.0 | non-thinking, improved tool/IF |
+| Gemma 3 4B | `gemma3:4b` | 3.3 | no | no | Gemma | QAT `4b-it-qat` (4.0 GB) is the value pick |
+| Llama 3.2 3B | `llama3.2:3b` | 2.0 | yes | no | Llama-3.2 | Meta |
+| DeepSeek-R1 (Qwen3-4B distill) | `deepseek-r1:4b`* | ~2.5 | no | yes | MIT | *verify tag exists; reasoning distill |
 
 **Pick 5:** phi4-mini, qwen3:4b-instruct-2507, gemma3:4b-it-qat, llama3.2:3b, qwen3:4b (thinking).
 
@@ -81,17 +81,17 @@ see [`MARKET.md`](MARKET.md))
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Granite 4 Tiny-H (7B-a1b MoE) | `granite4:tiny-h` | 4.2 | ✅ | ❌ | Apache-2.0 | **the current agent primary** — the bar |
-| Mistral 7B v0.3 | `mistral:7b-instruct-q4_K_M` | 4.4 | ✅ | ❌ | Apache-2.0 | classic 7B, q4 fits |
-| Ministral-3 8B (q4) | `ministral-3:8b`〜 / `doomgrave/...q4_K_S` | ~4.7 | ✅ | 〜 | Mistral (check) | official 8B; community q4 for low-VRAM |
-| Qwen2.5 7B (q4) | `qwen2.5:7b` | 4.7 | ✅ | ❌ | Qwen (check) | strong 7B reasoner |
-| DeepSeek-R1 7B (q4) | `deepseek-r1:7b` | 4.7 | ❌ | ✅ | MIT | reasoning distill (Qwen base) |
-| Qwen3 4B Instruct 2507 q8 | `qwen3:4b-instruct-2507-q8_0` | 4.3 | ✅ | ❌ | Apache-2.0 | higher-fidelity small model |
-| Gemma 3 4B q8 | `gemma3:4b-it-q8_0` | 5.0 | ❌ | ❌ | Gemma | quality-max small (edge of bracket) |
+| Granite 4 Tiny-H (7B-a1b MoE) | `granite4:tiny-h` | 4.2 | yes | no | Apache-2.0 | **the current agent primary** — the bar |
+| Mistral 7B v0.3 | `mistral:7b-instruct-q4_K_M` | 4.4 | yes | no | Apache-2.0 | classic 7B, q4 fits |
+| Ministral-3 8B (q4) | `ministral-3:8b`~ / `doomgrave/...q4_K_S` | ~4.7 | yes | ~ | Mistral (check) | official 8B; community q4 for low-VRAM |
+| Qwen2.5 7B (q4) | `qwen2.5:7b` | 4.7 | yes | no | Qwen (check) | strong 7B reasoner |
+| DeepSeek-R1 7B (q4) | `deepseek-r1:7b` | 4.7 | no | yes | MIT | reasoning distill (Qwen base) |
+| Qwen3 4B Instruct 2507 q8 | `qwen3:4b-instruct-2507-q8_0` | 4.3 | yes | no | Apache-2.0 | higher-fidelity small model |
+| Gemma 3 4B q8 | `gemma3:4b-it-q8_0` | 5.0 | no | no | Gemma | quality-max small (edge of bracket) |
 
 **Pick 5:** granite4:tiny-h (incumbent), mistral:7b, qwen2.5:7b, deepseek-r1:7b, qwen3:4b-instruct-2507-q8.
 
-> ⚠️ **Footprint vs RAM:** 4–5 GB on disk → ~5–7 GB resident with an 8 K KV cache.
+> **Note — footprint vs RAM:** 4–5 GB on disk → ~5–7 GB resident with an 8 K KV cache.
 > All fit the 23 GiB node with wide headroom (unlike the rejected 19–23 GB
 > laguna/small-h tier — see [`../README.md`](../README.md)).
 
@@ -112,7 +112,7 @@ see [`MARKET.md`](MARKET.md))
   terms — read before exposing a public endpoint. Flagged in the table.
 - **Provenance:** prefer **official library tags** (`mistral`, `ministral-3`,
   `phi4-mini`, `granite4`, `qwen3`, `gemma3`, `smollm2`, `deepseek-r1`). The
-  `user/...` community forks (〜) are supply-chain risk — only use a specific one
+  `user/...` community forks (~) are supply-chain risk — only use a specific one
   if you've vetted it (see [`MARKET.md`](MARKET.md)).
 
 ## Download budget (rough)
@@ -152,38 +152,38 @@ see [`MARKET.md`](MARKET.md))
 > 4. **Openness / provenance** — AllenAI **OLMo-2** is the only family with open
 >    data+code+weights, letting us separate "open weights" from "open everything".
 
-Legend (unchanged): ✅ yes · ❌ no · 〜 community/unofficial · ⚠️ real model, but
+Legend (unchanged): the **tools** / **think** columns show **yes** / **no** · ~ community/unofficial · † real model, but
 confirm the exact GGUF file / runtime before pulling (see notes).
 
 ## W3 · 0–1B params
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Gemma 3 270M | `gemma3:270m` | 0.29 | ❌ | ❌ | Gemma | sub-300 MB modern floor (only `1b` was tested) |
-| Gemma 3 270M QAT | `gemma3:270m-it-qat` | 0.24 | ❌ | ❌ | Gemma | **QAT** quant axis at the extreme low end |
-| Granite 4 350M | `granite4:350m` | 0.71 | ✅ | ❌ | Apache-2.0 | smallest **tool-tuned** model; dense Granite-4 |
-| Granite 4 350M-H | `granite4:350m-h` | 0.37 | ✅ | ❌ | Apache-2.0 | **hybrid Mamba-2** at 350M (366 MB!) |
-| Granite 4 350M bf16 | `granite4:350m-bf16` | 0.71 | ✅ | ❌ | Apache-2.0 | full-precision floor (quant-vs-bf16 pair) |
-| LFM2 350M | `hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M` | 0.26 | ✅ | ❌ | LFM Open v1.0 | Liquid **conv+attention hybrid** — new family |
-| LFM2 700M | `hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M` | 0.51 | ✅ | ❌ | LFM Open v1.0 | mid-rung of the LFM2 arch ladder |
-| OLMo-2 1B Instruct | `hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M` | 0.94 | ❌ | ❌ | Apache-2.0 | **fully open** (data+code+weights); full quant ladder |
-| Falcon-H1 0.5B | `hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M` ⚠️ | ~0.4 | ✅ | ❌ | Falcon-LLM | hybrid T+Mamba; confirm GGUF file before pull |
-| ERNIE-4.5 0.3B | `hf.co/baidu/ERNIE-4.5-0.3B-PT-GGUF:Q4_K_M` ⚠️ | ~0.3 | ❌ | ❌ | Apache-2.0 | Baidu family absent; HF listing bot-blocked |
+| Gemma 3 270M | `gemma3:270m` | 0.29 | no | no | Gemma | sub-300 MB modern floor (only `1b` was tested) |
+| Gemma 3 270M QAT | `gemma3:270m-it-qat` | 0.24 | no | no | Gemma | **QAT** quant axis at the extreme low end |
+| Granite 4 350M | `granite4:350m` | 0.71 | yes | no | Apache-2.0 | smallest **tool-tuned** model; dense Granite-4 |
+| Granite 4 350M-H | `granite4:350m-h` | 0.37 | yes | no | Apache-2.0 | **hybrid Mamba-2** at 350M (366 MB!) |
+| Granite 4 350M bf16 | `granite4:350m-bf16` | 0.71 | yes | no | Apache-2.0 | full-precision floor (quant-vs-bf16 pair) |
+| LFM2 350M | `hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M` | 0.26 | yes | no | LFM Open v1.0 | Liquid **conv+attention hybrid** — new family |
+| LFM2 700M | `hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M` | 0.51 | yes | no | LFM Open v1.0 | mid-rung of the LFM2 arch ladder |
+| OLMo-2 1B Instruct | `hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M` | 0.94 | no | no | Apache-2.0 | **fully open** (data+code+weights); full quant ladder |
+| Falcon-H1 0.5B | `hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M` † | ~0.4 | yes | no | Falcon-LLM | hybrid T+Mamba; confirm GGUF file before pull |
+| ERNIE-4.5 0.3B | `hf.co/baidu/ERNIE-4.5-0.3B-PT-GGUF:Q4_K_M` † | ~0.3 | no | no | Apache-2.0 | Baidu family absent; HF listing bot-blocked |
 
 ## W3 · 1–2B params
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| LFM2 1.2B | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M` | 0.80 | ✅ | ❌ | LFM Open v1.0 | top of the Liquid hybrid ladder |
-| LFM2 1.2B q8 | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0` | 1.25 | ✅ | ❌ | LFM Open v1.0 | q8 pair of a hybrid (quant-sensitivity) |
-| Falcon-H1 1.5B-Deep | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:Q4_K_M` | 0.94 | ✅ | ❌ | Falcon-LLM | **Transformer+Mamba**, strong math/reasoning |
-| Falcon-H1 1.5B IQ4_XS | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:IQ4_XS` | 0.86 | ✅ | ❌ | Falcon-LLM | **I-quant** axis (untested quant family) |
-| OpenCoder 1.5B | `opencoder:1.5b` | 1.4 | ❌ | ❌ | OpenCoder (open) | fully-reproducible **coder** (EN/ZH) |
-| Qwen2-Math 1.5B | `qwen2-math:1.5b` | 0.94 | ❌ | ❌ | Apache-2.0 | dedicated **math** specialist |
-| DeepScaleR 1.5B | `deepscaler:1.5b-preview-q4_K_M` | 1.1 | ❌ | ✅ | MIT | RL-tuned reasoner (≠ the R1 distill) |
-| Sailor2 1B | `sailor2:1b` | 1.1 | ❌ | ❌ | Apache-2.0 | SE-Asian **multilingual** coverage |
-| Yi-Coder 1.5B | `yi-coder:1.5b` | 0.87 | ❌ | ❌ | Apache-2.0 (Yi) | 01.AI coder, 128K ctx |
-| EuroLLM 1.7B | `hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M` ⚠️ | ~1.1 | ❌ | ❌ | Apache-2.0 | EU 24-language; HF listing bot-blocked |
+| LFM2 1.2B | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M` | 0.80 | yes | no | LFM Open v1.0 | top of the Liquid hybrid ladder |
+| LFM2 1.2B q8 | `hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0` | 1.25 | yes | no | LFM Open v1.0 | q8 pair of a hybrid (quant-sensitivity) |
+| Falcon-H1 1.5B-Deep | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:Q4_K_M` | 0.94 | yes | no | Falcon-LLM | **Transformer+Mamba**, strong math/reasoning |
+| Falcon-H1 1.5B IQ4_XS | `hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:IQ4_XS` | 0.86 | yes | no | Falcon-LLM | **I-quant** axis (untested quant family) |
+| OpenCoder 1.5B | `opencoder:1.5b` | 1.4 | no | no | OpenCoder (open) | fully-reproducible **coder** (EN/ZH) |
+| Qwen2-Math 1.5B | `qwen2-math:1.5b` | 0.94 | no | no | Apache-2.0 | dedicated **math** specialist |
+| DeepScaleR 1.5B | `deepscaler:1.5b-preview-q4_K_M` | 1.1 | no | yes | MIT | RL-tuned reasoner (≠ the R1 distill) |
+| Sailor2 1B | `sailor2:1b` | 1.1 | no | no | Apache-2.0 | SE-Asian **multilingual** coverage |
+| Yi-Coder 1.5B | `yi-coder:1.5b` | 0.87 | no | no | Apache-2.0 (Yi) | 01.AI coder, 128K ctx |
+| EuroLLM 1.7B | `hf.co/utter-project/EuroLLM-1.7B-Instruct-GGUF:Q4_K_M` † | ~1.1 | no | no | Apache-2.0 | EU 24-language; HF listing bot-blocked |
 
 ## W3 · 2–3B params *(thinnest — see note)*
 
@@ -194,28 +194,28 @@ confirm the exact GGUF file / runtime before pulling (see notes).
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| CodeGemma 2B | `codegemma:2b` | 1.6 | ❌ | ❌ | Gemma | code/FIM specialist |
-| CodeGemma 2B q6_K | `codegemma:2b-code-q6_K` | 2.1 | ❌ | ❌ | Gemma | **q6_K** quant axis of a 2B coder |
-| Granite 4 Micro-H | `granite4:micro-h` | 1.9 | ✅ | ❌ | Apache-2.0 | **hybrid Mamba-2** twin of `micro` (== `granite4:3b-h`, same blob) |
-| StarCoder2 3B | `starcoder2:3b` | 1.7 | ❌ | ❌ | BigCode OpenRAIL-M | transparent coder; **OpenRAIL** license axis |
-| Gemma 3n E2B | `gemma3n:e2b` ⚠️ | 5.6 | ❌ | ❌ | Gemma | **MatFormer**; 5.6 GB on disk (eff-2B, raw ~5B) — RAM-fits, over footprint |
-| Falcon-H1 3B | `hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M` ⚠️ | ~1.9 | ✅ | ❌ | Falcon-LLM | hybrid T+Mamba; confirm GGUF file |
-| BitNet b1.58 2B-4T | `hf.co/microsoft/bitnet-b1.58-2B-4T-gguf` ⚠️ | ~1.2 | ❌ | ❌ | MIT | **native 1.58-bit ternary**; needs `bitnet.cpp` (stock llama.cpp lacks 1-bit kernels) |
+| CodeGemma 2B | `codegemma:2b` | 1.6 | no | no | Gemma | code/FIM specialist |
+| CodeGemma 2B q6_K | `codegemma:2b-code-q6_K` | 2.1 | no | no | Gemma | **q6_K** quant axis of a 2B coder |
+| Granite 4 Micro-H | `granite4:micro-h` | 1.9 | yes | no | Apache-2.0 | **hybrid Mamba-2** twin of `micro` (== `granite4:3b-h`, same blob) |
+| StarCoder2 3B | `starcoder2:3b` | 1.7 | no | no | BigCode OpenRAIL-M | transparent coder; **OpenRAIL** license axis |
+| Gemma 3n E2B | `gemma3n:e2b` † | 5.6 | no | no | Gemma | **MatFormer**; 5.6 GB on disk (eff-2B, raw ~5B) — RAM-fits, over footprint |
+| Falcon-H1 3B | `hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M` † | ~1.9 | yes | no | Falcon-LLM | hybrid T+Mamba; confirm GGUF file |
+| BitNet b1.58 2B-4T | `hf.co/microsoft/bitnet-b1.58-2B-4T-gguf` † | ~1.2 | no | no | MIT | **native 1.58-bit ternary**; needs `bitnet.cpp` (stock llama.cpp lacks 1-bit kernels) |
 
 ## W3 · 3–4B params
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| Qwen3 4B Thinking-2507 | `qwen3:4b-thinking-2507-q4_K_M` | 2.5 | ✅ | ✅ | Apache-2.0 | the **thinking** 2507 refresh (only `-instruct` was tested) |
-| Qwen3 4B Thinking q8 | `qwen3:4b-thinking-2507-q8_0` | 4.3 | ✅ | ✅ | Apache-2.0 | q8 pair (quant-vs-reasoning) |
-| SmolLM3 3B | `hf.co/ggml-org/SmolLM3-3B-GGUF:Q4_K_M` | 1.9 | ✅ | ✅ | Apache-2.0 | **hybrid-reasoning, fully-open** 3B |
-| Hermes-3 Llama-3.2 3B | `hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q4_K_M` | 2.0 | ✅ | ❌ | Llama-3.2 | Nous function-calling lineage (agentic) |
-| MiniCPM3 4B | `hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M` | 2.5 | ✅ | ❌ | MiniCPM GML | strong tool/code-interpreter calling |
-| Cogito v1 3B | `cogito:3b` | 2.2 | ✅ | ✅ | Llama-3.2 | **hybrid reasoning toggle** + tools (deepcogito) |
-| Granite-Code 3B | `granite-code:3b` | 2.0 | ❌ | ❌ | Apache-2.0 | IBM **code** model |
-| SmallThinker 3B | `smallthinker:3b-preview-q4_K_M` | 2.1 | ❌ | ✅ | Apache-2.0 | Qwen2.5-3B **reasoning** distill |
-| Cogito v1 3B q8 | `cogito:3b-v1-preview-llama-q8_0` | 3.8 | ✅ | ✅ | Llama-3.2 | q8 pair of `cogito:3b` (quant axis) |
-| StarCoder2 3B | `starcoder2:3b` | 1.7 | ❌ | ❌ | BigCode OpenRAIL-M | (listed in 2–3B; also fits here) |
+| Qwen3 4B Thinking-2507 | `qwen3:4b-thinking-2507-q4_K_M` | 2.5 | yes | yes | Apache-2.0 | the **thinking** 2507 refresh (only `-instruct` was tested) |
+| Qwen3 4B Thinking q8 | `qwen3:4b-thinking-2507-q8_0` | 4.3 | yes | yes | Apache-2.0 | q8 pair (quant-vs-reasoning) |
+| SmolLM3 3B | `hf.co/ggml-org/SmolLM3-3B-GGUF:Q4_K_M` | 1.9 | yes | yes | Apache-2.0 | **hybrid-reasoning, fully-open** 3B |
+| Hermes-3 Llama-3.2 3B | `hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q4_K_M` | 2.0 | yes | no | Llama-3.2 | Nous function-calling lineage (agentic) |
+| MiniCPM3 4B | `hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M` | 2.5 | yes | no | MiniCPM GML | strong tool/code-interpreter calling |
+| Cogito v1 3B | `cogito:3b` | 2.2 | yes | yes | Llama-3.2 | **hybrid reasoning toggle** + tools (deepcogito) |
+| Granite-Code 3B | `granite-code:3b` | 2.0 | no | no | Apache-2.0 | IBM **code** model |
+| SmallThinker 3B | `smallthinker:3b-preview-q4_K_M` | 2.1 | no | yes | Apache-2.0 | Qwen2.5-3B **reasoning** distill |
+| Cogito v1 3B q8 | `cogito:3b-v1-preview-llama-q8_0` | 3.8 | yes | yes | Llama-3.2 | q8 pair of `cogito:3b` (quant axis) |
+| StarCoder2 3B | `starcoder2:3b` | 1.7 | no | no | BigCode OpenRAIL-M | (listed in 2–3B; also fits here) |
 
 ## W3+ · 3–4B quant-degradation sweep at the knee (expansion)
 
@@ -247,11 +247,11 @@ on how much quality the knee actually loses to quantization.
 
 | Model | Pull tag | GB | tools | think | License | Note |
 |---|---|---|---|---|---|---|
-| OLMo-2 7B Instruct | `olmo2:7b` | 4.5 | ❌ | ❌ | Apache-2.0 | **fully open** 7B — the provenance/openness anchor |
-| Cogito v1 8B | `cogito:8b` | 4.9 | ✅ | ✅ | Llama-3.1 | hybrid reasoning **+ tool-calling** at the top |
-| DeepSeek-R1-0528-Qwen3 8B | `deepseek-r1:8b-0528-qwen3-q4_K_M` | ~5.2 | ✅ | ✅ | MIT | best small **reasoning distill** of 2025 (≠ tested `r1:7b`) |
+| OLMo-2 7B Instruct | `olmo2:7b` | 4.5 | no | no | Apache-2.0 | **fully open** 7B — the provenance/openness anchor |
+| Cogito v1 8B | `cogito:8b` | 4.9 | yes | yes | Llama-3.1 | hybrid reasoning **+ tool-calling** at the top |
+| DeepSeek-R1-0528-Qwen3 8B | `deepseek-r1:8b-0528-qwen3-q4_K_M` | ~5.2 | yes | yes | MIT | best small **reasoning distill** of 2025 (≠ tested `r1:7b`) |
 
-> ⚠️ The 0528-Qwen3 distill is **~5.2 GB** (marginally over). Clean-fit
+> **Note:** the 0528-Qwen3 distill is **~5.2 GB** (marginally over). Clean-fit
 > alternates: `deepseek-r1:8b-llama-distill-q4_K_M` (4.9 GB), `granite3.3:8b`
 > (4.9 GB, Apache, think+tools), `falcon3:7b-instruct-q4_K_M` (4.6 GB).
 > **Excluded — non-commercial weights** that would taint the Apache-2.0 shareable
@@ -276,10 +276,10 @@ on how much quality the knee actually loses to quantization.
 
 > **Verification note (2026-06-20):** ~33 of ~40 tags were fetched and confirmed
 > against the live model/GGUF page (size, license, params, file list), including
-> every Ollama-native entry above. The **⚠️** items are real models whose exact
+> every Ollama-native entry above. The **†**-flagged items are real models whose exact
 > GGUF file or runtime needs a manual confirm before pulling (four HF listings
 > were bot-blocked; BitNet needs `bitnet.cpp`; gemma3n is over-footprint). **No
-> tag was invented** — every ⚠️ names the exact uncertainty to resolve.
+> tag was invented** — every † entry names the exact uncertainty to resolve.
 
 ## W3 · Wave-2 backfill (re-run the transient pull-failures)
 

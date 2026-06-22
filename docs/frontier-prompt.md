@@ -1,6 +1,6 @@
 # Frontier baseline prompt (manual reference run)
 
-> ⚠️ **Use [`MODEL-PROMPTS.md`](MODEL-PROMPTS.md) for a fair baseline.** That file
+> **Note — use [`MODEL-PROMPTS.md`](MODEL-PROMPTS.md) for a fair baseline.** That file
 > contains the **byte-identical** prompt each tested small model receives (from
 > `build_prompt()` in [run.py](run.py)). Running the frontier model on those exact
 > prompts is the apples-to-apples reference.

@@ -67,7 +67,7 @@ The pre-registration and full analysis plan live in `docs/PAPER.md`; every headl
 number reproduces from the released snapshot via `docs/analysis/wave_analysis.ipynb`.
 :::
 
-📄 **[Download this paper as a PDF](paper.pdf)** — or read it on this page; the
+**[Download this paper as a PDF](paper.pdf)** — or read it on this page; the
 [reviewer guide](reviewers.html) and a one-click feedback form are linked there.
 
 # Introduction {#sec-intro}
