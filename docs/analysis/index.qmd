@@ -60,6 +60,11 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
   quality, safety, energy, and the integrated Pareto, with the systems context.
 - [**Judge agreement →**](judge_comparison.ipynb) — how much the two LLM judges
   agree (Cohen's κ, ICC, Bland–Altman).
+- [**Reviewer queries →**](reviewer.ipynb) — run and **edit** the prebaked queries
+  behind every headline number, in your browser via
+  [Binder](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb)
+  or [Colab](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb)
+  (no install).
 - [**For reviewers →**](reviewers.html) — what we are asking you to check, and a
   one-click way to send structured feedback.
 
@@ -69,7 +74,7 @@ the pre-registration and full threats-to-validity table are in
 
 ::: {.callout-tip appearance="simple"}
 **Every number and figure here was verified.** Each value was re-derived from the
-committed snapshot (`data/snapshots/`) on 2026-06-20, and every reference resolved
+committed snapshot (`data/snapshots/`) on 2026-06-22, and every reference resolved
 against arXiv / CrossRef. See the paper's [verification statement](paper.html#sec-verification).
 :::
 
