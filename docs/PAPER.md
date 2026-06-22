@@ -653,9 +653,9 @@ dominated** — beaten on *every* axis at once, so nothing is lost by discarding
 
 | Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
 |---|---|---|---|---|
-| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` | 3-4B | 71.4 | 80.3 | 138 |
+| **`qwen3:4b-instruct-2507-q4_K_M`** — sovereign pick | 3-4B | 68.6 | **90.8** | 106 |
+| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` — quality-max | 3-4B | **71.4** | 80.3 | 138 |
 | `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3 | 90.8 | 155 |
-| `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 68.6 | 90.8 | 106 |
 | `granite4:tiny-h` | 4-5GB | 63.5 | 74.2 | 54 |
 | `qwen3:1.7b-q8_0` | 1-2B | 62.1 | 82.8 | 93 |
 | `qwen3:1.7b` | 1-2B | 61.5 | 83.6 | 36 |
@@ -665,6 +665,13 @@ dominated** — beaten on *every* axis at once, so nothing is lost by discarding
 | `hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M` | 0-1B | 36.2 | 68.6 | 32 |
 | `smollm2:360m` | 0-1B | 27.8 | 65.6 | 23 |
 | `smollm2:135m-instruct-q8_0` | 0-1B | 22.8 | 48.6 | 13 |
+
+*The front is the **short-list** — all 12 are non-dominated; the table leads with the
+recommended **sovereign pick**, then sorts by quality (sorting *by* quality would lead
+with the lower-safety model, against the three-axis point). `unsloth/Qwen3-4B` is the
+**quality-max**, but it is the *original* Qwen3-4B (a hybrid-thinking release): all four
+original-Qwen3-4B packagings refuse at **80–84 %** vs **90.8 %** for the pure-instruct
+Instruct-2507 — exactly why the balanced pick is the 2507 instruct, not the top score.*
 
 Two reads carry the integration. **(i) The proxies land off the front — even
 *within* the 4B cluster.** The high-quality corner is owned by **three Qwen3-4B

@@ -79,7 +79,7 @@ Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PA
 
 | RQ | Question | Hypothesis |
 |---|---|---|
-| RQ1 | Does reasoning quality scale with model size (0.5–8B)? | Quality rises, but with diminishing returns — a knee around **3–4B**. |
+| RQ1 | Does reasoning quality scale with model size (0.5–8B)? | Quality rises, but with diminishing returns — a knee around **2–3B**. |
 | RQ2 | Which bracket is the **speed/quality Pareto frontier** at ≥8 tok/s? | The **3–4B** bracket dominates. |
 | RQ3 | Are small models **safe** to put in front of a homelab? | Safety is **not monotonic** in size; some small models endorse catastrophic commands. |
 | RQ4 | Do **"thinking" models** beat instruct models at diagnosis? | They gain accuracy on diagnosis/test — but at a prohibitive latency cost on CPU. |

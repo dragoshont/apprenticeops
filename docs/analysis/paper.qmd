@@ -471,9 +471,9 @@ nothing is lost by discarding them.
 
 | Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
 |---|---|---|---|---|
-| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` | 3–4B | 71.4 | 80.3 | 138 |
+| **`qwen3:4b-instruct-2507-q4_K_M`** — sovereign pick | 3–4B | 68.6 | **90.8** | 106 |
+| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` — quality-max | 3–4B | **71.4** | 80.3 | 138 |
 | `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 71.3 | 90.8 | 155 |
-| `qwen3:4b-instruct-2507-q4_K_M` | 3–4B | 68.6 | 90.8 | 106 |
 | `granite4:tiny-h` | 4–5GB | 63.5 | 74.2 | 54 |
 | `qwen3:1.7b-q8_0` | 1–2B | 62.1 | 82.8 | 93 |
 | `qwen3:1.7b` | 1–2B | 61.5 | 83.6 | 36 |
@@ -484,7 +484,7 @@ nothing is lost by discarding them.
 | `smollm2:360m` | 0–1B | 27.8 | 65.6 | 23 |
 | `smollm2:135m-instruct-q8_0` | 0–1B | 22.8 | 48.6 | 13 |
 
-: The Pareto front spans the whole size range. {#tbl-pareto}
+: Ordered by the **sovereign pick** first, not by quality. `unsloth/Qwen3-4B` (the quality-max) is the *original* Qwen3-4B and refuses ~10 points less than the pure-instruct Instruct-2507 (80.3 % vs 90.8 %) — which is why the pick is the 2507. {#tbl-pareto}
 
 ![The sovereign selection. Each functional model is a point in (judged quality, deterministic refusal); marker area is energy per answer. Filled markers are Pareto-optimal (12 of 94); hollow markers are dominated. The 'biggest that fits' and 'has a reasoning mode' picks fall off the front.](figures/fig-pareto.png){#fig-pareto fig-alt="A scatter of 94 models by quality on the x-axis and refusal on the y-axis; twelve Pareto-optimal models are filled and the rest hollow; deepseek models sit low with large markers."}
 
