@@ -552,6 +552,43 @@ third collection wave was **dropped**. H1–H7 are **confirmatory**; analyses ad
 *after* the plan (e.g. the within-`Qwen3-4B`-family safety comparison) are
 **exploratory**.
 
+# Selecting from the front: weight-sensitivity and robustness {#sec-selection}
+
+A Pareto front is a **set**, not a ranking; collapsing it to one winner requires a
+preference — *absent stated preferences, every point on the front is equally good*
+[@miettinen1999]. The sovereign pick (@sec-pareto) is therefore **one operating
+point**, so we report how it behaves across **all** preferences rather than defend a
+single weighting.
+
+**Weight-sensitivity (SMAA).** Drawing 100,000 weight vectors uniformly from the
+(quality, safety, energy) simplex and counting first-place finishes
+[@lahdelma1998smaa] gives each model's share of the entire preference space:
+
+| Model | bracket | win-share |
+|---|---|---|
+| `qwen3:4b-instruct-2507-q4_K_M` (**sovereign pick**) | 3–4B | **39.6 %** |
+| `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 29.4 % |
+| `qwen3:1.7b` | 1–2B | 27.0 % |
+| `…unsloth/Qwen3-4B-GGUF:Q4_K_M` (**quality-max**) | 3–4B | 3.0 % |
+
+: Rank-1 acceptability over the 3-axis weight simplex (SMAA, 100k draws). {#tbl-smaa}
+
+Only **7 of 94** models win under *any* weighting and **three split 96 %** of the
+space. The same `Qwen3-4B-Instruct-2507` family wins the balanced, safety-first, and
+quality-first weightings, displaced only by the cheaper `qwen3:1.7b` under
+energy-dominant weights. The size heuristic's quality-max pick wins just **3 %** — a
+preference-independent restatement of the thesis. An independent **TOPSIS** ranking
+(distance to the ideal point, equal weights; @hwangyoon1981) places the sovereign
+pick **first of 94**: two unrelated rules agree.
+
+Selecting from a front is a Multi-Criteria Decision Analysis problem with a menu of
+preference models — weighted sum (convex hull only), Chebyshev (non-convex),
+TOPSIS/VIKOR, **ε-constraint** (the "refusal ≥ X %" floor), lexicographic, and
+**sorting** into tiers (deploy / conditional / reject) rather than choosing one. We
+report SMAA + TOPSIS as preference-robust summaries, noting that distance/pairwise
+methods can show **rank reversal** when the candidate set changes, whereas the SMAA
+acceptability is over the fixed roster.
+
 # Limitations and Threats to Validity {#sec-limitations}
 
 We name the load-bearing threats up front; the full table (with concrete,

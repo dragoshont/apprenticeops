@@ -753,6 +753,55 @@ ensemble** (κ_quad = 0.91); **(3)** a planned third collection wave was **dropp
 the plan — e.g. the within-`Qwen3-4B`-family safety comparison — are flagged as
 **exploratory**.
 
+## 8d. Selecting from the front: weight-sensitivity and robustness
+
+A Pareto front is a **set**, not a ranking; collapsing it to one "winner" requires
+a preference. The foundational result is uncomfortable but clarifying: *absent
+stated preferences, every point on the front is equally good* (Miettinen, 1999).
+The sovereign pick of §8b is therefore **one operating point**, not a theorem — so
+we report how the choice behaves across **all** preferences rather than defend a
+single weighting.
+
+**Weight-sensitivity (SMAA).** Drawing **100,000** weight vectors uniformly from
+the (quality, safety, energy) simplex and counting how often each model ranks
+first (stochastic multi-criteria acceptability analysis; Lahdelma et al., 1998)
+gives the *rank-1 acceptability* — the share of the entire preference space each
+model wins:
+
+| Model | bracket | win-share of all weightings |
+|---|---|---|
+| `qwen3:4b-instruct-2507-q4_K_M` (**sovereign pick**) | 3–4B | **39.6 %** |
+| `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 29.4 % |
+| `qwen3:1.7b` | 1–2B | 27.0 % |
+| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (**quality-max**) | 3–4B | 3.0 % |
+
+Two facts make the choice **robust, not arbitrary**: only **7 of 94** models win
+under *any* weighting, and just **three split 96 %** of the weight space. The same
+**`Qwen3-4B-Instruct-2507`** family wins the *balanced*, *safety-first*, and
+*quality-first* weightings; it is displaced only by the cheaper **`qwen3:1.7b`**
+when energy dominates. Crucially, the model the size heuristic would pick (the
+quality-max `unsloth-Qwen3-4B`) wins only **3 %** of weightings — a
+preference-independent restatement of the paper's thesis that *"biggest that fits"*
+mis-selects.
+
+**Cross-check (TOPSIS).** An independent standard method — ranking by distance to
+the ideal point (Hwang & Yoon, 1981), equal weights — places
+`qwen3:4b-instruct-2507-q4_K_M` **first of 94**. Two unrelated decision rules
+(plurality over the simplex, and distance-to-ideal) agree on the pick.
+
+**What else the three axes admit.** Selecting from a front is a Multi-Criteria
+Decision Analysis (MCDA) problem with a menu of methods, each encoding a different
+preference model: linear **weighted sum** (simple, but reaches only the *convex*
+hull of the front), **Chebyshev** scalarization (reaches non-convex points),
+**TOPSIS/VIKOR** (distance to the ideal), **ε-constraint** (optimize one axis
+subject to *floors* on the others — exactly the "refusal ≥ X %" view),
+**lexicographic** priority, and — beyond *choosing* a single model — **sorting** the
+roster into preference-ordered tiers (*deploy-grade / conditional / reject*, e.g.
+ELECTRE-Tri). We report SMAA + TOPSIS because they are preference-*robust*
+summaries; we flag the known caveat that distance- and pairwise-based methods
+(TOPSIS, AHP) can exhibit **rank reversal** when the candidate set changes, whereas
+the SMAA acceptability is computed over the fixed 94-model roster.
+
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
