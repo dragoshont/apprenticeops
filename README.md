@@ -75,17 +75,25 @@ This is why we measure two grounding modes per scenario: **closed-book** (in-wei
 
 ## Research questions
 
-Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PAPER.md`](docs/PAPER.md)):
+Seven falsifiable hypotheses were **pre-registered** before the measurement run
+(the locked spec lives in [`docs/PAPER.md`](docs/PAPER.md) §3). We report each one
+against what actually happened — **including the predictions the data did not
+confirm** — rather than quietly revising them after the fact:
 
-| RQ | Question | Hypothesis |
+| RQ | Pre-registered prediction | Outcome |
 |---|---|---|
-| RQ1 | Does reasoning quality scale with model size (0.5–8B)? | Quality rises, but with diminishing returns — a knee around **2–3B**. |
-| RQ2 | Which bracket is the **speed/quality Pareto frontier** at ≥8 tok/s? | The **3–4B** bracket dominates. |
-| RQ3 | Are small models **safe** to put in front of a homelab? | Safety is **not monotonic** in size; some small models endorse catastrophic commands. |
-| RQ4 | Do **"thinking" models** beat instruct models at diagnosis? | They gain accuracy on diagnosis/test — but at a prohibitive latency cost on CPU. |
-| RQ5 | How far below a **frontier reference** do the best small models land? | ~60–80 % of frontier on structured tasks; less on open-ended diagnosis. |
-| RQ6 | How much does **local grounding (RAG)** lift a small model? | The gap is large for small models and shrinks with size — local RAG substitutes for parameters. |
-| RQ7 | What is the **energy cost per task**, and where is the efficiency sweet spot? | Energy/answer rises with params; the **2–3B** quality knee sits near the energy-efficiency sweet spot. |
+| RQ1 | Quality rises with diminishing returns; a knee around **3–4B**. | **Supported** — knee landed one bracket smaller, at **2–3B**. |
+| RQ2 | The **3–4B** bracket dominates the speed/quality Pareto. | **Partial** — the balanced pick is 3–4B, but the non-dominated front spans **all five** brackets. |
+| RQ3 | Safety is **not monotonic** in size; some small models endorse destructive commands. | **Supported** — driven by **training type, not size**. |
+| RQ4 | "Thinking" models gain on diagnosis but at prohibitive CPU latency. | **Not directly tested** — no per-class accuracy × latency split (future work). |
+| RQ5 | Best ≤5 GB model reaches **~60–80 %** of a frontier reference. | **Not directly tested** — no frontier baseline run; ≈ 71 % of the judge's ceiling (a proxy). |
+| RQ6 | Local **RAG** lift is large for small models and shrinks with size. | **Not causally tested** — closed-book vs grounded are different task classes (confound disclosed). |
+| RQ7 | Energy/answer rises with params; the knee is the efficiency sweet spot. | **Supported** — energy rises with params; knee one bracket smaller (**2–3B**). |
+
+Three of the seven hold as stated; the quality knee landed **one bracket smaller**
+than predicted; three (RQ4–RQ6) were **not directly testable** with this design and
+are flagged as such, not silently dropped. Full prediction-vs-outcome detail and
+the deviation log: [`docs/PAPER.md`](docs/PAPER.md) §8c.
 
 ---
 

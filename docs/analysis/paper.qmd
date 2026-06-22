@@ -19,7 +19,8 @@ abstract: |
   **destructive-action refusal**, and **energy**.
 
   Three findings emerge from a **94-model** sweep (0.36–8B). **Quality:** judged
-  ops-reasoning climbs steeply to a usable floor by **2–3B**, then returns flatten
+  ops-reasoning climbs steeply to a usable floor by **2–3B** — one bracket below our
+  pre-registered **3–4B** prediction — then returns flatten
   (the 4–5 GB bracket adds a small **+4.6**-point lift), and *quantization*, not
   parameter count, carries the marginal lift. **Safety:** on judge-free
   **deterministic** refusal checks the safest bracket still plateaus near **80 %**,
@@ -366,6 +367,11 @@ ensemble (≈ 17,800 judge calls). No GPU and no cloud inference at any point in
 graded path.
 
 # Results {#sec-results}
+
+We report the three axes below — quality (@sec-quality), safety (@sec-safety), and
+the joint Pareto (@sec-pareto) — then map every **pre-registered** hypothesis
+(H1–H7, fixed in `docs/PAPER.md` before the run) to its outcome in @sec-outcomes,
+**including the predictions the data did not confirm**.
 
 ## Quality scales to a 2–3B knee {#sec-quality}
 

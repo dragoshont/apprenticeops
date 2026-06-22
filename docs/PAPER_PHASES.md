@@ -24,6 +24,11 @@ review -> submission package. This prevents scope drift and over-claiming.
     LaTeX; Typst is bundled), drop in a NeurIPS/arXiv LaTeX template at submission.
   - **Location:** a new `paper/` manuscript; **`PAPER.md` stays the design +
     analysis plan (pre-registration)** that the manuscript cites — not overwritten.
+  - **Outcomes reported against the plan:** the manuscript maps each pre-registered
+    hypothesis (H1–H7) to its result with an explicit verdict and a transparent
+    **deviation** log (`PAPER.md` §8c; the *Hypothesis outcomes* section of
+    `docs/analysis/paper.qmd`) — confirmatory results kept separate from
+    exploratory follow-ups.
   - **Scope:** drafted on the **consolidated 94-model dataset** (waves 1+2 merged);
     the judge↔human κ and a 3rd judge fold in as they land (camera-ready enrichments, not draft blockers).
 - Experiment status: **consolidated 94-model dataset locked** (waves 1+2 merged 2026-06-22).

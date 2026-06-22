@@ -44,9 +44,10 @@ practitioner reaches for — **parameter count, benchmark score, a "reasoning"
 badge, perplexity** — each mislead, and they mislead on **different axes**, so no
 one of them orders the choice. We profile three axes at once in a single
 offline, CPU-only harness. **Quality:** across a **94-model** sweep (0.36–8B),
-judged ops-reasoning climbs steeply with size to a usable floor by **2–3B**, then
-returns flatten (the 2–3B→3–4B step adds **<1 point**, the 4–5GB bracket a further
-**+4.6**), and **quantization largely preserves it** — so "biggest that fits" buys
+judged ops-reasoning climbs steeply with size to a usable floor by **2–3B** — one
+bracket below our **pre-registered 3–4B** prediction — then returns flatten (the
+2–3B→3–4B step adds **<1 point**, the 4–5GB bracket a further **+4.6**), and
+**quantization largely preserves it** — so "biggest that fits" buys
 little above the knee. **Safety:** on **deterministic** refusal-of-destructive-action
 checks (no LLM judge, our most robust numbers) the safest size bracket still plateaus
 near **80 %** — one destructive prompt in five survives — and the dominant driver
@@ -173,6 +174,17 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 | **RQ5** | How far below a **frontier reference** do the best small models land on real ops tasks? | H5: best ≤5 GB model reaches **~60–80 %** of frontier on structured tasks, **less** on open-ended diagnosis. |
 | **RQ6** | How much does **local grounding (RAG)** lift a small model vs closed-book? | H6: grounded − closed-book gap is **large for small models** and shrinks with size — i.e. local RAG substitutes for parameters. |
 | **RQ7** | What is the **energy cost per task** (Wh/answer, tok/s-per-watt) and how does it scale with model size on CPU? | H7: energy/answer rises with params; the **3–4B** knee is also the **energy-efficiency** sweet spot (best correct-answers-per-watt on this box). |
+
+> **Pre-registration (state up front).** These seven hypotheses — including the
+> **bracket each names** (H1/H2/H7 predict a *3–4B* knee/frontier) — were **fixed
+> before the measurement run** *(Locked.)*. We report outcomes against them
+> **verbatim** in §8c: each hypothesis earns an explicit verdict — *supported* /
+> *partially supported* / *not directly tested* — and any departure from this plan
+> is logged as a transparent **deviation**, never folded back into the hypothesis
+> after the fact (no HARKing). For the record, before the result: **three of the
+> seven hold**, the quality knee landed **one bracket smaller (2–3B)** than the
+> pre-registered **3–4B**, and three (RQ4–RQ6) were **not directly testable** with
+> this design — we say so rather than revise the predictions.
 
 ## 4. Methodology and Experimental Design
 
@@ -712,7 +724,7 @@ instrumentation gap. Models with *no* usable rows on *any* axis (`phi:2.7b` plus
 registry pull-failures) are excluded entirely and named in the appendix.
 ## 8c. Hypothesis outcomes (confirmatory) and deviations from the pre-registration
 
-Mapping each **pre-registered** hypothesis (§4, fixed before the run) to its result.
+Mapping each **pre-registered** hypothesis (§3, fixed before the run) to its result.
 Per the pre-registration / Registered-Reports convention (Nosek et al., *PNAS* 2018;
 Chambers, *Cortex* 2013), we report **every** registered prediction with an explicit
 verdict — including the ones the data did **not** cleanly test — rather than silently

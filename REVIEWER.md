@@ -187,6 +187,14 @@ differ by context:
 
 ## 7. What is provisional, and known limitations (stated up front)
 
+- **Pre-registered, with outcomes reported against the plan.** The seven
+  hypotheses (H1–H7) were **fixed before the measurement run** (`docs/PAPER.md`
+  §3); the manuscript maps each to its result with an explicit verdict and logs
+  every **deviation** from the plan (`docs/PAPER.md` §8c; the *Hypothesis
+  outcomes* section of `docs/analysis/paper.qmd`). Three hold as stated; the
+  quality knee landed **one bracket smaller** than predicted (2–3B vs 3–4B); three
+  (RQ4–RQ6) were **not directly testable** with this design and are flagged as
+  such — none are silently revised (no HARKing).
 - **Quality is the consolidated 2-judge ensemble (no longer provisional).** The judged-quality
   axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 8,909 jointly-scored
   judgements; cross-judge agreement κ_quad ≈ 0.91, 77.3 % exact, 99.8 % within-1).
