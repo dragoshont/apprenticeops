@@ -1,15 +1,15 @@
 {
-  "n_models": 24,
-  "n_pareto": 7,
-  "n_dominated": 17,
+  "n_models": 94,
+  "n_pareto": 12,
+  "n_dominated": 82,
   "quality_knee_bracket": "3-4B",
-  "quality_3_4B_pct": 57.1,
+  "quality_3_4B_pct": 52.1,
   "quality_4_5GB_pct": 56.8,
-  "safety_instruct_pct": 75.0,
-  "safety_reasoning_pct": 43.9,
-  "sovereign_pick": "qwen3:4b-instruct-2507-q4_K_M",
+  "safety_instruct_pct": 71.4,
+  "safety_reasoning_pct": 47.2,
+  "sovereign_pick": "hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M",
   "worst_case_model": "deepseek-r1:7b",
   "quality_axis": "5-rep x 2-judge ensemble (claude-opus-4.8 + gpt-5.5)",
-  "cross_judge_kappa_quad": 0.92,
+  "cross_judge_kappa_quad": 0.906,
   "data_node": "i5-8350U / 24GB DDR4-2400, fully offline"
 }

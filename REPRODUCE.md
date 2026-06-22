@@ -12,8 +12,8 @@
 | **Ollama** ≥ 0.30 | runs the models locally | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
 | **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models |
 | **Linux host** for full telemetry | `run.py` reads `/proc` for RAM/swap | macOS/Windows run fine but **RAM/swap series will be empty** (documented limitation) |
-| **~60–120 GB free disk** | model weights (pulled then freed per model) | 25 models, q4 |
-| **Time** | CPU inference | hours→days for the full R=5 × 25-model run |
+| **~60–120 GB free disk** | model weights (pulled then freed per model) | 95 models, q4 |
+| **Time** | CPU inference | hours→days for the full R=5 × 94-model run |
 | *(judge only)* a frontier judge | scoring (NOT the system-under-test) | default `copilot` backend = official Copilot CLI (`npm i -g @github/copilot`, authenticated); or `github`/`anthropic`. judge.py is stdlib-only |
 | *(energy, optional)* Intel RAPL (preferred) or a metered smart plug | measured energy-per-task | **RAPL** (Intel): on-die joule counters, auto-used if present (root-only → run.py reads via passwordless sudo; tune `RAPL_DOMAIN=psys\|package-0`, disable with `RAPL_DISABLE=1`). **Plug alt:** Home Assistant `HA_URL`/`HA_TOKEN`/`HA_POWER_ENTITY`, **or** IKEA DIRIGERA `DIRIGERA_URL`/`DIRIGERA_TOKEN`/`DIRIGERA_DEVICE_ID`. LAN/SoC operator telemetry (not a model egress); RAPL wins, then HA, then DIRIGERA |
 | *(stats only)* `numpy`, `scipy` | CIs, Wilcoxon, κ in the analysis | off the node, optional |

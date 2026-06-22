@@ -44,35 +44,35 @@ picks come out **dominated**.
    presented as **corroboration** of the agent-/SLM-safety literature, not
    discovery; energy is the under-reported axis that prices capability above the knee.
 
-## Wave-1 findings (data-grounded, 2026-06-18)
+## Findings (consolidated 94-model dataset, 2026-06-22)
 
-From the complete Wave-1 run (25 models × 19 scenarios; deterministic refusal/
-check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality pass —
-κ_quad ≈ 0.92 — that supersedes the original single-judge pass):
+From the consolidated run (**94 functional models** × 19 scenarios; deterministic
+refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality pass
+— κ_quad ≈ 0.91 over 8,909 pairs — that supersedes the original single-judge pass):
 
-1. **Knee at 3-4B.** Judged %-of-frontier rises 35 / 40 / 50 / 57 / 57 % across
-   the 0-1B→4-5GB brackets; under the variance pass the 4-5GB bracket sits -0.3 pt
-   *below* 3-4B (no lift; pre-registered gate → **HOLD 4-5GB**, strengthened).
-   Best small model ≈ 71 %.
-2. **Quant beats parameters at the knee.** A 4B at q4 (`qwen3:4b-...-q4_K_M`,
-   68.6 %) is mutually non-dominated with its own q8 (71.3 %) and beats
-   `qwen2.5:7b` and a 6.9B Granite.
+1. **Knee at 2-3B.** Judged %-of-frontier rises 32 / 38 / 51 / 52 / 57 % across
+   the 0-1B→4-5GB brackets; the 2-3B→3-4B step is **flat** (+0.8 pt, the knee) and
+   the 4-5GB bracket adds a **small +4.6 pt** lift (non-overlapping CIs but under
+   the pre-registered 5-pt gate → **marginal HOLD 4-5GB**). Best small model ≈ 71 %.
+2. **Quant beats parameters at the knee.** A 4B at q4 (`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`,
+   71.4 %) edges the best q8 4B (`qwen3:4b-instruct-2507-q8_0`, 71.3 %); the 2507
+   q4 (68.6 %) and q8 are mutually non-dominated.
 3. **Capability is perception-first.** Strong on detect/localize/monitor/test
    (80-100 %), weak on guard/expand/upgrade (38-55 %).
 4. **Safety (axis #2) tracks training type, not size — a *replication*, not a discovery.** Guard+secure
-   refusal by bracket: 62 / 67 / 79 / 82 / 73 % — peaks at 3-4B, **drops** at
-   4-5GB. Reasoning/“thinking” models refuse at **43.9 % [36.7, 51.2]** vs
-   instruct **75.0 % [73.1, 76.9]** (n = 60 vs 660). A 0.36B model (`smollm2:360m`,
+   refusal by bracket: 62 / 68 / 77 / 75 / 73 % (non-monotonic via the reasoning
+   confound). Reasoning/“thinking” models refuse at **47.2 % [41.3, 53.3]** vs
+   instruct **71.4 % [70.3, 72.4]** (n = 120 vs 2700). A 0.36B model (`smollm2:360m`,
    66 %) is safer than a 7.6B reasoning model (`deepseek-r1:7b`, 47 %). This rests
    on the **deterministic** refusal check (not the LLM judge) — methodologically
    cleaner and bias-free.
 5. **`phi:2.7b` failed to serve** (95/95 DNF) — excluded as DNF, not performance.
 6. **The headline is the integration: a quality × safety × energy Pareto.** Treating
-   each model as a point in (judged quality ↑, refusal ↑, energy ↓), **7 of 24
-   models are Pareto-optimal**; the other 17 are dominated. The “biggest” and
-   “reasoning” picks land **off** the front — `deepseek-r1:7b` is simultaneously the
-   least safe (47 %) and the most energy-expensive (303 mWh/answer). The selection
-   short-list is found only by measuring all three axes together.
+   each model as a point in (judged quality ↑, refusal ↑, energy ↓), **12 of 94
+   models are Pareto-optimal**; the other 82 are dominated. The “biggest” and
+   “reasoning” picks land **off** the front — `deepseek-r1:7b` is the least-safe
+   large model (47 %) and among the most energy-expensive (303 mWh/answer, top 5 of
+   94). The selection short-list is found only by measuring all three axes together.
 
 ## Literature positioning (scan 2026-06-18)
 

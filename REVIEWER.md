@@ -36,7 +36,7 @@ score, a "reasoning" badge, perplexity) get wrong.
   benchmark measures judged quality *beside* destructive-action refusal *beside*
   energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only, ≤8B**
   model-selection decision on commodity hardware and real GitOps incidents. The
-  headline result is the **energy × safety × quality Pareto**: 7 of 24 models are
+  headline result is the **energy × safety × quality Pareto**: 12 of 94 models are
   non-dominated; the "biggest" and "reasoning" picks come out **dominated**.
 - **Safety is axis #2, framed as corroboration — not discovery.** That
   reasoning-distillation and quantization degrade destructive-action refusal, and
@@ -107,7 +107,7 @@ the intended venue. For each, the specific thing to scrutinise here:
 
 | Dimension | What to check in *this* work |
 |---|---|
-| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks actually judge-free and correct? Do the bootstrap CIs support the bracket/arm claims? Is the quality axis — now the **5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.92) — honest about the *residual* judge↔human uncertainty? |
+| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks actually judge-free and correct? Do the bootstrap CIs support the bracket/arm claims? Is the quality axis — now the **5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.91) — honest about the *residual* judge↔human uncertainty? |
 | **Clarity** (can an expert reproduce from the text?) | Is the sovereign constraint defined unambiguously (offline = no external *model* API, not information-poverty)? Are the Pareto/dominance definitions precise? |
 | **Significance** (will others use or build on it?) | Is the offline/CPU/commodity regime + energy-coupled selection useful to practitioners and researchers? Is the released harness reusable? |
 | **Originality** (new insight, clearly differentiated, well-cited?) | Is the *integration* genuinely unoccupied by prior work, and is the safety axis honestly scoped as **replication**? Note: per NeurIPS, *"originality does not necessarily require introducing an entirely new method… novel insights by evaluating existing methods… is equally valuable."* Please judge the contribution as an integration/evaluation, and tell us if that integration is **not** novel enough. |
@@ -123,11 +123,11 @@ soften the claim" is gold.
 
 ## 5. Reproducibility & artifacts (how to verify, safely)
 
-> **Pre-submission verification (2026-06-20).** Every quantitative claim in the
+> **Pre-submission verification (2026-06-22).** Every quantitative claim in the
 > paper was **re-derived from the committed snapshot** (`data/snapshots/`) by an
 > independent clean-room audit, and **every reference was resolved against
 > arXiv / CrossRef / Semantic Scholar**. The audit reproduced the quality knee,
-> the safety arms, the cross-judge κ_quad = 0.92, and the full 7-of-24 Pareto
+> the safety arms, the cross-judge κ_quad = 0.91, and the full 12-of-94 Pareto
 > front *exactly*; it also corrected one over-stated safety superlative and
 > surfaced an undisclosed served-failure (both fixed). You can repeat it from a
 > clean checkout — the figures on the site are generated from the same exports.
@@ -187,12 +187,13 @@ differ by context:
 
 ## 7. What is provisional, and known limitations (stated up front)
 
-- **Quality is now the variance pass (no longer provisional).** The judged-quality
-  axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 2,375 judgements;
-  cross-judge agreement κ_quad ≈ 0.92, 77 % exact, 99.9 % within-1). It firmed the
-  Pareto membership (8 → 7 non-dominated) and *strengthened* the 3–4 B knee — the
-  4–5 GB bracket now sits -0.3 pt below 3–4 B (no lift) — without changing the
-  structure. What remains open is **judge↔human** agreement and an optional third
+- **Quality is the consolidated 2-judge ensemble (no longer provisional).** The judged-quality
+  axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 8,909 jointly-scored
+  judgements; cross-judge agreement κ_quad ≈ 0.91, 77.3 % exact, 99.8 % within-1).
+  Consolidating the two collection batches into one **94-model** dataset moved the
+  quality knee to **2–3B** (the 2–3B→3–4B step is flat; the 4–5 GB bracket then
+  adds +4.6 pts) and set the Pareto front at **12 of 94 non-dominated** — without
+  changing the structure. What remains open is **judge↔human** agreement and an optional third
   judge for a Fleiss pass.
 - **n = 1 environment.** One operator, one cluster, one node (i5-8350U). We frame
   this as a **single-environment case study plus a released harness**, and invite

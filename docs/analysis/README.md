@@ -41,7 +41,7 @@ quarto render docs/analysis                                                     
 ```
 
 > **Honesty:** the **quality** axis is the **5-rep × 2-judge ensemble**
-> (cross-judge κ_quad ≈ 0.92); **safety** and **energy** are judge-free / measured.
+> (cross-judge κ_quad ≈ 0.91); **safety** and **energy** are judge-free / measured.
 > Everything is one commodity node (n = 1). See the notebook intro for provenance.
 > Render artifacts (`_site/`, `*.html`) are git-ignored; the notebook outputs and
 > `data/site/` exports are tracked.

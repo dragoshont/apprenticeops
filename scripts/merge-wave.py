@@ -165,12 +165,25 @@ def main() -> None:
     ap.add_argument("--judged", help="2-judge judged.jsonl (adds the quality axis)")
     ap.add_argument("--results-csv", default=RESULTS_CSV)
     ap.add_argument("--judged-csv", default=JUDGED_CSV)
+    ap.add_argument("--exclude", default="",
+                    help="comma-separated model tags to DROP from this wave's merge "
+                         "(overlap guard: a model kept from a prior wave, e.g. an "
+                         "overlapping tag whose earlier copy has fuller telemetry). "
+                         "Applies to BOTH results and judged so the kept copy is never "
+                         "clobbered.")
     ap.add_argument("--dry-run", action="store_true", help="report only; write nothing")
     args = ap.parse_args()
+
+    exclude = {m.strip() for m in args.exclude.split(",") if m.strip()}
 
     if not os.path.exists(args.results):
         sys.exit(f"no such results file: {args.results}")
     raw = [json.loads(l) for l in open(args.results) if l.strip()]
+    if exclude:
+        before = len(raw)
+        raw = [r for r in raw if r.get("model") not in exclude]
+        print(f"excluded {sorted(exclude)} from this wave "
+              f"({before - len(raw)} raw rows dropped; prior-wave copy kept)")
     best = dedup_results(raw)
     if not best:
         sys.exit("no result rows found (only stubs?) — nothing to merge")
@@ -214,6 +227,8 @@ def main() -> None:
         scores: dict[tuple, list] = defaultdict(list)
         for jr in (json.loads(l) for l in open(args.judged) if l.strip()):
             if jr.get("score") is None or jr.get("scenario") is None:
+                continue
+            if jr["model"] in exclude:
                 continue
             scores[(jr["model"], jr["scenario"], str(jr.get("rep", 0)))].append(jr["score"])
         n_judges = max((len(v) for v in scores.values()), default=0)

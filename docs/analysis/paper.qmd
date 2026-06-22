@@ -18,20 +18,21 @@ abstract: |
   along three axes a practitioner must trade off *together*: **judged quality**,
   **destructive-action refusal**, and **energy**.
 
-  Three findings emerge from a 25-model Wave-1 sweep (0.36–8B). **Quality:** judged
-  ops-reasoning climbs to a **knee at 3–4B** and then flattens — the 4–5 GB bracket
-  adds nothing — and *quantization*, not parameter count, carries the marginal lift.
-  **Safety:** on judge-free **deterministic** refusal checks the safest bracket
-  still plateaus near **82 %**, and the dominant driver of refusal is **training
-  type, not size** — reasoning-distilled models refuse at **43.9 %** versus **75.0
-  %** for instruct, so a 0.36 B instruct model out-refuses a 7.6 B reasoning one. We
+  Three findings emerge from a **94-model** sweep (0.36–8B). **Quality:** judged
+  ops-reasoning climbs steeply to a usable floor by **2–3B**, then returns flatten
+  (the 4–5 GB bracket adds a small **+4.6**-point lift), and *quantization*, not
+  parameter count, carries the marginal lift. **Safety:** on judge-free
+  **deterministic** refusal checks the safest bracket still plateaus near **80 %**,
+  and the dominant driver of refusal is **training type, not size** —
+  reasoning-distilled models refuse at **47.2 %** versus **71.4 %** for instruct, so
+  a 0.36 B instruct model out-refuses a 7.6 B reasoning one. We
   are explicit that this safety result **corroborates** a fast-growing agent- and
   SLM-safety literature rather than discovering it; its weight is that it
   **replicates offline, on CPU, at homelab scale**. **Energy:** the bigger model
   bills you in watts and tokens per second for capability you may never use.
 
   The contribution is the **integration**. Treating each model as a point in
-  (quality ↑, refusal ↑, energy ↓), **7 of 24 models are Pareto-optimal**; the
+  (quality ↑, refusal ↑, energy ↓), **12 of 94 models are Pareto-optimal**; the
   "biggest that fits" and "has a reasoning mode" heuristics both select
   **dominated** models. We release the harness, scenarios, and data so the
   three-axis selection method is reproducible, not merely asserted.
@@ -59,7 +60,7 @@ format:
 ---
 
 ::: {.callout-note}
-**Draft status.** This is a Wave-1 working draft (not submitted). The judged-quality
+**Draft status.** This is a working draft (not submitted). The judged-quality
 axis is the 5-rep × 2-judge ensemble; safety and energy are deterministic/measured.
 The pre-registration and full analysis plan live in `docs/PAPER.md`; every headline
 number reproduces from the released snapshot via `docs/analysis/wave_analysis.ipynb`.
@@ -128,7 +129,7 @@ gate, framed on the AIOps maturity ladder. (2) An **offline operating contract +
 grounding split** (closed-book vs local-RAG-grounded) that isolates what
 retrieval cannot fix. (3) A **telemetry method** (OpenTelemetry-GenAI-aligned
 [@otel_genai], with measured per-task energy) for profiling on-device LLM ops.
-(4) The **three-axis selection map** — a quality knee at 3–4B (where quantization
+(4) The **three-axis selection map** — a quality knee at 2–3B (where quantization
 carries the lift), a safety axis governed by training type, and an energy axis —
 reported *together* for the model-selection decision, which no prior benchmark
 does. (5) The released artifact (harness + scenarios + data, Apache-2.0).
@@ -160,7 +161,7 @@ finds SLM reasoning is "strongly influenced by training methods and data quality
 rather than solely model scale" and that "quantization preserves reasoning
 capability," while [@schaeffer2023emergent] shows the apparent capability *jumps*
 of the scaling view are partly an artifact of discontinuous metrics. **Our take:**
-our Wave-1 curve adjudicates in this regime — judged quality knees at 3–4B and
+our curve adjudicates in this regime — judged quality knees at 2–3B and
 quantization preserves it (@sec-quality), corroborating ThinkSLM from an ops
 benchmark — which is why we report **continuous** judged %-of-frontier with
 confidence intervals, not a thresholded can/can't.
@@ -241,7 +242,7 @@ grading scaffolding. The deployed apprentice makes **zero** external calls.
 
 ## Scenario corpus and provenance {#sec-scenarios}
 
-The frozen Wave-1 snapshot is **19 scenarios** drawn from real `home.hont.ro`
+The frozen snapshot is **19 scenarios** drawn from real `home.hont.ro`
 signals (kube events, crashloops, ESO/Flux/Helm/probe failures) plus a held-out
 set authored *after* the harness froze, to test generalization. Tasks span six
 operational pillars — **Observe → Diagnose → Respond → Change → Secure →
@@ -279,13 +280,28 @@ tok/s-per-watt, and a net-over-idle baseline; a smart plug is an optional
 wall-power cross-check. The full field-by-field schema is released with the
 harness so the dataset is reusable.
 
+**Telemetry coverage and missing data.** The three decision axes — judged quality,
+deterministic refusal, and energy — are **complete for all 94 functional models**.
+Memory-bandwidth utilisation (MBU/roofline, @sec-pareto onward) is the one axis with
+gaps: a perf-counter capture shortfall left **6 of 94** models without per-run
+bandwidth samples. The shortfall is **instrumentation-driven** — the smallest,
+fastest models decode in too few 1 Hz sampling windows to register a peak — and is
+independent of the model's behaviour or scores, i.e. *missing at random* in the
+Rubin sense [@littlerubin2019]. We therefore report MBU on the **88-of-94** covered
+subset (available-case analysis) and keep every other axis at full $N$, rather than
+listwise-dropping otherwise-complete models from the study; the bandwidth subset
+under-samples the sub-1B bracket, so MBU is read as descriptive, not a per-bracket
+claim. Models removed from the analysis *entirely* — the `phi:2.7b` served-failure
+and a handful of registry pull-failures with no usable rows — are named in the
+excluded appendix.
+
 # Experimental Setup {#sec-setup}
 
-**Model roster.** We evaluate a **25-model roster** of local Ollama tags grouped
-by parameter bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB (five tags each). One model,
+**Model roster.** We evaluate a **94-model roster** of local Ollama tags grouped
+by parameter bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB. One model,
 the 2–3B base model `phi:2.7b` (Phi-2), failed to serve on every attempt (95/95
 timeouts) and is reported as a **served-failure**: it is excluded from the
-instruct-vs-reasoning arm split and from the Pareto front — leaving **24 functional
+instruct-vs-reasoning arm split and from the Pareto front — leaving **94 functional
 models** there — though its failed generations still count, near zero, in the
 quality bracket means. For the headline comparison, **quantization is held
 constant** at q4_K_M, with q8 and QAT (quantization-aware training) variants run as
@@ -318,19 +334,19 @@ first), so no model is certified by one judge: we grade every answer with **two
 judges from different families — Claude Opus 4.8 and GPT-5.5** — randomise answer
 order, blind the model identity, and require evidence citation. Where they agree
 we trust the score; where they split we flag rather than average. On the full
-Wave-1 set the two judges agree at **quadratic-weighted κ = 0.92** over **2,374
+consolidated set the two judges agree at **quadratic-weighted κ = 0.91** over **8,909
 pairs** — the weighted variant is the right metric for ordinal 1–5 scores
 [@cohen1968weighted; @landis1977kappa]. The supporting statistics all point the
-same way: unweighted κ = 0.71, Spearman ρ = 0.92, 77.9 % exact agreement, 99.9 %
-within one point, and near-identical means (2.39 vs 2.38). The quality ranking is
+same way: Pearson r = 0.91, 77.3 % exact agreement, 99.8 %
+within one point, and near-identical means (2.21 vs 2.23). The quality ranking is
 therefore not a single-grader artifact. A judge–**human** κ remains future work.
 
-![Cross-judge agreement (Claude Opus 4.8 vs GPT-5.5) over the 2,374 graded answers. Mass on the diagonal gives quadratic-weighted κ = 0.92 (77.9% exact, 99.9% within one point): the quality ranking is not a single-grader artifact.](figures/fig-judge.png){#fig-judge fig-alt="A 5 by 5 confusion heatmap of the two judges' 1-to-5 scores, with counts concentrated on the diagonal."}
+![Cross-judge agreement (Claude Opus 4.8 vs GPT-5.5) over the 8,909 graded answers. Mass on the diagonal gives quadratic-weighted κ = 0.91 (77.3% exact, 99.8% within one point): the quality ranking is not a single-grader artifact.](figures/fig-judge.png){#fig-judge fig-alt="A 5 by 5 confusion heatmap of the two judges' 1-to-5 scores, with counts concentrated on the diagonal."}
 
 **Statistical analysis plan (pre-registered).** Per (model, class) means of
 `det_score` and `judge_score` with bootstrap 95 % CIs (10k resamples); paired
 Wilcoxon signed-rank for pairwise comparisons and Friedman across models, with
-Holm–Bonferroni correction. With R = 5 and ~300 pairwise comparisons,
+Holm–Bonferroni correction. With R = 5 and ~4,400 pairwise comparisons,
 individual-model distinctions mostly will not survive correction, so we frame
 primary conclusions at the **bracket level** (5 well-powered groups) and treat
 per-model ranks as descriptive. A **cost/value gate** was fixed before looking at
@@ -344,39 +360,41 @@ size.
 so that "the model helps" is earned rather than assumed: a random legal answer
 (deterministic score ≈ 0.26) and a keyword/rule heuristic (≈ 0.73), both from
 `baselines.py`; a model must beat both to count. The sweep itself is deliberately
-modest — 25 models × 19 scenarios × (1 deterministic + 5 variance) samples ≈ 2,850
+modest — 94 models × 19 scenarios × (1 deterministic + 5 variance) samples ≈ 10,800
 graded generations on a single 15 W laptop CPU, plus the off-node two-judge
-ensemble (≈ 4,750 judge calls). No GPU and no cloud inference at any point in the
+ensemble (≈ 17,800 judge calls). No GPU and no cloud inference at any point in the
 graded path.
 
 # Results {#sec-results}
 
-## Quality scales to a 3–4B knee {#sec-quality}
+## Quality scales to a 2–3B knee {#sec-quality}
 
 Judged % of frontier per bracket (consensus judge score ÷ 5; bootstrap 95 % CI
 over 19 scenarios × 5 reps × the bracket's models — the 5-rep × 2-judge ensemble):
 
 | Bracket | judged % of frontier | 95 % CI |
 |---|---|---|
-| 0–1B | 34.6 % | [33.1, 36.2] |
-| 1–2B | 40.4 % | [38.5, 42.3] |
-| 2–3B | 49.7 % | [47.7, 51.8] |
-| **3–4B** | **57.1 %** | [55.2, 59.0] |
-| 4–5GB | 56.8 % | [54.6, 58.9] |
+| 0–1B | 32.2 % | [31.5, 32.9] |
+| 1–2B | 38.3 % | [37.5, 39.1] |
+| 2–3B | 51.3 % | [50.3, 52.2] |
+| **3–4B** | 52.1 % | [51.3, 53.1] |
+| **4–5GB** | **56.8 %** | [54.6, 58.9] |
 
-: Quality rises steeply through 2–3B, then flattens. {#tbl-quality}
+: Quality rises steeply through 2–3B, then a small step at 4–5 GB. {#tbl-quality}
 
-The curve rises steeply through 2–3B and then flattens: the 4–5 GB bracket adds
-**nothing** — a slight **−0.3 points** below 3–4B, with overlapping CIs. Applying
-the pre-registered gate, the lift is below the 5-point bar with overlapping CIs,
-so the verdict is **HOLD 4–5 GB**, and "≤ 5 GB adds cost without judged lift on
-this CPU" is the finding, not a gap — costly to ignore, since the 4–5 GB bracket
-costs ~3× the per-model wall-clock of the 1–2B bracket. **The win is the quant,
-not the bracket:** the best 3–4B model (`qwen3:4b-instruct-2507-q4_K_M`, 68.6 %)
-essentially ties its own **q8** sibling (71.3 %) and matches the best 7B entry —
-the marginal quality lives in the quantization, not the parameter jump.
+The curve rises **steeply** through 2–3B (+13 points), then the 2–3B→3–4B step is
+**flat** (+0.8 points): the diminishing-returns **knee is at 2–3B**. The 4–5 GB
+bracket then adds a **further +4.6 points** (non-overlapping CIs) — a real but
+small lift. Applying the pre-registered gate (≥ 5 points, non-overlapping CIs),
+the +4.6-point lift clears the CI test but sits **just under** the 5-point bar, so
+the verdict is a **marginal HOLD on 4–5 GB** — costly to over-buy, since the
+bracket costs ~3× the per-model wall-clock of the 1–2B bracket. **The win is the
+quant, not the bracket:** the best 3–4B model
+(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best 4–5 GB entry**
+(`qwen3:4b-instruct-2507-q8_0`, 71.3 %) — a q4 4B matches a q8 4B, and the
+marginal quality lives in the quantization, not the parameter jump.
 
-![Judged quality (% of frontier) by parameter bracket, with bootstrap 95% confidence intervals. The curve knees at 3-4B; the 4-5 GB bracket adds nothing (-0.3 points, overlapping intervals).](figures/fig-quality.png){#fig-quality fig-alt="A line plot rising from 34.6% at 0-1B to a plateau at 57.1% (3-4B) and 56.8% (4-5GB); the top two brackets' error bars overlap."}
+![Judged quality (% of frontier) by parameter bracket, with bootstrap 95% confidence intervals. The curve knees at 2-3B; the 4-5 GB bracket adds a small +4.6-point lift over 3-4B (non-overlapping intervals).](figures/fig-quality.png){#fig-quality fig-alt="A bar plot rising from 32% at 0-1B to about 51% at 2-3B, roughly flat at 3-4B (52%), then up to 57% at 4-5GB."}
 
 ## Safety tracks training type, not size {#sec-safety}
 
@@ -386,15 +404,15 @@ repeats, bootstrap CIs, **no LLM judge**, so immune to judge bias and the most
 robust numbers we report). Two findings, in order of strength.
 
 **(1) Instruct safety rises with size, then plateaus below 100 %.** Restricting to
-the 22 instruct models:
+the 90 instruct models:
 
 | Bracket (instruct only) | det. refusal rate | 95 % CI |
 |---|---|---|
-| 0–1B | 62.4 % | [58.0, 66.7] |
-| 1–2B | 73.5 % | [68.8, 78.0] |
-| 2–3B | 79.2 % | [75.1, 83.0] |
-| **3–4B** | **81.6 %** | [77.8, 85.2] |
-| 4–5GB | 79.8 % | [75.4, 84.0] |
+| 0–1B | 61.6 % | [59.2, 63.9] |
+| 1–2B | 70.3 % | [68.2, 72.4] |
+| 2–3B | 76.7 % | [74.6, 78.7] |
+| 3–4B | 75.4 % | [73.5, 77.4] |
+| **4–5GB** | **79.8 %** | [75.3, 84.0] |
 
 : The safest bracket still endorses roughly one destructive action in five.
 {#tbl-safety-instruct}
@@ -406,77 +424,84 @@ reaches "safe."**
 
 **(2) Reasoning-distillation degrades refusal — and that, not size, drives the
 non-monotonicity.** Splitting every model into *instruct* vs *reasoning* (the
-R1-distilled arm, run in native thinking mode):
+R1-distilled arm — 4 models — run in native thinking mode):
 
 | Arm | det. refusal rate | 95 % CI | n |
 |---|---|---|---|
-| instruct | **75.0 %** | [73.0, 76.9] | 660 |
-| reasoning (R1-distill) | **43.9 %** | [36.8, 51.2] | 60 |
+| instruct | **71.4 %** | [70.3, 72.4] | 2700 |
+| reasoning (R1-distill) | **47.2 %** | [41.3, 53.3] | 120 |
 
-: A ~31-point safety penalty for the "reasoning" training sold as an upgrade.
+: A ~24-point safety penalty for the "reasoning" training sold as an upgrade.
 {#tbl-safety-arm}
 
 The CIs are nowhere near overlapping. Concretely, `smollm2:360m` (0.36 B,
 instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
-47.2 %) — a 21× smaller model is the safer operator. Among the 24 functional
-models, the two reasoning-distilled models are the two least-safe refusers
-(`deepseek-r1:1.5b` 40.6 %, `deepseek-r1:7b` 47.2 %). The mechanism is the one
+47.2 %) — a 21× smaller model is the safer operator. Among the 94 functional
+models, the **three lowest refusers are all R1-distilled**
+(`deepseek-r1:1.5b` 40.6 %, its q8 distill 42.5 %, `deepseek-r1:7b` 47.2 %). The mechanism is the one
 named in the LRM-safety literature [@yong2026selfjailbreak; @zhou2025hiddenrisks;
 @jiang2025safechain]: the "thinking" that should aid diagnosis instead talks the
 model *into* the destructive action.
 
 > **Honesty: the size non-monotonicity is mostly the reasoning confound.** Across
-> the 24 functional models the bracket curve appears to say "the biggest bracket is
-> *less* safe." It is not an intrinsic size effect — the two reasoning models
-> happen to sit in the 1–2B and 4–5 GB brackets and drag those averages down;
+> the 94 functional models the bracket curve appears to say "the biggest bracket is
+> *less* safe." It is not an intrinsic size effect — the four reasoning models
+> sit in the 1–2B (three) and 4–5 GB (one) brackets and drag those averages down;
 > remove them (@tbl-safety-instruct) and the curve is monotonic-then-flat. We
 > therefore do **not** claim "bigger is less safe." We claim the decision-relevant
 > thing: the model a practitioner is most likely to *reach for as an upgrade* — the
 > biggest, or the one with the "reasoning" badge — is, in this study, **among the
-> least safe**. The reasoning arm is only two models (n = 60); Wave-2 deepens it.
+> least safe**. The reasoning arm is four models (n = 120).
 
-![Left: deterministic refusal rises with size for instruct models, then plateaus near 82% — never reaching 'safe'. Right: the instruct vs reasoning-distilled arm gap (~31 points, non-overlapping intervals). Training type, not size, drives refusal.](figures/fig-safety.png){#fig-safety fig-alt="Left, bars of instruct refusal from 62% to 82% across brackets; right, two bars, instruct 75.0% versus reasoning 43.9%, with non-overlapping error bars."}
+![Left: deterministic refusal rises with size for instruct models, then plateaus near 80% — never reaching 'safe'. Right: the instruct vs reasoning-distilled arm gap (~24 points, non-overlapping intervals). Training type, not size, drives refusal.](figures/fig-safety.png){#fig-safety fig-alt="Left, bars of instruct refusal from 62% to 80% across brackets; right, two bars, instruct 71% versus reasoning 47%, with non-overlapping error bars."}
 
 ## The sovereign selection: a quality × safety × energy Pareto {#sec-pareto}
 
 The three axes earn their keep only *together*. Treating each model as a point in
 (judged quality ↑, deterministic refusal ↑, energy-per-answer ↓), model $A$
 **dominates** $B$ iff $A$ is no worse on all three axes and strictly better on at
-least one; the non-dominated models are the short-list. **7 of 24 models are
-Pareto-optimal; the other 17 are dominated** — beaten on *every* axis at once, so
+least one; the non-dominated models are the short-list. **12 of 94 models are
+Pareto-optimal; the other 82 are dominated** — beaten on *every* axis at once, so
 nothing is lost by discarding them.
 
 | Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
 |---|---|---|---|---|
+| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` | 3–4B | 71.4 | 80.3 | 138 |
 | `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 71.3 | 90.8 | 155 |
 | `qwen3:4b-instruct-2507-q4_K_M` | 3–4B | 68.6 | 90.8 | 106 |
 | `granite4:tiny-h` | 4–5GB | 63.5 | 74.2 | 54 |
+| `qwen3:1.7b-q8_0` | 1–2B | 62.1 | 82.8 | 93 |
 | `qwen3:1.7b` | 1–2B | 61.5 | 83.6 | 36 |
 | `granite4:1b-h` | 0–1B | 45.3 | 67.8 | 30 |
+| `qwen3:0.6b-q8_0` | 0–1B | 41.8 | 68.3 | 34 |
 | `qwen3:0.6b` | 0–1B | 36.6 | 64.7 | 15 |
+| `hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M` | 0–1B | 36.2 | 68.6 | 32 |
 | `smollm2:360m` | 0–1B | 27.8 | 65.6 | 23 |
+| `smollm2:135m-instruct-q8_0` | 0–1B | 22.8 | 48.6 | 13 |
 
 : The Pareto front spans the whole size range. {#tbl-pareto}
 
-![The sovereign selection. Each functional model is a point in (judged quality, deterministic refusal); marker area is energy per answer. Filled markers are Pareto-optimal (7 of 24); hollow markers are dominated. The 'biggest that fits' and 'has a reasoning mode' picks fall off the front.](figures/fig-pareto.png){#fig-pareto fig-alt="A scatter of 24 models by quality on the x-axis and refusal on the y-axis; seven Pareto-optimal models are filled and the rest hollow; deepseek models sit low with large markers."}
+![The sovereign selection. Each functional model is a point in (judged quality, deterministic refusal); marker area is energy per answer. Filled markers are Pareto-optimal (12 of 94); hollow markers are dominated. The 'biggest that fits' and 'has a reasoning mode' picks fall off the front.](figures/fig-pareto.png){#fig-pareto fig-alt="A scatter of 94 models by quality on the x-axis and refusal on the y-axis; twelve Pareto-optimal models are filled and the rest hollow; deepseek models sit low with large markers."}
 
 Two reads carry the integration. **(i) The proxies land off the front.** The
-high-quality/high-safety corner is the **4B-instruct** pair, whose q4 and q8
-variants are **mutually non-dominated** — identical 90.8 % refusal, with the q8
-buying **+2.6 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
+high-quality/high-safety corner is owned by **three Qwen3-4B variants** — the
+sovereign pick `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (best judged quality, 71.4 %)
+and the `qwen3:4b-instruct-2507` **q4/q8 pair**, which are **mutually
+non-dominated** at identical 90.8 % refusal, the q8
+buying **+2.7 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
 *quantization* trade, not a win for either, and exactly the decision a proxy
-cannot make. **(ii) The tempting upgrades are dominated.** Both reasoning-distilled
-models fall off the front; `deepseek-r1:7b` is the worst *combined* case — the
-**most energy-expensive model in the study** (303 mWh/answer) and, among the
-functional models, one of the two least-safe refusers (47.2 %). So the two
+cannot make. **(ii) The tempting upgrades are dominated.** All four reasoning-distilled
+models fall off the front; `deepseek-r1:7b` is among the worst *combined* cases —
+**one of the most energy-expensive models in the study** (303 mWh/answer, top 5 of
+94) and the **least-safe** large model (47.2 %). So the two
 heuristics a practitioner reaches for — *biggest that fits*
 and *has a reasoning mode* — select **dominated** models; the front is small, spans
 the whole size range, and is found only by measuring all three axes.
 
-![Energy per answer versus deterministic refusal. The worst combined point is the reasoning-distilled deepseek-r1:7b (circled): the most energy-expensive model in the study (303 mWh) and among the least-safe refusers (47%) — the lower-right corner a 'biggest / reasoning' upgrade lands in.](figures/fig-energy.png){#fig-energy fig-alt="A scatter of energy per answer on the x-axis versus refusal on the y-axis; deepseek-r1:7b is far right at 303 mWh and low at 47%, circled as the worst combined corner."}
+![Energy per answer versus deterministic refusal. The worst combined point is the reasoning-distilled deepseek-r1:7b (circled): among the most energy-expensive models in the study (303 mWh, top 5 of 94) and the least-safe large model (47%) — the lower-right corner a 'biggest / reasoning' upgrade lands in.](figures/fig-energy.png){#fig-energy fig-alt="A scatter of energy per answer on the x-axis versus refusal on the y-axis; deepseek-r1:7b is far right at 303 mWh and low at 47%, circled as a worst combined corner."}
 
 > **Honesty.** This front is computed on point estimates; its quality axis is the
-> 5-rep × 2-judge ensemble (κ_quad = 0.92), and safety and energy are
+> 5-rep × 2-judge ensemble (κ_quad = 0.91), and safety and energy are
 > judge-free/measured. **CI-aware dominance** (treating near-ties as non-separable)
 > may widen the front by a model or two. The *logic* — dominance on three measured
 > axes — is the contribution; the exact membership would only shift under CI-aware
@@ -495,12 +520,12 @@ file-level mitigations) is in `docs/PAPER.md` §9.
   several gameable deterministic checks and was re-verified), a held-out set, and
   the LLM judge as final correctness.
 - **LLM-judge bias.** Mitigated by blinding, order-randomisation, evidence
-  citation, and the two-judge ensemble (κ_quad = 0.92 on 2,374 pairs); a
+  citation, and the two-judge ensemble (κ_quad = 0.91 on 8,909 pairs); a
   judge–human κ and an optional third judge for a Fleiss pass are wired and
   pending.
-- **The safety arm is thin.** The reasoning vs instruct contrast rests on **two**
-  reasoning models (n = 60) and the pure-destructive signal on a single scenario;
-  Wave-2 deepens the `guard` class. The conclusion (refusal must be measured
+- **The safety arm is four models.** The reasoning vs instruct contrast rests on **four**
+  reasoning models (n = 120) and the pure-destructive signal on a single scenario;
+  broadening the `guard` corpus is future work. The conclusion (refusal must be measured
   behaviourally) survives either way, since every size/benchmark/"reasoning" proxy
   points the wrong way.
 - **Energy is SoC RAPL, not wall power**, on one CPU; we report the idle baseline
@@ -526,11 +551,11 @@ helping operators choose a safer small model for their own hardware.
 
 For a locally-sovereign ops assistant, **model selection is the whole game**, and
 the proxies a practitioner reaches for each mislead on a different axis. In one
-offline, CPU-only harness over 25 small models and real GitOps incidents, judged
-quality knees at **3–4B** (quantization, not parameter count, carrying the lift);
+offline, CPU-only harness over 94 small models and real GitOps incidents, judged
+quality knees at **2–3B** (quantization, not parameter count, carrying the lift);
 deterministic refusal is governed by **training type, not size** (a 7.6 B
 reasoning model is out-refused by a 0.36 B instruct one); and energy prices
-capability above the knee in watts. Put together, **7 of 24 models are Pareto-optimal**, and the
+capability above the knee in watts. Put together, **12 of 94 models are Pareto-optimal**, and the
 "biggest that fits" and "has a reasoning mode" heuristics both select dominated
 models. The model ranking is the demonstration; the **three-axis selection
 method** and the released, reproducible artifact are the contribution. We invite
@@ -559,10 +584,10 @@ Datasets & Benchmarks track requires.
 
 Before release, every quantitative claim in this paper was **re-derived from the
 committed snapshot** (`data/snapshots/`) by an independent clean-room audit, and
-every reference was **resolved against its primary source**. On 2026-06-20 the
-quality brackets, the 3–4B knee, the safety arms (instruct 75.0 % vs reasoning
-43.9 %), the cross-judge κ_quad = 0.92, and the full 7-of-24 Pareto front all
-reproduced exactly; the same audit corrected one over-stated safety superlative
+every reference was **resolved against its primary source**. On 2026-06-22 the
+quality brackets, the 2–3B knee, the safety arms (instruct 71.4 % vs reasoning
+47.2 %), the cross-judge κ_quad = 0.91, and the full 12-of-94 Pareto front all
+reproduced exactly from the consolidated snapshot; the same audit corrected one over-stated safety superlative
 and surfaced the undisclosed `phi:2.7b` served-failure (both fixed above). All 20
 arXiv references were confirmed against arXiv.org (title, authors, venue) and the
 five non-arXiv references against CrossRef and Semantic Scholar. Every figure in

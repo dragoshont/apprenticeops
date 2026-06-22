@@ -29,7 +29,7 @@ We map onto the NeurIPS dimensions so your assessment ports to the venue.
 
 | Dimension | The specific thing to scrutinise here |
 |---|---|
-| **Quality / soundness** | Are the deterministic checks genuinely judge-free? Do the bootstrap CIs support the bracket claims? Is the quality axis (the 5-rep × 2-judge ensemble, κ_quad ≈ 0.92) honest about residual judge↔human uncertainty? |
+| **Quality / soundness** | Are the deterministic checks genuinely judge-free? Do the bootstrap CIs support the bracket claims? Is the quality axis (the 5-rep × 2-judge ensemble, κ_quad ≈ 0.91) honest about residual judge↔human uncertainty? |
 | **Clarity** | Is the sovereign constraint unambiguous (offline = no external *model* API, not information-poverty)? Are the Pareto/dominance definitions precise? |
 | **Significance** | Is the offline/CPU/commodity + energy-coupled-selection regime useful to practitioners and researchers? Is the harness reusable? |
 | **Originality** | Is the *integration* genuinely unoccupied by prior work, and is the safety axis honestly scoped as **replication**? (NeurIPS explicitly values originality-by-integration.) |

@@ -24,9 +24,9 @@ review -> submission package. This prevents scope drift and over-claiming.
     LaTeX; Typst is bundled), drop in a NeurIPS/arXiv LaTeX template at submission.
   - **Location:** a new `paper/` manuscript; **`PAPER.md` stays the design +
     analysis plan (pre-registration)** that the manuscript cites — not overwritten.
-  - **Scope:** drafted on **locked Wave-1**; Wave-2, the judge↔human κ, and a 3rd
-    judge fold in as they land (camera-ready enrichments, not draft blockers).
-- Experiment status: Wave-1 locked; Wave-2 additive sweep in progress.
+  - **Scope:** drafted on the **consolidated 94-model dataset** (waves 1+2 merged);
+    the judge↔human κ and a 3rd judge fold in as they land (camera-ready enrichments, not draft blockers).
+- Experiment status: **consolidated 94-model dataset locked** (waves 1+2 merged 2026-06-22).
 - Submission intent: arXiv preprint → **NeurIPS Datasets & Benchmarks** track.
 - Intent memo: [`PAPER_INTENT.md`](./PAPER_INTENT.md)
 

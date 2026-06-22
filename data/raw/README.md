@@ -1,12 +1,16 @@
-# Raw run data — Waves 1 & 2 (variance + deterministic)
+# Raw run data — the 94-model dataset (two collection batches)
 
 This directory is the released raw artifact for the ApprenticeOps runs, so the
 headline tables and the analysis notebook are reproducible, **not just
-asserted**. **Wave 1** is the 25-model core; **Wave 2** is the additive coverage
-wave (a broader model set per bracket). Same protocol throughout: 19 scenarios,
-deterministic (temp 0) and variance (temp 0.7, R=5), one commodity node.
+asserted**. The data was collected in **two batches** for operational reasons (the
+broader roster was added after the first batch, and Ollama's intermittent `hf.co`
+pulls forced a resume sweep); **together they form the single 94-model analysis
+dataset** in [`data/snapshots/`](../snapshots/). The raw files below stay
+**batch-labelled** for audit — `results.var.*` is the first batch, `results.wave2.*`
+the second. Same protocol throughout: 19 scenarios, deterministic (temp 0) and
+variance (temp 0.7, R=5), one commodity node.
 
-## Wave 1 files (25-model core)
+## First batch — `results.var.*` (core)
 
 | File | What | Rows / notes |
 |---|---|---|
@@ -45,7 +49,7 @@ ExternalSecret scenarios) — they are **not real credentials**. Any IP addresse
 in answers are model-generated examples, not the real node. The scenarios are
 **synthetic-but-repo-grounded**: real config *shapes*, no real secret *values*.
 
-## Wave 2 files (additive coverage wave)
+## Second batch — `results.wave2.*` (broader roster)
 
 Same variance protocol (temp 0.7, R=5, 19 scenarios), a broader model set per
 bracket; run on the node 2026-06-19/20.
@@ -61,19 +65,22 @@ stubs and deduping `(model, scenario, rep)` on best det_score: **71 complete**
 (95 rows each); **9 with no usable rows** — **transient pull-failures** (Ollama's
 intermittent `hf.co` redirect bug
 [#15661](https://github.com/ollama/ollama/issues/15661) + registry blips), not
-model failures. All 665 DNF rows are `DNF:error:HTTPError` (model not loaded
-because its pull failed). With **Wave 3 dropped from scope**, those 9 stay
-incomplete and are **excluded** from the analysis (treated like Wave-1's
-`phi:2.7b` served-failure). Wave 2 *does* carry the systems telemetry: raw
-`membw_peak_mb_s` / perf-core are present for **~88–90%** of rows (safety + energy
-are 100%); with no on-node `calibration.json`, the **MBU%** normalization reuses
-Wave-1's bandwidth ceiling (same hardware). Privacy: scanned (same synthetic
-fixtures as Wave 1 — `SuperSecret123`, `eso-verify-*`, example JWT — no new
-secrets).
+model failures. Those 9 (plus a further 7 all-DNF served-failures and the first
+batch's `phi:2.7b`) are **excluded** from the analysis and named in the paper's
+excluded appendix. The second batch *does* carry the systems telemetry: raw
+`membw_peak_mb_s` / perf-core are present for **~94%** of rows (safety + energy
+are 100%). The STREAM calibration did not complete on the node, so the **MBU%**
+normalization uses the node's **datasheet** peak bandwidth (38.4 GB/s, dual-channel
+DDR4-2400) and is read as a relative efficiency; **6 of the 94 functional models
+lack per-run bandwidth telemetry** entirely (a perf-counter capture gap, missing at
+random), so MBU is reported on the **88-of-94** covered subset. Privacy: scanned
+(same synthetic fixtures as the first batch — `SuperSecret123`, `eso-verify-*`,
+example JWT — no new secrets).
 
-**Quality (judged):** the Wave-2 2-judge pass (`claude-opus-4.8` + `gpt-5.5`)
-runs off-node post-hoc on the answer texts above; added as `judged.wave2.*.jsonl.gz`
-when complete.
+**Quality (judged):** the second batch's 2-judge pass (`claude-opus-4.8` + `gpt-5.5`)
+ran off-node post-hoc on the answer texts above. Consolidated across both batches,
+the two judges agree at **quadratic-weighted κ = 0.91** over **8,909** jointly-scored
+reps (77.3% exact, 99.8% within-1).
 
 ## Reproducing the snapshots
 

@@ -79,7 +79,7 @@ Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PA
 | RQ4 | Do **"thinking" models** beat instruct models at diagnosis? | They gain accuracy on diagnosis/test — but at a prohibitive latency cost on CPU. |
 | RQ5 | How far below a **frontier reference** do the best small models land? | ~60–80 % of frontier on structured tasks; less on open-ended diagnosis. |
 | RQ6 | How much does **local grounding (RAG)** lift a small model? | The gap is large for small models and shrinks with size — local RAG substitutes for parameters. |
-| RQ7 | What is the **energy cost per task**, and where is the efficiency sweet spot? | Energy/answer rises with params; the 3–4B knee is also the energy-efficiency optimum. |
+| RQ7 | What is the **energy cost per task**, and where is the efficiency sweet spot? | Energy/answer rises with params; the **2–3B** quality knee sits near the energy-efficiency sweet spot. |
 
 ---
 
@@ -88,15 +88,16 @@ Seven falsifiable hypotheses drive the experimental design (full spec: [`docs/PA
 The contribution is not any single axis; it is choosing on **all three together**.
 Treat each model as a point in **(judged quality ↑, destructive-action refusal ↑,
 energy-per-answer ↓)** and compute the **Pareto-optimal set** — the models nothing
-else beats on every axis at once. On the Wave-1 data, **7 of 24 models are
-Pareto-optimal; the other 17 are dominated**, and the two heuristics a practitioner
+else beats on every axis at once. On the consolidated **94-model** data, **12 of 94 models are
+Pareto-optimal; the other 82 are dominated**, and the two heuristics a practitioner
 reaches for — *biggest that fits* and *has a “reasoning” mode* — select **dominated**
-models. `deepseek-r1:7b` is the worst *combined* case: the **most energy-expensive**
-model in the study, and among the two least-safe reasoning-distilled refusers.
+models. `deepseek-r1:7b` is among the worst *combined* cases: among the **most
+energy-expensive** models in the study (top 5 of 94), and the least-safe large
+reasoning-distilled refuser.
 
 The three axes, briefly:
 
-- **Quality** — judged %-of-frontier knees at **3–4B**; *quantization*, not parameter
+- **Quality** — judged %-of-frontier knees at **2–3B**; *quantization*, not parameter
   count, carries the marginal lift.
 - **Safety (axis #2)** — judge-free deterministic refusal, governed by **training
   type, not size**. This **corroborates** a saturated agent-/SLM-safety literature
@@ -108,7 +109,7 @@ The three axes, briefly:
 Figures and the dominance computation live in
 [`docs/analysis/wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb) §7–§8; the
 full result is [`docs/PAPER.md`](docs/PAPER.md) §8b. The quality axis is the
-**5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.92); residual judge↔human
+**5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.91); residual judge↔human
 agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 
 ---

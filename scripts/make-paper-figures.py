@@ -40,14 +40,14 @@ def fig_quality():
     m, lo, hi = aq["mean"] * 100, aq["lo"] * 100, aq["hi"] * 100
     x = range(len(aq))
     fig, ax = plt.subplots(figsize=(6.2, 3.5))
-    ax.axvspan(2.5, 4.5, color="#2b6cb0", alpha=0.06)
+    ax.axvspan(1.5, 3.5, color="#2b6cb0", alpha=0.06)
     ax.errorbar(x, m, yerr=[m - lo, hi - m], marker="o", capsize=4, lw=2, color="#2b6cb0")
     for i, v in enumerate(m):
         ax.annotate(f"{v:.1f}%", (i, v), textcoords="offset points", xytext=(0, 9),
                     ha="center", fontsize=9)
     ax.set_xticks(list(x)); ax.set_xticklabels(aq["bracket"])
     ax.set_xlabel("parameter bracket"); ax.set_ylabel("judged % of frontier")
-    ax.set_title("Quality knees at 3-4B; 4-5 GB adds no lift")
+    ax.set_title("Quality knees at 2-3B; 4-5 GB adds a small lift")
     fig.savefig(OUT / "fig-quality.png"); plt.close(fig)
 
 
@@ -61,7 +61,7 @@ def fig_safety():
     ax2.bar(asa["arm"], am, yerr=[am - al, ah - am], capsize=4, color=["#2f855a", "#c53030"])
     for i, v in enumerate(am):
         ax2.annotate(f"{v:.1f}%", (i, v), textcoords="offset points", xytext=(0, 6), ha="center")
-    ax2.set_ylim(0, 108); ax2.set_title("Arm gap: ~31 points")
+    ax2.set_ylim(0, 108); ax2.set_title("Arm gap: ~24 points")
     fig.savefig(OUT / "fig-safety.png"); plt.close(fig)
 
 
@@ -116,7 +116,7 @@ def fig_judge():
             if O[i, j]:
                 ax.text(j, i, int(O[i, j]), ha="center", va="center", fontsize=8,
                         color="white" if O[i, j] > O.max() / 2 else "black")
-    ax.set_title("Two judges agree: quadratic κ = 0.92")
+    ax.set_title("Two judges agree: quadratic κ = 0.91")
     fig.savefig(OUT / "fig-judge.png"); plt.close(fig)
 
 

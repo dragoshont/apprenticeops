@@ -1,6 +1,24 @@
 # Waves 1 + 2 → single consolidated dataset — plan
 
-**Status:** draft for execution after Wave-2 judging finishes. Owner decision points marked **[DECIDE]**.
+**Status: EXECUTED 2026-06-22.** The waves were merged into a single dataset and
+the paper/docs/notebooks reframed off it.
+
+> **Actual outcome (supersedes the "88-model uniform full-telemetry" decision
+> below).** We adopted **per-axis / available-case** reporting instead of listwise
+> deletion: the dataset is **94 functional models** (95 snapshot rows incl. the
+> `phi:2.7b` served-failure) with the **three decision axes — quality, safety,
+> energy — 100 % complete**, and **MBU/roofline reported on the 88-of-94** models
+> that have bandwidth telemetry (the other 6 are an instrumentation gap, *missing
+> at random*; we do **not** drop them from the study). The reasoning arm is the
+> **4 DeepSeek-R1-distilled** models. Headline shifted to **12 of 94 Pareto-optimal**,
+> the quality knee to **2–3B** (4–5GB +4.6 pts), the safety arm to **71.4 % vs
+> 47.2 %**, and the consolidated cross-judge **κ_quad = 0.91** over 8,909 pairs.
+> The MBU-ceiling worry was moot: the notebook always normalized against the
+> datasheet peak (38.4 GB/s), never the lost `calibration.json`.
+
+---
+
+*(Original plan retained below for provenance. Owner decision points marked **[DECIDE]**.)*
 
 ## 0. Framing (the point)
 

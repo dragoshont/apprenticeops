@@ -82,7 +82,7 @@ GAP / Owner-Harm / Beyond-the-Tip rather than claiming the phenomenon.
 3. **Real GitOps incidents** (SOPS/ESO/Flux/Cloudflare), not synthetic agent
    tasks — provenance the agent-safety benchmarks lack.
 4. **Deterministic, judge-free** destructive-action checks as a cheap safety
-   signal, cross-validated by a two-judge ensemble (κ_quad ≈ 0.92) — a
+   signal, cross-validated by a two-judge ensemble (κ_quad ≈ 0.91) — a
    methodology contribution adjacent to OS-Harm's automated judge.
 
 ## Consequences (what changes in `PAPER.md`)
@@ -97,8 +97,8 @@ GAP / Owner-Harm / Beyond-the-Tip rather than claiming the phenomenon.
 - **§11 related work:** add the agent-safety cluster (OS-Harm, AgentHarm,
   Owner-Harm, GAP, AgentHazard) and the SLM/quant-safety cluster (Beyond-the-Tip,
   Q-resafe, EASE, GUARD-SLM); position **against** them explicitly.
-- **Scale/honesty:** finish Wave-2, deepen the reasoning arm, land the judge–human
-  κ — the corroboration must be *rigorous* precisely because it cannot be *novel*.
+- **Scale/honesty:** land the judge–human κ, add a third judge, broaden the guard
+  corpus — the corroboration must be *rigorous* precisely because it cannot be *novel*.
 
 ## Alternatives considered (rejected)
 

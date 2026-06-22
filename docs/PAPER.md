@@ -43,17 +43,18 @@ Our finding is a **selection problem**, not a leaderboard: the proxies a
 practitioner reaches for — **parameter count, benchmark score, a "reasoning"
 badge, perplexity** — each mislead, and they mislead on **different axes**, so no
 one of them orders the choice. We profile three axes at once in a single
-offline, CPU-only harness. **Quality:** across a 25-model Wave-1 sweep (0.5–8B),
-judged ops-reasoning climbs with size to a **knee at 3–4B**, then flattens, and
-**quantization largely preserves it** — so "biggest that fits" buys little above
-the knee. **Safety:** on **deterministic** refusal-of-destructive-action checks
-(no LLM judge, our most robust numbers) the safest size bracket still plateaus
-near **82 %** — one destructive prompt in five survives — and the dominant driver
+offline, CPU-only harness. **Quality:** across a **94-model** sweep (0.36–8B),
+judged ops-reasoning climbs steeply with size to a usable floor by **2–3B**, then
+returns flatten (the 2–3B→3–4B step adds **<1 point**, the 4–5GB bracket a further
+**+4.6**), and **quantization largely preserves it** — so "biggest that fits" buys
+little above the knee. **Safety:** on **deterministic** refusal-of-destructive-action
+checks (no LLM judge, our most robust numbers) the safest size bracket still plateaus
+near **80 %** — one destructive prompt in five survives — and the dominant driver
 of refusal is **training type, not size**: **reasoning-distilled ("thinking",
-R1-style)** models refuse at **43.9 %** [36.8, 51.2] versus **75.0 %** [73.0,
-76.9] for instruct, a gap wide enough that a **0.36 B** instruct model out-refuses
-a **7.6 B** reasoning model and the largest "reasoning"-badged model in the study
-is its *least* safe. We are explicit that this safety result **corroborates** a
+R1-style)** models refuse at **47.2 %** [41.3, 53.3] versus **71.4 %** [70.3,
+72.4] for instruct, a gap wide enough that a **0.36 B** instruct model out-refuses
+a **7.6 B** reasoning model and the **three lowest refusers in the study are all
+reasoning-distilled**. We are explicit that this safety result **corroborates** a
 fast-growing agent-/SLM-safety literature (reasoning-distillation and
 quantization degrade safety; text-refusal ≠ action-refusal) rather than
 discovering it — its weight here is that it **replicates offline, on CPU, at
@@ -97,22 +98,22 @@ This yields the **reordered requirement stack** a small local ops model is grade
 > practitioner reaches for (parameter count, benchmark score, a "reasoning" badge,
 > perplexity) misleads on a *different* axis.** We measure three axes in one
 > harness. **(1) Quality:** the capability bar is cleared earlier than folklore
-> expects — a usable ops-reasoning floor arrives at **3–4B** — and *quantization
+> expects — a usable ops-reasoning floor arrives by **2–3B** — and *quantization
 > largely preserves it*, so param-count and a "reasoning" badge over-predict what
 > the job needs. **(2) Safety:** on **deterministic** refusal checks (no LLM
-> judge) instruct-model refusal *rises with size then plateaus near 82 %* — a
+> judge) instruct-model refusal *rises with size then plateaus near 80 %* — a
 > fifth of destructive prompts survive even the best bracket — and the real driver
 > is **training type, not size**: **reasoning-distilled** models refuse roughly
-> **30 points less** than instruct siblings, so the largest "reasoning"-badged
-> model here is the *least* safe of all 25. We state plainly that this
+> **24 points less** than instruct siblings, so the **three lowest refusers of all
+> 94 models are reasoning-distilled**. We state plainly that this
 > **corroborates** a fast-growing agent-/SLM-safety literature (§11) rather than
 > discovering it; the delta is that it **replicates offline, on CPU, at homelab
 > scale**, where the unsafe model is also the one the size heuristic picks.
 > **(3) Energy:** the bigger model bills you in **watts and tokens/s** for
 > capability above the knee you may never use. The spine is that consequence —
 > **no single axis, and no single proxy, orders the choice; the integration
-> does.** §8b is the first evidence (Wave-1, deterministic; the reasoning arm is
-> only two models — Wave-2 deepens it).
+> does.** §8b is the evidence (deterministic; the reasoning arm is four
+> R1-distilled models).
 
 **Grounding modes (a measured factor, not a caveat).** Each scenario is labelled
 `closed-book` (answer from in-weights ops knowledge; incident data given, no
@@ -460,8 +461,8 @@ documented **next capture** (env-gated) to deepen the contention/offload signals
 - **Model comparison:** since paired within-subject, use **Wilcoxon signed-rank**
   (non-parametric) for pairwise; **Friedman test** across all models per class.
 - **Multiple comparisons:** **Holm–Bonferroni** correction over the pairwise set.
-  > **Power reality (state honestly):** with R=5 × ~6 scenarios/class, 25 models
-  > → ~300 pairwise comparisons; after Holm correction, **individual-model**
+  > **Power reality (state honestly):** with R=5 × ~6 scenarios/class, 94 models
+  > → ~4,400 pairwise comparisons; after Holm correction, **individual-model**
   > distinctions will mostly NOT reach significance. Frame primary conclusions at
   > the **bracket level** (5 groups, well-powered); treat per-model ranks as
   > descriptive, not significant. Over-claiming "model A > model B" is the trap.
@@ -518,52 +519,56 @@ implementation-status appendix).
   size (RQ3 — the naive size ranking even inverts) and the signal is cheap to keep. *(Gate logic lives in
   [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
-## 8b. Wave-1 results (quality: 2-judge × 5-rep ensemble; safety/energy: deterministic)
+## 8b. Results (quality: 2-judge × 5-rep ensemble; safety/energy: deterministic)
 
 > **Status (state up front):** two kinds of number appear below, with different
 > strength. **(a) Judged quality** is the **5-rep × 2-judge ensemble** (temperature 0.7, R=5
 > samples/scenario, graded by `claude-opus-4.8` **and** `gpt-5.5` — the consensus
-> mean per rep). The two judges agree at **Cohen's κ = 0.71 unweighted / 0.92
-> quadratic-weighted** on the full **2,374-pair** set (the latter is the right
-> metric for ordinal 1–5 scores; Spearman ρ = 0.92; 77.9 % exact, 99.9 % within-1;
-> near-identical mean, 2.39 vs 2.38), so the **ranking is judge-robust** — a
-> judge–**human** κ is still future ([`judge_agreement.py`](../judge_agreement.py), [`human_eval.py`](../human_eval.py)).
+> mean per rep). The two judges agree at **Cohen's κ = 0.91 quadratic-weighted**
+> on the full **8,909-pair** set (the right metric for ordinal 1–5 scores;
+> Pearson r = 0.91; 77.3 % exact, 99.8 % within-1; near-identical mean, 2.21 vs
+> 2.23), so the **ranking is judge-robust** — a judge–**human** κ is still future
+> ([`judge_agreement.py`](../judge_agreement.py), [`human_eval.py`](../human_eval.py)).
 > **(b) Safety** rides the **deterministic refusal checks**, which need no judge,
 > so all **5 repeats** are scored and we report **bootstrap CIs** — these are the
-> robust numbers. Both are Wave-1 (25 models); `phi:2.7b` is **excluded** (95/95
+> robust numbers. The dataset is **94 functional models**; `phi:2.7b` is **excluded** (95/95
 > DNF). Read quality as the **powered axis** (5-rep × 2-judge ensemble; the
 > single-judge deterministic pass is preserved at `judged_snapshot.det.csv`) and
 > safety as the **most robust** (judge-free) and a **replication** of the
 > agent-/SLM-safety literature (§11), not a discovery.
 
-**Quality scales with size, with a knee at 3-4B.** Judged **% of frontier** per
+**Quality scales with size, with the knee at 2-3B.** Judged **% of frontier** per
 bracket (consensus judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × 5 reps ×
 the bracket's models — the **5-rep × 2-judge** ensemble):
 
 | Bracket | judged % of frontier | 95 % CI |
 |---|---|---|
-| 0-1B | 34.6 % | [33.1, 36.2] |
-| 1-2B | 40.4 % | [38.5, 42.3] |
-| 2-3B | 49.7 % | [47.7, 51.8] |
-| **3-4B** | **57.1 %** | [55.2, 59.0] |
+| 0-1B | 32.2 % | [31.5, 32.9] |
+| 1-2B | 38.3 % | [37.5, 39.1] |
+| 2-3B | 51.3 % | [50.3, 52.2] |
+| **3-4B** | **52.1 %** | [51.3, 53.1] |
 | 4-5GB | 56.8 % | [54.6, 58.9] |
 
-The curve rises steeply through 2-3B and then **flattens**: 4-5GB adds **nothing**
-— a slight **−0.3 points** below 3-4B, with **overlapping CIs**. This is the
-diminishing-returns **knee** H1 predicted — and ignoring it is **costly**, since
-4-5GB costs ~3× the per-model wall-clock of the 1-2B bracket (§4 hardware).
+The curve rises **steeply** through 2-3B (+13 points), then the 2-3B→3-4B step is
+**flat** (+0.8 points): the diminishing-returns **knee is at 2-3B**. The 4-5GB
+bracket then adds a **further +4.6 points** (non-overlapping CIs) — a real but
+**small** lift relative to the early climb, and it costs ~3× the per-model
+wall-clock of the 1-2B bracket (§4 hardware). The decision-relevant shape is
+unchanged: **the capability you need arrives small, and paying for the top bracket
+buys a few points, not a tier.**
 
-**Pre-registered gate verdict → HOLD 4-5GB.** Applying the §8 cost/value gate
-(expand 4-5GB only if it beats 3-4B by ≥ 5 pts with non-overlapping CIs): the
-lift is **−0.3 pts** (4-5GB ties-or-below 3-4B) with overlapping CIs, so Wave-2 **deepens 0-1B…3-4B and holds
-4-5GB**. "**≤5 GB adds cost without judged lift on this CPU**" is the **finding**,
-not a gap.
+**Pre-registered gate verdict → marginal HOLD on 4-5GB.** Applying the §8
+cost/value gate (expand 4-5GB only if it beats 3-4B by **≥ 5 pts with
+non-overlapping CIs**): the consolidated lift is **+4.6 pts** with
+**non-overlapping** CIs — directionally a pass, but **just under** the 5-pt bar, so
+the verdict is a **marginal HOLD**. "**≤5 GB buys a small, sub-threshold judged
+lift on this CPU**" is the **finding**, not a gap.
 
 **The win is the quant, not the bracket.** The best 3-4B model
-(`qwen3:4b-instruct-2507-q4_K_M`, 68.6 %) essentially ties the best 4-5GB entry —
-its own **q8** sibling (71.3 %) — and matches the best 7B entry. A 4B at **q4**
-on the knee matches a 7B; the marginal quality lives in the **quantization**, not
-the parameter jump. *(Confirmed by the 5-rep × 2-judge variance pass, κ_quad = 0.92.)*
+(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best 4-5GB entry**
+(`qwen3:4b-instruct-2507-q8_0`, 71.3 %) — a **q4 4B on the knee matches a q8 4B**,
+and the marginal quality lives in the **model and its quantization**, not the
+parameter jump. *(Confirmed by the 5-rep × 2-judge ensemble, κ_quad = 0.91.)*
 
 **Safety (axis #2) tracks training type, not size — replicating a known effect in
 the offline/CPU regime.** The sharpest behavioural signal is not in the judged
@@ -571,21 +576,23 @@ quality curve but in the **deterministic** safety checks: **refusing a destructi
 (`guard-08-destructive`) and **rejecting insecure config** (`secure-09…13`:
 plaintext secret, no-auth ingress, privileged container, broad RBAC, `:latest`) —
 6 scenarios × 5 repeats (the *pure-destructive* `guard` signal is a single
-scenario — thin; Wave-2 deepens it, §5), bootstrap 95 % CIs, **no LLM judge involved** (so it is immune to judge bias and
+scenario — thin; the consolidated roster broadens the **models**, not the
+scenarios, §5), bootstrap 95 % CIs, **no LLM judge involved** (so it is immune to judge bias and
 is the most robust number we report). `phi:2.7b` is excluded (95/95 DNF). Two
 findings, in order of strength.
 
 ***(1) Instruct safety rises with size, then plateaus below 100 %.*** Restricting
-to the 22 instruct models (non-reasoning, non-`phi`), refusal climbs and then
-flattens — the *same* diminishing-returns shape as quality:
+to the 90 instruct models (non-reasoning, non-`phi`), refusal climbs to the mid-70s
+by 2-3B and then **plateaus in the 75–80 % band** — the *same* diminishing-returns
+shape as quality:
 
 | Bracket (instruct only) | det. refusal rate | 95 % CI |
 |---|---|---|
-| 0-1B | 62.4 % | [58.0, 66.7] |
-| 1-2B | 73.5 % | [68.8, 78.0] |
-| 2-3B | 79.2 % | [75.1, 83.0] |
-| **3-4B** | **81.6 %** | [77.8, 85.2] |
-| 4-5GB | 79.8 % | [75.4, 84.0] |
+| 0-1B | 61.6 % | [59.2, 63.9] |
+| 1-2B | 70.3 % | [68.2, 72.4] |
+| 2-3B | 76.7 % | [74.6, 78.7] |
+| 3-4B | 75.4 % | [73.5, 77.4] |
+| **4-5GB** | **79.8 %** | [75.3, 84.0] |
 
 The plateau is the point: the safest bracket still **endorses roughly one
 destructive action in five**. Behind a human, on low-stakes tasks, that is a
@@ -594,38 +601,38 @@ reaches "safe."**
 
 ***(2) Reasoning-distillation degrades refusal — and that, not size, drives the
 non-monotonicity.*** Splitting every model into *instruct* vs *reasoning/"thinking"*
-(the R1-distilled arm, `deepseek-r1:1.5b` and `deepseek-r1:7b`, run in their
-native thinking mode):
+(the R1-distilled arm: `deepseek-r1:1.5b`, its q8 distill, `deepseek-r1:7b`, and the
+unsloth Qwen-1.5B repack — **4 models** run in their native thinking mode):
 
 | Arm | det. refusal rate | 95 % CI | n |
 |---|---|---|---|
-| instruct | **75.0 %** | [73.0, 76.9] | 660 |
-| reasoning ("thinking", R1-distill) | **43.9 %** | [36.8, 51.2] | 60 |
+| instruct | **71.4 %** | [70.3, 72.4] | 2700 |
+| reasoning ("thinking", R1-distill) | **47.2 %** | [41.3, 53.3] | 120 |
 
-The CIs are nowhere near overlapping — a **~31-point** safety penalty for the
+The CIs are nowhere near overlapping — a **~24-point** safety penalty for the
 "reasoning" training sold as an upgrade. Concretely, **`smollm2:360m` (0.36 B,
 instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
-47.2 %)** — a 21× smaller model is the safer operator. Among the 24 functional
-models, the two reasoning-distilled models are the two least-safe refusers
-(`deepseek-r1:1.5b` 40.6 %, `deepseek-r1:7b` 47.2 %); the only model that refuses
-less, the base model `phi:2.7b` (20.8 %), is a 95/95 served-failure excluded as
-such. The mechanism is corroborated in
+47.2 %)** — a 21× smaller model is the safer operator. Among the 94 functional
+models, the **three lowest refusers are all R1-distilled** (`deepseek-r1:1.5b`
+40.6 %, its q8 distill 42.5 %, `deepseek-r1:7b` 47.2 %); the next tier is the
+tiniest sub-0.5 B instruct models. (`phi:2.7b`, 20.8 %, would refuse less still,
+but is a 95/95 served-failure excluded as such.) The mechanism is corroborated in
 the LRM-safety literature: R1-distilled models *rationalize* harmful actions
 through their chain-of-thought (Self-Jailbreaking, arXiv 2510.20956; SafeChain
 2502.12025; Hidden Risks of R1 2502.12659) — the "thinking" that should aid
 diagnosis instead talks the model *into* the destructive action.
 
 > **Honesty: the size non-monotonicity is mostly the reasoning confound (state up
-> front).** Over the *24 functional models* the bracket curve is **non-monotonic** —
-> 62.4 / 66.9 / 79.2 / 81.6 / **73.3 %** — appearing to say "the biggest bracket
-> is *less* safe." It is **not** an intrinsic size effect: the two reasoning
-> models happen to sit in the 1-2B and 4-5GB brackets and drag those averages
-> down; remove them (table 1 above) and the curve is monotonic-then-flat. So we
+> front).** Over the *94 functional models* the bracket curve is **non-monotonic** —
+> 61.6 / 67.5 / 76.7 / 75.4 / **73.3 %** — appearing to say "the biggest bracket
+> is *less* safe." It is **not** an intrinsic size effect: the four reasoning
+> models sit in the **1-2B** (three) and **4-5GB** (one) brackets and drag those
+> averages down; remove them (table 1 above) and the curve is monotonic-then-flat. So we
 > do **not** claim "bigger is less safe." We claim the decision-relevant thing:
 > the model a practitioner is most likely to *reach for as an upgrade* — the
 > biggest one, the one with the "reasoning" badge — is, in this study, the **least
-> safe**, which is why the naive size ranking inverts. The reasoning arm is only
-> **two models (n=60)**; Wave-2 deepens it. The conclusion survives either way:
+> safe**, which is why the naive size ranking inverts. The reasoning arm is **four
+> models (n=120)**. The conclusion survives either way:
 > **refusal must be measured behaviourally, because every size / benchmark /
 > "reasoning" proxy points the wrong way.**
 
@@ -635,48 +642,64 @@ single column. Treat each model as a point in **(judged quality ↑, determinist
 refusal ↑, energy-per-answer ↓)** and compute the **Pareto-optimal set**: model
 $A$ **dominates** $B$ iff $A$ is no worse on all three axes and strictly better on
 at least one; the **non-dominated** models are the short-list a practitioner
-should choose from. **7 of 24 models are Pareto-optimal; the other 17 are
+should choose from. **12 of 94 models are Pareto-optimal; the other 82 are
 dominated** — beaten on *every* axis at once, so nothing is lost by discarding them.
 
 | Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
 |---|---|---|---|---|
+| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` | 3-4B | 71.4 | 80.3 | 138 |
 | `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3 | 90.8 | 155 |
 | `qwen3:4b-instruct-2507-q4_K_M` | 3-4B | 68.6 | 90.8 | 106 |
 | `granite4:tiny-h` | 4-5GB | 63.5 | 74.2 | 54 |
+| `qwen3:1.7b-q8_0` | 1-2B | 62.1 | 82.8 | 93 |
 | `qwen3:1.7b` | 1-2B | 61.5 | 83.6 | 36 |
 | `granite4:1b-h` | 0-1B | 45.3 | 67.8 | 30 |
+| `qwen3:0.6b-q8_0` | 0-1B | 41.8 | 68.3 | 34 |
 | `qwen3:0.6b` | 0-1B | 36.6 | 64.7 | 15 |
+| `hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M` | 0-1B | 36.2 | 68.6 | 32 |
 | `smollm2:360m` | 0-1B | 27.8 | 65.6 | 23 |
+| `smollm2:135m-instruct-q8_0` | 0-1B | 22.8 | 48.6 | 13 |
 
 Two reads carry the integration. **(i) The proxies land off the front.** The
-high-quality/high-safety corner is the **4B-instruct** pair, whose **q4 and q8
-variants are mutually non-dominated** — identical **90.8 %** refusal, with the q8
-buying **+2.6 judged points for ~46 % more energy** (155 vs 106 mWh/answer): a
-*quantization* trade, not a win for either, and exactly the "choose on measured
-behaviour" decision a proxy cannot make. **(ii) The tempting upgrades are
-dominated.** **Both** reasoning-distilled models fall **off** the front;
-`deepseek-r1:7b` is the worst *combined* case — the **most energy-expensive
-model in the study** (303 mWh/answer) and, among the functional models, one of
-the two least-safe refusers (47.2 %), dominated by much of the roster. So the two heuristics a practitioner reaches for — *biggest
-that fits* and *has a "reasoning" mode* — select **dominated** models; the front is
-small, spans the whole size range, and is found only by measuring all three axes.
+high-quality/high-safety corner is owned by **three Qwen3-4B variants** — the
+sovereign pick `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (best judged quality, 71.4 %)
+and the `qwen3:4b-instruct-2507` **q4/q8 pair**, which are **mutually
+non-dominated** at identical **90.8 %** refusal, the q8 buying **+2.7 judged
+points for ~46 % more energy** (155 vs 106 mWh/answer): a *quantization* trade, not
+a win for either, and exactly the "choose on measured behaviour" decision a proxy
+cannot make. **(ii) The tempting upgrades are dominated.** **All four**
+reasoning-distilled models fall **off** the front; `deepseek-r1:7b` is among the
+worst *combined* cases — **one of the most energy-expensive models in the study**
+(303 mWh/answer, top 5 of 94) and the **least-safe** large model (47.2 %),
+dominated by much of the roster. So the two heuristics a practitioner reaches for —
+*biggest that fits* and *has a "reasoning" mode* — select **dominated** models; the
+front is small, spans the whole size range, and is found only by measuring all
+three axes.
 
 > **Honesty (state up front).** This front is computed on **point estimates**; its
-> **quality** axis is now the **5-rep × 2-judge ensemble** (κ_quad = 0.92), and
+> **quality** axis is now the **5-rep × 2-judge ensemble** (κ_quad = 0.91), and
 > safety and energy are judge-free / measured. The membership is still a point
 > estimate — **CI-aware dominance** (treating near-ties as non-separable) may widen
 > the front by a model or two. Energy is `psys`-RAPL on one CPU; ranks invite re-runs. The **logic** —
 > dominance on three *measured* axes — is the contribution; the exact membership
 > would only shift under **CI-aware dominance**. Reproduced in
 > [`wave_analysis.ipynb`](analysis/wave_analysis.ipynb) §8.
-
+**Telemetry coverage and missing data.** The three decision axes (judged quality,
+refusal, energy) are **100 % complete across all 94 functional models**. Only the
+memory-bandwidth axis (MBU/roofline) has gaps: **6 of 94** models lack per-run
+bandwidth telemetry — a perf-counter capture shortfall on the smallest/fastest
+models, **independent of behaviour or scores (missing at random)**. MBU is therefore
+reported on the **88-of-94** covered subset (available-case analysis), every other
+axis stays at full $N$, and no otherwise-complete model is dropped to paper over an
+instrumentation gap. Models with *no* usable rows on *any* axis (`phi:2.7b` plus the
+registry pull-failures) are excluded entirely and named in the appendix.
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
 |---|---|---|
 | n=1 environment (one cluster/operator) | External | Frame as **single-environment case study**; release harness so others replicate |
 | Author wrote scenarios + gold + rubric | Internal/construct | **option-C gold review DONE** (Claude 4.8 audited gold+rubric+checks, hardened the gameable ones, re-verified — `gold-review*.jsonl`); held-out set; hardened deterministic checks + LLM-judge as final correctness |
-| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** (full variance pass) — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.92** on 2,374 pairs (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
+| LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** (full variance pass) — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.91** on 8,909 pairs (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
 | Benchmark contamination | Construct | Canary/memorization probe; real-incident tasks unlikely in pretraining |
 | **Fine-tuning contamination** — domain fine-tuning on homelab-style ops data can make a tuned small model *memorize the benchmark style*, inflating scores and undermining the core "real incidents in nobody's training set" claim | Construct | **Caveat (future work).** Any fine-tuned arm must train only on data **disjoint** from the evaluated scenarios, report results on a **contamination-proof held-out set**, split by **incident** (not just wording) to avoid near-duplicate leakage, and include paraphrase/canary memorization probes. Always report **base vs fine-tuned** on the same held-out set so the lift is earned, not memorized. |
 | Quant vs architecture confound | Internal | q4 held constant for headline; q8/QAT as sensitivity |
@@ -690,12 +713,12 @@ small, spans the whole size range, and is found only by measuring all three axes
 | **RAG-lift confound** (grounded vs closed-book are *different task classes*, not the same task with/without a doc) | Internal/construct | **Open issue.** Current `rag_lift` mixes retrieval effect with task-difficulty. Fix before the RQ6 claim: author **paired variants** (same scenario, reference-doc present vs absent) so the within-scenario delta isolates retrieval. Until then, report closed-book and grounded **separately**; do not claim a causal RAG lift. |
 | **Judge egress** (real cluster telemetry sent to a 3rd-party cloud judge) | Construct/opsec | System-under-test stays sovereign; but scrub/anonymize released scenarios, disclose the egress, and prefer a self-hosted judge (§0b) |
 | **Energy = SoC (RAPL `psys`) not wall power**; single node | Construct/External | RAPL `psys` is on-die platform energy — **excludes** display/PSU/peripheral draw (a feature: isolates compute energy for the size comparison, but not facility power). Report the **idle baseline** + **net-over-idle**; optionally cross-check with a wall plug; energy ranks are this-chip-specific — invite re-runs |
-| **Thermal-order confound (C1)** — sequential 25-model runs heat the chip; later models throttle, confounding speed/energy with *run position* | Internal | **Fixed:** `--shuffle` randomizes model order (deterministic `--order-seed`); temp-gated `cooldown()` between models; `thermal.start_c` recorded as a per-task carryover covariate. The deterministic *quality* pass is order-insensitive; only the systems numbers need this |
+| **Thermal-order confound (C1)** — sequential 94-model runs heat the chip; later models throttle, confounding speed/energy with *run position* | Internal | **Fixed:** `--shuffle` randomizes model order (deterministic `--order-seed`); temp-gated `cooldown()` between models; `thermal.start_c` recorded as a per-task carryover covariate. The deterministic *quality* pass is order-insensitive; only the systems numbers need this |
 | **Tokenizer non-comparability (C2)** — tok/s differs ~20% across tokenizers for identical text | Construct | **Fixed:** report **chars/s** and **energy-per-token** beside tok/s; `output_chars` captured per request |
 | **Observer effect (C3)** — the sampler + perf counters perturb the throughput/energy they measure | Construct | **Fixed:** `calibrate.py` runs the probe model **with vs without** telemetry and reports the tok/s overhead; heavy `PERF_MEMBW` is env-gated, off by default; `SAMPLE_INTERVAL` tunable |
 | **RAPL is a modeled estimate (M1)** — whole-socket model, not per-process wall power; counters wrap | Construct | **Fixed/disclosed:** per-**subdomain** wraparound correction (`RAPL_MAXES`); `package-0` avoids the battery-charge confound; framed as compute-energy ±error, not facility power (Weaver et al.) |
 | **Sampling aliasing (M2)** — a 1 Hz sampler can alias sub-second power/freq excursions | Construct | **Fixed:** `SAMPLE_INTERVAL` configurable sub-second; peak trackers catch excursions between ticks |
-| **MBU vs datasheet (M4)** — utilization against the spec bandwidth overstates headroom | Construct | **Fixed:** `calibrate.py` measures the achievable STREAM peak on *this* node; MBU/bottleneck stay **blank** until calibration exists rather than faking a ceiling |
+| **MBU vs datasheet (M4)** — utilization against the spec bandwidth overstates headroom | Construct | **Disclosed:** the STREAM calibration did not complete on the run node, so MBU is normalized against the **datasheet** peak (38.4 GB/s, dual-channel DDR4-2400) and read as a **relative** efficiency, not an absolute ceiling. Reported as median 0.46 (10–90 %: 0.36–0.52). **6 of 94 models lack per-run bandwidth telemetry** (a perf-counter capture gap, independent of behaviour — MAR); MBU is reported on the **88-of-94** covered subset only, leaving every other axis at full N (§ telemetry coverage) |
 | **Frequency-scaling / power-management confound** — dynamic HWP clocks (0.4–3.6 GHz) + turbo make tok/s depend on thermal luck, not just the model | Internal | **Fixed:** `node-power.sh` locks governor `performance`, **turbo off**, clock pinned to **base** (~1.70 GHz, sustainable) for the systems pass; per-model `quiesce()` (fan-max + cache/swap reset + temp settle) equalizes start state; `cpu_freq_mhz`+`core_freq` logged at 1 Hz as evidence. No TLP/ppd/auto-cpufreq present (audited) |
 | **Dual-/single-channel flex region not attributable per test** — the 8 GB+16 GB asymmetric DIMMs run the first 16 GB interleaved (dual-channel ~38 GB/s) and the top ~8 GB single-channel (~19 GB/s), but the OS doesn't expose which region a process's pages occupy | Construct | **Disclosed.** The IMC PMU counts by *requestor* (ia/gt/io), not per channel; per-page channel mapping isn't authoritative. We capture the **effect** (achieved bandwidth / MBU) + the requestor split + working-set-vs-16 GB spill risk — not a per-region label |
 | **MoE dynamic routing not observable** — we capture the *static* sparsity (experts active/total per token, e.g. 6/64) but not *which* experts fire per token or the routing load-balance | Construct | **Disclosed.** Ollama/llama.cpp don't expose the router (`ffn_gate_inp`) logits; per-token expert selection needs engine instrumentation. `expert_used_count` bounds the active-compute; dynamic routing is future work |

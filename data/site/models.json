@@ -1,11 +1,38 @@
 [
   {
+    "model":"deepseek-coder:1.3b",
+    "bracket":"1-2B",
+    "quality":0.2957894737,
+    "safety":0.6556,
+    "energy_wh":0.0973236842,
+    "mWh":97.3236842105,
+    "pareto":false
+  },
+  {
+    "model":"deepseek-coder:1.3b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.3010526316,
+    "safety":0.7167,
+    "energy_wh":0.1572396842,
+    "mWh":157.2396842105,
+    "pareto":false
+  },
+  {
     "model":"deepseek-r1:1.5b",
     "bracket":"1-2B",
     "quality":0.2515789474,
     "safety":0.4055333333,
     "energy_wh":0.0871033684,
     "mWh":87.1033684211,
+    "pareto":false
+  },
+  {
+    "model":"deepseek-r1:1.5b-qwen-distill-q8_0",
+    "bracket":"1-2B",
+    "quality":0.2810526316,
+    "safety":0.4250333333,
+    "energy_wh":0.2247501053,
+    "mWh":224.7501052632,
     "pareto":false
   },
   {
@@ -18,6 +45,51 @@
     "pareto":false
   },
   {
+    "model":"falcon3:1b",
+    "bracket":"1-2B",
+    "quality":0.3410526316,
+    "safety":0.6945,
+    "energy_wh":0.152012,
+    "mWh":152.012,
+    "pareto":false
+  },
+  {
+    "model":"falcon3:1b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.3410526316,
+    "safety":0.6945,
+    "energy_wh":0.1460031579,
+    "mWh":146.0031578947,
+    "pareto":false
+  },
+  {
+    "model":"falcon3:3b",
+    "bracket":"3-4B",
+    "quality":0.4157894737,
+    "safety":0.5833333333,
+    "energy_wh":0.1243470526,
+    "mWh":124.3470526316,
+    "pareto":false
+  },
+  {
+    "model":"falcon3:3b-instruct-q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.4094736842,
+    "safety":0.5833333333,
+    "energy_wh":0.1074878947,
+    "mWh":107.4878947368,
+    "pareto":false
+  },
+  {
+    "model":"falcon3:3b-instruct-q8_0",
+    "bracket":"3-4B",
+    "quality":0.4673684211,
+    "safety":0.6334333333,
+    "energy_wh":0.3144321053,
+    "mWh":314.4321052632,
+    "pareto":false
+  },
+  {
     "model":"gemma2:2b",
     "bracket":"2-3B",
     "quality":0.5126315789,
@@ -27,12 +99,147 @@
     "pareto":false
   },
   {
+    "model":"gemma2:2b-instruct-q8_0",
+    "bracket":"2-3B",
+    "quality":0.5252631579,
+    "safety":0.7695333333,
+    "energy_wh":0.1495497895,
+    "mWh":149.5497894737,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:1b",
+    "bracket":"0-1B",
+    "quality":0.3852631579,
+    "safety":0.6945,
+    "energy_wh":0.0441473684,
+    "mWh":44.1473684211,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:1b-it-q8_0",
+    "bracket":"0-1B",
+    "quality":0.3715789474,
+    "safety":0.6639,
+    "energy_wh":0.0479881053,
+    "mWh":47.9881052632,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:1b-it-qat",
+    "bracket":"0-1B",
+    "quality":0.4052631579,
+    "safety":0.7,
+    "energy_wh":0.0376225263,
+    "mWh":37.6225263158,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:4b",
+    "bracket":"3-4B",
+    "quality":0.5863157895,
+    "safety":0.8639,
+    "energy_wh":0.1209785263,
+    "mWh":120.9785263158,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:4b-it-q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.5863157895,
+    "safety":0.8639,
+    "energy_wh":0.1114885263,
+    "mWh":111.4885263158,
+    "pareto":false
+  },
+  {
+    "model":"gemma3:4b-it-q8_0",
+    "bracket":"3-4B",
+    "quality":0.5536842105,
+    "safety":0.8000666667,
+    "energy_wh":0.143228,
+    "mWh":143.228,
+    "pareto":false
+  },
+  {
     "model":"gemma3:4b-it-qat",
     "bracket":"3-4B",
     "quality":0.5557894737,
     "safety":0.8056,
     "energy_wh":0.0864403158,
     "mWh":86.4403157895,
+    "pareto":false
+  },
+  {
+    "model":"gemma:2b",
+    "bracket":"2-3B",
+    "quality":0.3736842105,
+    "safety":0.6167,
+    "energy_wh":0.0756736842,
+    "mWh":75.6736842105,
+    "pareto":false
+  },
+  {
+    "model":"gemma:2b-instruct-q8_0",
+    "bracket":"2-3B",
+    "quality":0.3578947368,
+    "safety":0.6306,
+    "energy_wh":0.1015855789,
+    "mWh":101.5855789474,
+    "pareto":false
+  },
+  {
+    "model":"granite3.1-dense:2b",
+    "bracket":"2-3B",
+    "quality":0.5515789474,
+    "safety":0.7973,
+    "energy_wh":0.1384561053,
+    "mWh":138.4561052632,
+    "pareto":false
+  },
+  {
+    "model":"granite3.1-dense:2b-instruct-q8_0",
+    "bracket":"2-3B",
+    "quality":0.5894736842,
+    "safety":0.7612,
+    "energy_wh":0.3031607368,
+    "mWh":303.1607368421,
+    "pareto":false
+  },
+  {
+    "model":"granite3.1-moe:3b",
+    "bracket":"2-3B",
+    "quality":0.4221052632,
+    "safety":0.7028666667,
+    "energy_wh":0.0557507368,
+    "mWh":55.7507368421,
+    "pareto":false
+  },
+  {
+    "model":"granite3.2:2b",
+    "bracket":"2-3B",
+    "quality":0.5389473684,
+    "safety":0.7889666667,
+    "energy_wh":0.1859729474,
+    "mWh":185.9729473684,
+    "pareto":false
+  },
+  {
+    "model":"granite3.2:2b-instruct-q4_K_M",
+    "bracket":"2-3B",
+    "quality":0.5368421053,
+    "safety":0.7889666667,
+    "energy_wh":0.1757701053,
+    "mWh":175.7701052632,
+    "pareto":false
+  },
+  {
+    "model":"granite3.3:2b",
+    "bracket":"2-3B",
+    "quality":0.5842105263,
+    "safety":0.8000666667,
+    "energy_wh":0.1267047368,
+    "mWh":126.7047368421,
     "pareto":false
   },
   {
@@ -63,6 +270,78 @@
     "pareto":true
   },
   {
+    "model":"hf.co\/Qwen\/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M",
+    "bracket":"1-2B",
+    "quality":0.4326315789,
+    "safety":0.7167,
+    "energy_wh":0.075158,
+    "mWh":75.158,
+    "pareto":false
+  },
+  {
+    "model":"hf.co\/Qwen\/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+    "bracket":"2-3B",
+    "quality":0.5673684211,
+    "safety":0.7695,
+    "energy_wh":0.1497721053,
+    "mWh":149.7721052632,
+    "pareto":false
+  },
+  {
+    "model":"hf.co\/Qwen\/Qwen3-4B-GGUF:Q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.5515789474,
+    "safety":0.8417,
+    "energy_wh":0.3832601053,
+    "mWh":383.2601052632,
+    "pareto":false
+  },
+  {
+    "model":"hf.co\/unsloth\/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M",
+    "bracket":"1-2B",
+    "quality":0.2894736842,
+    "safety":0.5861666667,
+    "energy_wh":0.143804,
+    "mWh":143.804,
+    "pareto":false
+  },
+  {
+    "model":"hf.co\/unsloth\/Llama-3.2-1B-Instruct-GGUF:Q4_K_M",
+    "bracket":"0-1B",
+    "quality":0.3621052632,
+    "safety":0.6861666667,
+    "energy_wh":0.0323626316,
+    "mWh":32.3626315789,
+    "pareto":true
+  },
+  {
+    "model":"hf.co\/unsloth\/Phi-4-mini-instruct-GGUF:Q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.5294736842,
+    "safety":0.7972666667,
+    "energy_wh":0.1721308421,
+    "mWh":172.1308421053,
+    "pareto":false
+  },
+  {
+    "model":"hf.co\/unsloth\/Qwen3-4B-GGUF:Q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.7136842105,
+    "safety":0.8028333333,
+    "energy_wh":0.1376137895,
+    "mWh":137.6137894737,
+    "pareto":true
+  },
+  {
+    "model":"internlm2:1.8b",
+    "bracket":"1-2B",
+    "quality":0.3221052632,
+    "safety":0.6000666667,
+    "energy_wh":0.0521906316,
+    "mWh":52.1906315789,
+    "pareto":false
+  },
+  {
     "model":"llama3.2:1b",
     "bracket":"0-1B",
     "quality":0.3568421053,
@@ -72,12 +351,30 @@
     "pareto":false
   },
   {
+    "model":"llama3.2:1b-instruct-q8_0",
+    "bracket":"0-1B",
+    "quality":0.3557894737,
+    "safety":0.6056666667,
+    "energy_wh":0.0463105263,
+    "mWh":46.3105263158,
+    "pareto":false
+  },
+  {
     "model":"llama3.2:3b",
     "bracket":"3-4B",
     "quality":0.5336842105,
     "safety":0.8000666667,
     "energy_wh":0.0597232632,
     "mWh":59.7232631579,
+    "pareto":false
+  },
+  {
+    "model":"llama3.2:3b-instruct-q8_0",
+    "bracket":"3-4B",
+    "quality":0.5263157895,
+    "safety":0.7195,
+    "energy_wh":0.1473454737,
+    "mWh":147.3454736842,
     "pareto":false
   },
   {
@@ -99,12 +396,129 @@
     "pareto":false
   },
   {
+    "model":"nemotron-mini:4b",
+    "bracket":"3-4B",
+    "quality":0.3642105263,
+    "safety":0.6028,
+    "energy_wh":0.1204233684,
+    "mWh":120.4233684211,
+    "pareto":false
+  },
+  {
+    "model":"nemotron-mini:4b-instruct-q4_K_M",
+    "bracket":"3-4B",
+    "quality":0.3578947368,
+    "safety":0.6028,
+    "energy_wh":0.1255828421,
+    "mWh":125.5828421053,
+    "pareto":false
+  },
+  {
+    "model":"nemotron-mini:4b-instruct-q8_0",
+    "bracket":"3-4B",
+    "quality":0.3694736842,
+    "safety":0.675,
+    "energy_wh":0.2183445263,
+    "mWh":218.3445263158,
+    "pareto":false
+  },
+  {
+    "model":"phi3.5:3.8b",
+    "bracket":"3-4B",
+    "quality":0.5336842105,
+    "safety":0.7861333333,
+    "energy_wh":0.2552613684,
+    "mWh":255.2613684211,
+    "pareto":false
+  },
+  {
+    "model":"phi3.5:3.8b-mini-instruct-q8_0",
+    "bracket":"3-4B",
+    "quality":0.58,
+    "safety":0.7611666667,
+    "energy_wh":0.3578262105,
+    "mWh":357.8262105263,
+    "pareto":false
+  },
+  {
+    "model":"phi3:3.8b",
+    "bracket":"3-4B",
+    "quality":0.4652631579,
+    "safety":0.7500666667,
+    "energy_wh":0.1703763158,
+    "mWh":170.3763157895,
+    "pareto":false
+  },
+  {
+    "model":"phi3:3.8b-mini-128k-instruct-q8_0",
+    "bracket":"3-4B",
+    "quality":0.4726315789,
+    "safety":0.7473,
+    "energy_wh":0.2160389474,
+    "mWh":216.0389473684,
+    "pareto":false
+  },
+  {
     "model":"phi4-mini",
     "bracket":"3-4B",
     "quality":0.5547368421,
     "safety":0.7611666667,
     "energy_wh":0.0984010526,
     "mWh":98.4010526316,
+    "pareto":false
+  },
+  {
+    "model":"phi4-mini-reasoning",
+    "bracket":"3-4B",
+    "quality":0.4673684211,
+    "safety":0.7806,
+    "energy_wh":0.4429987368,
+    "mWh":442.9987368421,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5-coder:1.5b",
+    "bracket":"1-2B",
+    "quality":0.4315789474,
+    "safety":0.6889666667,
+    "energy_wh":0.0941897895,
+    "mWh":94.1897894737,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5-coder:1.5b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.44,
+    "safety":0.7500666667,
+    "energy_wh":0.1221469474,
+    "mWh":122.1469473684,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5-coder:3b",
+    "bracket":"2-3B",
+    "quality":0.5294736842,
+    "safety":0.7834,
+    "energy_wh":0.1545006316,
+    "mWh":154.5006315789,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5-coder:3b-instruct-q4_K_M",
+    "bracket":"2-3B",
+    "quality":0.5284210526,
+    "safety":0.7834,
+    "energy_wh":0.1635063158,
+    "mWh":163.5063157895,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5-coder:3b-instruct-q8_0",
+    "bracket":"2-3B",
+    "quality":0.5494736842,
+    "safety":0.7834,
+    "energy_wh":0.2502982105,
+    "mWh":250.2982105263,
     "pareto":false
   },
   {
@@ -117,12 +531,48 @@
     "pareto":false
   },
   {
+    "model":"qwen2.5:0.5b-instruct-q4_K_M",
+    "bracket":"0-1B",
+    "quality":0.2757894737,
+    "safety":0.5334333333,
+    "energy_wh":0.0528381053,
+    "mWh":52.8381052632,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5:0.5b-instruct-q8_0",
+    "bracket":"0-1B",
+    "quality":0.2884210526,
+    "safety":0.6417333333,
+    "energy_wh":0.0606682105,
+    "mWh":60.6682105263,
+    "pareto":false
+  },
+  {
     "model":"qwen2.5:1.5b",
     "bracket":"1-2B",
     "quality":0.4410526316,
     "safety":0.7500333333,
     "energy_wh":0.0511770526,
     "mWh":51.1770526316,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5:1.5b-instruct-q4_K_M",
+    "bracket":"1-2B",
+    "quality":0.4336842105,
+    "safety":0.7500333333,
+    "energy_wh":0.0944868421,
+    "mWh":94.4868421053,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5:1.5b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.4284210526,
+    "safety":0.7500666667,
+    "energy_wh":0.1247322105,
+    "mWh":124.7322105263,
     "pareto":false
   },
   {
@@ -135,12 +585,57 @@
     "pareto":false
   },
   {
+    "model":"qwen2.5:3b-instruct-q4_K_M",
+    "bracket":"2-3B",
+    "quality":0.5526315789,
+    "safety":0.7806333333,
+    "energy_wh":0.1718992632,
+    "mWh":171.8992631579,
+    "pareto":false
+  },
+  {
+    "model":"qwen2.5:3b-instruct-q8_0",
+    "bracket":"2-3B",
+    "quality":0.5663157895,
+    "safety":0.8444666667,
+    "energy_wh":0.2454209474,
+    "mWh":245.4209473684,
+    "pareto":false
+  },
+  {
     "model":"qwen2.5:7b",
     "bracket":"4-5GB",
     "quality":0.6642105263,
     "safety":0.8361666667,
     "energy_wh":0.1546286813,
     "mWh":154.6286813187,
+    "pareto":false
+  },
+  {
+    "model":"qwen2:0.5b-instruct-q8_0",
+    "bracket":"0-1B",
+    "quality":0.2715789474,
+    "safety":0.6417,
+    "energy_wh":0.0582682105,
+    "mWh":58.2682105263,
+    "pareto":false
+  },
+  {
+    "model":"qwen2:1.5b",
+    "bracket":"1-2B",
+    "quality":0.3494736842,
+    "safety":0.6834,
+    "energy_wh":0.0493365263,
+    "mWh":49.3365263158,
+    "pareto":false
+  },
+  {
+    "model":"qwen2:1.5b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.3884210526,
+    "safety":0.6667333333,
+    "energy_wh":0.0728423158,
+    "mWh":72.8423157895,
     "pareto":false
   },
   {
@@ -153,12 +648,48 @@
     "pareto":true
   },
   {
+    "model":"qwen3:0.6b-fp16",
+    "bracket":"0-1B",
+    "quality":0.4,
+    "safety":0.6472333333,
+    "energy_wh":0.0954941053,
+    "mWh":95.4941052632,
+    "pareto":false
+  },
+  {
+    "model":"qwen3:0.6b-q8_0",
+    "bracket":"0-1B",
+    "quality":0.4178947368,
+    "safety":0.6833666667,
+    "energy_wh":0.0336723158,
+    "mWh":33.6723157895,
+    "pareto":true
+  },
+  {
     "model":"qwen3:1.7b",
     "bracket":"1-2B",
     "quality":0.6147368421,
     "safety":0.8361333333,
     "energy_wh":0.0357187368,
     "mWh":35.7187368421,
+    "pareto":true
+  },
+  {
+    "model":"qwen3:1.7b-fp16",
+    "bracket":"1-2B",
+    "quality":0.6263157895,
+    "safety":0.8083666667,
+    "energy_wh":0.2251427368,
+    "mWh":225.1427368421,
+    "pareto":false
+  },
+  {
+    "model":"qwen3:1.7b-q8_0",
+    "bracket":"1-2B",
+    "quality":0.6210526316,
+    "safety":0.8278,
+    "energy_wh":0.0928398947,
+    "mWh":92.8398947368,
     "pareto":true
   },
   {
@@ -189,6 +720,15 @@
     "pareto":true
   },
   {
+    "model":"qwen3:4b-q8_0",
+    "bracket":"3-4B",
+    "quality":0.7094736842,
+    "safety":0.8278333333,
+    "energy_wh":0.2143644211,
+    "mWh":214.3644210526,
+    "pareto":false
+  },
+  {
     "model":"smollm2:1.7b",
     "bracket":"1-2B",
     "quality":0.4021052632,
@@ -196,6 +736,33 @@
     "energy_wh":0.0617566316,
     "mWh":61.7566315789,
     "pareto":false
+  },
+  {
+    "model":"smollm2:1.7b-instruct-q8_0",
+    "bracket":"1-2B",
+    "quality":0.3989473684,
+    "safety":0.689,
+    "energy_wh":0.1087591579,
+    "mWh":108.7591578947,
+    "pareto":false
+  },
+  {
+    "model":"smollm2:135m",
+    "bracket":"0-1B",
+    "quality":0.2347368421,
+    "safety":0.5584333333,
+    "energy_wh":0.0183294737,
+    "mWh":18.3294736842,
+    "pareto":false
+  },
+  {
+    "model":"smollm2:135m-instruct-q8_0",
+    "bracket":"0-1B",
+    "quality":0.2284210526,
+    "safety":0.4862,
+    "energy_wh":0.0131526316,
+    "mWh":13.1526315789,
+    "pareto":true
   },
   {
     "model":"smollm2:360m",
@@ -207,12 +774,75 @@
     "pareto":true
   },
   {
+    "model":"smollm2:360m-instruct-q8_0",
+    "bracket":"0-1B",
+    "quality":0.2536842105,
+    "safety":0.4972333333,
+    "energy_wh":0.0239509474,
+    "mWh":23.9509473684,
+    "pareto":false
+  },
+  {
+    "model":"smollm:1.7b",
+    "bracket":"1-2B",
+    "quality":0.2631578947,
+    "safety":0.5945333333,
+    "energy_wh":0.1200005263,
+    "mWh":120.0005263158,
+    "pareto":false
+  },
+  {
+    "model":"smollm:360m",
+    "bracket":"0-1B",
+    "quality":0.2168421053,
+    "safety":0.5195,
+    "energy_wh":0.0419014737,
+    "mWh":41.9014736842,
+    "pareto":false
+  },
+  {
     "model":"stablelm2:1.6b",
     "bracket":"1-2B",
     "quality":0.3126315789,
     "safety":0.6639666667,
     "energy_wh":0.0548336842,
     "mWh":54.8336842105,
+    "pareto":false
+  },
+  {
+    "model":"stablelm2:1.6b-chat",
+    "bracket":"1-2B",
+    "quality":0.2978947368,
+    "safety":0.6639666667,
+    "energy_wh":0.0963229474,
+    "mWh":96.3229473684,
+    "pareto":false
+  },
+  {
+    "model":"stablelm2:1.6b-zephyr",
+    "bracket":"1-2B",
+    "quality":0.2705263158,
+    "safety":0.5695,
+    "energy_wh":0.1130848421,
+    "mWh":113.0848421053,
+    "pareto":false
+  },
+  {
+    "model":"tinyllama:1.1b",
+    "bracket":"0-1B",
+    "quality":0.2684210526,
+    "safety":0.6084666667,
+    "energy_wh":0.0563056842,
+    "mWh":56.3056842105,
+    "pareto":false
+  },
+  {
+    "model":"tinyllama:1.1b-chat-v1-q8_0",
+    "bracket":"0-1B",
+    "quality":0.2852631579,
+    "safety":0.639,
+    "energy_wh":0.0927875789,
+    "mWh":92.7875789474,
     "pareto":false
   }
 ]
