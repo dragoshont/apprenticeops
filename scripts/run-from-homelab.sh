@@ -69,7 +69,7 @@ if [ -n "${LIMIT:-}" ]; then
   log "--- LIMIT=${LIMIT} stop-and-audit batch (inline) ---"
   "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' LIMIT='${LIMIT}' ./scripts/run-roster.sh" || log "WARN: audit batch returned non-zero"
   collect
-  log "AUDIT NOW:  python3 scripts/audit-wave.py ${COLLECT}/results.${RUN_ID}.jsonl   (must say AUDIT: PASS before the full run)"
+  log "AUDIT NOW:  python3 scripts/audit-run.py ${COLLECT}/results.${RUN_ID}.jsonl   (must say AUDIT: PASS before the full run)"
 else
   log "--- full roster (detached on home-ai) ---"
   "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 & echo started pid \$!"

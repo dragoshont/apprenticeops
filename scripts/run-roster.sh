@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-roster.sh — node-side LOCKED full-roster run (runs ON home-ai). Deterministic:
 # locks the power state, refuses to start unless the node matches the frozen manifest,
-# runs every model in data/models.all.txt under per-model quiesce + reset-state
+# runs every model in data/models.txt under per-model quiesce + reset-state
 # evidence (in the rows), and captures the ollama server log + CPU-library choice.
 # Resumable: --rm-after + append-to-file; re-run continues, dedup later.
 #
@@ -17,7 +17,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 RUN_ID="${RUN_ID:-roster-$(date -u +%Y%m%d-%H%M)}"
-MODELS="${MODELS:-data/models.all.txt}"
+MODELS="${MODELS:-data/models.txt}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
 mkdir -p "$LOGDIR" outputs
@@ -70,7 +70,7 @@ IDLE_T=$(python3 -c "import json;print(int(json.load(open('calibration.json')).g
 COOL_T=$(( IDLE_T + 7 )); [ "$COOL_T" -lt 50 ] && COOL_T=58
 log "cooldown target COOL_TEMP_C=${COOL_T}C"
 
-# 4) PREFLIGHT — refuse to run unless the node matches data/wave1-manifest.json
+# 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
 if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 python3 run.py --preflight-only \
       --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
@@ -105,5 +105,5 @@ print(f"reset-state: {ok} rows ok, {bad} flagged. top warnings: {dict(warns.most
 PY
 
 log "=== ROSTER RUN $RUN_ID DONE rc=$rc rows=$(wc -l <"$OUT" 2>/dev/null || echo 0) ==="
-log "audit:  python3 scripts/audit-wave.py $OUT"
+log "audit:  python3 scripts/audit-run.py $OUT"
 # node-power.sh teardown runs via the EXIT trap.

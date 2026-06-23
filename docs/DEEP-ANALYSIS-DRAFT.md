@@ -413,7 +413,7 @@ problems are exactly what `ensure_pulled` retries and `--rm-after` were later ad
 
 **The fix (implemented + validated):** a **deterministic preflight inside `run.py`** — the one component
 every wave passes through — so no launch path (script *or* manual) can drift:
-- **`data/wave1-manifest.json`** — the frozen env lock (turbo off, governor `performance`,
+- **`data/run-manifest.json`** — the frozen env lock (turbo off, governor `performance`,
   `min/max_perf_pct=100`, freq ceiling 1750 MHz, RAPL `package-0`, `perf_event_paranoid≤2`, `num_ctx`
   8192, require-models-present).
 - **`run.py --preflight`** (default-on) — refuses to start (exit 3) if the node drifts from the manifest;
@@ -448,9 +448,9 @@ measured DRAM peak), TPOT, energy-per-correct-answer, tokenizer-normalized chars
 pass-consistency**, **net-egress (offline proof)**, **thinking-ratio**, KV-cache bytes, FLOPs/token, and
 (when `outputs/` is present) hedge/refusal/repetition/parseability.
 
-**Candidate task axes (not yet merged — `data/scenarios.candidates.json`):** prompt-injection resistance
+**New task axes (merged — `data/scenarios.json`, now 24 scenarios):** prompt-injection resistance
 (untrusted context carrying adversarial instructions; OWASP LLM01 / `gap2026`) and structured-action /
-tool-call emission — the two ops-relevant capabilities Waves 1–3 never tested. Merging them bumps the
+tool-call emission — two ops-relevant capabilities the earlier roster never tested. The merge bumped the
 manifest `scenarios_sha256` deliberately (a reviewed change, not silent drift).
 
 **Honest residuals:** token-level logprobs aren't in the ollama API (only the llama.cpp side-probe gets
@@ -485,7 +485,7 @@ systems **yes**; **one exception** = wall-clock timeouts (`DNF:timeout` 3.5% `va
 `wave2`-ON, all on the slowest 4–5GB models) → §2 r1:7b case partly a Turbo-off artifact (conservative).
 15. **Systematic wave diff + deterministic guard built** (§23): found 5 wave differences (Turbo, RAPL
 domain `package-0`↔`psys`, 133 `pull_failed`, 14% missing perf telemetry, no provenance). Implemented +
-validated a `run.py` preflight (`data/wave1-manifest.json`, `--preflight-only`, `env.*` provenance in
+validated a `run.py` preflight (`data/run-manifest.json`, `--preflight-only`, `env.*` provenance in
 every row) + `node-power.sh perf_event_paranoid=1`; documented in REPRODUCE.md §3b.
 Remaining: per-check `det_detail` analysis; decide var-only vs rerun for systems; promote vetted findings
 to PAPER.md (with the Turbo-wave caveat on systems/energy).

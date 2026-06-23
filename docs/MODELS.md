@@ -135,7 +135,7 @@ see [`MARKET.md`](MARKET.md))
 > Waves 1+2 ran **106 distinct tags** — almost all **dense transformers** in
 > `q4_K_M`/`q8_0`. Wave 3 deliberately attacks the axes that coverage missed, so
 > the paper can say something about *architecture* and *quantization*, not just
-> *which Qwen*. Runnable manifest: [`../data/models.wave3.txt`](../data/models.wave3.txt).
+> *which Qwen*. Runnable manifest: [`../data/models.txt`](../data/models.txt).
 >
 > The four Wave-3 axes:
 > 1. **Non-transformer / hybrid arch** — Mamba-2 (`granite4:*-h`), conv-hybrid

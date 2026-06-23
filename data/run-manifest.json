@@ -1,7 +1,7 @@
 {
-  "_comment": "Frozen reproducible-node environment lock for ApprenticeOps waves. run.py --preflight reads this and REFUSES to start unless the live node matches (or you pass --allow-unlocked). This exists because wave1 (results.var, Turbo OFF, RAPL package-0) and wave2 (results.wave2, Turbo ON, RAPL psys/package-0 mixed) drifted: wave2 was launched without scripts/node-power.sh setup, so the prior run's teardown trap had restored Turbo, and RAPL_DOMAIN was unpinned. These env facts were never recorded in the data, so the drift was invisible. This manifest + the env.* provenance fields run.py now stamps make a wave's power/energy regime explicit and enforceable.",
-  "name": "apprenticeops-wave-env-v1",
-  "frozen_from": "results.var.jsonl (wave1), 2026-06-17..18, launched via scripts/run-experiment.sh + scripts/node-power.sh setup",
+  "_comment": "Frozen reproducible-node environment lock for the ApprenticeOps model-list run. run.py --preflight reads this and REFUSES to start unless the live node matches (or you pass --allow-unlocked). It exists because an earlier controlled run (Turbo OFF, RAPL package-0) and a later one (Turbo ON, RAPL psys/package-0 mixed) drifted: the later run was launched without scripts/node-power.sh setup, so a prior run's teardown trap had restored Turbo and RAPL_DOMAIN was unpinned, and none of it was recorded. This manifest + the env.* provenance run.py stamps make the node's power/energy regime explicit and enforceable so it can't recur.",
+  "name": "apprenticeops-run-env-v1",
+  "frozen_from": "the controlled Turbo-off run, 2026-06-17..18, launched via scripts/node-power.sh setup",
   "platform": "linux",
   "enforce_on_platform": "linux",
 
@@ -33,14 +33,14 @@
   },
 
   "protocol": {
-    "_comment": "Verified identical across wave1/wave2 from the data (temp 0.7, seeds 1-5 => seed_base 1, reps 5, think=false). run.py --preflight now asserts the launch args + the scenarios.json content hash match these, so a stray --temp/--think or an edited prompt aborts instead of silently producing non-wave1 data.",
+    "_comment": "The decode protocol the preflight asserts (temp 0.7, seed_base 1, reps 5, think=false) plus the scenarios.json content hash, so a stray --temp/--think or an edited prompt aborts instead of silently producing off-protocol data. scenario_count 24 = the original 19 + 5 merged (3 prompt-injection + 2 tool-call). NB: run.py pins only temp/seed/num_predict/num_ctx; each model's other sampler defaults (top_p/top_k/...) are captured in ollama.parameters, not pinned.",
     "temperature": 0.7,
     "repeats": 5,
     "seed_base": 1,
     "think": false,
     "scenarios_file": "data/scenarios.json",
-    "scenarios_sha256": "80b727c771dbbe854d50b38740a3eda45d26961bff39c4647639a73b15edd5d6",
-    "scenario_count": 19
+    "scenarios_sha256": "b0d5ad070f4655528f5ff7e10f1c203dfafbf4db5f73b0222977b1295d3fa0d4",
+    "scenario_count": 24
   },
 
   "expected": {

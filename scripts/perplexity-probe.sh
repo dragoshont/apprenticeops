@@ -14,14 +14,14 @@
 # coarse to see, plus a judge-INDEPENDENT quality axis (cross-checks the judge's
 # known verbosity bias) and a calibration signal.
 #
-#   ./scripts/perplexity-probe.sh CORPUS.txt [models.all.txt] [out.jsonl]
+#   ./scripts/perplexity-probe.sh CORPUS.txt [models.txt] [out.jsonl]
 #
 # CORPUS = a HELD-OUT ops text file (NOT data/scenarios.json — keep it out-of-sample
 # so PPL isn't circular). Join to the main results on `model` / `ollama.digest`.
 # Needs llama.cpp's `llama-perplexity` on PATH (build: github.com/ggml-org/llama.cpp).
 set -uo pipefail
 CORPUS="${1:?usage: perplexity-probe.sh CORPUS.txt [models.txt] [out.jsonl]}"
-MODELS="${2:-data/models.all.txt}"
+MODELS="${2:-data/models.txt}"
 OUT="${3:-results.perplexity.jsonl}"
 CTX="${PPL_CTX:-2048}"
 

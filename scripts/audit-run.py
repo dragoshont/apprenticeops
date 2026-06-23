@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""audit-wave.py — stop-and-audit a (partial) results file before committing days
+"""audit-run.py — stop-and-audit a (partial) results file before committing days
 of compute. Reads results.jsonl[.gz], confirms EVERY row shares one reproducible
 env regime (no mid-run drift) and that the regime matches the frozen manifest, and
-flags the wave2-class problems (RAPL-domain mix, pull_failed, missing perf telemetry).
+flags the known regime problems (RAPL-domain mix, pull_failed, missing perf telemetry).
 
 Usage:
-    python3 scripts/audit-wave.py results.wave2.jsonl [--manifest data/wave1-manifest.json]
+    python3 scripts/audit-run.py results.<RUN_ID>.jsonl [--manifest data/run-manifest.json]
 
 Workflow:
     1) node-power.sh setup
     2) RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 python3 run.py --models ... \
-         --temp 0.7 --repeats 5 --seed-base 1 --limit 2 --out results.wave2.jsonl
-    3) python3 scripts/audit-wave.py results.wave2.jsonl     # must print AUDIT: PASS
+         --temp 0.7 --repeats 5 --seed-base 1 --limit 2 --out results.<RUN_ID>.jsonl
+    3) python3 scripts/audit-run.py results.<RUN_ID>.jsonl     # must print AUDIT: PASS
     4) re-launch without --limit for the full sweep (dedup handles the 2 repeats)
 
 Exit 0 = PASS, non-zero = problems found.
@@ -61,7 +61,7 @@ def finish_of(r):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("results")
-    ap.add_argument("--manifest", default="data/wave1-manifest.json")
+    ap.add_argument("--manifest", default="data/run-manifest.json")
     ap.add_argument("--scenarios", default="data/scenarios.json")
     args = ap.parse_args()
 

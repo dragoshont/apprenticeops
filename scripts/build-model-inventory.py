@@ -17,7 +17,7 @@ import os
 import re
 from collections import defaultdict
 
-LISTS = [("w1", "data/models.txt"), ("w2", "data/models.wave2.txt"), ("w3", "data/models.wave3.txt")]
+LISTS = [("w1", "data/legacy/models.legacy-w1.txt"), ("w2", "data/legacy/models.legacy-w2.txt"), ("w3", "data/legacy/models.legacy-w3.txt")]
 META = "data/model_metadata.csv"
 RAW = sorted(glob.glob("data/raw/results.*.jsonl.gz"))
 OUT = "data/models-inventory.csv"

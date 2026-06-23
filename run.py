@@ -1132,7 +1132,7 @@ def load_models(path, only_bracket=None):
 # state and refuse to run if it drifts from the frozen manifest. This exists
 # because wave1 (Turbo OFF, RAPL package-0) and wave2 (Turbo ON, RAPL psys/
 # package-0) silently diverged — the env was never recorded, so the drift was
-# invisible until a post-hoc clock analysis. See data/wave1-manifest.json.
+# invisible until a post-hoc clock analysis. See data/run-manifest.json.
 # --------------------------------------------------------------------------
 def _read_first(path):
     try:
@@ -1360,9 +1360,9 @@ def main():
                     help="`ollama rm` each model THIS run pulled, after its scenarios finish, "
                          "to bound disk during large sweeps. Models already present before the "
                          "run are KEPT (conservative; never deletes pre-existing models).")
-    ap.add_argument("--manifest", default="data/wave1-manifest.json",
+    ap.add_argument("--manifest", default="data/run-manifest.json",
                     help="frozen env-lock manifest; run.py refuses to start if the node has drifted "
-                         "from it (turbo/governor/RAPL-domain/perf/models). The wave1<->wave2 guard.")
+                         "from it (turbo/governor/RAPL-domain/perf/models). The run-drift guard.")
     ap.add_argument("--allow-unlocked", action="store_true",
                     help="downgrade preflight failures to warnings (local/dev or Mac runs; "
                          "NEVER for a canonical wave).")
@@ -1371,7 +1371,7 @@ def main():
                          "(no models run).")
     ap.add_argument("--limit", type=int, default=0,
                     help="run only the first N models then stop (stop-and-audit: run a couple, audit "
-                         "env.* with scripts/audit-wave.py, then launch the full sweep).")
+                         "env.* with scripts/audit-run.py, then launch the full sweep).")
     args = ap.parse_args()
 
     os.makedirs(args.outputs_dir, exist_ok=True)
@@ -1434,7 +1434,7 @@ def main():
         for _mi, (model, bracket) in enumerate(models):
             if args.limit and _mi >= args.limit:
                 sys.stderr.write(f"== --limit {args.limit} reached; stopping for audit "
-                                 f"(scripts/audit-wave.py {args.out}) ==\n")
+                                 f"(scripts/audit-run.py {args.out}) ==\n")
                 break
             # re-read the drift-prone state for THIS model; abort if the node moved.
             env_fp = {**env_static, **_env_volatile()}

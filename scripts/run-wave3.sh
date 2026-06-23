@@ -28,7 +28,7 @@ set -uo pipefail
 SME="${SME:-/tmp/sme-var}"
 cd "$SME"
 LOG="$PWD/wave3.log"
-MODELS="${MODELS:-data/models.wave3.txt}"
+MODELS="${MODELS:-data/legacy/models.legacy-w3.txt}"
 OUT="${OUT:-results.wave3.jsonl}"
 ts() { date -uIs; }
 log() { echo "[$(ts)] $*" | tee -a "$LOG"; }
