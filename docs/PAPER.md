@@ -802,6 +802,45 @@ summaries; we flag the known caveat that distance- and pairwise-based methods
 (TOPSIS, AHP) can exhibit **rank reversal** when the candidate set changes, whereas
 the SMAA acceptability is computed over the fixed 94-model roster.
 
+## 8e. Per-model SWOT: the deployment-decision synthesis
+
+The MCDA selection in §8d collapses the front to *one* recommended model. The
+operational question a homelab owner actually asks is broader — *"what am I getting,
+and what am I risking, if I run **this** model?"* — which is a **SWOT**. SWOT is a
+strategic-management framing (Weihrich's TOWS matrix), and its standard criticism is
+**subjectivity**: the quadrants get filled by opinion. We avoid that by making the
+SWOT **data-driven and pre-registered** — every entry is a measured axis crossing a
+fixed threshold, not a judgement call. The four quadrants map onto what the benchmark
+already produces:
+
+| Quadrant | Source (measured axes) | Computable from this run? |
+|---|---|---|
+| **Strengths** (internal +) | per-model **top-quantile** axes: quality on a class, refusal rate, Wh/correct, tok/s ≥ 8, cross-rep consistency | **Yes** — §8b/§8d axes |
+| **Weaknesses** (internal −) | **bottom-quantile** axes + failure modes: truncation rate, DNF/timeout, unsafe endorsement, sub-interactive speed | **Yes** — §8b axes |
+| **Opportunities** (external +) | **context/retrieval lift** (§12), **quantization headroom** (q8 pairs), **hardware transfer** (§7c roofline) | **Partly** — quant + roofline now; retrieval needs §12 |
+| **Threats** (external −) | **prompt-injection** susceptibility (`secure-14/15/16`), **counterfactual / context-poisoning** (§12), **quant/fine-tune safety regression**, **license/provenance** | **Partly** — injection + license + quant now; context-poisoning needs §12 |
+
+So the honest answer to *"can we compute a SWOT from the data we are collecting?"* is:
+**the two internal quadrants (S, W) fall out of the current run directly** — they are
+the §8b axis profile and the archetype membership, re-expressed as a per-model card.
+**The two external quadrants (O, T) are partly populated now** (quantization headroom,
+roofline transfer, injection-resistance, and license/provenance are all measured) and
+are **completed by the planned context axis (§12)**, which supplies the single biggest
+*Opportunity* (grounding substitutes for parameters, E1) and a key *Threat*
+(context-poisoning / counterfactual-follow, E4). **No new metric is required** — SWOT is
+an **aggregation and communication layer** over axes we already collect, plus the §12
+extension. The only genuinely new artifact is a **pre-registered bucketing rubric** (the
+quantile thresholds that decide what counts as a strength versus a weakness), reported
+so the synthesis is reproducible rather than editorial.
+
+> **Scope honesty.** SWOT *informs* the deployment decision; it is **not a
+> measurement**. The O and T quadrants are by definition about *external/future*
+> factors — a benchmark can ground them in evidence (a model that follows injected
+> context *is* a measured threat) but cannot fully quantify "opportunity." We present
+> the per-model SWOT as a **decision aid built on the metrics**, with the MCDA score
+> (§8d) as the quantitative selector and the SWOT as its qualitative complement — and
+> we resist dressing a strategy framework up as a number.
+
 ## 9. Limitations and Threats to Validity
 
 | Threat | Type | Mitigation |
