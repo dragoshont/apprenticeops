@@ -44,8 +44,8 @@
   },
 
   "expected": {
-    "_comment": "Pin the Ollama version once you capture it from a known-good run (run.py stamps env.ollama_version into every row). null = record-but-do-not-enforce until pinned. wave1 did not record it, so it is currently unknown.",
-    "ollama_version": null
+    "_comment": "Ollama engine pinned from the home-ai node (hostname 'ai') on 2026-06-24; run.py stamps env.ollama_version into every row and the preflight refuses to run if the node's engine drifts from this. Re-pin only on a deliberate, reviewed engine upgrade.",
+    "ollama_version": "0.30.8"
   },
 
   "models_pinned": {

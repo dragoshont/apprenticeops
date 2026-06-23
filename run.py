@@ -1309,8 +1309,15 @@ def preflight(models, fp, manifest_path, require_models_present=False, protocol=
                             "(Turbo appears ON — run scripts/node-power.sh setup)")
 
     wantver = man.get("expected", {}).get("ollama_version")
-    if wantver and wantver != fp["env.ollama_version"]:
-        problems.append(f"ollama version: manifest wants {wantver!r}, node has {fp['env.ollama_version']!r}")
+    if wantver:
+        got_raw = fp.get("env.ollama_version") or ""
+        _gm = re.search(r"\d+\.\d+\.\d+", got_raw)
+        _wm = re.search(r"\d+\.\d+\.\d+", str(wantver))
+        got_v = _gm.group(0) if _gm else got_raw.strip()
+        want_v = _wm.group(0) if _wm else str(wantver).strip()
+        if got_v != want_v:
+            problems.append(f"ollama version: manifest wants {want_v!r}, node has {got_v!r} "
+                            f"(full: {got_raw.strip()!r})")
 
     # protocol args (temperature/repeats/seed/think) — a stray --temp or --think
     # would otherwise pass the env preflight and silently produce non-wave1 data.
@@ -1430,12 +1437,44 @@ def main():
     if idle_w is not None:
         sys.stderr.write(f"== idle power baseline: {idle_w} W ==\n")
 
+    # --- model-level resume: skip models already complete in --out (idempotent) ---
+    # A model is "complete" when it has a row for every (scenario, rep) unit. A
+    # half-finished model (crash mid-model) is re-run from scratch; the duplicate
+    # partial rows are harmless and collapse in dedup. This makes the roster
+    # recoverable + resumable at MODEL granularity: a re-launch continues where it
+    # stopped instead of repeating days of compute.
+    expected_units = len(scen) * args.repeats
+    done_models = set()
+    if os.path.exists(args.out):
+        _seen = {}
+        with open(args.out) as _f:
+            for _ln in _f:
+                _ln = _ln.strip()
+                if not _ln:
+                    continue
+                try:
+                    _r = json.loads(_ln)
+                except Exception:  # noqa: BLE001
+                    continue
+                _m = _r.get("model")
+                if _m and _r.get("scenario") is not None and _r.get("rep") is not None \
+                        and _r.get("det_total") is not None:
+                    _seen.setdefault(_m, set()).add((_r["scenario"], _r["rep"]))
+        done_models = {m for m, u in _seen.items() if len(u) >= expected_units}
+        if done_models:
+            sys.stderr.write(f"== resume: {len(done_models)} model(s) already complete in "
+                             f"{args.out}; skipping them ==\n")
+
     with open(args.out, "a") as fout:
-        for _mi, (model, bracket) in enumerate(models):
-            if args.limit and _mi >= args.limit:
+        ran = 0
+        for (model, bracket) in models:
+            if model in done_models:
+                continue                      # model-level resume: already complete
+            if args.limit and ran >= args.limit:
                 sys.stderr.write(f"== --limit {args.limit} reached; stopping for audit "
                                  f"(scripts/audit-run.py {args.out}) ==\n")
                 break
+            ran += 1
             # re-read the drift-prone state for THIS model; abort if the node moved.
             env_fp = {**env_static, **_env_volatile()}
             _drift = [f"{k}={env_fp.get(k)!r}!={v!r}"
@@ -1569,6 +1608,14 @@ def main():
                     sys.stderr.write(f"    {s['id']:28} r{rep} det={passed}/{total} "
                                      f"{tel['decode_tok_s']}tok/s {tel['wall_s']}s {flag}\n")
                     sys.stderr.flush()
+            # model fully produced all (scenario x rep) rows -> signal the consumer
+            # (the judge/commit scheduler) that this model is ready to evaluate.
+            try:
+                with open(args.out + ".done", "a") as _df:
+                    _df.write(json.dumps({"model": model, "bracket": bracket,
+                                          "ts": time.time(), "units": expected_units}) + "\n")
+            except Exception:  # noqa: BLE001
+                pass
             unload(model)
             quiesce()
             # bound disk: drop a model we pulled for this run (keep pre-existing ones)
