@@ -1150,6 +1150,68 @@ def env_fingerprint():
     return {**_env_static(), **_env_volatile()}
 
 
+def _f(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _running_procs():
+    """Contention check: (# running-state procs, the top non-harness CPU hog).
+    Proves nothing heavy is competing with inference at this model's start."""
+    try:
+        out = subprocess.run(["ps", "-eo", "stat,pcpu,comm", "--sort=-pcpu", "--no-headers"],
+                             capture_output=True, text=True, timeout=5).stdout.splitlines()
+    except Exception:  # noqa: BLE001
+        return None, None
+    running = sum(1 for ln in out if ln.strip()[:1] == "R")
+    top = None
+    for ln in out:
+        p = ln.split(None, 2)
+        if len(p) == 3 and p[2] not in ("ps", "ollama", "run.py", "python3", "python") and _f(p[1]) > 5:
+            top = f"{p[2]}:{p[1]}%"; break
+    return running, top
+
+
+def reset_state_snapshot():
+    """Per-model evidence (captured AFTER quiesce, BEFORE the model loads) that the
+    node is in the identical reset state: turbo/governor/freq/temp/swap/RAM/load/
+    procs. Stamped into every row of the model so 'identical setup' is PROVEN, not
+    assumed. reset.ok=False flags a model whose start state drifted (filter it)."""
+    avail, swap = _meminfo()
+    try:
+        load1 = float(open("/proc/loadavg").read().split()[0])
+    except OSError:
+        load1 = None
+    nproc, topproc = _running_procs()
+    temp = _cpu_temp_c()
+    s = {
+        "reset.cpu_no_turbo": _read_first("/sys/devices/system/cpu/intel_pstate/no_turbo"),
+        "reset.cpu_governor": _read_first("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"),
+        "reset.cpu_freq_mhz": _cpu_freq_mhz(),
+        "reset.cpu_temp_c": temp,
+        "reset.mem_avail_mb": avail,
+        "reset.swap_used_mb": swap,
+        "reset.load1": load1,
+        "reset.running_procs": nproc,
+        "reset.top_proc": topproc,
+        "reset.perf_event_paranoid": _read_first("/proc/sys/kernel/perf_event_paranoid"),
+    }
+    warn = []
+    if COOL_TEMP_C and temp is not None and temp > COOL_TEMP_C + 8:
+        warn.append(f"hot:{temp}C")
+    if RESET_SWAP and isinstance(swap, (int, float)) and swap > 200:
+        warn.append(f"swap:{swap}MB")
+    if isinstance(avail, (int, float)) and avail < MEM_AVAIL_FLOOR_MB:
+        warn.append(f"low_mem:{avail}MB")
+    if topproc:
+        warn.append(f"busy:{topproc}")
+    s["reset.ok"] = not warn
+    s["reset.warnings"] = ";".join(warn) or None
+    return s
+
+
 def _env_static():
     """Slow-changing node identity (read once per run)."""
     try:
@@ -1377,6 +1439,11 @@ def main():
                                  + "; ".join(_drift) + "\nRe-lock (scripts/node-power.sh setup) "
                                  "and resume; rows already written are fine.\n")
                 sys.exit(4)
+            # per-model identical-state EVIDENCE (turbo/temp/swap/ram/procs), captured
+            # after the previous model's quiesce -> proves each model starts clean.
+            env_fp = {**env_fp, **reset_state_snapshot()}
+            if not env_fp.get("reset.ok"):
+                sys.stderr.write(f"  reset-state WARN for {model}: {env_fp.get('reset.warnings')}\n")
             # was the model on disk before this run? (decides --rm-after cleanup)
             was_present = model_present(model)
             if not args.no_pull and not ensure_pulled(model):

@@ -152,6 +152,48 @@ nohup ./scripts/run-wave3.sh >wave3.driver.out 2>&1 &
 partial data shows any drift or wave2-class defect, so you spend the multi-day budget only
 on a node you've **verified** matches wave 1.
 
+## 3c. Run it from `homelab` (control) against `home-ai` (experiment)
+
+The whole sweep is driven from the **homelab** control node — no workstation in the loop.
+`homelab` SSHes to `home-ai` (its key/cert is trusted there); the node mirrors the exact
+pinned commit and runs the locked roster.
+
+```bash
+# on homelab:
+LIMIT=2 ./scripts/run-from-homelab.sh        # 1) audit batch: 2 models, locked, collected
+python3 scripts/audit-wave.py data/collected/<RUN_ID>/results.<RUN_ID>.jsonl   # must say PASS
+./scripts/run-from-homelab.sh                 # 2) full 158-model roster (detached on home-ai)
+./scripts/run-from-homelab.sh status          # tail the node-side driver log
+./scripts/run-from-homelab.sh collect         # pull results + logs + outputs back to homelab
+```
+
+The node-side `run-roster.sh` guarantees per run:
+- **Locked + verified:** `node-power.sh setup`, then `run.py --preflight-only` must pass
+  (turbo off, governor performance, RAPL `package-0`, perf readable, protocol + scenarios
+  hash + models). It refuses to run otherwise.
+- **Identical start per model (proven, not assumed):** between models `quiesce()` resets the
+  state (fan-max cool to target °C, `drop_caches`, `swapoff/swapon`, compact), and the next
+  model stamps **`reset.*`** evidence into its rows — `reset.cpu_no_turbo`, `reset.cpu_freq_mhz`,
+  `reset.cpu_temp_c`, `reset.swap_used_mb`, `reset.mem_avail_mb`, `reset.load1`,
+  `reset.running_procs`, `reset.top_proc`, `reset.perf_event_paranoid`, plus
+  `reset.ok`/`reset.warnings`. A model that starts dirty is flagged, not silently kept.
+- **Server logging:** the ollama server log (`journalctl -u ollama`, or `~/.ollama/logs/server.log`)
+  is captured for the whole run, plus `ollama list` (digests) and the selected **CPU library**
+  (`cpu_avx2`/`avx`/`cpu` — pin with `OLLAMA_LLM_LIBRARY` for determinism).
+
+**Data convention** (collected to `homelab:data/collected/<RUN_ID>/`, `RUN_ID=roster-YYYYMMDD-HHMM`):
+
+```
+results.<RUN_ID>.jsonl                    one row per (model,scenario,rep); env.* + reset.* stamped
+outputs/<model>__<scenario>__rN.txt       the raw answers
+logs/<RUN_ID>/{driver,run,preflight}.log  ollama-server.log  ollama-list.txt
+              ollama.meta  ollama-cpu-library.txt  node-power-status.txt  calibration.json
+```
+
+**Trust:** set up `homelab -> home-ai` SSH first — homelab's public key (or a CA-signed SSH
+certificate `home-ai` trusts) so the orchestrator runs in BatchMode with no prompts. The
+experiment node mirrors `origin/main` exactly (tracked files only; gitignored artifacts kept).
+
 ## 4. Judge (on the control node `homelab`, off the experiment node; frontier reference + scoring)
 
 ```bash
