@@ -1,0 +1,159 @@
+model,waves,bracket,has_data,family,org,arch_class,quant,param_size,size_gb,is_moe,native_ctx,license,training_regime,thinking_capable,tools_capable,provenance,source_file_count
+gemma3:1b,w2,0-1B,wave2,gemma3,Google,dense,Q4_K_M,999.89M,0.95,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:1b-it-q8_0,w2,0-1B,wave2,gemma3,Google,dense,Q8_0,999.89M,1.21,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:1b-it-qat,w2,0-1B,wave2,gemma3,Google,dense,Q4_0,999.89M,1.14,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:270m,w3,0-1B,no,gemma,,,,,,,,,,,,ollama-library,1
+gemma3:270m-it-qat,w3,0-1B,no,gemma,,,,,,,,,,,,ollama-library,1
+granite3.1-moe:1b,w2;w3,0-1B,wave2,granite,,,,,,,,,,,,ollama-library,2
+granite3.1-moe:1b-instruct-q8_0,w2;w3,0-1B,wave2,granite,,,q8_0,,,,,,,,,ollama-library,2
+granite4:1b-h,w1,0-1B,det;var,granite4,IBM,hybrid-ssm,Q8_0,1.5B,1.75,False,1048576.0,Apache-2.0,instruct,False,True,ollama-library,1
+granite4:350m,w3,0-1B,no,granite,,,,,,,,,,,,ollama-library,1
+granite4:350m-bf16,w3,0-1B,no,granite,,,bf16,,,,,,,,,ollama-library,1
+granite4:350m-h,w3,0-1B,no,granite,,,,,,,,,,,,ollama-library,1
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M,w3,0-1B,no,LFM,,,,,,,,,,,,hf:LiquidAI,1
+hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M,w3,0-1B,no,LFM,,,,,,,,,,,,hf:LiquidAI,1
+hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M,w3,0-1B,no,OLMo,,,,,,,,,,,,hf:allenai,1
+hf.co/google/gemma-3-1b-it-qat-q4_0-gguf:Q4_0,w2;w3,0-1B,no,gemma,,,q4_0,,,,,,,,,hf:google,2
+hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M,w2,0-1B,wave2,llama3.2,Meta,dense,Q4_K_M,1.24B,1.09,False,,Llama-3.2-Community,instruct,False,False,hf:unsloth,1
+llama3.2:1b,w1,0-1B,det;var,llama3.2,Meta,dense,Q8_0,1.2B,1.6,False,131072.0,Llama-3.2-Community,instruct,False,True,ollama-library,1
+llama3.2:1b-instruct-q8_0,w2,0-1B,wave2,llama3.2,Meta,dense,Q8_0,1.2B,1.6,False,,Llama-3.2-Community,instruct,False,False,ollama-library,1
+qwen2.5:0.5b,w1,0-1B,det;var,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,494.03M,0.53,False,32768.0,Apache-2.0,instruct,False,True,ollama-library,1
+qwen2.5:0.5b-instruct-q4_K_M,w2,0-1B,wave2,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,494.03M,0.53,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2.5:0.5b-instruct-q8_0,w2,0-1B,wave2,qwen2.5,Alibaba/Qwen,dense,Q8_0,494.03M,0.67,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2:0.5b-instruct-q8_0,w2,0-1B,wave2,qwen2,Alibaba/Qwen,dense,Q8_0,494.03M,0.67,False,32768.0,Apache-2.0,instruct,False,False,ollama-library,1
+qwen3:0.6b,w1,0-1B,det;var,qwen3,Alibaba/Qwen,dense,Q4_K_M,751.63M,1.09,False,40960.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:0.6b-fp16,w2,0-1B,wave2,qwen3,Alibaba/Qwen,dense,F16,751.63M,2.07,False,40960.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:0.6b-q8_0,w2,0-1B,wave2,qwen3,Alibaba/Qwen,dense,Q8_0,751.63M,1.4,False,,Apache-2.0,instruct,False,False,ollama-library,1
+smollm2:135m,w2,0-1B,wave2,smollm2,Hugging Face,dense,F16,134.52M,0.41,False,,Apache-2.0,instruct,False,False,ollama-library,1
+smollm2:135m-instruct-q8_0,w2,0-1B,wave2,smollm2,Hugging Face,dense,Q8_0,134.52M,0.29,False,,Apache-2.0,instruct,False,False,ollama-library,1
+smollm2:360m,w1;w2,0-1B,det;var;wave2,smollm2,Hugging Face,dense,F16,361.82M,0.96,False,8192.0,Apache-2.0,instruct,False,False,ollama-library,2
+smollm2:360m-instruct-q8_0,w2,0-1B,wave2,smollm2,Hugging Face,dense,Q8_0,361.82M,0.62,False,,Apache-2.0,instruct,False,False,ollama-library,1
+smollm:360m,w2,0-1B,wave2,smollm,Hugging Face,dense,Q4_0,361.82M,0.3,False,,Apache-2.0,instruct,False,False,ollama-library,1
+tinyllama:1.1b,w2,0-1B,wave2,tinyllama,TinyLlama (community),dense,Q4_0,1B,0.71,False,,Apache-2.0,instruct,False,False,ollama-library,1
+tinyllama:1.1b-chat-v1-q8_0,w2,0-1B,wave2,tinyllama,TinyLlama (community),dense,Q8_0,1B,1.24,False,,Apache-2.0,instruct,False,False,ollama-library,1
+deepscaler:1.5b,w3,1-2B,no,deepscaler,,,,,,,,,,,,ollama-library,1
+deepseek-coder:1.3b,w2,1-2B,wave2,deepseek-coder,DeepSeek,dense,Q4_0,1B,1.74,False,,deepseek-license,code/math,False,False,ollama-library,1
+deepseek-coder:1.3b-instruct-q8_0,w2,1-2B,wave2,deepseek-coder,DeepSeek,dense,Q8_0,1B,2.4,False,,deepseek-license,code/math,False,False,ollama-library,1
+deepseek-r1:1.5b,w1,1-2B,det;var,deepseek-r1,DeepSeek,dense,Q4_K_M,1.8B,1.38,False,131072.0,MIT,reasoning,True,True,ollama-library,1
+deepseek-r1:1.5b-qwen-distill-q8_0,w2,1-2B,wave2,deepseek-r1,DeepSeek,dense,Q8_0,1.8B,2.16,False,,MIT,reasoning,False,False,ollama-library,1
+falcon3:1b,w2,1-2B,wave2,falcon3,TII,dense,Q8_0,1.7B,2.24,False,,Falcon-LLM-License,instruct,False,False,ollama-library,1
+falcon3:1b-instruct-q8_0,w2,1-2B,wave2,falcon3,TII,dense,Q8_0,1.7B,2.24,False,,Falcon-LLM-License,instruct,False,False,ollama-library,1
+hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M,w3,1-2B,no,LFM,,,,,,,,,,,,hf:LiquidAI,1
+hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0,w3,1-2B,no,LFM,,,,,,,,,,,,hf:LiquidAI,1
+hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M,w2,1-2B,wave2,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,1.78B,1.38,False,,Apache-2.0,instruct,False,False,hf:Qwen,1
+hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:IQ4_XS,w3,1-2B,no,Falcon,,,IQ4_XS,,,,,,,,,hf:tiiuae,1
+hf.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF:Q4_K_M,w3,1-2B,no,Falcon,,,,,,,,,,,,hf:tiiuae,1
+hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M,w2,1-2B,wave2,deepseek-r1,DeepSeek,dense,Q4_K_M,1.78B,1.38,False,,MIT,reasoning,False,False,hf:unsloth,1
+internlm2:1.8b,w2,1-2B,wave2,internlm2,Shanghai AI Lab,dense,Q4_0,1.9B,1.68,False,,Apache-2.0(check),instruct,False,False,ollama-library,1
+opencoder:1.5b,w3,1-2B,no,opencoder,,,,,,,,,,,,ollama-library,1
+qwen2-math:1.5b,w3,1-2B,no,qwen,,,,,,,,,,,,ollama-library,1
+qwen2.5-coder:1.5b,w2,1-2B,wave2,qwen2.5-coder,Alibaba/Qwen,dense,Q4_K_M,1.5B,1.25,False,,Apache-2.0,code/math,False,False,ollama-library,1
+qwen2.5-coder:1.5b-instruct-q8_0,w2,1-2B,wave2,qwen2.5-coder,Alibaba/Qwen,dense,Q8_0,1.5B,1.91,False,,Apache-2.0,code/math,False,False,ollama-library,1
+qwen2.5:1.5b,w1,1-2B,det;var,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,1.5B,1.25,False,32768.0,Apache-2.0,instruct,False,True,ollama-library,1
+qwen2.5:1.5b-instruct-q4_K_M,w2,1-2B,wave2,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,1.5B,1.25,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2.5:1.5b-instruct-q8_0,w2,1-2B,wave2,qwen2.5,Alibaba/Qwen,dense,Q8_0,1.5B,1.91,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2:1.5b,w2,1-2B,wave2,qwen2,Alibaba/Qwen,dense,Q4_0,1.5B,1.2,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2:1.5b-instruct-q8_0,w2,1-2B,wave2,qwen2,Alibaba/Qwen,dense,Q8_0,1.5B,1.91,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen3:1.7b,w1,1-2B,det;var,qwen3,Alibaba/Qwen,dense,Q4_K_M,2.0B,1.97,False,40960.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:1.7b-fp16,w2,1-2B,wave2,qwen3,Alibaba/Qwen,dense,F16,2.0B,4.68,False,40960.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:1.7b-q8_0,w2,1-2B,wave2,qwen3,Alibaba/Qwen,dense,Q8_0,2.0B,2.83,False,,Apache-2.0,instruct,False,False,ollama-library,1
+sailor2:1b,w3,1-2B,no,sailor,,,,,,,,,,,,ollama-library,1
+smollm2:1.7b,w1,1-2B,det;var,smollm2,Hugging Face,dense,Q8_0,1.7B,2.82,False,8192.0,Apache-2.0,instruct,False,True,ollama-library,1
+smollm2:1.7b-instruct-q8_0,w2,1-2B,wave2,smollm2,Hugging Face,dense,Q8_0,1.7B,2.82,False,,Apache-2.0,instruct,False,False,ollama-library,1
+smollm:1.7b,w2,1-2B,wave2,smollm,Hugging Face,dense,Q4_0,1.7B,1.27,False,,Apache-2.0,instruct,False,False,ollama-library,1
+stablelm2:1.6b,w1,1-2B,det;var,stablelm2,Stability AI,dense,Q4_0,2B,1.46,False,4096.0,STABILITY-Community(check),instruct,False,False,ollama-library,1
+stablelm2:1.6b-chat,w2,1-2B,wave2,stablelm2,Stability AI,dense,Q4_0,2B,1.46,False,,STABILITY-Community(check),instruct,False,False,ollama-library,1
+stablelm2:1.6b-zephyr,w2,1-2B,wave2,stablelm2,Stability AI,dense,Q4_0,2B,1.46,False,4096.0,STABILITY-Community(check),instruct,False,False,ollama-library,1
+yi-coder:1.5b,w3,1-2B,no,yi,,,,,,,,,,,,ollama-library,1
+codegemma:2b,w3,2-3B,no,codegemma,,,,,,,,,,,,ollama-library,1
+codegemma:2b-code-q6_K,w3,2-3B,no,codegemma,,,q6_K,,,,,,,,,ollama-library,1
+exaone-deep:2.4b,w2;w3,2-3B,wave2,exaone,,,,,,,,,,,,ollama-library,2
+exaone3.5:2.4b,w2;w3,2-3B,wave2,exaone,,,,,,,,,,,,ollama-library,2
+exaone3.5:2.4b-instruct-q4_K_M,w2;w3,2-3B,wave2,exaone,,,q4_K_M,,,,,,,,,ollama-library,2
+exaone3.5:2.4b-instruct-q8_0,w2;w3,2-3B,wave2,exaone,,,q8_0,,,,,,,,,ollama-library,2
+gemma2:2b,w1,2-3B,det;var,gemma2,Google,dense,Q4_0,2.6B,1.96,False,8192.0,Gemma,instruct,False,False,ollama-library,1
+gemma2:2b-instruct-q8_0,w2,2-3B,wave2,gemma2,Google,dense,Q8_0,2.6B,3.11,False,,Gemma,instruct,False,False,ollama-library,1
+gemma:2b,w2,2-3B,wave2,gemma,Google,dense,Q4_0,3B,2.0,False,,Gemma,instruct,False,False,ollama-library,1
+gemma:2b-instruct-q8_0,w2,2-3B,wave2,gemma,Google,dense,Q8_0,3B,2.99,False,,Gemma,instruct,False,False,ollama-library,1
+granite3.1-dense:2b,w2,2-3B,wave2,granite3.1-dense,IBM,dense,Q4_K_M,2.5B,2.07,False,,Apache-2.0,instruct,False,False,ollama-library,1
+granite3.1-dense:2b-instruct-q8_0,w2,2-3B,wave2,granite3.1-dense,IBM,dense,Q8_0,2.5B,3.19,False,131072.0,Apache-2.0,instruct,False,True,ollama-library,1
+granite3.1-moe:3b,w2,2-3B,wave2,granite3.1-moe,IBM,moe,Q4_K_M,3.3B,2.46,True,,Apache-2.0,instruct,False,False,ollama-library,1
+granite3.2:2b,w2,2-3B,wave2,granite3.2,IBM,dense,Q4_K_M,2.5B,2.04,False,,Apache-2.0,instruct,False,False,ollama-library,1
+granite3.2:2b-instruct-q4_K_M,w2,2-3B,wave2,granite3.2,IBM,dense,Q4_K_M,2.5B,2.04,False,,Apache-2.0,instruct,False,False,ollama-library,1
+granite3.3:2b,w2,2-3B,wave2,granite3.3,IBM,dense,Q4_K_M,2.5B,2.04,False,,Apache-2.0,instruct,False,False,ollama-library,1
+granite4:micro,w1,2-3B,det;var,granite4,IBM,hybrid-ssm,Q4_K_M,3.4B,2.6,False,131072.0,Apache-2.0,instruct,False,True,ollama-library,1
+granite4:micro-h,w3,2-3B,no,granite,,,,,,,,,,,,ollama-library,1
+hf.co/Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M,w2,2-3B,wave2,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,3.4B,2.44,False,,Apache-2.0,instruct,False,False,hf:Qwen,1
+ministral-3:3b,w1,2-3B,det;var,ministral-3,Mistral AI,dense,Q4_K_M,3.8B,2.85,False,262144.0,Mistral-Research(check),instruct,False,True,ollama-library,1
+phi:2.7b,w1,2-3B,det;var,phi,,,,,,,,,,,,ollama-library,1
+qwen2.5-coder:3b,w2,2-3B,wave2,qwen2.5-coder,Alibaba/Qwen,dense,Q4_K_M,3.1B,2.26,False,,Apache-2.0,code/math,False,False,ollama-library,1
+qwen2.5-coder:3b-instruct-q4_K_M,w2,2-3B,wave2,qwen2.5-coder,Alibaba/Qwen,dense,Q4_K_M,3.1B,2.26,False,,Apache-2.0,code/math,False,False,ollama-library,1
+qwen2.5-coder:3b-instruct-q8_0,w2,2-3B,wave2,qwen2.5-coder,Alibaba/Qwen,dense,Q8_0,3.1B,3.62,False,,Apache-2.0,code/math,False,False,ollama-library,1
+qwen2.5:3b,w1,2-3B,det;var,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,3.1B,2.26,False,32768.0,Apache-2.0,instruct,False,True,ollama-library,1
+qwen2.5:3b-instruct-q4_K_M,w2,2-3B,wave2,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,3.1B,2.26,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen2.5:3b-instruct-q8_0,w2,2-3B,wave2,qwen2.5,Alibaba/Qwen,dense,Q8_0,3.1B,3.62,False,,Apache-2.0,instruct,False,False,ollama-library,1
+stablelm-zephyr:3b,w2;w3,2-3B,wave2,stablelm,,,,,,,,,,,,ollama-library,2
+starcoder2:3b,w3,2-3B,no,starcoder,,,,,,,,,,,,ollama-library,1
+cogito:3b,w3,3-4B,no,cogito,,,,,,,,,,,,ollama-library,1
+cogito:3b-v1-preview-llama-q8_0,w3,3-4B,no,cogito,,,q8_0,,,,,,,,,ollama-library,1
+falcon3:3b,w2,3-4B,wave2,falcon3,TII,dense,Q4_K_M,3.2B,2.56,False,,Falcon-LLM-License,instruct,False,False,ollama-library,1
+falcon3:3b-instruct-q4_K_M,w2,3-4B,wave2,falcon3,TII,dense,Q4_K_M,3.2B,2.56,False,,Falcon-LLM-License,instruct,False,False,ollama-library,1
+falcon3:3b-instruct-q8_0,w2,3-4B,wave2,falcon3,TII,dense,Q8_0,3.2B,3.99,False,32768.0,Falcon-LLM-License,instruct,False,False,ollama-library,1
+gemma3:4b,w2,3-4B,wave2,gemma3,Google,dense,Q4_K_M,4.3B,2.94,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:4b-it-q4_K_M,w2,3-4B,wave2,gemma3,Google,dense,Q4_K_M,4.3B,2.94,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:4b-it-q8_0,w2,3-4B,wave2,gemma3,Google,dense,Q8_0,4.3B,4.58,False,,Gemma,instruct,False,False,ollama-library,1
+gemma3:4b-it-qat,w1,3-4B,det;var,gemma3,Google,dense,Q4_0,4.3B,3.6,False,131072.0,Gemma,instruct,False,False,ollama-library,1
+granite-code:3b,w3,3-4B,no,granite,,,,,,,,,,,,ollama-library,1
+granite-code:3b-instruct-q6_K,w3,3-4B,no,granite,,,q6_K,,,,,,,,,ollama-library,1
+granite-code:3b-instruct-q8_0,w3,3-4B,no,granite,,,q8_0,,,,,,,,,ollama-library,1
+hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q4_K_M,w3,3-4B,no,Hermes,,,,,,,,,,,,hf:NousResearch,1
+hf.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF:Q8_0,w3,3-4B,no,Hermes,,,,,,,,,,,,hf:NousResearch,1
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M,w2,3-4B,wave2,qwen3,Alibaba/Qwen,dense,Q4_K_M,4.02B,3.32,False,,Apache-2.0,instruct,False,False,hf:Qwen,1
+hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:IQ4_XS,w3,3-4B,no,Llama,,,IQ4_XS,,,,,,,,,hf:bartowski,1
+hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q3_K_L,w3,3-4B,no,Llama,,,,,,,,,,,,hf:bartowski,1
+hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q5_K_M,w3,3-4B,no,Llama,,,,,,,,,,,,hf:bartowski,1
+hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF:Q6_K,w3,3-4B,no,Llama,,,,,,,,,,,,hf:bartowski,1
+hf.co/ggml-org/SmolLM3-3B-GGUF:Q4_K_M,w3,3-4B,no,SmolLM,,,,,,,,,,,,hf:ggml-org,1
+hf.co/ggml-org/SmolLM3-3B-GGUF:Q8_0,w3,3-4B,no,SmolLM,,,,,,,,,,,,hf:ggml-org,1
+hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0,w2;w3,3-4B,no,gemma,,,q4_0,,,,,,,,,hf:google,2
+hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M,w3,3-4B,no,MiniCPM,,,,,,,,,,,,hf:openbmb,1
+hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M,w2,3-4B,wave2,phi4-mini,Microsoft,dense,Q4_K_M,3.84B,3.21,False,,MIT,instruct,False,False,hf:unsloth,1
+hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M,w2,3-4B,wave2,qwen3,Alibaba/Qwen,dense,Q4_K_M,4.02B,3.32,False,,Apache-2.0,instruct,False,False,hf:unsloth,1
+llama3.2:3b,w1,3-4B,det;var,llama3.2,Meta,dense,Q4_K_M,3.2B,2.67,False,131072.0,Llama-3.2-Community,instruct,False,True,ollama-library,1
+llama3.2:3b-instruct-q8_0,w2,3-4B,wave2,llama3.2,Meta,dense,Q8_0,3.2B,4.07,False,,Llama-3.2-Community,instruct,False,False,ollama-library,1
+nemotron-mini:4b,w2,3-4B,wave2,nemotron-mini,NVIDIA,dense,Q4_K_M,4.2B,3.02,False,,NVIDIA-Open-Model,instruct,False,False,ollama-library,1
+nemotron-mini:4b-instruct-q4_K_M,w2,3-4B,wave2,nemotron-mini,NVIDIA,dense,Q4_K_M,4.2B,3.02,False,,NVIDIA-Open-Model,instruct,False,False,ollama-library,1
+nemotron-mini:4b-instruct-q8_0,w2,3-4B,wave2,nemotron-mini,NVIDIA,dense,Q8_0,4.2B,4.78,False,,NVIDIA-Open-Model,instruct,False,False,ollama-library,1
+phi3.5:3.8b,w2,3-4B,wave2,phi3.5,Microsoft,dense,Q4_0,3.8B,4.04,False,,MIT,instruct,False,False,ollama-library,1
+phi3.5:3.8b-mini-instruct-q8_0,w2,3-4B,wave2,phi3.5,Microsoft,dense,Q8_0,3.8B,5.93,False,,MIT,instruct,False,False,ollama-library,1
+phi3:3.8b,w2,3-4B,wave2,phi3,Microsoft,dense,Q4_0,3.8B,4.04,False,,MIT,instruct,False,False,ollama-library,1
+phi3:3.8b-mini-128k-instruct-q8_0,w2,3-4B,wave2,phi3,Microsoft,dense,Q8_0,3.8B,5.93,False,,MIT,instruct,False,False,ollama-library,1
+phi4-mini,w1,3-4B,det;var,phi4-mini,Microsoft,dense,Q4_K_M,3.8B,,False,131072.0,MIT,instruct,False,True,ollama-library,1
+phi4-mini-reasoning,w2,3-4B,wave2,phi4-mini-reasoning,Microsoft,dense,Q4_K_M,3.8B,,False,,MIT,reasoning,False,False,ollama-library,1
+qwen3:4b,w1,3-4B,det;var,qwen3,Alibaba/Qwen,dense,Q4_K_M,4.0B,3.32,False,262144.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:4b-instruct-2507-q4_K_M,w1,3-4B,det;var,qwen3,Alibaba/Qwen,dense,Q4_K_M,4.0B,3.32,False,262144.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:4b-q8_0,w2,3-4B,wave2,qwen3,Alibaba/Qwen,dense,Q8_0,4.0B,5.19,False,,Apache-2.0,instruct,False,False,ollama-library,1
+qwen3:4b-thinking-2507-q4_K_M,w3,3-4B,no,qwen,,,q4_K_M,,,,,,,,,ollama-library,1
+qwen3:4b-thinking-2507-q8_0,w3,3-4B,no,qwen,,,q8_0,,,,,,,,,ollama-library,1
+smallthinker:3b-preview-q4_K_M,w3,3-4B,no,smallthinker,,,q4_K_M,,,,,,,,,ollama-library,1
+starcoder2:3b-q6_K,w3,3-4B,no,starcoder,,,q6_K,,,,,,,,,ollama-library,1
+starcoder2:3b-q8_0,w3,3-4B,no,starcoder,,,q8_0,,,,,,,,,ollama-library,1
+aya-expanse:8b,w2,4-5GB,no,aya,,,,,,,,,,,,ollama-library,1
+cogito:8b,w3,4-5GB,no,cogito,,,,,,,,,,,,ollama-library,1
+command-r7b:latest,w2,4-5GB,no,command,,,,,,,,,,,,ollama-library,1
+deepseek-r1:7b,w1,4-5GB,det;var,deepseek-r1,DeepSeek,dense,Q4_K_M,7.6B,5.22,False,131072.0,MIT,reasoning,True,True,ollama-library,1
+deepseek-r1:8b,w2,4-5GB,no,deepseek,,,,,,,,,,,,ollama-library,1
+deepseek-r1:8b-0528-qwen3-q4_K_M,w3,4-5GB,no,deepseek,,,q4_K_M,,,,,,,,,ollama-library,1
+exaone-deep:7.8b,w2,4-5GB,no,exaone,,,,,,,,,,,,ollama-library,1
+exaone3.5:7.8b,w2,4-5GB,no,exaone,,,,,,,,,,,,ollama-library,1
+falcon3:7b,w2,4-5GB,no,falcon,,,,,,,,,,,,ollama-library,1
+granite3.3:8b,w2,4-5GB,no,granite,,,,,,,,,,,,ollama-library,1
+granite4:tiny-h,w1,4-5GB,det;var,granite4,IBM,hybrid-ssm,Q4_K_M,6.9B,4.43,True,1048576.0,Apache-2.0,instruct,False,True,ollama-library,1
+hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M,w2,4-5GB,no,Llama,,,,,,,,,,,,hf:unsloth,1
+internlm2:7b,w2,4-5GB,no,internlm,,,,,,,,,,,,ollama-library,1
+llama3.1:8b,w2,4-5GB,no,llama,,,,,,,,,,,,ollama-library,1
+mistral:7b-instruct-q4_K_M,w1,4-5GB,det;var,mistral,Mistral AI,dense,Q4_K_M,7B,5.18,False,32768.0,Apache-2.0,instruct,False,False,ollama-library,1
+olmo2:7b,w2;w3,4-5GB,no,olmo,,,,,,,,,,,,ollama-library,2
+qwen2.5:7b,w1,4-5GB,det;var,qwen2.5,Alibaba/Qwen,dense,Q4_K_M,7.6B,5.22,False,32768.0,Apache-2.0,instruct,False,True,ollama-library,1
+qwen3:4b-instruct-2507-q8_0,w1,4-5GB,det;var,qwen3,Alibaba/Qwen,dense,Q8_0,4.0B,5.1,False,262144.0,Apache-2.0,instruct,True,True,ollama-library,1
+qwen3:8b,w2,4-5GB,no,qwen,,,,,,,,,,,,ollama-library,1
