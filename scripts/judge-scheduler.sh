@@ -99,7 +99,7 @@ while true; do
     status "model $m -> done (committed)"
   done
 
-  njudged="$(judged_models | grep -c . 2>/dev/null || echo 0)"
+  njudged="$(judged_models | grep -c . 2>/dev/null)"; njudged="${njudged:-0}"
   if [ "${EXPECT:-0}" -gt 0 ] && [ "${njudged:-0}" -ge "$EXPECT" ]; then
     status "EXPECT=$EXPECT reached ($njudged judged) — consumer exiting cleanly"
     break
