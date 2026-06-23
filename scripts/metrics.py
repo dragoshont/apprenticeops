@@ -72,7 +72,7 @@ def find_peak_bw(rows, calibration, override):
     if calibration and os.path.exists(calibration):
         try:
             c = json.load(open(calibration))
-            for k in ("peak_dram_mb_s", "dram_bw_mb_s", "membw_peak_mb_s",
+            for k in ("peak_membw_mb_s", "peak_dram_mb_s", "dram_bw_mb_s", "membw_peak_mb_s",
                       "peak_mb_s", "memory_bandwidth_mb_s"):
                 if isinstance(c.get(k), (int, float)) and c[k] > 0:
                     return float(c[k]), f"calibration.{k}"

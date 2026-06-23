@@ -826,6 +826,10 @@ def model_meta(model):
         "ollama.rope_freq_base": _mi(".rope.freq_base"),
         "ollama.rope_dimension_count": _mi(".rope.dimension_count"),
         "ollama.tokenizer_model": mi.get("tokenizer.ggml.model"),
+        # the model's OWN Modelfile sampler defaults (top_p/top_k/repeat_penalty/stop):
+        # run.py pins only temperature+seed+num_predict+num_ctx, so the rest fall back to
+        # THESE per-model defaults — captured so the decoding variation is auditable.
+        "ollama.parameters": d.get("parameters"),
         "ollama.capabilities": d.get("capabilities"),
     }
 
@@ -1019,6 +1023,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
         "ollama.total_duration_s": round(total_dur / 1e9, 3) if total_dur else None,
         "ollama.load_duration_s": round(load_dur / 1e9, 3) if load_dur else None,
         "_text": text,
+        "_think": "".join(think),
     }
 
 
@@ -1228,6 +1233,7 @@ def _env_static():
         "env.sample_interval_s": SAMPLE_INTERVAL_S,
         "env.perf_membw": PERF_MEMBW,
         "env.perf_core": PERF_CORE,
+        "env.run_id": os.environ.get("RUN_ID"),
     }
 
 
@@ -1401,6 +1407,7 @@ def main():
     # state before EACH model so a multi-day sweep aborts if the node moves (turbo
     # re-enabled by thermald/cron) instead of silently mislabelling rows.
     env_static = _env_static()
+    env_static["env.scenarios_sha"] = hashlib.sha256(open(args.scenarios, "rb").read()).hexdigest()
     _man = {}
     if args.manifest and os.path.exists(args.manifest):
         try:
@@ -1484,6 +1491,7 @@ def main():
                     if pcore:
                         pcore.stop(); pcore.join(timeout=2)
                     text = tel.pop("_text")
+                    think_text = tel.pop("_think", "")
                     passed, total, detail = run_checks(text, s.get("deterministic_checks", []))
                     # energy: prefer RAPL on-die joules; else smart-plug watts.
                     ej = _rapl_delta_j(rapl0, rapl1)
@@ -1505,6 +1513,8 @@ def main():
                     ctxt_sw = ((_cv[-1]["ctxt_vol"] - _cv[0]["ctxt_vol"]
                                 + (_cv[-1].get("ctxt_invol") or 0) - (_cv[0].get("ctxt_invol") or 0))
                                if len(_cv) >= 2 else None)
+                    _net = [s.get("net_kb_s") for s in sampler.samples if isinstance(s.get("net_kb_s"), (int, float))]
+                    _disk = [s.get("disk_mb_s") for s in sampler.samples if isinstance(s.get("disk_mb_s"), (int, float))]
                     row = {
                         "ts": time.time(), "model": model, "bracket": bracket,
                         "scenario": s["id"], "class": s["class"],
@@ -1539,6 +1549,9 @@ def main():
                         "proc.minflt": _sdelta("minflt"),
                         "proc.majflt": _sdelta("majflt"),
                         "proc.ctxt_switches": ctxt_sw,
+                        "net.peak_kb_s": round(max(_net), 2) if _net else None,
+                        "net.total_kb": round(sum(_net) * SAMPLE_INTERVAL_S, 1) if _net else None,
+                        "disk.read_mb": round(sum(_disk) * SAMPLE_INTERVAL_S, 1) if _disk else None,
                         "samples": sampler.samples,
                         **env_fp,
                         **meta,
@@ -1546,9 +1559,12 @@ def main():
                     }
                     fout.write(json.dumps(row) + "\n"); fout.flush()
                     suffix = f"__r{rep}" if args.repeats > 1 else ""
-                    with open(os.path.join(args.outputs_dir,
-                              f"{model.replace('/', '_').replace(':', '_')}__{s['id']}{suffix}.txt"), "w") as o:
+                    _osafe = model.replace('/', '_').replace(':', '_')
+                    with open(os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.txt"), "w") as o:
                         o.write(text)
+                    if think_text:
+                        with open(os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.think.txt"), "w") as o:
+                            o.write(think_text)
                     flag = tel["gen_ai.response.finish_reasons"][0]
                     sys.stderr.write(f"    {s['id']:28} r{rep} det={passed}/{total} "
                                      f"{tel['decode_tok_s']}tok/s {tel['wall_s']}s {flag}\n")

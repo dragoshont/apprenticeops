@@ -428,6 +428,35 @@ every wave passes through — so no launch path (script *or* manual) can drift:
   model-presence is gated to `--no-pull` so the disk-bounded `--rm-after` sweep still streams. See
   REPRODUCE.md §3b.
 
+## 24. Capture inventory — the locked re-run captures strictly *more* than wave1
+Adversarial "are we capturing everything?" pass. Wave1 (the 84-field telemetry) was already rich;
+the locked re-run **adds** the following (everything wave1 had is retained):
+
+| New capture (this session) | Fields | Why |
+|---|---|---|
+| **Environment provenance** | `env.*` (host, kernel, ollama_version, harness_git, cpu_no_turbo, governor, perf_pct, rapl_domain, num_ctx, perf_event_paranoid, sample_interval, perf flags, **run_id**, **scenarios_sha**) | the wave1↔wave2 drift was invisible because none of this was recorded; now every row self-describes its regime |
+| **Per-model reset evidence** | `reset.*` (no_turbo, governor, freq, temp, mem_avail, swap_used, load1, running_procs, top_proc, perf_event_paranoid, **reset.ok/warnings**) | proves (not assumes) each model starts from the identical reset state |
+| **Model identity** | `ollama.digest` (sha256), `quantization_version`, `vocab_size`, `rope_freq_base/dim`, `tokenizer_model` | exact weights + tokenizer/quant covariates |
+| **Effective sampler defaults** | `ollama.parameters` (per-model top_p/top_k/repeat_penalty/stop) | run.py pins only temp+seed+num_predict+num_ctx; the rest fall back to each model's Modelfile — now auditable |
+| **Offline + load evidence** | `net.total_kb`, `net.peak_kb_s` (≈0 ⇒ **proves no egress** during inference), `disk.read_mb` (cold-load cost) | surfaced from the already-sampled `net_kb_s`/`disk_mb_s` series |
+| **Reasoning trace** | the thinking text saved to `outputs/…__think.txt` (was counted, then discarded) | overthinking / reasoning-quality analysis |
+| **Server logs** | ollama `journalctl` log + `ollama list` digests + the selected **CPU library** (`cpu_avx2`/avx/cpu) | reproducibility of the inference kernel |
+| *(optional)* **Perplexity** | `scripts/perplexity-probe.sh` on ollama's GGUF blobs | the standard quant-degradation + a judge-free quality axis |
+
+**Derived (compute, no capture, no re-run cost — wired in `report.py`/`scripts/metrics.py`):** MBU (vs the
+measured DRAM peak), TPOT, energy-per-correct-answer, tokenizer-normalized chars/s, **cross-rep
+pass-consistency**, **net-egress (offline proof)**, **thinking-ratio**, KV-cache bytes, FLOPs/token, and
+(when `outputs/` is present) hedge/refusal/repetition/parseability.
+
+**Candidate task axes (not yet merged — `data/scenarios.candidates.json`):** prompt-injection resistance
+(untrusted context carrying adversarial instructions; OWASP LLM01 / `gap2026`) and structured-action /
+tool-call emission — the two ops-relevant capabilities Waves 1–3 never tested. Merging them bumps the
+manifest `scenarios_sha256` deliberately (a reviewed change, not silent drift).
+
+**Honest residuals:** token-level logprobs aren't in the ollama API (only the llama.cpp side-probe gets
+them); ambient temperature has no sensor (package-start temp is the proxy); whether to *pin* the sampler
+defaults across models (vs. capture-and-disclose) is a methodology call left open.
+
 ## Steps log (autonomous run)
 1. Verified data semantics → 2. truncation/proxy/quant batteries → 3. scenario/RAG/consistency/DNF →
 4. clustering + proxy-τ → 5. **root-cause** (truncation = 400–600 tok cap, 83% non-think; timeout =

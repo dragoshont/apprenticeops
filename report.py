@@ -294,6 +294,23 @@ def main():
         ipcs = [r["perf.core"]["ipc"] for r in rs
                 if r.get("perf.core") and r["perf.core"].get("ipc")]
         ipc = round(statistics.mean(ipcs), 2) if ipcs else None
+        # --- re-run-era additions: cross-rep stability, offline-egress proof,
+        # reasoning overhead (all from the locked roster's richer capture) ---
+        _byscen = defaultdict(list)
+        for r in rs:
+            if r.get("det_score") is not None:
+                _byscen[r.get("scenario")].append(r["det_score"])
+        _cons = []
+        for _ds in _byscen.values():
+            _p = [d >= 0.5 for d in _ds]
+            _maj = sum(_p) >= len(_p) / 2
+            _cons.append(sum(1 for x in _p if x == _maj) / len(_p))
+        pass_consistency = round(statistics.mean(_cons), 3) if _cons else None
+        _eg = [r.get("net.total_kb") for r in rs if isinstance(r.get("net.total_kb"), (int, float))]
+        net_egress_kb = round(statistics.mean(_eg), 2) if _eg else None  # ~0 proves offline
+        _thr = [r["gen_ai.thinking.chars"] / r["gen_ai.usage.output_chars"]
+                for r in rs if r.get("gen_ai.thinking.chars") and r.get("gen_ai.usage.output_chars")]
+        thinking_ratio = round(statistics.mean(_thr), 3) if _thr else None
         table.append({
             "model": model, "bracket": bracket,
             "det_mean": det_mean, "det_ci": det_ci,
@@ -308,6 +325,9 @@ def main():
             "j_per_tok": round(statistics.mean(j_per_tok), 2) if j_per_tok else None,
             "wh_per_correct": wh_per_correct, "mbu": mbu,
             "ipc": ipc,
+            "pass_consistency": pass_consistency,
+            "net_egress_kb": net_egress_kb,
+            "thinking_ratio": thinking_ratio,
             "peak_temp_c": peak_temp, "throttle": throttle,
             "bottleneck": classify_bottleneck(peak_swap, mbu, peak_temp, throttle),
             "verdict": verdict(det_mean, judge_pct, med_dec, dnf, safety_fail),
