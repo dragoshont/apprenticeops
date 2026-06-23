@@ -819,6 +819,13 @@ def model_meta(model):
         "ollama.expert_count": _mi(".expert_count"),
         "ollama.expert_used_count": _mi(".expert_used_count"),
         "ollama.expert_shared_count": _mi(".expert_shared_count"),
+        # extra covariates (cheap, can't backfill after the run): quant scheme
+        # version, tokenizer + vocab (tokenizer efficiency), RoPE (context scaling).
+        "ollama.quantization_version": mi.get("general.quantization_version"),
+        "ollama.vocab_size": _mi(".vocab_size"),
+        "ollama.rope_freq_base": _mi(".rope.freq_base"),
+        "ollama.rope_dimension_count": _mi(".rope.dimension_count"),
+        "ollama.tokenizer_model": mi.get("tokenizer.ggml.model"),
         "ollama.capabilities": d.get("capabilities"),
     }
 

@@ -18,6 +18,20 @@
 | *(energy, optional)* Intel RAPL (preferred) or a metered smart plug | measured energy-per-task | **RAPL** (Intel): on-die joule counters, auto-used if present (root-only → run.py reads via passwordless sudo; tune `RAPL_DOMAIN=psys\|package-0`, disable with `RAPL_DISABLE=1`). **Plug alt:** Home Assistant `HA_URL`/`HA_TOKEN`/`HA_POWER_ENTITY`, **or** IKEA DIRIGERA `DIRIGERA_URL`/`DIRIGERA_TOKEN`/`DIRIGERA_DEVICE_ID`. LAN/SoC operator telemetry (not a model egress); RAPL wins, then HA, then DIRIGERA |
 | *(stats only)* `numpy`, `scipy` | CIs, Wilcoxon, κ in the analysis | off the node, optional |
 
+## 0a. Node topology (this homelab's setup)
+
+Two nodes, no laptop in the loop:
+
+| Node | Role | Runs |
+|---|---|---|
+| **`home-ai`** (the locked i5-8350U / 24 GB) | **experiment node** | `ollama` + `run.py` under the lock (turbo-off, RAPL `package-0`, perf on). All `env.*` / manifest checks target this node. |
+| **`homelab`** (always-on server) | **control plane** | the agent/editor, `git`, the **judge** (`judge.py` → frontier API), and orchestration — it SSHes to `home-ai` to launch sweeps and pulls results back. |
+
+A clean reproduction needs only `home-ai` + Ollama; the split just separates the
+graded experiment (offline, locked) from the grading rig (online, frontier judge) —
+the same offline/online boundary the paper draws. The experiment node is driven
+over SSH, so nothing depends on a particular workstation.
+
 ## 1. Clone & smoke-test (5 min)
 
 ```bash
@@ -138,7 +152,7 @@ nohup ./scripts/run-wave3.sh >wave3.driver.out 2>&1 &
 partial data shows any drift or wave2-class defect, so you spend the multi-day budget only
 on a node you've **verified** matches wave 1.
 
-## 4. Judge (off the node; frontier reference + scoring)
+## 4. Judge (on the control node `homelab`, off the experiment node; frontier reference + scoring)
 
 ```bash
 # Default backend = copilot (the official GitHub Copilot CLI). Find the Claude id:
