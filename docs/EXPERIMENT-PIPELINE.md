@@ -187,13 +187,25 @@ Both schedulers write a **status file** + heartbeat so a check never disturbs th
 - **Scheduler mechanism:** detached `nohup` loops with PID/lock + status files now;
   can be promoted to `systemd` units for auto‑restart on reboot. *(default: nohup)*
 
-## 9. Build status
+## 9. How to run
 
-**Done:** `home → ai` passwordless SSH; ollama 0.30.8 pinned + preflight enforces;
-`run.py` model‑level resume + `.done` marker; reset‑before‑each‑model evidence;
-manifest + scenarios (24) locked; one canonical `data/models.txt`.
+**One command, fully autonomous + detached** (from `home`, in `~/apprenticeops`):
 
-**To build (in order):** clone repo on `home` + create the experiment branch →
-`scripts/judge-scheduler.sh` (consumer) → producer as a detached service on `ai` →
-retire the legacy wave launchers → README test‑condition note → `LIMIT=2` dry‑run →
-`audit-run.py` PASS → launch both schedulers.
+```bash
+# dry run (2 tiny models, full end-to-end):
+RUN_ID=e2e-$(date -u +%Y%m%d-%H%M) MODELS=data/models.dryrun.txt \
+  setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.boot 2>&1 </dev/null &
+# full run: MODELS=data/models.txt
+```
+
+`scripts/run-e2e.sh` launches **both** schedulers (producer on `ai`, consumer on
+`home`) detached and returns immediately; the run survives your disconnect. Watch it
+from any session with `RUN_ID=<id> ./scripts/run-e2e.sh progress` (or `watch`), and see
+per-model commits with `git log --oneline experiment/<RUN_ID>`. Full operator runbook:
+[AGENTS.md](../AGENTS.md).
+
+**Status (validated on a 2-model dry run):** S1 `lock` → S2 `reset` → S3 `infer` →
+S4 `emit` (producer) and S5 `collect` → S6 `judge` → S7 `persist` (consumer) all run
+end-to-end and detached. Built: the two schedulers, the `run-e2e.sh` orchestrator +
+progress view, model-level resume, the flock single-instance guard, the ollama 0.30.8
+pin, the 24-scenario corpus, and the SWOT / retrieval paper sections (§8e / §12).
