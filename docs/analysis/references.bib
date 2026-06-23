@@ -2,6 +2,11 @@
 % All arXiv entries VERIFIED against arXiv.org on 2026-06-20: title, authors,
 % year, and venue checked against each paper's abstract page. Citation keys are
 % stable (the manuscript's @cite keys depend on them).
+% Deep-analysis literature pass (alizadeh2024llmflash, dettmers2023case,
+% zheng2023judge, chiang2024arena, liang2023helm, dehghani2021lottery,
+% dehghani2021efficiency, luccioni2024power, gu2023mamba, lu2024slmsurvey,
+% sui2025overthinking, mitchell2019modelcards) verified the same way against each
+% paper's arXiv abstract page; venue typed only where arXiv shows it.
 
 % ---- Statistics / methods ----
 @book{littlerubin2019,
@@ -240,6 +245,22 @@
   year    = {2009}
 }
 
+@inproceedings{alizadeh2024llmflash,
+  title     = {{LLM} in a flash: Efficient Large Language Model Inference with Limited Memory},
+  author    = {Alizadeh, Keivan and Mirzadeh, Iman and Belenko, Dmitry and Khatamifard, Karen and Cho, Minsik and Del Mundo, Carlo C. and Rastegari, Mohammad and Farajtabar, Mehrdad},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year      = {2024},
+  note      = {arXiv:2312.11514}
+}
+
+@inproceedings{dettmers2023case,
+  title     = {The case for 4-bit precision: k-bit Inference Scaling Laws},
+  author    = {Dettmers, Tim and Zettlemoyer, Luke},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2023},
+  note      = {arXiv:2212.09720}
+}
+
 @misc{otel_genai,
   title        = {Semantic Conventions for Generative {AI} Systems},
   author       = {{OpenTelemetry Authors}},
@@ -266,4 +287,82 @@
   number  = {1},
   pages   = {159--174},
   year    = {1977}
+}
+
+@inproceedings{zheng2023judge,
+  title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
+  author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and Gonzalez, Joseph E. and Stoica, Ion},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks Track},
+  year      = {2023},
+  note      = {arXiv:2306.05685}
+}
+
+@misc{chiang2024arena,
+  title        = {{Chatbot Arena}: An Open Platform for Evaluating {LLMs} by Human Preference},
+  author       = {Chiang, Wei-Lin and Zheng, Lianmin and Sheng, Ying and Angelopoulos, Anastasios Nikolas and Li, Tianle and Li, Dacheng and Zhang, Hao and Zhu, Banghua and Jordan, Michael and Gonzalez, Joseph E. and Stoica, Ion},
+  year         = {2024},
+  howpublished = {arXiv:2403.04132}
+}
+
+% ---- Multi-metric evaluation, leaderboards & benchmark robustness ----
+@article{liang2023helm,
+  title   = {Holistic Evaluation of Language Models},
+  author  = {Liang, Percy and Bommasani, Rishi and Lee, Tony and Tsipras, Dimitris and Soylu, Dilara and Yasunaga, Michihiro and Zhang, Yian and Narayanan, Deepak and Wu, Yuhuai and others},
+  journal = {Transactions on Machine Learning Research},
+  year    = {2023},
+  note    = {arXiv:2211.09110}
+}
+
+@misc{dehghani2021lottery,
+  title        = {The Benchmark Lottery},
+  author       = {Dehghani, Mostafa and Tay, Yi and Gritsenko, Alexey A. and Zhao, Zhe and Houlsby, Neil and Diaz, Fernando and Metzler, Donald and Vinyals, Oriol},
+  year         = {2021},
+  howpublished = {arXiv:2107.07002}
+}
+
+@misc{dehghani2021efficiency,
+  title        = {The Efficiency Misnomer},
+  author       = {Dehghani, Mostafa and Arnab, Anurag and Beyer, Lucas and Vaswani, Ashish and Tay, Yi},
+  year         = {2021},
+  howpublished = {arXiv:2110.12894}
+}
+
+% ---- Energy / efficiency / architecture of (small) models ----
+@inproceedings{luccioni2024power,
+  title     = {Power Hungry Processing: Watts Driving the Cost of {AI} Deployment?},
+  author    = {Luccioni, Alexandra Sasha and Jernite, Yacine and Strubell, Emma},
+  booktitle = {Proceedings of the 2024 ACM Conference on Fairness, Accountability, and Transparency (FAccT '24)},
+  year      = {2024},
+  note      = {arXiv:2311.16863}
+}
+
+@misc{gu2023mamba,
+  title        = {Mamba: Linear-Time Sequence Modeling with Selective State Spaces},
+  author       = {Gu, Albert and Dao, Tri},
+  year         = {2023},
+  howpublished = {arXiv:2312.00752}
+}
+
+@misc{lu2024slmsurvey,
+  title        = {Small Language Models: Survey, Measurements, and Insights},
+  author       = {Lu, Zhenyan and Li, Xiang and Cai, Dongqi and Yi, Rongjie and Liu, Fangming and Zhang, Xiwen and Lane, Nicholas D. and Xu, Mengwei},
+  year         = {2024},
+  howpublished = {arXiv:2409.15790}
+}
+
+@article{sui2025overthinking,
+  title   = {Stop Overthinking: A Survey on Efficient Reasoning for Large Language Models},
+  author  = {Sui, Yang and Chuang, Yu-Neng and Wang, Guanchu and Zhang, Jiamu and Zhang, Tianyi and Yuan, Jiayi and Liu, Hongyi and Wen, Andrew and Zhong, Shaochen and others},
+  journal = {Transactions on Machine Learning Research},
+  year    = {2025},
+  note    = {arXiv:2503.16419}
+}
+
+% ---- Model documentation / transparency ----
+@inproceedings{mitchell2019modelcards,
+  title     = {Model Cards for Model Reporting},
+  author    = {Mitchell, Margaret and Wu, Simone and Zaldivar, Andrew and Barnes, Parker and Vasserman, Lucy and Hutchinson, Ben and Spitzer, Elena and Raji, Inioluwa Deborah and Gebru, Timnit},
+  booktitle = {Proceedings of the Conference on Fairness, Accountability, and Transparency (FAT* '19)},
+  year      = {2019},
+  note      = {arXiv:1810.03993}
 }

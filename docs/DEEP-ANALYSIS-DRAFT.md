@@ -222,6 +222,212 @@ judge **under-rates terse small models** relative to their checks (`tinyllama`, 
 models**. The order is preserved (ρ 0.91), so this is a calibration (style) bias, not an ordering flip —
 but it compresses the smallest models and should be disclosed as a judge limitation.
 
+## 20. Roofline (clean at fixed clock) — and a Turbo-Boost wave confound in the systems metrics (CORRECTED)
+**Correction of a prior reading in this section.** An earlier draft of §20 claimed "no thermal
+throttling — frequency *rises* with temperature (ρ +0.89), turbo held at 100C" and read the
+memory-bandwidth wall off a *frequency/power* drop. That was **a cross-wave artifact**, caught by checking
+the operator's recollection that **Turbo Boost was disabled**. The raw `scaling_cur_freq` samples settle it:
+
+| wave | runs | models | brackets | `cpu_freq_mhz` (mean of `scaling_cur_freq`) | Turbo |
+|---|---|---|---|---|---|
+| `results.var` | 2375 | 25 (5 per bracket, **incl. all 4–5GB**) | 0–1B…4–5GB | median **1700**, p90 1700, **max 1708**, 100% ≤1750 | **OFF (pinned 1.7 GHz base)** |
+| `results.wave2` | 7543 | 80 (20 per bracket, **no 4–5GB**) | 0–1B…3–4B | median **2500**, p90 3100, **max 3602**, 0% ≤1750 | **ON** |
+
+The operator's memory was **correct**: Turbo *was* disabled — for the `var` wave, where every sample sits
+at the 1.7 GHz base. The later `wave2` expansion ran with Turbo **on**. The one model in **both** waves,
+`smollm2:360m`, is the clean within-model contrast: **1700→2300 MHz, 19.4→23.9 tok/s (+23% speed) from
+Turbo alone**. So the old "freq rises with temp / turbo held at 100C" was just *pooling a Turbo-off wave
+with a Turbo-on wave* — **retracted**.
+
+- **The published `results_snapshot.csv` is the UNION of both waves** (25 Turbo-off + 71 Turbo-on = 95
+  models, with an `energy_wh` column). **Therefore the systems/energy metrics are Turbo-confounded across
+  models**, and the confound is large:
+
+  | metric | `var` (Turbo OFF) | `wave2` (Turbo ON) |
+  |---|---|---|
+  | `power.mean_watts` (median) | **8.6 W** | **17.7 W** (≈2×) |
+  | `power.peak_watts` (median) | 9.9 W | 25.2 W (max 63.8) |
+  | `power.energy_wh` (median) | 0.066 | 0.089 |
+  | `decode_tok_s` (smollm2:360m) | 19.4 | 23.9 |
+
+  My earlier "4–5GB draw only ~9W, 0–3B draw ~15W → memory-stall power signature" was **wrong**: the 4–5GB
+  bracket is **`var`-only (Turbo off, ~8.6W ceiling)** and the small models are mostly **`wave2`
+  (Turbo on, ~17.7W)**. That gap is **Turbo, not a memory signature**. Any speed/energy comparison that
+  mixes a `var` model with a `wave2` model is contaminated.
+
+- **What SURVIVES — and is now *cleaner*: the roofline read *within* the Turbo-off `var` wave**, where the
+  clock is held flat at 1700 MHz, so decode rate is a pure function of weights-streamed-per-token:
+
+  | bracket (var, 1700 MHz fixed) | median decode tok/s |
+  |---|---|
+  | 0–1B | **19.4** |
+  | 1–2B | 13.3 |
+  | 2–3B | 7.3 |
+  | 3–4B | 5.8 |
+  | 4–5GB | **3.8** |
+
+  A monotone **~5× decline at a fixed clock** is the cleanest possible demonstration of
+  **memory-bandwidth-bound decode** (no frequency or Turbo can explain it — the clock never moved). This is
+  *stronger* evidence than the confounded version it replaces.
+
+- **`granite4` efficiency also survives — and is clean**, because the 4–5GB bracket is `var`-only (Turbo
+  off, same 1700 MHz for every model). At a fixed clock, `granite4:tiny-h` decodes **13.1 tok/s** vs
+  **3.7–4.0 tok/s** for same-bracket dense (`qwen3:4b-q8`, `mistral:7b`, `qwen2.5:7b`, `deepseek-r1:7b`) —
+  a **~3.4× speed-up at the same clock and bracket** (grounds with Gu & Dao's SSM bandwidth argument, §14).
+
+- **Unaffected by the confound:** quality, safety, and judge scores — Turbo changes *how fast* a model
+  decodes, not *what* it emits at fixed seed/temperature. **Proof:** the one model in both waves,
+  `smollm2:360m`, has an **identical finish-reason mix (90 `stop`, 5 `length`)** in both, despite
+  19.4→23.9 tok/s; and the **token-cap truncation rate is wave-flat** (`length` 9.7% var vs 11.2% wave2 —
+  it's a `num_predict` cap, not a speed effect, so §1 stands). The §1–§19 quality/safety findings hold.
+- **The one exception — wall-clock timeouts (turbo *did* touch this).** The 180s wall-clock limit couples
+  speed to *completion*: **`DNF:timeout` = 3.5% in `var` (Turbo OFF) vs 0.0% in `wave2` (Turbo ON)**, and
+  **every timeout is a slow model in the Turbo-off wave** (`deepseek-r1:7b` 71, `mistral:7b` 8,
+  `qwen2.5:7b` 4 — all 4–5GB). With Turbo on these would have completed more often, so Turbo-off
+  **inflated the DNF count** and made the slowest models look worse (the §2 `deepseek-r1:7b` timeout case
+  is *partly* a Turbo-off artifact). The effect is **bounded to a handful of the slowest models** and
+  makes the Turbo-off systems numbers **conservative**, not optimistic. (Note the waves also differ in
+  `DNF:error:HTTPError` — 4.0% var vs 8.8% wave2 — so "wave" carries more than just Turbo; treat it as the
+  confound variable and prefer single-wave systems analysis.)
+
+- **Remedy for the paper:** report systems/energy from a **single wave** (prefer `var`: Turbo-off,
+  controlled, balanced across *all five* brackets) **or** carry **wave (Turbo on/off) as a covariate** and
+  never compare raw watts/tok-s across waves. Disclose the Turbo-disabled `var` wave as the controlled
+  systems subset.
+
+- **Still-valid architecture facts (wave-independent):** no swapping (`proc.majflt`=0 across all runs —
+  every model fits the 23 GiB node; node idles ~0.8 W); GQA near-universal (`head_count_kv` <
+  `head_count` for 79/88); models scale by **width** (`embedding_length` ρ=0.84 with params) more than
+  **depth** (`block_count` ρ=0.50); `granite4` is deep-and-narrow (40 layers at 3.4B).
+
+## 21. Literature quotation bank (similar approaches → grounds our findings)
+Exact, verbatim quotes pulled from the source abstracts (read directly), each mapped to the finding it
+supports and the bib key to cite. These are the strings to drop into Related Work / Discussion.
+
+**Small models as the right tool for repetitive agent tasks** — `belcak2025slm` (NVIDIA, arXiv
+2506.02153), the closest thesis match to ApprenticeOps:
+> "The rise of agentic AI systems is … ushering in a mass of applications in which language models perform
+> a small number of specialized tasks repetitively and with little variation."
+> "small language models (SLMs) are sufficiently powerful, inherently more suitable, and necessarily more
+> economical for many invocations in agentic systems, and are therefore the future of agentic AI."
+> "in situations where general-purpose conversational abilities are essential, heterogeneous agentic
+> systems (i.e., agents invoking multiple different models) are the natural choice."
+*Grounds:* the entire premise (small local model as homelab-ops apprentice), **and** our per-bracket /
+tiered-champion recommendation (their "heterogeneous agentic systems").
+
+**LLM-as-a-judge validity *and* its verbosity bias** — `zheng2023judge` (MT-Bench, NeurIPS D&B 2023, arXiv
+2306.05685):
+> "strong LLM judges like GPT-4 can match both controlled and crowdsourced human preferences well,
+> achieving over 80% agreement, the same level of agreement between humans."
+> "We examine the usage and limitations of LLM-as-a-judge, including position, verbosity, and
+> self-enhancement biases … and propose solutions to mitigate some of them."
+> "our benchmark and traditional benchmarks complement each other."
+*Grounds:* our two-judge ensemble (justified by the >80% agreement result); our **judge-calibration
+finding** (§19) — their named **"verbosity bias"** *is* our "judge under-rates terse models" style
+discount; and our **dual deterministic + judged scoring** ("complement each other").
+
+**Inference on memory-constrained devices is data-transfer / memory bound** — `alizadeh2024llmflash`
+("LLM in a flash", Apple, ACL 2024, arXiv 2312.11514):
+> "their substantial computational and memory requirements present challenges, especially for devices
+> with limited DRAM capacity."
+> "constructing an inference cost model … guiding us to optimize in two critical areas: reducing the
+> volume of data transferred from flash and reading data in larger, more contiguous chunks."
+*Grounds:* our **memory-bandwidth wall** (§20) and roofline framing — the bottleneck on commodity CPU
+hardware is moving weights, not arithmetic.
+
+**4-bit is the Pareto-optimal quantization point, and bit-equal models differ** — `dettmers2023case` ("The
+case for 4-bit precision", ICML 2023, arXiv 2212.09720):
+> "4-bit precision is almost universally optimal for total model bits and zero-shot accuracy."
+> "a 30B 8-bit model and a 60B 4-bit model have the same number of bits but may have very different
+> zero-shot accuracies."
+> "the only improvements being the use of a small block size … and the quantization data type being used
+> (e.g., Int vs Float)."
+*Grounds:* our **quant economics** (q4_K_M sweet spot, §6/§18) via "4-bit … almost universally optimal";
+and our **quant-ladder confound** (§18) — bit-count alone doesn't determine quality, so aggregating by
+quant level is invalid (exactly their 30B-8bit vs 60B-4bit point). The K-quant block scheme is their
+"small block size" improvement.
+
+**Already banked (round 1)** — quotes captured earlier, repeated here for one-stop citation:
+- `liang2023helm` (HELM): multi-metric, "metrics beyond accuracy … [don't] fall to the wayside" and
+  trade-offs "clearly exposed." *Grounds:* our multi-axis (quality/safety/speed/energy) scoring.
+- `dehghani2021lottery` (Benchmark Lottery): "many factors, other than fundamental algorithmic
+  superiority, may lead to a method being perceived as superior" → *grounds* our multi-method τ-agreement
+  robustness check (§15).
+- `dehghani2021efficiency` (Efficiency Misnomer): "incomplete reporting of cost indicators can lead to
+  partial conclusions" → *grounds* reporting all of latency/throughput/energy/memory, not one.
+- `luccioni2024power` (Power Hungry Processing, FAccT24): generative models "orders of magnitude more
+  expensive … even when controlling for the number of model parameters" → *grounds* our per-inference
+  **energy** axis (mWh) and the architecture-efficiency (`granite4`) finding.
+- `lu2024slmsurvey` (SLM Survey): benchmarks SLM "inference latency and memory footprints" on-device →
+  *grounds* our systems-telemetry methodology.
+- `gu2023mamba` (Mamba): "5× higher throughput than Transformers", "Mamba-3B … matches Transformers
+  twice its size" → *grounds* the `granite4` hybrid-SSM bandwidth-thrift result (§14/§20).
+- `sui2025overthinking` (Stop Overthinking, TMLR25): long CoT "introduce[s] significant computational
+  overhead due to verbose and redundant outputs, known as the 'overthinking phenomenon'" → *grounds* our
+  `deepseek-r1:7b` timeout case study (§2) and the reasoning-arm safety/latency penalty.
+
+## 22. The interactive-frontier claim (RQ2/H2) is Turbo-sensitive — check before promoting
+A direct consequence of §20. With decode speed wave-dependent, the **≥8 tok/s "interactive" bar** moves:
+
+| bracket | `var` Turbo OFF (median tok/s) | % runs ≥8 | `wave2` Turbo ON (median tok/s) | % runs ≥8 |
+|---|---|---|---|---|
+| 0–1B | 19.4 | 100% | 26.3 | 100% |
+| 1–2B | 13.3 | 100% | 16.0 | 95% |
+| 2–3B | **7.3 (FAIL)** | 25% | **9.5 (PASS)** | 73% |
+| 3–4B | **5.8 (FAIL)** | 0% | **7.3 (FAIL)** | 31% |
+| 4–5GB | 3.8 | 24% | *(no models in this wave)* | — |
+
+Two findings, both **threats to RQ2/H2** ("the **3–4B** bracket dominates the speed/quality Pareto front
+for interactive use, ≥8 tok/s"):
+1. **The 2–3B bracket flips across the bar with Turbo** (7.3 off → 9.5 on). Whether 2–3B is "interactive"
+   is a Turbo setting, not a model fact.
+2. **The 3–4B bracket median is *below* 8 tok/s in *both* regimes** (5.8 off, 7.3 on; only 31% of runs
+   clear 8 even with Turbo). By bracket-median, the interactive frontier is **2–3B (Turbo on)** or **1–2B
+   (Turbo off)** — *not* 3–4B. H2 as stated is **not supported by the median**, and the **union snapshot**
+   (0–3B shown Turbo-**on**, 4–5GB shown Turbo-**off**) **exaggerates the size→speed gradient**.
+
+**Before promoting any speed/Pareto/energy result:** (a) fix a single Turbo regime — `var` (off) is the
+controlled, all-bracket subset; (b) restate RQ2/H2 against that regime; (c) decide whether "interactive"
+is judged per **model** (some 3–4B models *do* clear 8 tok/s with Turbo) or per **bracket median** (3–4B
+does not). The sovereign pick `qwen3:4b-instruct-2507-q4_K_M` is a 3–4B model — confirm its tok/s in the
+chosen regime against the ≥8 bar (it is ~5.9 tok/s Turbo-off). Quality/safety rankings are unaffected.
+
+## 23. Systematic wave1↔wave2 diff + the deterministic guard (harness fix)
+A full field-by-field diff of `results.var` (wave1) vs `results.wave2` found **five** systematic
+differences — turbo was only the first:
+
+| # | Difference | wave1 (`var`) | wave2 | Effect |
+|---|---|---|---|---|
+| 1 | **Turbo Boost** | OFF (≤1708 MHz) | ON (1713–3602 MHz) | speed/power/energy/timeouts |
+| 2 | **RAPL energy domain** (`power.source`) | `package-0` (100%) | `package-0` 88% + **`psys` 10%** + None 2% | energy not comparable (psys = whole-SoC, reads higher); **even within wave2** |
+| 3 | **`fatal: pull_failed`** | 0 | **133** (72 models, `rep=None`) | empty rows from mid-run model-download failures |
+| 4 | **Missing perf telemetry** (`membw.series`/`perf.core`) | 0.1% | **14%** (incl. 726 *successful* runs) | `perf_event_paranoid` too high / perf unavailable |
+| 5 | **No env provenance recorded** | — | — | the drift was **invisible in the data** |
+
+Identical and verified equal: temperature (0.7), seed scheme, `num_predict` per scenario, the 19-scenario
+set, reps (5), grounding/difficulty/class labels. **Root cause:** wave2 was launched **without**
+`scripts/node-power.sh setup` (so the prior run's teardown trap had restored Turbo) and with
+`RAPL_DOMAIN` unpinned (so `_rapl_pick()` drifted to `psys` across sub-batches). `run-experiment.sh`
+(wave1) and `run-wave3.sh` both lock correctly; wave2 was a pre-fix sweep (its pull-EOF + "no space"
+problems are exactly what `ensure_pulled` retries and `--rm-after` were later added to fix).
+
+**The fix (implemented + validated):** a **deterministic preflight inside `run.py`** — the one component
+every wave passes through — so no launch path (script *or* manual) can drift:
+- **`data/wave1-manifest.json`** — the frozen env lock (turbo off, governor `performance`,
+  `min/max_perf_pct=100`, freq ceiling 1750 MHz, RAPL `package-0`, `perf_event_paranoid≤2`, `num_ctx`
+  8192, require-models-present).
+- **`run.py --preflight`** (default-on) — refuses to start (exit 3) if the node drifts from the manifest;
+  prints the exact mismatch; `--allow-unlocked` downgrades to a warning for Mac/dev. `--preflight-only`
+  reports without running.
+- **`env.*` provenance** stamped into **every** record (`env.cpu_no_turbo`, `env.rapl_domain`,
+  `env.ollama_version`, `env.harness_git`, `env.perf_event_paranoid`, …) — a wave's regime is now
+  permanently auditable from the data alone.
+- **`scripts/node-power.sh`** now also sets `perf_event_paranoid=1` (restored on teardown), closing the
+  perf-telemetry gap (#4).
+- Validated on the Mac: preflight correctly FAILs (macOS ≠ locked Linux node) with an actionable list;
+  model-presence is gated to `--no-pull` so the disk-bounded `--rm-after` sweep still streams. See
+  REPRODUCE.md §3b.
+
 ## Steps log (autonomous run)
 1. Verified data semantics → 2. truncation/proxy/quant batteries → 3. scenario/RAG/consistency/DNF →
 4. clustering + proxy-τ → 5. **root-cause** (truncation = 400–600 tok cap, 83% non-think; timeout =
@@ -230,9 +436,30 @@ r1:7b slow×overthink) → 6. systems telemetry + **difficulty-label inconsisten
 (HELM mean-win-rate + Arena Bradley–Terry, τ 0.95–1.00; judged↔judge-free τ 0.74) → 9. literature
 round (Mamba 5× throughput; Power-Hungry-Processing energy-per-inference; SLM survey; Model Cards) →
 10. safety per-action (**stakes inversely ∝ refusal**: secrets 45%, destructive 48%) + quant-ladder
-confound + judge calibration (ρ 0.91, style discount on terse models). Artifacts: `model_metadata.csv`,
-this draft. Remaining: promote vetted findings to PAPER.md (with caveats); add covariate + multi-method
-figures; optionally a per-bracket champion table.
+confound + judge calibration (ρ 0.91, style discount on terse models).
+11. **all-84-fields pass** + first hardware read (later partly **corrected**, see #13): no swapping
+(`majflt`=0); GQA 79/88; width>depth scaling.
+12. **literature round 2** (similar-approach papers + a verbatim **quotation bank**, §21): added 13
+verified refs to `references.bib` (MT-Bench/judge, LLM-in-a-flash, 4-bit precision, HELM, Benchmark
+Lottery, Efficiency Misnomer, Power-Hungry, Mamba, SLM survey, Stop-Overthinking, Chatbot Arena, Model
+Cards) — the round-1 keys were never actually in the bib; now they are.
+13. **Turbo-Boost wave confound found + §20 corrected** (operator recalled disabling Turbo — checked it):
+`var` wave = Turbo **off** (pinned 1700 MHz, all 5 brackets, 25 models); `wave2` = Turbo **on**
+(2300–3600 MHz, 80 models, no 4–5GB). Snapshot is the **union** → systems/energy metrics are
+Turbo-confounded (mean watts 8.6 vs 17.7). **Retracted** the "no throttling / freq↑temp" reading;
+**kept + strengthened** the roofline as the *fixed-clock* tok/s decline within `var` (19.4→3.8, ~5×) and
+the clean `granite4` 3.4× speed-up at fixed clock. Quality/safety unaffected.
+Artifacts: `model_metadata.csv`, this draft, `references.bib`.
+14. **Did Turbo alter outcomes?** Outputs **no** (smollm2:360m, the one both-wave model, has an identical
+finish mix 90`stop`/5`length` despite 19.4→23.9 tok/s; token-cap truncation wave-flat 9.7%/11.2%);
+systems **yes**; **one exception** = wall-clock timeouts (`DNF:timeout` 3.5% `var`-OFF vs 0.0%
+`wave2`-ON, all on the slowest 4–5GB models) → §2 r1:7b case partly a Turbo-off artifact (conservative).
+15. **Systematic wave diff + deterministic guard built** (§23): found 5 wave differences (Turbo, RAPL
+domain `package-0`↔`psys`, 133 `pull_failed`, 14% missing perf telemetry, no provenance). Implemented +
+validated a `run.py` preflight (`data/wave1-manifest.json`, `--preflight-only`, `env.*` provenance in
+every row) + `node-power.sh perf_event_paranoid=1`; documented in REPRODUCE.md §3b.
+Remaining: per-check `det_detail` analysis; decide var-only vs rerun for systems; promote vetted findings
+to PAPER.md (with the Turbo-wave caveat on systems/energy).
 
 ## Open threads (next)
 - **Build the per-model static metadata table** (org / architecture class / training regime / native
