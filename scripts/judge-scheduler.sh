@@ -16,6 +16,9 @@
 #   RUN_ID=... EXPECT=2 ./scripts/judge-scheduler.sh                    # dry-run: stop after 2 judged
 set -uo pipefail
 cd "$(dirname "$0")/.."
+# the nvm-installed node + copilot are symlinked into /usr/local/bin; ensure they
+# resolve in a minimal detached/daemon PATH (copilot is a `#!/usr/bin/env node` script).
+export PATH="/usr/local/bin:$PATH"
 
 RUN_ID="${RUN_ID:?set RUN_ID (the producer run id, e.g. roster-20260624-1200)}"
 AI="${AI:-dragos@home-ai.hont.ro}"
@@ -34,6 +37,13 @@ JUDGED="${WORK}/judged.${RUN_ID}.jsonl"
 STATUS="${WORK}/judge-scheduler.status"
 LOG="${WORK}/judge-scheduler.log"
 mkdir -p "$WORK" "$MIRROR/outputs"
+
+# single-instance guard: a stale relaunch must not double-judge the same RUN_ID
+exec 9>"${WORK}/.consumer.lock"
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+  echo "[$(date -uIs)] another consumer already holds ${WORK}/.consumer.lock; exiting" >&2
+  exit 0
+fi
 
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=10"
 ts() { date -uIs; }
