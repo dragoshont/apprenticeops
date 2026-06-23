@@ -31,6 +31,7 @@ import json
 import os
 import re
 import glob
+import hashlib
 import random
 import socket
 import ssl
@@ -838,6 +839,9 @@ def model_runtime(model):
                 "ollama.size_vram_bytes": vram,
                 "ollama.cpu_pct": round(100 * (size - vram) / size, 1) if size else None,
                 "ollama.gpu_pct": round(100 * vram / size, 1) if size else None,
+                # exact model blob identity (sha256) — pins WHICH weights ran, so a
+                # re-pulled tag with updated weights is detectable across waves.
+                "ollama.digest": m.get("digest"),
             }
     return {}
 
@@ -1111,6 +1115,152 @@ def load_models(path, only_bracket=None):
     return models
 
 
+# --------------------------------------------------------------------------
+# Reproducibility guard: fingerprint the node's power/turbo/energy/version
+# state and refuse to run if it drifts from the frozen manifest. This exists
+# because wave1 (Turbo OFF, RAPL package-0) and wave2 (Turbo ON, RAPL psys/
+# package-0) silently diverged — the env was never recorded, so the drift was
+# invisible until a post-hoc clock analysis. See data/wave1-manifest.json.
+# --------------------------------------------------------------------------
+def _read_first(path):
+    try:
+        return open(path).read().strip()
+    except OSError:
+        return None
+
+
+def _sh_out(cmd):
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout.strip()
+        return out or None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def env_fingerprint():
+    """Full node fingerprint (static + volatile) for the startup preflight + the
+    self-describing env.* stamp on every record."""
+    return {**_env_static(), **_env_volatile()}
+
+
+def _env_static():
+    """Slow-changing node identity (read once per run)."""
+    try:
+        kernel = os.uname().release
+    except Exception:  # noqa: BLE001
+        kernel = None
+    return {
+        "env.host": socket.gethostname(),
+        "env.kernel": kernel,
+        "env.ollama_version": _sh_out(["ollama", "--version"]),
+        "env.harness_git": _sh_out(
+            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "rev-parse", "--short", "HEAD"]),
+        "env.num_ctx": NUM_CTX,
+        "env.sample_interval_s": SAMPLE_INTERVAL_S,
+        "env.perf_membw": PERF_MEMBW,
+        "env.perf_core": PERF_CORE,
+    }
+
+
+def _env_volatile():
+    """Drift-prone power/energy state — cheap sysfs reads, re-read PER MODEL so a
+    row's regime is accurate even if the node drifts mid-sweep (turbo/governor can
+    be flipped by thermald/cron during a multi-day run; a one-shot startup snapshot
+    would silently lie)."""
+    return {
+        "env.cpu_no_turbo": _read_first("/sys/devices/system/cpu/intel_pstate/no_turbo"),
+        "env.cpu_governor": _read_first("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"),
+        "env.cpu_min_perf_pct": _read_first("/sys/devices/system/cpu/intel_pstate/min_perf_pct"),
+        "env.cpu_max_perf_pct": _read_first("/sys/devices/system/cpu/intel_pstate/max_perf_pct"),
+        "env.rapl_domain": RAPL_NAME,
+        "env.perf_event_paranoid": _read_first("/proc/sys/kernel/perf_event_paranoid"),
+    }
+
+
+def preflight(models, fp, manifest_path, require_models_present=False, protocol=None, scenarios_path=None):
+    """Compare the live node fingerprint + protocol args + model presence against the
+    frozen manifest. Returns a list of human-readable problems ([] = clean). Model
+    presence is only enforced when require_models_present (i.e. --no-pull), so the
+    disk-bounded streaming pull+rm sweep (--rm-after) is not blocked."""
+    problems = []
+    if not (manifest_path and os.path.exists(manifest_path)):
+        return [f"manifest not found: {manifest_path!r} (pass --manifest or --allow-unlocked)"]
+    try:
+        man = json.load(open(manifest_path))
+    except Exception as e:  # noqa: BLE001
+        return [f"manifest unreadable: {e}"]
+
+    enforce_plat = man.get("enforce_on_platform")
+    if enforce_plat and sys.platform.startswith("darwin") and enforce_plat == "linux":
+        problems.append(f"node is macOS but manifest targets {enforce_plat!r}; "
+                        "this is a dev box, not the experiment node (use --allow-unlocked for local runs)")
+
+    cpu = man.get("cpu", {})
+    checks = [
+        ("cpu turbo (no_turbo)", cpu.get("intel_pstate.no_turbo"), fp["env.cpu_no_turbo"]),
+        ("cpu governor", cpu.get("scaling_governor"), fp["env.cpu_governor"]),
+        ("cpu min_perf_pct", cpu.get("min_perf_pct"), fp["env.cpu_min_perf_pct"]),
+        ("cpu max_perf_pct", cpu.get("max_perf_pct"), fp["env.cpu_max_perf_pct"]),
+        ("rapl_domain", man.get("energy", {}).get("rapl_domain"), fp["env.rapl_domain"]),
+        ("num_ctx", man.get("model_runtime", {}).get("num_ctx"), fp["env.num_ctx"]),
+    ]
+    for name, want, got in checks:
+        if want is not None and str(want) != str(got):
+            problems.append(f"{name}: manifest wants {want!r}, node has {got!r}")
+
+    tel = man.get("telemetry", {})
+    pmax = tel.get("perf_event_paranoid_max")
+    pv = fp["env.perf_event_paranoid"]
+    if pmax is not None and pv is not None:
+        try:
+            if int(pv) > int(pmax):
+                problems.append(f"perf_event_paranoid={pv} > {pmax}: perf counters (membw/core) may be blocked")
+        except ValueError:
+            pass
+    if tel.get("require_perf_membw") and not fp["env.perf_membw"]:
+        problems.append("PERF_MEMBW is off: set PERF_MEMBW=1 (manifest requires membw telemetry)")
+    if tel.get("require_perf_core") and not fp["env.perf_core"]:
+        problems.append("PERF_CORE is off: set PERF_CORE=1 (manifest requires core telemetry)")
+
+    ceil = cpu.get("freq_ceiling_mhz")
+    if ceil:
+        cur = []
+        for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq"):
+            v = _read_first(p)
+            if v:
+                cur.append(int(v) // 1000)
+        if cur and max(cur) > ceil:
+            problems.append(f"cpu freq {max(cur)} MHz > ceiling {ceil} MHz "
+                            "(Turbo appears ON — run scripts/node-power.sh setup)")
+
+    wantver = man.get("expected", {}).get("ollama_version")
+    if wantver and wantver != fp["env.ollama_version"]:
+        problems.append(f"ollama version: manifest wants {wantver!r}, node has {fp['env.ollama_version']!r}")
+
+    # protocol args (temperature/repeats/seed/think) — a stray --temp or --think
+    # would otherwise pass the env preflight and silently produce non-wave1 data.
+    prot = man.get("protocol", {})
+    if protocol:
+        for key in ("temperature", "repeats", "seed_base", "think"):
+            want = prot.get(key, False if key == "think" else None)
+            got = protocol.get(key)
+            if want is not None and want != got:
+                problems.append(f"protocol {key}: manifest wants {want!r}, run uses {got!r}")
+    want_sha = prot.get("scenarios_sha256")
+    if want_sha and scenarios_path and os.path.exists(scenarios_path):
+        got_sha = hashlib.sha256(open(scenarios_path, "rb").read()).hexdigest()
+        if got_sha != want_sha:
+            problems.append(f"scenarios.json changed: sha256 {got_sha[:12]}\u2026 != manifest {want_sha[:12]}\u2026")
+
+    if require_models_present and man.get("models_pinned", {}).get("require_all_present"):
+        missing = [m for m, _ in models if not model_present(m)]
+        if missing:
+            shown = ", ".join(missing[:6]) + ("…" if len(missing) > 6 else "")
+            problems.append(f"{len(missing)} model(s) not present locally — pre-pull to avoid mid-run "
+                            f"pull_failed rows: {shown}")
+    return problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="data/models.txt")
@@ -1135,6 +1285,18 @@ def main():
                     help="`ollama rm` each model THIS run pulled, after its scenarios finish, "
                          "to bound disk during large sweeps. Models already present before the "
                          "run are KEPT (conservative; never deletes pre-existing models).")
+    ap.add_argument("--manifest", default="data/wave1-manifest.json",
+                    help="frozen env-lock manifest; run.py refuses to start if the node has drifted "
+                         "from it (turbo/governor/RAPL-domain/perf/models). The wave1<->wave2 guard.")
+    ap.add_argument("--allow-unlocked", action="store_true",
+                    help="downgrade preflight failures to warnings (local/dev or Mac runs; "
+                         "NEVER for a canonical wave).")
+    ap.add_argument("--preflight-only", action="store_true",
+                    help="run the env/model preflight, print the fingerprint + result, and exit "
+                         "(no models run).")
+    ap.add_argument("--limit", type=int, default=0,
+                    help="run only the first N models then stop (stop-and-audit: run a couple, audit "
+                         "env.* with scripts/audit-wave.py, then launch the full sweep).")
     args = ap.parse_args()
 
     os.makedirs(args.outputs_dir, exist_ok=True)
@@ -1142,6 +1304,48 @@ def main():
     models = load_models(args.models, args.bracket)
     if args.shuffle:
         random.Random(args.order_seed).shuffle(models)
+
+    # --- reproducibility preflight: refuse to run on a drifted node ---------
+    env_fp = env_fingerprint()
+    _protocol = {"temperature": args.temp, "repeats": args.repeats,
+                 "seed_base": args.seed_base, "think": args.think}
+    problems = preflight(models, env_fp, args.manifest, require_models_present=args.no_pull,
+                         protocol=_protocol, scenarios_path=args.scenarios)
+    if args.preflight_only:
+        if problems:
+            sys.stderr.write("PREFLIGHT: FAIL\n" + "\n".join(f"  - {p}" for p in problems) + "\n")
+            sys.exit(3)
+        sys.stderr.write(f"PREFLIGHT: OK \u2014 node matches {args.manifest}\n"
+                         + json.dumps(env_fp, indent=2) + "\n")
+        sys.exit(0)
+    if problems:
+        tag = "WARN (unlocked)" if args.allow_unlocked else "FATAL"
+        sys.stderr.write(f"PREFLIGHT {tag}: node does not match {args.manifest}\n"
+                         + "\n".join(f"  - {p}" for p in problems) + "\n")
+        if not args.allow_unlocked:
+            sys.stderr.write("Refusing to run a wave on a drifted node. Fix it (scripts/node-power.sh "
+                             "setup; RAPL_DOMAIN=package-0; PERF_MEMBW=1 PERF_CORE=1; pre-pull models) "
+                             "or pass --allow-unlocked for a non-canonical run.\n")
+            sys.exit(3)
+
+    # Per-model drift guard: the startup env_fp is a snapshot; re-read the volatile
+    # state before EACH model so a multi-day sweep aborts if the node moves (turbo
+    # re-enabled by thermald/cron) instead of silently mislabelling rows.
+    env_static = _env_static()
+    _man = {}
+    if args.manifest and os.path.exists(args.manifest):
+        try:
+            _man = json.load(open(args.manifest))
+        except Exception:  # noqa: BLE001
+            _man = {}
+    expected_vol = {
+        "env.cpu_no_turbo": _man.get("cpu", {}).get("intel_pstate.no_turbo"),
+        "env.cpu_governor": _man.get("cpu", {}).get("scaling_governor"),
+        "env.cpu_min_perf_pct": _man.get("cpu", {}).get("min_perf_pct"),
+        "env.cpu_max_perf_pct": _man.get("cpu", {}).get("max_perf_pct"),
+        "env.rapl_domain": _man.get("energy", {}).get("rapl_domain"),
+    }
+
     sys.stderr.write(f"== {len(models)} models x {len(scen)} scenarios "
                      f"(shuffle={args.shuffle}, sample={SAMPLE_INTERVAL_S}s, "
                      f"cool_temp={COOL_TEMP_C}, fan_max={FAN_MAX and _fan_control_on()}, "
@@ -1151,12 +1355,26 @@ def main():
         sys.stderr.write(f"== idle power baseline: {idle_w} W ==\n")
 
     with open(args.out, "a") as fout:
-        for model, bracket in models:
+        for _mi, (model, bracket) in enumerate(models):
+            if args.limit and _mi >= args.limit:
+                sys.stderr.write(f"== --limit {args.limit} reached; stopping for audit "
+                                 f"(scripts/audit-wave.py {args.out}) ==\n")
+                break
+            # re-read the drift-prone state for THIS model; abort if the node moved.
+            env_fp = {**env_static, **_env_volatile()}
+            _drift = [f"{k}={env_fp.get(k)!r}!={v!r}"
+                      for k, v in expected_vol.items()
+                      if v is not None and str(env_fp.get(k)) != str(v)]
+            if _drift and not args.allow_unlocked:
+                sys.stderr.write(f"FATAL: node drifted mid-run before {model}: "
+                                 + "; ".join(_drift) + "\nRe-lock (scripts/node-power.sh setup) "
+                                 "and resume; rows already written are fine.\n")
+                sys.exit(4)
             # was the model on disk before this run? (decides --rm-after cleanup)
             was_present = model_present(model)
             if not args.no_pull and not ensure_pulled(model):
                 row = {"model": model, "bracket": bracket, "fatal": "pull_failed",
-                       "ts": time.time()}
+                       "ts": time.time(), **env_fp}
                 fout.write(json.dumps(row) + "\n"); fout.flush()
                 continue
             if args.no_pull and not model_present(model):
@@ -1248,6 +1466,7 @@ def main():
                         "proc.majflt": _sdelta("majflt"),
                         "proc.ctxt_switches": ctxt_sw,
                         "samples": sampler.samples,
+                        **env_fp,
                         **meta,
                         **tel,
                     }

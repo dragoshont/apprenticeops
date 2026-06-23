@@ -1,0 +1,55 @@
+{
+  "_comment": "Frozen reproducible-node environment lock for ApprenticeOps waves. run.py --preflight reads this and REFUSES to start unless the live node matches (or you pass --allow-unlocked). This exists because wave1 (results.var, Turbo OFF, RAPL package-0) and wave2 (results.wave2, Turbo ON, RAPL psys/package-0 mixed) drifted: wave2 was launched without scripts/node-power.sh setup, so the prior run's teardown trap had restored Turbo, and RAPL_DOMAIN was unpinned. These env facts were never recorded in the data, so the drift was invisible. This manifest + the env.* provenance fields run.py now stamps make a wave's power/energy regime explicit and enforceable.",
+  "name": "apprenticeops-wave-env-v1",
+  "frozen_from": "results.var.jsonl (wave1), 2026-06-17..18, launched via scripts/run-experiment.sh + scripts/node-power.sh setup",
+  "platform": "linux",
+  "enforce_on_platform": "linux",
+
+  "cpu": {
+    "_comment": "Set by scripts/node-power.sh setup. no_turbo=1 disables Turbo Boost; min=max=100 perf_pct pins to the non-turbo BASE clock (i5-8350U = 1.70 GHz). wave1 observed freq ceiling 1708 MHz; wave2 (turbo on) reached 3602 MHz.",
+    "intel_pstate.no_turbo": "1",
+    "scaling_governor": "performance",
+    "min_perf_pct": "100",
+    "max_perf_pct": "100",
+    "freq_ceiling_mhz": 1750
+  },
+
+  "energy": {
+    "_comment": "RAPL domain MUST be pinned. package-0 = CPU package only (what wave1 used, 100%). psys = whole-SoC (reads higher; 760 wave2 rows used it -> not comparable). Pin via RAPL_DOMAIN=package-0.",
+    "rapl_domain": "package-0"
+  },
+
+  "telemetry": {
+    "_comment": "perf counters must be readable for membw.series + perf.core. wave2 silently lost these on ~14% of runs (perf_event_paranoid too high or perf unavailable). Require paranoid<=2.",
+    "perf_event_paranoid_max": 2,
+    "require_perf_membw": true,
+    "require_perf_core": true,
+    "sample_interval_s": 0.5
+  },
+
+  "model_runtime": {
+    "_comment": "Ollama options applied per request. num_ctx is the run.py NUM_CTX constant.",
+    "num_ctx": 8192
+  },
+
+  "protocol": {
+    "_comment": "Verified identical across wave1/wave2 from the data (temp 0.7, seeds 1-5 => seed_base 1, reps 5, think=false). run.py --preflight now asserts the launch args + the scenarios.json content hash match these, so a stray --temp/--think or an edited prompt aborts instead of silently producing non-wave1 data.",
+    "temperature": 0.7,
+    "repeats": 5,
+    "seed_base": 1,
+    "think": false,
+    "scenarios_file": "data/scenarios.json",
+    "scenarios_sha256": "80b727c771dbbe854d50b38740a3eda45d26961bff39c4647639a73b15edd5d6",
+    "scenario_count": 19
+  },
+
+  "expected": {
+    "_comment": "Pin the Ollama version once you capture it from a known-good run (run.py stamps env.ollama_version into every row). null = record-but-do-not-enforce until pinned. wave1 did not record it, so it is currently unknown.",
+    "ollama_version": null
+  },
+
+  "models_pinned": {
+    "_comment": "If true, the preflight requires EVERY model in --models to be present locally before the sweep starts (no mid-run pull_failed like wave2's 133). Pre-pull with: while read m; do [ -n \"$m\" ] && ollama pull \"$m\"; done < data/models.txt",
+    "require_all_present": true
+  }
+}

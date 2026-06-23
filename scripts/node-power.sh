@@ -54,6 +54,7 @@ status() {
     echo "perf_pct : min=$(cat $PSTATE/min_perf_pct) max=$(cat $PSTATE/max_perf_pct)"
   fi
   echo "EPP      : $(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null)"
+  echo "perf_par : $(cat /proc/sys/kernel/perf_event_paranoid 2>/dev/null)  (<=2 => perf membw/core readable)"
   echo "fan_ctl  : $(cat /sys/module/thinkpad_acpi/parameters/fan_control 2>/dev/null || echo N)" \
        " level=$(awk '/level/{print $2}' "$FAN" 2>/dev/null) rpm=$(awk '/speed/{print $2}' "$FAN" 2>/dev/null)"
   echo "radios   : $(for r in /sys/class/rfkill/rfkill*; do [[ -e "$r/soft" ]] && printf '%s=%s ' "$(cat "$r/type")" "$([[ $(cat "$r/soft") == 1 ]] && echo blocked || echo on)"; done)"
@@ -68,6 +69,7 @@ setup() {
       have_pstate && echo "MINPCT=$(cat $PSTATE/min_perf_pct)"
       have_pstate && echo "MAXPCT=$(cat $PSTATE/max_perf_pct)"
       echo "FANCTL=$(cat /sys/module/thinkpad_acpi/parameters/fan_control 2>/dev/null || echo N)"
+      echo "PARANOID=$(cat /proc/sys/kernel/perf_event_paranoid 2>/dev/null || echo 2)"
       for r in /sys/class/rfkill/rfkill*; do [[ -e "$r/soft" ]] && echo "RFK_$(basename "$r")=$(cat "$r/soft")"; done
     } > "$SNAP"
     echo "snapshot -> $SNAP"
@@ -82,6 +84,9 @@ setup() {
   fi
   # 3) EPB -> performance (best-effort; EPP is already 'performance')
   sudo x86_energy_perf_policy performance 2>/dev/null || true
+  # 3b) allow perf counters (membw + core microarch telemetry) for the non-root
+  #     run.py sampler; wave2 silently lost membw/perf on ~14% of runs without this.
+  echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid >/dev/null
   # 4) ThinkPad fan control on (persist + reload so quiesce() can max the fan)
   echo "options thinkpad_acpi fan_control=1" | sudo tee /etc/modprobe.d/thinkpad_acpi-eval.conf >/dev/null
   if [[ "$(cat /sys/module/thinkpad_acpi/parameters/fan_control 2>/dev/null)" != "Y" ]]; then
@@ -107,6 +112,7 @@ teardown() {
     echo "${NOTURBO:-0}"  | sudo tee "$PSTATE/no_turbo"     >/dev/null
   fi
   sudo x86_energy_perf_policy normal 2>/dev/null || true
+  [ -n "${PARANOID:-}" ] && echo "${PARANOID}" | sudo tee /proc/sys/kernel/perf_event_paranoid >/dev/null
   echo "level auto" | sudo tee "$FAN" >/dev/null 2>&1 || true
   radios_restore
   sudo rm -f /etc/modprobe.d/thinkpad_acpi-eval.conf

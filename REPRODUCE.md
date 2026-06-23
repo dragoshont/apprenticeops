@@ -83,6 +83,61 @@ carryover is decorrelated from model identity. `FAN_MAX` needs `node-power.sh
 setup` first (it enables `fan_control`). The deterministic *quality* pass (§3) is
 order-insensitive and does **not** need this; only the systems numbers do.
 
+## 3b. Reproducibility preflight — guarantee every wave matches wave 1
+
+`run.py` now **refuses to start** unless the node matches the frozen environment
+lock in [`data/wave1-manifest.json`](data/wave1-manifest.json). This exists because
+the original **wave 1** (`results.var`, Turbo **off**, RAPL `package-0`) and **wave 2**
+(`results.wave2`, Turbo **on**, RAPL `psys`/`package-0` mixed) silently diverged: wave 2
+was launched without `node-power.sh setup`, so the prior run's teardown trap had
+restored Turbo, and `RAPL_DOMAIN` was left unpinned. None of this was recorded in the
+data, so the drift stayed invisible until a post-hoc CPU-clock analysis. The guard makes
+that **impossible to repeat**:
+
+```bash
+# After node-power.sh setup, verify the node is identical to wave 1 (no run yet):
+RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 python3 run.py --preflight-only
+#   -> "PREFLIGHT: OK — node matches data/wave1-manifest.json"  (exit 0), or
+#   -> "PREFLIGHT: FAIL" + the exact drift (turbo on, wrong RAPL domain, perf blocked,
+#      models missing) and exit 3.
+```
+
+The preflight checks: Turbo (`intel_pstate/no_turbo=1`), governor (`performance`),
+`min/max_perf_pct=100` (pinned to base), the freq ceiling (≤1750 MHz), `RAPL_DOMAIN`
+(`package-0`), `perf_event_paranoid≤2` (so `membw`/`perf.core` counters are readable —
+wave 2 lost them on ~14 % of runs), `num_ctx`, and — with `--no-pull` — that every model
+is already present (no mid-run `pull_failed`). Any real wave run now **enforces** this
+automatically (default `--manifest data/wave1-manifest.json`); a drifted node aborts with
+exit 3. Use `--allow-unlocked` only for local/Mac dev runs (downgrades to a warning).
+
+**Self-describing data:** every result row now carries an `env.*` fingerprint
+(`env.cpu_no_turbo`, `env.rapl_domain`, `env.ollama_version`, `env.harness_git`,
+`env.perf_event_paranoid`, …) so a wave's power/energy regime is permanently auditable —
+you can always tell, from the data alone, whether Turbo was on. The volatile fields are
+**re-read before every model** (not just at startup), so a multi-day sweep **aborts**
+(exit 4) if the node drifts mid-run instead of silently mislabelling rows. `node-power.sh
+setup` now also sets `perf_event_paranoid=1` (restored on teardown). To pin the Ollama
+version, fill `expected.ollama_version` in the manifest from a known-good
+`env.ollama_version`.
+
+**Stop-and-audit (run a couple models, verify, then commit to the full sweep):**
+
+```bash
+# 1) lock + run just the first 2 models
+./scripts/node-power.sh setup
+RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 python3 run.py --models data/models.wave3.txt \
+    --temp 0.7 --repeats 5 --seed-base 1 --shuffle --order-seed 1 --limit 2 \
+    --out results.wave3.jsonl
+# 2) audit those rows: one regime? matches wave1? no RAPL mix / pull_failed / missing perf?
+python3 scripts/audit-wave.py results.wave3.jsonl       # must print "AUDIT: PASS"
+# 3) only if PASS, launch the full sweep (drop --limit; dedup handles the 2 repeats)
+nohup ./scripts/run-wave3.sh >wave3.driver.out 2>&1 &
+```
+
+`--limit N` runs the first N models then stops; `audit-wave.py` exits non-zero if the
+partial data shows any drift or wave2-class defect, so you spend the multi-day budget only
+on a node you've **verified** matches wave 1.
+
 ## 4. Judge (off the node; frontier reference + scoring)
 
 ```bash
