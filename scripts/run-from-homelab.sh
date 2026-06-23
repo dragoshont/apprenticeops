@@ -73,7 +73,7 @@ if [ -n "${LIMIT:-}" ]; then
   log "AUDIT NOW:  python3 scripts/audit-run.py ${COLLECT}/results.${RUN_ID}.jsonl   (must say AUDIT: PASS before the full run)"
 else
   log "--- full roster (detached on home-ai) ---"
-  "${SSH[@]}" "cd '${REMOTE_DIR}' && mkdir -p logs && RUN_ID='${RUN_ID}' MODELS='${MODELS}' nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 & echo started pid \$!"
+  "${SSH[@]}" "cd '${REMOTE_DIR}' && mkdir -p logs && RUN_ID='${RUN_ID}' MODELS='${MODELS}' setsid nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 </dev/null & echo started-detached" </dev/null
   log "running detached on home-ai."
   log "  monitor:  ./scripts/run-from-homelab.sh status     (RUN_ID=${RUN_ID})"
   log "  collect:  ./scripts/run-from-homelab.sh collect     (RUN_ID=${RUN_ID})"
