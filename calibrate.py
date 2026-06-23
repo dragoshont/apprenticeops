@@ -64,7 +64,7 @@ class _NullSampler:
         pass
 
 
-class _NullSampler:
+def _tok_s(model, prompt, reps=3, with_telemetry=True):
     vals = []
     for _ in range(reps):
         if with_telemetry:

@@ -81,7 +81,8 @@ log "preflight OK"
 
 # 5) THE LOCKED ROSTER RUN — per-model quiesce + reset-state evidence, all telemetry
 NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
-log "--- roster run: ${NMODELS} models x 19 scenarios x R=5, all telemetry, --rm-after ---"
+NSCEN=$(python3 -c "import json;print(len(json.load(open('data/scenarios.json'))['scenarios']))" 2>/dev/null || echo '?')
+log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
 SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 \
 python3 run.py --models "$MODELS" --shuffle --order-seed 1 \
