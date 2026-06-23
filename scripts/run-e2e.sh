@@ -45,7 +45,7 @@ progress() {
     || echo "  (ai unreachable)"
   echo "-- CONSUMER (home, judge+commit) --"
   echo "  status: $(cat "${WORK}/judge-scheduler.status" 2>/dev/null || echo '(none yet)')"
-  echo "  judged: $(wc -l < "${WORK}/judged.${RUN_ID}.jsonl" 2>/dev/null || echo 0) rows; models: $(jq -r .model "${WORK}/judged.${RUN_ID}.jsonl" 2>/dev/null | sort -u | tr '\n' ' ')/ target ${EXPECT}"
+  echo "  judged: $(cat "${WORK}/judged.${RUN_ID}.jsonl" 2>/dev/null | wc -l | tr -d ' ') rows; models: $(jq -r .model "${WORK}/judged.${RUN_ID}.jsonl" 2>/dev/null | sort -u | tr '\n' ' ')/ target ${EXPECT}"
   tail -n 5 "${WORK}/pipeline-ledger.jsonl" 2>/dev/null | sed 's/^/  ledger: /'
   git log --oneline "experiment/${RUN_ID}" 2>/dev/null | head -3 | sed 's/^/  commit: /'
   echo "  consumer alive: $(pgrep -fc '[j]udge-scheduler' || echo 0)"
@@ -58,8 +58,7 @@ esac
 
 elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  expect=$EXPECT ==="
 elog "launching PRODUCER on ai (detached) ..."
-RUN_ID="$RUN_ID" MODELS="$MODELS" HOME_AI="$AI" REMOTE_DIR="$AI_REPO" \
-  ./scripts/run-from-homelab.sh >>"$LOG" 2>&1 || elog "WARN: producer launch returned non-zero"
+setsid bash -c "RUN_ID='$RUN_ID' MODELS='$MODELS' HOME_AI='$AI' REMOTE_DIR='$AI_REPO' ./scripts/run-from-homelab.sh >>'$LOG' 2>&1" </dev/null &
 elog "launching CONSUMER on home (detached, flock-guarded) ..."
 RUN_ID="$RUN_ID" AI="$AI" AI_REPO="$AI_REPO" EXPECT="$EXPECT" POLL_S="$POLL_S" \
   setsid nohup ./scripts/judge-scheduler.sh >>"${WORK}/judge-scheduler.out" 2>&1 </dev/null &
