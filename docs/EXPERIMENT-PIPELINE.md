@@ -65,9 +65,41 @@ A run is reproducible because the node is **locked and proven**, not assumed:
   harness_git, cpu_no_turbo, governor, rapl_domain, num_ctx, run_id, scenarios_sha)
   and `reset.*`, so the regime is auditable from the data alone.
 
-## 4. The two independent schedulers
+## 4. The pipeline — seven named stages
 
-### 4a. Producer — inference scheduler (runs ON `ai`)
+Every model flows through the **same fixed pipeline**. These names are the shared
+vocabulary for the **code (log + status), the docs, and the paper** — use them
+everywhere so the implementation and the write-up describe the same thing.
+
+| # | Stage | Node | What | Guarantee |
+|---|---|---|---|---|
+| S1 | `lock` | ai | preflight asserts the node matches the frozen manifest | refuse-to-run determinism gate |
+| S2 | `reset` | ai | quiesce + capture `reset.*` evidence | proven-identical start per model |
+| S3 | `infer` | ai | all scenarios × reps; telemetry + deterministic (safety/energy) scores | the measurement |
+| S4 | `emit` | ai | append the model to `…done` | per-model completion event (the handoff) |
+| S5 | `collect` | home | rsync the model's rows + answer texts | data off the node, durably |
+| S6 | `judge` | home | 2-judge pair (claude-opus-4.8 + gpt-5.5) | the quality axis |
+| S7 | `persist` | home | merge + commit to the experiment branch + push | versioned, off-node evidence |
+
+**S1–S4 are the *measurement* stage** (the producer, on the locked node);
+**S5–S7 are the *evaluation* stage** (the consumer, on home). They are decoupled by
+the S4 event, so the pipeline **streams**: while model *N* is in `judge`/`persist`,
+model *N+1* is already in `reset`/`infer`. Per-model granularity is what makes the
+pipeline **resumable** (restart at the next model that hasn't reached S4) and
+**incrementally durable** (S7 commits each model the moment it is evaluated).
+
+**How to explain it in the paper / docs.** *"Each model is evaluated through a fixed,
+instrumented pipeline. A measurement stage runs on a power-locked CPU node under a
+frozen environment manifest (Turbo off, governor fixed, RAPL domain pinned) and
+resets and re-verifies the environment before every model so each starts from a
+proven-identical state (`reset.*` evidence recorded per row). A decoupled evaluation
+stage scores each model's outputs with a two-judge LLM ensemble plus deterministic
+checks and persists results per model. The two stages communicate through a
+per-model completion event, making the pipeline streaming, resumable, and
+idempotent."* The per-model **pipeline ledger** (§4d) is the reproducibility
+appendix: it shows every model traversed the identical S1→S7 sequence.
+
+### 4a. Producer — inference scheduler, stages S1–S4 (runs ON `ai`)
 `scripts/run-roster.sh` → `run.py`. Locks the node, preflight must pass, then runs
 `data/models.txt` one model at a time through all **24 scenarios × 5 reps**.
 
@@ -102,9 +134,18 @@ lifecycle**:
   pulled data.
 
 ### 4c. Decoupling
-The `.done` marker is the entire contract. The producer never blocks on the judge;
-the consumer consumes at its own pace. Both recover from durable on‑disk state
-(results file, `.done` marker, judged file) — classic producer/consumer.
+The `.done` marker (S4) is the entire contract. The producer never blocks on the
+judge; the consumer consumes at its own pace. Both recover from durable on‑disk
+state (results file, `.done` marker, judged file) — classic producer/consumer.
+
+### 4d. Pipeline ledger (the stage trace)
+`scripts/judge-scheduler.sh` appends one line per **stage transition** to
+`data/runs/<RUN_ID>/pipeline-ledger.jsonl` — `{model, stage, ts, ok, detail}` for
+`collect`/`judge`/`persist` — which, combined with the producer's per-row `reset.*` +
+`env.*` and the `.done` (`emit`) event, reconstructs the full S1→S7 trace for every
+model. The ledger is both the **operational status board** (probe = tail the last
+lines per model) and the **paper's reproducibility trace** (proof that every model
+executed the identical pipeline). It never holds secrets.
 
 ## 5. Branch, commit & secrets
 

@@ -1,0 +1,5 @@
+# Dry-run roster — 2 tiny models to validate the FULL pipeline end-to-end
+# (S1 lock -> S2 reset -> S3 infer -> S4 emit -> S5 collect -> S6 judge -> S7 persist)
+# before committing to the full data/models.txt run. Smallest tags = fastest signal.
+smollm2:135m
+qwen2.5:0.5b
