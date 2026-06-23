@@ -4,7 +4,7 @@
 # Independently consumes the producer's per-model completion events (the `.done`
 # marker, stage S4) and runs, per model:
 #     S5 collect  — rsync the model's result rows + answer texts off `ai`
-#     S6 judge    — the 2-judge pair (claude-opus-4.8 + gpt-5.5) via the Copilot CLI
+#     S6 judge    — the 2-judge pair (claude-opus-4.6 + gpt-5.4) via the Copilot CLI
 #     S7 persist  — commit the model's evidence to the experiment branch + push
 #
 # It is decoupled from the producer (only the `.done` marker couples them),
@@ -22,8 +22,8 @@ AI="${AI:-dragos@home-ai.hont.ro}"
 AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"                 # where run-roster.sh runs on `ai`
 BRANCH="${BRANCH:-experiment/${RUN_ID}}"
 POLL_S="${POLL_S:-30}"
-ENSEMBLE="${ENSEMBLE:-copilot:gpt-5.5}"
-JUDGE_MODEL="${JUDGE_MODEL:-claude-opus-4.8}"
+ENSEMBLE="${ENSEMBLE:-copilot:gpt-5.4}"
+JUDGE_MODEL="${JUDGE_MODEL:-claude-opus-4.6}"
 EXPECT="${EXPECT:-0}"                               # >0 = exit once this many models are judged
 
 RESULTS="results.${RUN_ID}.jsonl"

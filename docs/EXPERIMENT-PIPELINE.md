@@ -32,8 +32,8 @@ headless inference worker it reaches over SSH.
    │  Producer control            Consumer scheduler           │
    │  (launch/monitor on ai) ───▶ (judge + commit, independent)│
    │         │ ssh                       ▲   │ copilot CLI      │
-   │         │                           │   │ (claude-opus-4.8 │
-   │         ▼                    .done   │   │  + gpt-5.5)      │
+   │         │                           │   │ (claude-opus-4.6 │
+   │         ▼                    .done   │   │  + gpt-5.4)      │
    │   ╔═══════════╗   rsync results/ ┌───┴─┐ │                 │
    │   ║  AI node  ║ ───────────────▶ │pull │ ▼  commit+push    │
    │   ║  ollama   ║   outputs/       └─────┘ ─────────────▶ GitHub
@@ -78,7 +78,7 @@ everywhere so the implementation and the write-up describe the same thing.
 | S3 | `infer` | ai | all scenarios × reps; telemetry + deterministic (safety/energy) scores | the measurement |
 | S4 | `emit` | ai | append the model to `…done` | per-model completion event (the handoff) |
 | S5 | `collect` | home | rsync the model's rows + answer texts | data off the node, durably |
-| S6 | `judge` | home | 2-judge pair (claude-opus-4.8 + gpt-5.5) | the quality axis |
+| S6 | `judge` | home | 2-judge pair (claude-opus-4.6 + gpt-5.4) | the quality axis |
 | S7 | `persist` | home | merge + commit to the experiment branch + push | versioned, off-node evidence |
 
 **S1–S4 are the *measurement* stage** (the producer, on the locked node);
@@ -122,8 +122,10 @@ lifecycle**:
 1. Pull new `.done` entries + the corresponding result rows + `outputs/` for newly
    complete models from `ai` (rsync over SSH).
 2. For each completed model **not yet judged**, run the **2‑judge pair** via the
-   Copilot CLI — `JUDGE_BACKEND=copilot judge.py --judge --ensemble copilot:gpt-5.5`
-   (primary `claude-opus-4.8` + ensemble `gpt-5.5`) — on that model's answer texts.
+   Copilot CLI — `JUDGE_BACKEND=copilot judge.py --judge --ensemble copilot:gpt-5.4`
+   (primary `claude-opus-4.6` + ensemble `gpt-5.4`) — on that model's answer texts.
+   (These are the strongest Claude + GPT judges this Copilot CLI build exposes;
+   `judge_model` is recorded per row.)
 3. Store the judged rows on `home` (the clone).
 4. **Commit that model** to the experiment branch and **push** to GitHub.
 5. Sleep, repeat.
