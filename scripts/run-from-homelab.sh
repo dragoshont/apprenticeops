@@ -14,10 +14,11 @@
 # home-ai). This script uses BatchMode (no password prompts).
 set -uo pipefail
 HOME_AI="${HOME_AI:-home-ai}"
-REMOTE_DIR="${REMOTE_DIR:-/opt/apprenticeops}"
+REMOTE_DIR="${REMOTE_DIR:-/home/dragos/apprenticeops}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-https://github.com/dragoshont/apprenticeops}"
 RUN_ID="${RUN_ID:-roster-$(date -u +%Y%m%d-%H%M)}"
+MODELS="${MODELS:-data/models.txt}"
 COLLECT="${COLLECT:-data/collected/${RUN_ID}}"
 SSH=(ssh -o BatchMode=yes -o ConnectTimeout=10 "$HOME_AI")
 ts() { date -uIs; }
@@ -67,12 +68,12 @@ log "home-ai at commit ${COMMIT}"
 # 2) run
 if [ -n "${LIMIT:-}" ]; then
   log "--- LIMIT=${LIMIT} stop-and-audit batch (inline) ---"
-  "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' LIMIT='${LIMIT}' ./scripts/run-roster.sh" || log "WARN: audit batch returned non-zero"
+  "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' MODELS='${MODELS}' LIMIT='${LIMIT}' ./scripts/run-roster.sh" || log "WARN: audit batch returned non-zero"
   collect
   log "AUDIT NOW:  python3 scripts/audit-run.py ${COLLECT}/results.${RUN_ID}.jsonl   (must say AUDIT: PASS before the full run)"
 else
   log "--- full roster (detached on home-ai) ---"
-  "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 & echo started pid \$!"
+  "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' MODELS='${MODELS}' nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 & echo started pid \$!"
   log "running detached on home-ai."
   log "  monitor:  ./scripts/run-from-homelab.sh status     (RUN_ID=${RUN_ID})"
   log "  collect:  ./scripts/run-from-homelab.sh collect     (RUN_ID=${RUN_ID})"

@@ -19,7 +19,7 @@ cd "$(dirname "$0")/.."
 
 RUN_ID="${RUN_ID:?set RUN_ID (the producer run id, e.g. roster-20260624-1200)}"
 AI="${AI:-dragos@home-ai.hont.ro}"
-AI_REPO="${AI_REPO:-/tmp/sme-var}"                 # where run-roster.sh runs on `ai`
+AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"                 # where run-roster.sh runs on `ai`
 BRANCH="${BRANCH:-experiment/${RUN_ID}}"
 POLL_S="${POLL_S:-30}"
 ENSEMBLE="${ENSEMBLE:-copilot:gpt-5.5}"
