@@ -961,6 +961,101 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   model cost you in watts and tokens/s?"* — not any single axis, each of which
   (we say plainly) is already known.
 
+## 12. Planned extension — the context (retrieval) axis (powering RQ6)
+
+> **Status: planned, pre-registered as an extension — not in the current frozen
+> run.** RQ6 (does local grounding substitute for parameters?) is the one question
+> this design could *not* power: the frozen corpus has only **two** paired
+> grounded/closed-book tasks (`expand-04/19`, `upgrade-05/18`), so §8c records RQ6
+> as *not directly tested*. This section specifies the extension that turns RQ6
+> into a first-class axis, and — same discipline as §3 — states its expectations
+> **before** the run.
+
+**Why it belongs here.** In real use you do not ask a 1B model to recall your
+cluster from its weights — you **paste it the relevant context**: the
+`kubectl describe`, the failing event, the HelmRelease, a runbook paragraph. The
+honest question for a *sovereign, local* assistant is therefore not "how much does
+the model know" but **"how well does a small model *use the bit of context you give
+it*"** — and what that context costs on a CPU. That is the context/retrieval axis,
+and it is the realistic deployment mode for these models.
+
+**Design — vary the context condition, hold the question fixed.** Each scenario
+keeps its question and gold answer; we attach a set of **context conditions** and
+run the model under each. The conditions are the established RAG failure modes
+(RGB, Chen et al., AAAI 2024) plus position sensitivity (*Lost in the Middle*, Liu
+et al., TACL 2023), instantiated on **real `home.hont.ro` artifacts** (kube events,
+`journalctl`, Flux/Helm YAML, runbook paragraphs):
+
+| Condition | What the model is given | Ability it probes |
+|---|---|---|
+| **closed-book** | nothing — parametric only | baseline (the current closed-book set) |
+| **gold** | exactly the relevant snippet | upper bound — can it use *perfect* context |
+| **retrieved** | gold snippet + a few plausible-but-irrelevant neighbours, realistic order | **noise robustness** — the realistic operator-paste |
+| **insufficient** | relevant-looking context that does **not** contain the answer | **negative rejection** — abstain ("need X") vs hallucinate |
+| **counterfactual** | context with a **stale/wrong** value (or an injected instruction) | **counterfactual robustness** — catch it vs parrot it |
+| **multi-doc** | answer requires combining two snippets | **information integration** |
+
+For `retrieved`/`counterfactual` we also sweep the gold snippet's **position**
+(start/middle/end) to measure *lost-in-the-middle* sensitivity, which we expect to
+be worse for small-context models.
+
+**Realism *and* determinism (both, not either).** Context is sized as an operator
+would paste it — **hundreds to ~1–2k tokens, not a dump** — which also respects the
+small context windows and the truncation tax (§8b). To stay reproducible, a small
+CPU embedder (e.g. `bge-small`/BM25) builds the `retrieved` set **once** from a
+fixed homelab corpus, and the result is **frozen into the scenario file and
+hashed** — the context becomes a pinned input exactly like `scenarios.json`, so the
+determinism contract (§4) is unbroken. The retriever is part of the artifact, not a
+live dependency.
+
+**Expectations (pre-registered).**
+- **E1 — context substitutes for parameters, most for the smallest.** The
+  `gold − closed-book` lift is largest in the 0.5–2B brackets and shrinks with size
+  (the powered form of H6). A 1–3B model + gold context should close much of the
+  gap to a 7–8B closed-book model.
+- **E2 — but on CPU it is a Pareto move, not a free lunch.** Added context is
+  prefill: it raises latency and Wh/answer and pushes models into the **token-cap →
+  truncation** failure mode that already dominates quality loss (§8b). The quality
+  gain should arrive **with** a measurable energy/latency/truncation cost — that
+  trade is the contribution, not the lift alone.
+- **E3 — small models fail *negative rejection* worst.** On `insufficient`, we
+  expect small models to **confidently hallucinate** rather than abstain (the RGB
+  result), which on CPU ops is operationally dangerous: a confident-wrong root
+  cause gets acted on.
+- **E4 — `counterfactual`/injected context is a safety axis, not just a quality
+  one.** We expect the cheapest models to **follow** a stale or injected value most
+  readily, tying this axis to the prompt-injection scenarios (§5) and the
+  inverse-stakes refusal finding: the models that cost the least trust their
+  context the most.
+- **E5 — position sensitivity is amplified at small scale.** Gold-in-the-middle
+  should cost small-context models more than the larger ones.
+
+**New metrics** (derivable, no new judging machinery beyond running the
+conditions): per-bracket **context-lift**, **noise penalty** (`gold − retrieved`),
+**negative-rejection rate**, **counterfactual-follow rate**, and **position
+sensitivity** — each reported *beside* the existing energy/latency/truncation axes
+so the trade is always visible.
+
+> **Why not episodic memory or fine-tuning in *this* paper.** Two adjacent levers
+> are deliberately **out of scope here**, for reasons of method, not interest:
+> - **Episodic / persistent memory (write-back across tasks)** would test whether a
+>   weak model *amortises* — solves a recurring incident once, stores the fix, nails
+>   the repeat. It is the most novel direction (learning curves; memory as an
+>   *attack surface* when an injected log writes a false memory), but it **breaks the
+>   determinism contract**: runs stop being independent and state carries over, so it
+>   needs its own longitudinal design with versioned memory snapshots. A *separate
+>   study*, not a column in this table.
+> - **Parameter learning (LoRA/QLoRA fine-tuning)** would test the strongest
+>   sovereignty claim — a fine-tuned 1–3B beating a *generic* 7–8B at a fraction of
+>   the energy. We hold it out because it is a **confound minefield** this benchmark
+>   is not yet built to control: catastrophic forgetting, judge-gaming, and **safety
+>   regression** (fine-tuning erodes alignment more than the quantization we already
+>   meter, §8b) each require held-out scenario *classes* and a safety re-test before
+>   any claim is honest. A follow-up, not a footnote.
+>
+> Retrieval is the lever that is **cheap, determinism-safe, and answers the question
+> we already asked** (RQ6) — so it is the one we add.
+
 ## Appendix A. Submission Target and Format (Out-of-manuscript)
 
 - **Target:** arXiv preprint (cs.SE / cs.AI) → a **workshop** (MLSys, NeurIPS
