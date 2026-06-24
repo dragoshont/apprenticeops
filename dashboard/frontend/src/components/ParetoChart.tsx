@@ -38,15 +38,35 @@ function frontier(pts: ParetoPoint[]): Set<string> {
   return f;
 }
 
+// Security maps to a SHAPE as well as a colour, so the third objective is never
+// carried by colour alone (WCAG 1.4.1 — readable for colour-blind users).
+function secBand(sec: number | null): "safe" | "mid" | "weak" | "unknown" {
+  if (sec == null) return "unknown";
+  if (sec >= 3) return "safe";
+  if (sec >= 2) return "mid";
+  return "weak";
+}
+
+function SecGlyph({ cx, cy, c, band, r = 6 }: { cx: number; cy: number; c: string; band: string; r?: number }) {
+  const stroke = "#0b1020";
+  if (band === "safe")
+    return <circle cx={cx} cy={cy} r={r} fill={c} fillOpacity={0.9} stroke={stroke} strokeWidth={1} />;
+  if (band === "mid")
+    return <polygon points={`${cx},${cy - r - 1} ${cx + r + 1},${cy} ${cx},${cy + r + 1} ${cx - r - 1},${cy}`} fill={c} fillOpacity={0.9} stroke={stroke} strokeWidth={1} />;
+  if (band === "weak")
+    return <polygon points={`${cx - r - 1},${cy - r + 1} ${cx + r + 1},${cy - r + 1} ${cx},${cy + r + 2}`} fill={c} fillOpacity={0.95} stroke={stroke} strokeWidth={1} />;
+  return <circle cx={cx} cy={cy} r={r - 1} fill="none" stroke={c} strokeWidth={1.5} strokeDasharray="2 2" />;
+}
+
 function Dot(props: { cx?: number; cy?: number; payload?: ParetoPoint & { _front?: boolean } }) {
   const { cx, cy, payload } = props;
   if (cx == null || cy == null || !payload) return null;
   const c = secColor(payload.security);
-  const onFront = payload._front;
+  const band = secBand(payload.security);
   return (
     <g>
-      {onFront && <circle cx={cx} cy={cy} r={9} fill="none" stroke={c} strokeOpacity={0.5} strokeWidth={1.5} />}
-      <circle cx={cx} cy={cy} r={6} fill={c} fillOpacity={0.9} stroke="#0b1020" strokeWidth={1} />
+      {payload._front && <circle cx={cx} cy={cy} r={10} fill="none" stroke={c} strokeOpacity={0.5} strokeWidth={1.5} />}
+      <SecGlyph cx={cx} cy={cy} c={c} band={band} />
     </g>
   );
 }
@@ -74,18 +94,12 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
     <Card
       title="Pareto · quality vs energy vs security"
       icon={<Sparkles className="h-4 w-4 text-accent" />}
-      hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its colour is the security score (green safe → red weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
+      hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its shape + colour show the security score (● safe ◆ mid ▼ weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
       right={
-        <div className="flex items-center gap-2 text-[10px] text-faint">
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: "#34d399" }} /> safe
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: "#fbbf24" }} /> mid
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: "#f87171" }} /> weak
-          </span>
+        <div className="flex items-center gap-2.5 text-[10px] text-faint">
+          <span className="inline-flex items-center gap-1"><span className="text-good">●</span> safe</span>
+          <span className="inline-flex items-center gap-1"><span className="text-warn">◆</span> mid</span>
+          <span className="inline-flex items-center gap-1"><span className="text-bad">▼</span> weak</span>
         </div>
       }
     >
@@ -123,7 +137,7 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
             </ResponsiveContainer>
           </div>
           <p className="mt-1 text-center text-[10px] text-faint">
-            colour = security · ringed = on the quality/energy frontier · top-left is best
+            shape + colour = security (● safe ◆ mid ▼ weak) · ringed = on the quality/energy frontier · top-left is best
           </p>
         </>
       )}

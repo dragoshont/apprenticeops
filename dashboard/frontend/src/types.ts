@@ -75,6 +75,8 @@ export interface RunSummary {
   energy_wh: number | null;
   quality_overall: number | null;
   security_overall: number | null;
+  n: number;
+  n_security: number;
 }
 
 export interface ScoreBucket {

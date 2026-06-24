@@ -8,11 +8,13 @@ export function Controls({
   runId,
   batches,
   onAfter,
+  liveElsewhere = false,
 }: {
   state: string;
   runId: string | null;
   batches: Batch[];
   onAfter: (runId?: string | null) => void;
+  liveElsewhere?: boolean;
 }) {
   const [batch, setBatch] = useState<string>("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,8 +74,9 @@ export function Controls({
             <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
           </div>
           <button
-            className="inline-flex items-center gap-1 border-l border-line bg-accent/15 px-2.5 py-1.5 font-medium text-accent transition hover:bg-accent/25 disabled:opacity-40"
-            disabled={!chosen || busy != null}
+            className="inline-flex items-center gap-1 border-l border-line bg-accent/15 px-2.5 py-1.5 font-medium text-accent transition hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!chosen || busy != null || liveElsewhere}
+            title={liveElsewhere ? "A run is already live — only one run can use the ai node at a time. Follow the live run to control it." : undefined}
             onClick={() => chosen && run("start", () => control.start(chosen.id))}
           >
             {spin("start", <Play className="h-3.5 w-3.5" />)}

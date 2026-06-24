@@ -22,6 +22,7 @@ export function SessionsTable({
       ) : (
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-sm">
+            <caption className="sr-only">Runs — select a row to load its details below.</caption>
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-faint">
                 <th className="px-2 py-2 font-medium">Run</th>
@@ -43,7 +44,17 @@ export function SessionsTable({
                   <tr
                     key={s.run_id}
                     onClick={() => onSelect(s.run_id)}
-                    className={`cursor-pointer border-t border-line/70 transition hover:bg-panel2/60 ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSelect(s.run_id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-current={active ? "true" : undefined}
+                    aria-label={`Run ${s.run_id}, ${s.state}, ${s.pct}% complete, by ${s.user ?? "user"} — open details`}
+                    className={`cursor-pointer border-t border-line/70 transition hover:bg-panel2/60 focus:outline-none focus-visible:bg-accent/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent ${
                       active ? "bg-accent/[0.06]" : ""
                     }`}
                   >

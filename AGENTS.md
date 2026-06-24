@@ -71,6 +71,14 @@ ssh home-ai.hont.ro "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
   `#!/usr/bin/env node` script, so a detached daemon's PATH must resolve **both**),
   `gh` SSH auth, `rsync`, `jq`, `flock`.
 
+## Browser verification (mission-control dashboard)
+
+When verifying the dashboard in a browser — screenshots or the Playwright MCP — use
+**Microsoft Edge** (`--browser msedge`), **not Chrome** (Chrome isn't installed on this
+Mac). The Playwright MCP is pinned to Edge in `sideport/.vscode/mcp.json`. The dev
+backend serves the built UI at `http://127.0.0.1:8770` (`uvicorn app:app` from
+`dashboard/backend`); the durable copy is `https://ceops.hont.ro`.
+
 ## Gotchas (learned the hard way — do not relearn them)
 
 - **Detach:** always launch long jobs with `setsid nohup CMD >log 2>&1 </dev/null &`.

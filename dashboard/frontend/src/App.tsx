@@ -39,6 +39,11 @@ export default function App() {
   const hasRun = !!status?.run_id;
   const live = state === "running";
   const selected = sessions.find((s) => s.run_id === status?.run_id);
+  // Liveness is GLOBAL, not tied to the selected run: a run can be live while you
+  // browse a finished one. This drives the persistent "Follow" control + the
+  // Start guard, so the header never says "nothing running" while a run runs.
+  const liveSession = sessions.find((s) => s.state === "running");
+  const liveElsewhere = !!liveSession && liveSession.run_id !== status?.run_id;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -59,7 +64,17 @@ export default function App() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {(live || state === "paused") && <StatePill state={state} />}
-          <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} />
+          {liveElsewhere && (
+            <button
+              onClick={() => liveSession && refresh(liveSession.run_id)}
+              className="pill bg-good/15 text-good ring-1 ring-good/30 transition hover:bg-good/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-good"
+              title={`A run is live: ${liveSession!.run_id} — click to follow it`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-good motion-safe:animate-pulse" />
+              run live · Follow
+            </button>
+          )}
+          <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} liveElsewhere={liveElsewhere} />
           {auth?.auth_enabled ? (
             <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />
@@ -103,7 +118,7 @@ export default function App() {
           {hasRun && (
             <div className="space-y-4">
               {/* selected-run header */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm" aria-live="polite">
                 <span className="font-mono text-fg">{status!.run_id}</span>
                 <StatePill state={state} size="sm" />
                 {status?.meta?.batch && <span className="text-xs text-muted">{status.meta.batch}</span>}

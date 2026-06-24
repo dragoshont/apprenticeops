@@ -31,13 +31,32 @@ function Tip({ active, payload, label, unit }: any) {
   );
 }
 
+/** Tooltip that also shows the sample size n behind a mean (a mean from few
+ * judgments is weaker evidence than one from many). */
+function TipN({ active, payload, unit }: any) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload ?? {};
+  const name = p.model ?? p.class ?? "";
+  return (
+    <div className="rounded-lg border border-line bg-panel px-3 py-2 text-xs shadow-xl">
+      <div className="mb-0.5 font-mono font-semibold text-fg">{name}</div>
+      <div className="text-muted">
+        {payload[0].value}
+        {unit ?? ""}
+        {p.n != null ? <span className="text-faint"> · n={p.n}</span> : null}
+      </div>
+    </div>
+  );
+}
+
 /** Top models by mean judge quality. */
 export function QualityLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
   const data = pareto
     .filter((p) => p.quality != null)
     .sort((a, b) => (b.quality ?? 0) - (a.quality ?? 0))
     .slice(0, 14)
-    .map((p) => ({ model: p.model, quality: p.quality }));
+    .map((p) => ({ model: p.model, quality: p.quality, n: p.n }));
+  const fullN = Math.max(1, ...data.map((d) => d.n ?? 0));
   return (
     <Card
       title="Quality leaderboard"
@@ -61,10 +80,10 @@ export function QualityLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                 tickLine={false}
                 interval={0}
               />
-              <Tooltip content={<Tip unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
+              <Tooltip content={<TipN unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
               <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                {data.map((_, i) => (
-                  <Cell key={i} fill={ACCENT} />
+                {data.map((d, i) => (
+                  <Cell key={i} fill={ACCENT} fillOpacity={d.n != null && d.n < fullN ? 0.4 : 1} />
                 ))}
               </Bar>
             </BarChart>
@@ -110,7 +129,8 @@ export function ScoreDistribution({ scores }: { scores?: Scores }) {
 
 /** Mean quality by scenario class (where the models do well / struggle). */
 export function ClassQuality({ scores }: { scores?: Scores }) {
-  const data = (scores?.by_class ?? []).map((c) => ({ class: c.class, quality: c.quality }));
+  const data = (scores?.by_class ?? []).map((c) => ({ class: c.class, quality: c.quality, n: c.n }));
+  const fullN = Math.max(1, ...data.map((d) => d.n ?? 0));
   return (
     <Card
       title="Quality by scenario class"
@@ -134,10 +154,14 @@ export function ClassQuality({ scores }: { scores?: Scores }) {
                 tickLine={false}
                 interval={0}
               />
-              <Tooltip content={<Tip unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
+              <Tooltip content={<TipN unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
               <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={16}>
                 {data.map((d, i) => (
-                  <Cell key={i} fill={(d.quality ?? 0) >= 2.5 ? GOOD : (d.quality ?? 0) >= 1.8 ? WARN : "#f87171"} />
+                  <Cell
+                    key={i}
+                    fill={(d.quality ?? 0) >= 2.5 ? GOOD : (d.quality ?? 0) >= 1.8 ? WARN : "#f87171"}
+                    fillOpacity={d.n != null && d.n < fullN ? 0.4 : 1}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -171,6 +195,7 @@ export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
     .filter((p) => p.quality != null)
     .sort((a, b) => (b.quality ?? 0) - (a.quality ?? 0) || (b.tok_s ?? 0) - (a.tok_s ?? 0));
   const front = paretoFront(pareto);
+  const fullN = Math.max(1, ...rows.map((p) => p.n ?? 0));
   return (
     <Card
       title="Pareto leaderboard"
@@ -192,6 +217,7 @@ export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                 <th className="px-2 py-2 font-medium">#</th>
                 <th className="px-2 py-2 font-medium">Model</th>
                 <th className="px-2 py-2 text-right font-medium">Quality</th>
+                <th className="px-2 py-2 text-right font-medium">n</th>
                 <th className="px-2 py-2 text-right font-medium">tok/s</th>
                 <th className="px-2 py-2 text-right font-medium">Wh/ans</th>
               </tr>
@@ -212,6 +238,7 @@ export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                       </span>
                     </td>
                     <td className="px-2 py-2 text-right font-mono tabular-nums text-fg">{p.quality}</td>
+                    <td className={`px-2 py-2 text-right font-mono tabular-nums ${p.n < fullN ? "text-warn" : "text-faint"}`}>{p.n}</td>
                     <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">
                       {p.tok_s ?? "—"}
                     </td>
@@ -235,6 +262,7 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
   const rows = pareto
     .filter((p) => p.wh != null)
     .sort((a, b) => (a.wh ?? Infinity) - (b.wh ?? Infinity)); // lower energy first
+  const fullN = Math.max(1, ...rows.map((p) => p.n ?? 0));
   return (
     <Card
       title="Power leaderboard"
@@ -254,6 +282,7 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                 <th className="px-2 py-2 text-right font-medium">Wh/ans</th>
                 <th className="px-2 py-2 text-right font-medium">Watts</th>
                 <th className="px-2 py-2 text-right font-medium">Quality</th>
+                <th className="px-2 py-2 text-right font-medium">n</th>
               </tr>
             </thead>
             <tbody>
@@ -264,6 +293,7 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-good">{p.wh ?? "—"}</td>
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.watts ?? "—"}</td>
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.quality ?? "—"}</td>
+                  <td className={`px-2 py-2 text-right font-mono tabular-nums ${p.n < fullN ? "text-warn" : "text-faint"}`}>{p.n}</td>
                 </tr>
               ))}
             </tbody>
@@ -296,8 +326,8 @@ export function RunSummaryCard({ summary }: { summary?: RunSummary }) {
       <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub="total this run" hint="Total electricity this run has drawn, in watt-hours — summed across every model's inference, measured from the CPU's Intel RAPL energy counter. Lower is better." />
       <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" hint="Average power draw in watts while the CPU was inferring — the mean of the per-model RAPL package readings." />
       <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" hint="Total processor time spent this run, in CPU-minutes — the sum of every model's wall-clock inference time." />
-      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub="mean judge / 5" hint="Mean judge score (1–5) across every answer in this run, averaged over both LLM judges. Higher is better." />
-      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub="safety scenarios / 5" hint="Mean judge score (1–5) on the safety scenarios only — the 'secure' and 'guard' classes that test whether a model refuses or safely handles risky operations." />
+      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub={s?.n != null ? `mean judge / 5 · n=${s.n}` : "mean judge / 5"} hint="Mean judge score (1–5) across every answer in this run, averaged over both LLM judges. Higher is better." />
+      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub={s?.n_security != null ? `safety scenarios / 5 · n=${s.n_security}` : "safety scenarios / 5"} hint="Mean judge score (1–5) on the safety scenarios only — the 'secure' and 'guard' classes that test whether a model refuses or safely handles risky operations." />
     </div>
   );
 }
