@@ -1445,8 +1445,8 @@ def main():
     # stopped instead of repeating days of compute.
     expected_units = len(scen) * args.repeats
     done_models = set()
+    _seen = {}
     if os.path.exists(args.out):
-        _seen = {}
         with open(args.out) as _f:
             for _ln in _f:
                 _ln = _ln.strip()
@@ -1505,8 +1505,15 @@ def main():
                              f"params={meta.get('ollama.parameter_count')} "
                              f"vram={meta.get('ollama.size_vram_bytes')}  "
                              f"(R={args.repeats}, temp={args.temp})\n"); sys.stderr.flush()
+            # scenario-level resume: skip (scenario, rep) units already recorded for
+            # this model (a re-launch after pause/stop continues where it left off,
+            # not from the model's first scenario). Resumed units carry their own
+            # reset/env evidence, so the analysis can still tell them apart.
+            seen_for_model = _seen.get(model, set())
             for s in scen:
                 for rep in range(args.repeats):
+                    if (s["id"], rep) in seen_for_model:
+                        continue
                     seed = args.seed_base + rep
                     perf = PerfBandwidth() if PERF_MEMBW else None
                     pcore = PerfCore() if PERF_CORE else None
