@@ -133,8 +133,10 @@ agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 The original paper run used **19 scenarios**. The working corpus now contains
 **27 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
 homelab incidents plus later repo-grounded security, capacity, tool-action, and
-Sideport high-CPU cases. The 2026-06-24 coverage audit recommends an **18-case
-core roster** for future compact runs; see
+Sideport high-CPU cases. The 2026-06-24 external research pass recommends a
+**20-case core roster** for the next expensive run; see
+[`docs/SCENARIO_RESEARCH_2026-06-24.md`](docs/SCENARIO_RESEARCH_2026-06-24.md)
+and the earlier inventory audit in
 [`docs/SCENARIO_AUDIT_2026-06-24.md`](docs/SCENARIO_AUDIT_2026-06-24.md).
 
 The scenarios are drawn from a production homelab cluster (`home.hont.ro`,

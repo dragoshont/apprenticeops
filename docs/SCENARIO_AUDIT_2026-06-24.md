@@ -2,6 +2,10 @@
 
 Status: audit and recommendation, not a scenario rewrite.
 
+Follow-up: [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
+adds an external benchmark/framework scan and supersedes this document's 18-case
+default with a research-backed **Core 20** recommendation.
+
 ## Scope Honesty
 
 The source of truth is `data/scenarios.json`, not the older prose in `README.md`

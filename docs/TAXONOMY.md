@@ -44,7 +44,8 @@ The table below records the original seed coverage. It is historically useful,
 but no longer describes the live corpus: `data/scenarios.json` now has 27
 scenarios, including `secure`, `capacity`, and Sideport high-CPU cases. See
 [`SCENARIO_AUDIT_2026-06-24.md`](SCENARIO_AUDIT_2026-06-24.md) for the current
-inventory, homelab-fidelity audit, and compact-roster recommendation.
+inventory and [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
+for the external benchmark scan and Core 20 recommendation.
 
 | Pillar | Class | Scenarios now | Grounding | Real-data source |
 |---|---|---|---|---|
@@ -65,9 +66,11 @@ scenarios.
 
 ## 4. Gaps to fill (the authoring backlog, from real homelab data)
 
-The highest-priority next additions from the 2026-06-24 audit are backup restore
-verification and network/DNS partition scenarios. Prefer replacing lower-priority
-extended cases over growing the default set indefinitely.
+The highest-priority next additions from the 2026-06-24 external research pass
+are backup restore verification, home-network/WAN/DNS localization, Flux drift,
+Home Assistant recorder/MQTT, and Linux/Kubernetes resource-pressure scenarios.
+Prefer replacing lower-priority extended cases over growing the default set
+indefinitely.
 
 Target **≥6 scenarios/class**. New classes + concrete cases grounded in data this
 cluster actually emits:
