@@ -35,7 +35,9 @@ import os
 import re
 import shlex
 import subprocess
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -127,6 +129,20 @@ def _marker(run_id: str, name: str, create: bool) -> None:
 
 # --------------------------------------------------------------------------- status
 _cache: dict = {"ts": 0.0, "run_id": None, "data": None}
+_status_cache: dict[str | None, tuple[float, dict]] = {}
+_prewarm_tasks: set[str] = set()
+_prewarm_pool = ThreadPoolExecutor(max_workers=2)
+_status_lock = threading.Lock()
+_status_generation = 0
+
+
+def _status_ttl(data: dict) -> float:
+    state = data.get("state")
+    if state in ("done", "canceled", "stopped", "idle"):
+        return 120.0
+    if state == "paused":
+        return 15.0
+    return 3.0
 
 
 def _gather(run_id: str | None) -> dict:
@@ -143,14 +159,62 @@ def _gather(run_id: str | None) -> dict:
                 "run_id": run_id, "ts": time.time()}
 
 
-def status(run_id: str | None, max_age: float = 3.0) -> dict:
+def _invalidate_status(*run_ids: str | None) -> None:
+    global _status_generation
+    with _status_lock:
+        _status_generation += 1
+        if not run_ids:
+            _status_cache.clear()
+        else:
+            for run_id in run_ids:
+                _status_cache.pop(run_id, None)
+        _cache["ts"] = 0.0
+
+
+def status(run_id: str | None, max_age: float = 3.0, force: bool = False) -> dict:
     now = time.time()
-    if (_cache["data"] is not None and _cache["run_id"] == run_id
-            and now - _cache["ts"] < max_age):
-        return _cache["data"]
+    if not force:
+        with _status_lock:
+            cached = _status_cache.get(run_id)
+        if cached:
+            ts, data = cached
+            ttl = max_age if max_age > 0 else 0
+            ttl = max(ttl, _status_ttl(data)) if max_age > 0 else 0
+            if now - ts < ttl:
+                return data
+    with _status_lock:
+        generation = _status_generation
     data = _gather(run_id)
+    with _status_lock:
+        if generation == _status_generation:
+            _status_cache[run_id] = (time.time(), data)
     _cache.update(ts=now, run_id=run_id, data=data)
     return data
+
+
+def _prewarm_recent_runs(data: dict) -> None:
+    for session in (data.get("sessions") or [])[:8]:
+        run_id = session.get("run_id")
+        with _status_lock:
+            if not run_id or not _RUNID_RE.match(run_id) or run_id in _prewarm_tasks:
+                continue
+            cached = _status_cache.get(run_id)
+            if cached and time.time() - cached[0] < _status_ttl(cached[1]):
+                continue
+            _prewarm_tasks.add(run_id)
+            generation = _status_generation
+
+        def _worker(rid: str = run_id, gen: int = generation) -> None:
+            try:
+                data = _gather(rid)
+                with _status_lock:
+                    if gen == _status_generation:
+                        _status_cache[rid] = (time.time(), data)
+            finally:
+                with _status_lock:
+                    _prewarm_tasks.discard(rid)
+
+        _prewarm_pool.submit(_worker)
 
 
 _MATRIX_SCRIPT = r'''
@@ -331,7 +395,10 @@ class RunReq(BaseModel):
 
 @app.get("/api/status")
 def api_status(run_id: str | None = None):
-    return JSONResponse(status(run_id))
+    data = status(run_id)
+    if run_id is None:
+        _prewarm_recent_runs(data)
+    return JSONResponse(data)
 
 
 @app.get("/api/run-matrix")
@@ -345,7 +412,7 @@ def api_start(req: StartReq, request: Request):
     models = model_set["path"]
     scenarios = scenario_set["path"]
     # one run at a time: refuse if a run is currently active (running or paused).
-    cur = status(None, max_age=0.0)
+    cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
               or (cur.get("producer") or {}).get("run_py_alive")
               or (cur.get("consumer") or {}).get("alive"))
@@ -368,7 +435,7 @@ def api_start(req: StartReq, request: Request):
              f"echo launched {_q(run_id)}")
     cp = _ssh(_home_cmd(inner), timeout=40)
     ok = cp.returncode == 0 and "launched" in cp.stdout
-    _cache["ts"] = 0.0
+    _invalidate_status(None, run_id)
     return {"ok": ok, "run_id": run_id,
             "model_set": req.model_set, "scenario_set": req.scenario_set,
             "models": models, "scenarios": scenarios, "user": user,
@@ -397,6 +464,7 @@ def api_stop(req: RunReq):
     if req.run_id:
         _marker(req.run_id, ".canceled", create=True)
         _marker(req.run_id, ".paused", create=False)
+        _invalidate_status(None, req.run_id)
     return {**_signal_all("KILL"), "action": "cancel", "run_id": req.run_id}
 
 
@@ -408,6 +476,7 @@ def api_pause(req: RunReq):
     checkpointing — but no rows are lost."""
     if req.run_id:
         _marker(req.run_id, ".paused", create=True)
+        _invalidate_status(None, req.run_id)
     return {**_signal_all("STOP"), "action": "pause", "run_id": req.run_id}
 
 
@@ -421,13 +490,14 @@ def api_resume(req: RunReq):
         raise HTTPException(400, "run_id required")
     if not _RUNID_RE.match(req.run_id):
         raise HTTPException(400, "invalid run_id")
-    st = status(req.run_id, max_age=0.0)
+    st = status(req.run_id, max_age=0.0, force=True)
     if st.get("markers", {}).get("canceled"):
         raise HTTPException(409, "run was canceled — start a new run instead")
     prod_alive = st.get("producer", {}).get("run_py_alive")
     cons_alive = st.get("consumer", {}).get("alive")
     if prod_alive or cons_alive:
         _marker(req.run_id, ".paused", create=False)
+        _invalidate_status(None, req.run_id)
         return {**_signal_all("CONT"), "action": "continue", "run_id": req.run_id}
     meta = _read_run_meta(req.run_id)
     for key in ("models", "model_set", "scenarios", "scenario_set"):
@@ -435,6 +505,7 @@ def api_resume(req: RunReq):
             raise HTTPException(409, f"run.meta missing {key}; start a new run")
     _validate_run_meta_for_resume(meta)
     _marker(req.run_id, ".paused", create=False)
+    _invalidate_status(None, req.run_id)
     env = _env_assign({
         "RUN_ID": req.run_id,
         "MODELS": meta["models"],
@@ -447,7 +518,7 @@ def api_resume(req: RunReq):
              f"setsid nohup ./scripts/run-e2e.sh >{_q(f'/tmp/e2e.{req.run_id}.boot')} "
              f"2>&1 </dev/null & echo relaunched {_q(req.run_id)}")
     cp = _ssh(_home_cmd(inner), timeout=40)
-    _cache["ts"] = 0.0
+    _invalidate_status(None, req.run_id)
     return {"ok": cp.returncode == 0, "action": "relaunch", "run_id": req.run_id,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
