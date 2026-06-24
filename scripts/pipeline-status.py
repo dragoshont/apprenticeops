@@ -13,6 +13,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -33,8 +34,9 @@ def _sh(cmd, timeout=12):
 
 
 def _ai(remote_cmd, timeout=12):
-    """Run a command on the ai node from home (passwordless)."""
-    return _sh(f"ssh -o BatchMode=yes -o ConnectTimeout=6 {AI} {json.dumps(remote_cmd)}", timeout)
+    """Run a command on the ai node from home (passwordless). shlex.quote keeps the
+    local shell from expanding $(...)/$N before ssh forwards it to the ai shell."""
+    return _sh(f"ssh -o BatchMode=yes -o ConnectTimeout=6 {AI} {shlex.quote(remote_cmd)}", timeout)
 
 
 def _pgrepc(pattern):
