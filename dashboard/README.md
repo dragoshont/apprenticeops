@@ -52,18 +52,24 @@ browser ──HTTP──▶ FastAPI (backend/app.py) ──ssh──▶ home ─
 
 ## Run it — LAN (Docker on the home node)
 
-For an always-on, LAN-accessible instance, run the container on `home`:
+Deployed on `home` itself, on its LAN interface. Use the `compose.host.yaml`
+overlay (host networking, so the container resolves `home`/`ai` exactly as the
+host does), and connect as **dragos** (the container runs as root, so the bare
+`home` alias would auth as `root@home` and be refused):
 
 ```bash
 cd dashboard
-HOME_SSH=home AI_SSH=home-ai.hont.ro REPO_DIR=/home/dragos/apprenticeops \
-  docker compose up -d --build      # → http://<home-lan-ip>:8770
+# one-time: open the port to the LAN
+sudo ufw allow from 192.168.1.0/24 to any port 8770 proto tcp
+# values are also kept in dashboard/.env on the host
+HOME_SSH=dragos@home AI_SSH=home-ai.hont.ro REPO_DIR=/home/dragos/apprenticeops AUTH_ENABLED=false \
+  docker compose -f compose.yaml -f compose.host.yaml up -d --build
 ```
 
-The container publishes `0.0.0.0:8770` (LAN-reachable) and mounts `~/.ssh`
-read-only. The mounted ssh config must define `Host home` (and `home` must reach
-`home-ai.hont.ro` passwordlessly, which it already does). A `/healthz` endpoint
-backs the compose healthcheck. Keep it on the trusted LAN.
+→ reachable on the LAN at **http://192.168.1.201:8770**. The container mounts
+`~/.ssh` read-only; an entrypoint copies it into a root-owned `~/.ssh` with the
+strict perms OpenSSH requires. `restart: unless-stopped` + a `/healthz`
+healthcheck keep it up. Keep it on the trusted LAN.
 
 ## Authentication (feature toggle)
 

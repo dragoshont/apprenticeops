@@ -1,0 +1,2 @@
+# host-specific deploy env (HOME_SSH, AUTH_ENABLED, …) — not committed
+.env
