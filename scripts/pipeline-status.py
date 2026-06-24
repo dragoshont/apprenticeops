@@ -383,6 +383,11 @@ def sessions():
                        glob.glob(os.path.join(d, "_mirror", "results.*.jsonl")))
         judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(d, "judged.*.jsonl")))
         committed = _count_lines(os.path.join(d, ".committed"))
+        if not expect:
+            # historical runs predate run.meta — recover a total from the markers
+            done_markers = sum(_count_lines(p) for p in
+                               glob.glob(os.path.join(d, "_mirror", "results.*.jsonl.done")))
+            expect = max(committed, done_markers)
         inf_total = expect * SCEN * REPS
         judge_total = inf_total * NJUDGES
         total = inf_total + judge_total

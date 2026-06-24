@@ -70,6 +70,22 @@ def _home_cmd(inner: str) -> str:
     return f"cd {REPO_DIR} && {inner}"
 
 
+# Refresh the experiment scripts from origin/main before a (re)launch so the run
+# always uses current code (e.g. run-e2e.sh that writes run.meta), without
+# touching the current branch or the untracked run data. Best-effort.
+_SYNC = ("git fetch -q origin 2>/dev/null; "
+         "git checkout -q origin/main -- scripts data/batches.json data/scenarios.json 2>/dev/null; ")
+
+
+def _marker(run_id: str, name: str, create: bool) -> None:
+    """Create or remove a run marker file (.canceled/.paused) on home."""
+    if not _RUNID_RE.match(run_id) or name not in (".canceled", ".paused"):
+        return
+    path = f"data/runs/{run_id}/{name}"
+    inner = f"touch {path}" if create else f"rm -f {path}"
+    _ssh(_home_cmd(inner), timeout=15)
+
+
 # --------------------------------------------------------------------------- status
 _cache: dict = {"ts": 0.0, "run_id": None, "data": None}
 
@@ -144,10 +160,11 @@ def api_start(req: StartReq):
     if not re.match(r"^[A-Za-z0-9._/-]{1,120}$", models):
         raise HTTPException(400, "batch points at an unsafe models path")
     run_id = f"{req.batch}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
-    inner = (f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' "
+    inner = (_SYNC +
+             f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' "
              f"setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.{run_id}.boot 2>&1 </dev/null & "
              f"echo launched {run_id}")
-    cp = _ssh(_home_cmd(inner), timeout=30)
+    cp = _ssh(_home_cmd(inner), timeout=40)
     ok = cp.returncode == 0 and "launched" in cp.stdout
     _cache["ts"] = 0.0
     return {"ok": ok, "run_id": run_id, "batch": req.batch, "models": models,
@@ -170,38 +187,52 @@ def _signal_all(sig: str) -> dict:
 
 
 @app.post("/api/control/stop")
-def api_stop():
-    return _signal_all("KILL")
+def api_stop(req: RunReq):
+    """Stop = cancel. Kill both process trees and write a .canceled marker so the
+    run is terminal: it shows as 'canceled' in the table and cannot be resumed."""
+    if req.run_id:
+        _marker(req.run_id, ".canceled", create=True)
+        _marker(req.run_id, ".paused", create=False)
+    return {**_signal_all("KILL"), "action": "cancel", "run_id": req.run_id}
 
 
 @app.post("/api/control/pause")
-def api_pause():
-    """Best-effort pause: SIGSTOP the schedulers + run.py. The ollama server is a
-    separate persistent process, so an in-flight token stream stalls rather than
-    cleanly checkpointing — this is a soft hold, not a transactional pause."""
-    return _signal_all("STOP")
+def api_pause(req: RunReq):
+    """Pause = soft hold. SIGSTOP the schedulers + run.py (the process freezes with
+    all state intact) and write a .paused marker. Continue resumes it exactly. The
+    ollama server is separate, so an in-flight token stream stalls rather than
+    checkpointing — but no rows are lost."""
+    if req.run_id:
+        _marker(req.run_id, ".paused", create=True)
+    return {**_signal_all("STOP"), "action": "pause", "run_id": req.run_id}
 
 
 @app.post("/api/control/resume")
 def api_resume(req: RunReq):
-    """Continue a paused run (SIGCONT). If nothing is stopped and a run_id is
-    given, re-launch the same RUN_ID — the pipeline is model-level resumable, so
-    relaunching continues where it left off."""
+    """Continue a run. If it was paused, SIGCONT the frozen processes (exact resume)
+    and clear the marker. If the processes are gone (e.g. a reboot), re-launch the
+    same RUN_ID — the pipeline resumes at scenario granularity. A canceled run is
+    terminal and refuses to resume."""
+    if not req.run_id:
+        raise HTTPException(400, "run_id required")
+    if not _RUNID_RE.match(req.run_id):
+        raise HTTPException(400, "invalid run_id")
+    st = status(req.run_id, max_age=0.0)
+    if st.get("markers", {}).get("canceled"):
+        raise HTTPException(409, "run was canceled — start a new run instead")
+    prod_alive = st.get("producer", {}).get("run_py_alive")
+    cons_alive = st.get("consumer", {}).get("alive")
+    _marker(req.run_id, ".paused", create=False)
     cont = _signal_all("CONT")
-    if req.run_id:
-        if not _RUNID_RE.match(req.run_id):
-            raise HTTPException(400, "invalid run_id")
-        st = status(req.run_id, max_age=0.0)
-        prod_alive = st.get("producer", {}).get("run_py_alive")
-        cons_alive = st.get("consumer", {}).get("alive")
-        if not (prod_alive or cons_alive):
-            inner = (f"RUN_ID='{req.run_id}' setsid nohup ./scripts/run-e2e.sh "
-                     f">/tmp/e2e.{req.run_id}.boot 2>&1 </dev/null & echo relaunched {req.run_id}")
-            cp = _ssh(_home_cmd(inner), timeout=30)
-            _cache["ts"] = 0.0
-            return {"ok": cp.returncode == 0, "action": "relaunch", "run_id": req.run_id,
-                    "detail": (cp.stdout or cp.stderr).strip()[:400]}
-    return {**cont, "action": "continue"}
+    if not (prod_alive or cons_alive):
+        inner = (_SYNC +
+                 f"RUN_ID='{req.run_id}' setsid nohup ./scripts/run-e2e.sh "
+                 f">/tmp/e2e.{req.run_id}.boot 2>&1 </dev/null & echo relaunched {req.run_id}")
+        cp = _ssh(_home_cmd(inner), timeout=40)
+        _cache["ts"] = 0.0
+        return {"ok": cp.returncode == 0, "action": "relaunch", "run_id": req.run_id,
+                "detail": (cp.stdout or cp.stderr).strip()[:400]}
+    return {**cont, "action": "continue", "run_id": req.run_id}
 
 
 @app.websocket("/ws")
