@@ -182,7 +182,7 @@ def api_batches():
 
 
 @app.post("/api/control/start")
-def api_start(req: StartReq):
+def api_start(req: StartReq, request: Request):
     b = _resolve_batch(req.batch)
     models = b.get("models", "")
     if not re.match(r"^[A-Za-z0-9._/-]{1,120}$", models):
@@ -194,15 +194,18 @@ def api_start(req: StartReq):
               or (cur.get("consumer") or {}).get("alive"))
     if active:
         raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+    # who started it: the Authentik user when gated, else a generic "user".
+    user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
+    user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
     run_id = f"{req.batch}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     inner = (_SYNC +
-             f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' "
+             f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' RUN_USER='{user}' "
              f"setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.{run_id}.boot 2>&1 </dev/null & "
              f"echo launched {run_id}")
     cp = _ssh(_home_cmd(inner), timeout=40)
     ok = cp.returncode == 0 and "launched" in cp.stdout
     _cache["ts"] = 0.0
-    return {"ok": ok, "run_id": run_id, "batch": req.batch, "models": models,
+    return {"ok": ok, "run_id": run_id, "batch": req.batch, "models": models, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 

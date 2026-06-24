@@ -9,8 +9,8 @@ import {
   Cell,
 } from "recharts";
 import { Card } from "./ui";
-import type { ParetoPoint, Scores } from "../types";
-import { Trophy, BarChart3, Layers, Sparkles, Star } from "lucide-react";
+import type { ParetoPoint, Scores, RunSummary } from "../types";
+import { Trophy, BarChart3, Layers, Sparkles, Star, BatteryLow, Zap, Cpu, Clock, ShieldCheck } from "lucide-react";
 
 const ACCENT = "#5b8cff";
 const GOOD = "#34d399";
@@ -75,7 +75,11 @@ export function QualityLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
 export function ScoreDistribution({ scores }: { scores?: Scores }) {
   const data = (scores?.hist ?? []).map((b) => ({ score: b.score.toFixed(1), count: b.count }));
   return (
-    <Card title="Judge score distribution" icon={<BarChart3 className="h-4 w-4 text-good" />}>
+    <Card
+      title="Judge score distribution"
+      icon={<BarChart3 className="h-4 w-4 text-good" />}
+      right={<span className="text-[10px] text-faint">how many answers got each 1–5 score</span>}
+    >
       {data.length === 0 ? (
         <p className="py-10 text-center text-sm text-faint">No judgments yet…</p>
       ) : (
@@ -212,5 +216,76 @@ export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
         </div>
       )}
     </Card>
+  );
+}
+
+/** Power leaderboard — ranked by energy ascending (LOWER power = better, i.e. the
+ * inverse of power). Shows Wh/answer, mean watts, and quality for context. */
+export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
+  const rows = pareto
+    .filter((p) => p.wh != null)
+    .sort((a, b) => (a.wh ?? Infinity) - (b.wh ?? Infinity)); // lower energy first
+  return (
+    <Card
+      title="Power leaderboard"
+      icon={<BatteryLow className="h-4 w-4 text-good" />}
+      right={<span className="text-xs text-faint">lower = better</span>}
+    >
+      {rows.length === 0 ? (
+        <p className="py-10 text-center text-sm text-faint">No telemetry yet…</p>
+      ) : (
+        <div className="max-h-[26rem] overflow-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="sticky top-0 bg-panel text-left text-[11px] uppercase tracking-wider text-faint">
+                <th className="px-2 py-2 font-medium">#</th>
+                <th className="px-2 py-2 font-medium">Model</th>
+                <th className="px-2 py-2 text-right font-medium">Wh/ans</th>
+                <th className="px-2 py-2 text-right font-medium">Watts</th>
+                <th className="px-2 py-2 text-right font-medium">Quality</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p, i) => (
+                <tr key={p.model} className="border-t border-line/70">
+                  <td className="px-2 py-2 font-mono text-xs text-faint">{i + 1}</td>
+                  <td className="px-2 py-2 font-mono text-xs text-fg">{p.model}</td>
+                  <td className="px-2 py-2 text-right font-mono tabular-nums text-good">{p.wh ?? "—"}</td>
+                  <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.watts ?? "—"}</td>
+                  <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.quality ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Metric({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-panel2/40 p-3">
+      <div className="label flex items-center gap-1.5">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-xl font-semibold text-fg tabular-nums">{value}</div>
+      {sub && <div className="text-[10px] text-faint">{sub}</div>}
+    </div>
+  );
+}
+
+/** Roll-up stats for the selected run: energy, power, compute, quality, security. */
+export function RunSummaryCard({ summary }: { summary?: RunSummary }) {
+  const s = summary;
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub="total this run" />
+      <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" />
+      <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" />
+      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub="mean judge / 5" />
+      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub="safety scenarios / 5" />
+    </div>
   );
 }

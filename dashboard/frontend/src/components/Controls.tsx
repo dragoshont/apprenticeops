@@ -47,17 +47,20 @@ export function Controls({
   }
 
   const spin = (k: string, icon: React.ReactNode) =>
-    busy === k ? <Loader2 className="h-4 w-4 animate-spin" /> : icon;
+    busy === k ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon;
+
+  const cbtn =
+    "inline-flex items-center gap-1 rounded-lg border border-line bg-panel2/50 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5">
       {!active && (
-        <div className="flex items-center overflow-hidden rounded-xl border border-line bg-panel2">
+        <div className="flex items-center overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
           <div className="relative">
             <select
               value={batch}
               onChange={(e) => setBatch(e.target.value)}
-              className="appearance-none bg-transparent py-2 pl-3 pr-8 text-sm text-fg focus:outline-none"
+              className="appearance-none bg-transparent py-1.5 pl-2.5 pr-7 text-xs text-fg focus:outline-none"
             >
               {batches.map((b) => (
                 <option key={b.id} value={b.id} className="bg-panel text-fg">
@@ -66,51 +69,48 @@ export function Controls({
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+            <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
           </div>
           <button
-            className="btn btn-primary rounded-none border-0 border-l border-line"
+            className="inline-flex items-center gap-1 border-l border-line bg-accent/15 px-2.5 py-1.5 font-medium text-accent transition hover:bg-accent/25 disabled:opacity-40"
             disabled={!chosen || busy != null}
             onClick={() => chosen && run("start", () => control.start(chosen.id))}
           >
-            {spin("start", <Play className="h-4 w-4" />)}
+            {spin("start", <Play className="h-3.5 w-3.5" />)}
             Start
           </button>
         </div>
       )}
 
       {running && (
-        <button className="btn" disabled={busy != null} onClick={() => run("pause", () => control.pause(runId))}>
-          {spin("pause", <Pause className="h-4 w-4" />)}
+        <button className={cbtn} disabled={busy != null} onClick={() => run("pause", () => control.pause(runId))}>
+          {spin("pause", <Pause className="h-3.5 w-3.5" />)}
           Pause
         </button>
       )}
 
       {(paused || stopped) && (
         <button
-          className="btn btn-primary"
+          className={`${cbtn} border-accent/50 bg-accent/15 text-accent`}
           disabled={busy != null}
           onClick={() => run("resume", () => control.resume(runId))}
         >
-          {spin("resume", <RotateCw className="h-4 w-4" />)}
+          {spin("resume", <RotateCw className="h-3.5 w-3.5" />)}
           {paused ? "Resume" : "Continue"}
         </button>
       )}
 
       {active && (
         <button
-          className="btn btn-danger"
+          className={`${cbtn} hover:border-bad/60 hover:bg-bad/10 hover:text-bad`}
           disabled={busy != null}
           onClick={() => run("stop", () => control.stop(runId))}
         >
-          {spin("stop", <Square className="h-4 w-4" />)}
-          Stop
+          {spin("stop", <Square className="h-3.5 w-3.5" />)}
+          Cancel
         </button>
       )}
 
-      {!active && chosen?.desc && (
-        <span className="hidden max-w-[20rem] truncate text-xs text-faint xl:inline">{chosen.desc}</span>
-      )}
       {msg && <span className="max-w-[16rem] truncate text-xs text-bad" title={msg}>{msg}</span>}
     </div>
   );

@@ -62,9 +62,19 @@ export interface ModelStage {
 export interface ParetoPoint {
   model: string;
   quality: number | null;
+  security: number | null;
   tok_s: number | null;
   wh: number | null;
+  watts: number | null;
   n: number;
+}
+
+export interface RunSummary {
+  mean_watts: number | null;
+  cpu_minutes: number | null;
+  energy_wh: number | null;
+  quality_overall: number | null;
+  security_overall: number | null;
 }
 
 export interface ScoreBucket {
@@ -116,6 +126,7 @@ export interface ModelProgress {
 export interface Session {
   run_id: string;
   batch: string;
+  user?: string;
   state: PipelineState | string;
   started_at: number | null;
   ended_at: number | null;
@@ -140,9 +151,11 @@ export interface Status {
   state: PipelineState;
   expect?: number;
   error?: string;
+  user?: string;
   markers?: { canceled: boolean; paused: boolean };
   meta?: { run_id?: string; models?: string; batch?: string; expect?: number; started_at?: number };
   progress?: Progress;
+  summary?: RunSummary;
   producer?: Producer;
   consumer?: Consumer;
   stages?: string[];

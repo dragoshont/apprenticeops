@@ -1,6 +1,6 @@
 import type { Progress } from "../types";
 import { Bar } from "./ui";
-import { Gauge, Cpu, Scale, Clock, Timer, Activity } from "lucide-react";
+import { Gauge, Cpu, Scale, Clock, Timer } from "lucide-react";
 
 function Row({
   icon,
@@ -84,16 +84,8 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
         {/* bars */}
         <div className="flex-1 space-y-3">
           <Row
-            icon={<Activity className="h-3.5 w-3.5" />}
-            label="Overall units"
-            done={p?.units_done ?? 0}
-            total={p?.units_total ?? 0}
-            tone="accent"
-            live={live}
-          />
-          <Row
             icon={<Cpu className="h-3.5 w-3.5" />}
-            label="Inference"
+            label="Inference (ai)"
             done={p?.inf_done ?? 0}
             total={p?.inf_total ?? 0}
             tone="info"
@@ -101,7 +93,7 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
           />
           <Row
             icon={<Scale className="h-3.5 w-3.5" />}
-            label="Judge"
+            label="Judge (home)"
             done={p?.judge_done ?? 0}
             total={p?.judge_total ?? 0}
             tone="warn"

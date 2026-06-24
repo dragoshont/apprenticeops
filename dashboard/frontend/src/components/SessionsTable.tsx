@@ -25,6 +25,7 @@ export function SessionsTable({
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-faint">
                 <th className="px-2 py-2 font-medium">Run</th>
+                <th className="px-2 py-2 font-medium">User</th>
                 <th className="px-2 py-2 font-medium">Status</th>
                 <th className="px-2 py-2 font-medium">Started</th>
                 <th className="px-2 py-2 font-medium">Duration</th>
@@ -57,6 +58,7 @@ export function SessionsTable({
                         </span>
                       )}
                     </td>
+                    <td className="whitespace-nowrap px-2 py-2.5 text-xs text-muted">{s.user ?? "user"}</td>
                     <td className="px-2 py-2.5">
                       <StatePill state={s.state} size="sm" />
                     </td>

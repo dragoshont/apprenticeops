@@ -31,8 +31,8 @@ LOG="${WORK}/e2e.log"
 mkdir -p "$WORK"
 # consumer exits cleanly once EXPECT models are judged; default = model count in MODELS
 EXPECT="${EXPECT:-$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS" 2>/dev/null || echo 0)}"
-printf '{"run_id":"%s","models":"%s","batch":"%s","expect":%s,"started_at":%s}\n' \
-  "$RUN_ID" "$MODELS" "${BATCH:-}" "${EXPECT:-0}" "$(date +%s)" >"$WORK/run.meta" 2>/dev/null || true
+printf '{"run_id":"%s","models":"%s","batch":"%s","user":"%s","expect":%s,"started_at":%s}\n' \
+  "$RUN_ID" "$MODELS" "${BATCH:-}" "${RUN_USER:-user}" "${EXPECT:-0}" "$(date +%s)" >"$WORK/run.meta" 2>/dev/null || true
 ts() { date -uIs; }
 elog() { echo "[$(ts)] $*" | tee -a "$LOG"; }
 

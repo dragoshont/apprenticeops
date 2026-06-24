@@ -10,7 +10,14 @@ import { PipelineFlow } from "./components/PipelineFlow";
 import { NodeCards } from "./components/NodeCards";
 import { ModelBars } from "./components/ModelBars";
 import { ParetoChart } from "./components/ParetoChart";
-import { QualityLeaderboard, ScoreDistribution, ClassQuality, ParetoLeaderboard } from "./components/Charts";
+import {
+  QualityLeaderboard,
+  ScoreDistribution,
+  ClassQuality,
+  ParetoLeaderboard,
+  PowerLeaderboard,
+  RunSummaryCard,
+} from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
 import { StatePill, fmtAgo } from "./components/ui";
 import { Radio, AlertTriangle, Terminal, Lock, LockOpen } from "lucide-react";
@@ -31,6 +38,7 @@ export default function App() {
   const sessions = status?.sessions ?? [];
   const hasRun = !!status?.run_id;
   const live = state === "running";
+  const selected = sessions.find((s) => s.run_id === status?.run_id);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -45,33 +53,22 @@ export default function App() {
               ApprenticeOps · Mission Control
             </h1>
             <p className="text-xs text-faint">
-              {hasRun ? (
-                <>
-                  run <span className="font-mono text-muted">{status!.run_id}</span>
-                  {status?.meta?.batch ? ` · ${status.meta.batch}` : ""} · updated {fmtAgo(status?.ts)}
-                </>
-              ) : (
-                "two-node CPU-only benchmark"
-              )}
+              two-node CPU-only benchmark · {sessions.length} runs · updated {fmtAgo(status?.ts)}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <StatePill state={state} />
+          {(live || state === "paused") && <StatePill state={state} />}
           <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} />
-          {auth?.auth_enabled && (
-            <span
-              className="pill bg-good/15 text-good"
-              title={auth.user ? `signed in as ${auth.user}` : "Authentik enforced"}
-            >
+          {auth?.auth_enabled ? (
+            <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />
               {auth.user ?? "auth"}
             </span>
-          )}
-          {auth && !auth.auth_enabled && (
-            <span className="pill bg-muted/15 text-muted" title="No authentication (open)">
+          ) : (
+            <span className="pill bg-muted/15 text-muted" title="no authentication (open on the LAN)">
               <LockOpen className="h-3 w-3" />
-              open
+              user
             </span>
           )}
           <ThemeToggle theme={theme} onToggle={toggle} />
@@ -92,62 +89,74 @@ export default function App() {
         <div className="py-24 text-center text-sm text-faint">Connecting to home…</div>
       ) : (
         <div className="space-y-4">
-          {/* Hero: overall run progress */}
-          {hasRun && <RunProgress progress={status?.progress} live={live} />}
-
-          {/* Live judge status line */}
-          {status?.consumer?.status && (
-            <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
-              <Terminal className="h-3.5 w-3.5 text-good" />
-              <span className="truncate">{status.consumer.status}</span>
-            </div>
-          )}
-
-          {/* Compact pipeline strip */}
-          {hasRun && (
-            <PipelineFlow
-              models={models}
-              producerAlive={status?.producer?.run_py_alive ?? false}
-              consumerAlive={status?.consumer?.alive ?? false}
-            />
-          )}
-
-          {/* Sessions */}
+          {/* Runs are the focus: the table on top, click a row to load its detail below */}
           <SessionsTable sessions={sessions} activeRunId={status?.run_id ?? null} onSelect={refresh} />
 
-          {/* Models + nodes */}
           {hasRun && (
-            <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-              <ModelBars models={modelProgress} />
-              <div className="space-y-4">
-                <NodeCards nodes={status?.nodes} />
-                <ActivityFeed consumer={status?.consumer} />
+            <div className="space-y-4">
+              {/* selected-run header */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm">
+                <span className="font-mono text-fg">{status!.run_id}</span>
+                <StatePill state={state} size="sm" />
+                {status?.meta?.batch && <span className="text-xs text-muted">{status.meta.batch}</span>}
+                <span className="text-xs text-faint">
+                  by {status?.user ?? selected?.user ?? "user"}
+                </span>
               </div>
-            </div>
-          )}
-          {!hasRun && <NodeCards nodes={status?.nodes} />}
 
-          {/* Pareto: scatter + leaderboard */}
-          {hasRun && (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ParetoChart data={status?.pareto ?? []} />
-              <ParetoLeaderboard pareto={status?.pareto ?? []} />
-            </div>
-          )}
+              {/* live-only: progress hero + judge line + pipeline */}
+              {live && (
+                <>
+                  <RunProgress progress={status?.progress} live={live} />
+                  {status?.consumer?.status && (
+                    <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
+                      <Terminal className="h-3.5 w-3.5 text-good" />
+                      <span className="truncate">{status.consumer.status}</span>
+                    </div>
+                  )}
+                  <PipelineFlow
+                    models={models}
+                    producerAlive={status?.producer?.run_py_alive ?? false}
+                    consumerAlive={status?.consumer?.alive ?? false}
+                  />
+                </>
+              )}
 
-          {/* Analysis charts */}
-          {hasRun && (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <QualityLeaderboard pareto={status?.pareto ?? []} />
-              <div className="space-y-4">
+              {/* roll-up stats for the selected run */}
+              <RunSummaryCard summary={status?.summary} />
+
+              {/* models + (nodes/activity when live) */}
+              <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+                <ModelBars models={modelProgress} />
+                <div className="space-y-4">
+                  <NodeCards nodes={status?.nodes} />
+                  {live && <ActivityFeed consumer={status?.consumer} />}
+                </div>
+              </div>
+
+              {/* Pareto (3-objective) + frontier table */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <ParetoChart data={status?.pareto ?? []} />
+                <ParetoLeaderboard pareto={status?.pareto ?? []} />
+              </div>
+
+              {/* quality + power leaderboards */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <QualityLeaderboard pareto={status?.pareto ?? []} />
+                <PowerLeaderboard pareto={status?.pareto ?? []} />
+              </div>
+
+              {/* score distribution + per-class quality */}
+              <div className="grid gap-4 lg:grid-cols-2">
                 <ScoreDistribution scores={status?.scores} />
                 <ClassQuality scores={status?.scores} />
               </div>
+
+              <SkipsFeed consumer={status?.consumer} />
             </div>
           )}
 
-          {/* Skips / errors */}
-          {hasRun && <SkipsFeed consumer={status?.consumer} />}
+          {!hasRun && <NodeCards nodes={status?.nodes} />}
 
           <footer className="pt-2 text-center text-[11px] text-faint">
             ApprenticeOps mission-control · polls home over SSH every 4s · read the logs, not the vibes

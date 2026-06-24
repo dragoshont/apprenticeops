@@ -52,6 +52,9 @@ def _scen_classes():
 
 SCEN = _scen_count()
 SCEN_CLASS = _scen_classes()
+# the safety/security scenario classes — a model's "security" score is its mean
+# judge score on these (higher = safer refusals + correct guardrail behaviour).
+SAFETY_CLASSES = {"secure", "guard"}
 
 
 def _count_lines(path):
@@ -224,13 +227,20 @@ def per_model_stage(run_id, prod, cons):
 
 
 def pareto(run_id, cons):
-    """Per-model quality x energy x speed, as data accumulates."""
+    """Per-model quality, energy, speed, watts, and security (mean judge score on
+    the safety scenarios — class `secure`/`guard`). Lower energy/watts = better;
+    higher quality/security = better."""
     wd = os.path.join(RUNS, run_id)
     judged = _read_jsonl(os.path.join(wd, f"judged.{run_id}.jsonl"))
-    jq = {}
+    jq, sec = {}, {}
     for r in judged:
-        if r.get("score") is not None:
-            jq.setdefault(r["model"], []).append(float(r["score"]))
+        sc = r.get("score")
+        if sc is None:
+            continue
+        m = r["model"]
+        jq.setdefault(m, []).append(float(sc))
+        if SCEN_CLASS.get(r.get("scenario")) in SAFETY_CLASSES:
+            sec.setdefault(m, []).append(float(sc))
     # results live in the mirror on home (or per-model slices committed)
     res = _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl"))
     sysd = {}
@@ -238,24 +248,51 @@ def pareto(run_id, cons):
         m = r.get("model")
         if not m:
             continue
-        d = sysd.setdefault(m, {"toks": [], "wh": []})
+        d = sysd.setdefault(m, {"toks": [], "wh": [], "watts": []})
         if r.get("decode_tok_s"):
             d["toks"].append(r["decode_tok_s"])
         if r.get("power.energy_wh"):
             d["wh"].append(r["power.energy_wh"])
+        if r.get("power.mean_watts"):
+            d["watts"].append(r["power.mean_watts"])
     out = []
     for m in sorted(set(jq) | set(sysd)):
         toks = sysd.get(m, {}).get("toks", [])
         wh = sysd.get(m, {}).get("wh", [])
+        watts = sysd.get(m, {}).get("watts", [])
         q = jq.get(m, [])
+        s = sec.get(m, [])
         out.append({
             "model": m,
             "quality": round(sum(q) / len(q), 2) if q else None,
+            "security": round(sum(s) / len(s), 2) if s else None,
             "tok_s": round(sorted(toks)[len(toks) // 2], 1) if toks else None,
             "wh": round(sum(wh) / len(wh), 4) if wh else None,
+            "watts": round(sum(watts) / len(watts), 1) if watts else None,
             "n": len(q),
         })
     return out
+
+
+def run_summary(run_id):
+    """Roll-up metrics for the selected run's detail panel: mean power draw,
+    CPU-minutes (sum of wall-clock), total energy, and overall quality/security."""
+    wd = os.path.join(RUNS, run_id)
+    res = _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl"))
+    judged = _read_jsonl(os.path.join(wd, f"judged.{run_id}.jsonl"))
+    watts = [r["power.mean_watts"] for r in res if r.get("power.mean_watts")]
+    walls = [r["wall_s"] for r in res if r.get("wall_s")]
+    wh = [r["power.energy_wh"] for r in res if r.get("power.energy_wh")]
+    q = [float(r["score"]) for r in judged if r.get("score") is not None]
+    sec = [float(r["score"]) for r in judged if r.get("score") is not None
+           and SCEN_CLASS.get(r.get("scenario")) in SAFETY_CLASSES]
+    return {
+        "mean_watts": round(sum(watts) / len(watts), 1) if watts else None,
+        "cpu_minutes": round(sum(walls) / 60, 1) if walls else None,
+        "energy_wh": round(sum(wh), 3) if wh else None,
+        "quality_overall": round(sum(q) / len(q), 2) if q else None,
+        "security_overall": round(sum(sec) / len(sec), 2) if sec else None,
+    }
 
 
 def score_breakdown(run_id):
@@ -457,6 +494,7 @@ def sessions():
         out.append({
             "run_id": rid,
             "batch": meta.get("batch") or "",
+            "user": meta.get("user") or "user",
             "state": state,
             "started_at": started,
             "ended_at": last,
@@ -509,7 +547,9 @@ def main():
         "markers": markers,
         "expect": expect,
         "meta": meta,
+        "user": meta.get("user") or "user",
         "progress": progress,
+        "summary": run_summary(run_id),
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
