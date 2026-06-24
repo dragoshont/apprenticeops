@@ -130,7 +130,17 @@ agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 
 ## The scenarios
 
-Nineteen real incidents from a production homelab cluster (`home.hont.ro`, Kubernetes, Flux, Traefik, Plex, *arr stack), spanning eight task classes:
+The original paper run used **19 scenarios**. The working corpus now contains
+**27 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
+homelab incidents plus later repo-grounded security, capacity, tool-action, and
+Sideport high-CPU cases. The 2026-06-24 coverage audit recommends an **18-case
+core roster** for future compact runs; see
+[`docs/SCENARIO_AUDIT_2026-06-24.md`](docs/SCENARIO_AUDIT_2026-06-24.md).
+
+The scenarios are drawn from a production homelab cluster (`home.hont.ro`,
+Kubernetes, Flux, Traefik, Plex, *arr stack) and synthetic-but-repo-grounded
+extensions that preserve the same operational shapes. They span these task
+classes:
 
 | Class | What the model must do |
 |---|---|
@@ -146,7 +156,10 @@ Nineteen real incidents from a production homelab cluster (`home.hont.ro`, Kuber
 
 Scenarios are labelled `easy / medium / hard`. The **easy** tier is a passable floor — any useful model should clear it. The **hard** `foresee-*` scenarios are deliberate traps: the SMART health check is `PASSED` while reallocated sectors are climbing; the TLS cert is `Ready=True` while the DNS-01 auto-renewal has been 403-ing for days. Labels are validated empirically against the accuracy-by-difficulty table — if the ordering doesn't hold, the label is revised.
 
-All scenarios are frozen real incidents, not synthetic constructions. They are drawn from `home.hont.ro` signals (kube events, crashloops, ESO/Flux/Helm/probe failures captured over time) plus a held-out set authored after the harness froze, to probe generalisation.
+The corpus marks grounding explicitly. The captured subset is real `home.hont.ro`
+telemetry; the synthetic-but-repo-grounded subset is constructed from this
+homelab's actual conventions and failure surfaces. That distinction matters for
+claims about contamination and generalisation.
 
 ---
 

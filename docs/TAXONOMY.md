@@ -38,7 +38,13 @@ test class(es).
 (reactive + early-proactive)** thoroughly and **opens P6** as the predictive
 frontier (honestly scoped as future work, per PAPER.md §1).
 
-## 3. Current coverage (what scenarios.json has today)
+## 3. Original coverage seed and current audit
+
+The table below records the original seed coverage. It is historically useful,
+but no longer describes the live corpus: `data/scenarios.json` now has 27
+scenarios, including `secure`, `capacity`, and Sideport high-CPU cases. See
+[`SCENARIO_AUDIT_2026-06-24.md`](SCENARIO_AUDIT_2026-06-24.md) for the current
+inventory, homelab-fidelity audit, and compact-roster recommendation.
 
 | Pillar | Class | Scenarios now | Grounding | Real-data source |
 |---|---|---|---|---|
@@ -51,11 +57,17 @@ frontier (honestly scoped as future work, per PAPER.md §1).
 | P4 | `upgrade` | 1 | grounded | Helm changelog |
 | Toil | `augment` | 1 | closed-book | raw events → JSON |
 
-**Coverage verdict:** P1–P4 + toil seeded (1 each); **P5 Secure and P6 Foresee
-are entirely absent.** That's the priority gap — and P5 is exactly the
-"DevSecOps" angle you asked about.
+**Original coverage verdict:** P1–P4 + toil were seeded (1 each); at that point
+**P5 Secure and P6 Foresee were absent**. That gap has since been addressed in
+the live JSON corpus. The current remaining gaps are different: backup/restore,
+network/DNS partition, Flux drift, Authentik/OIDC failures, and resource-pressure
+scenarios.
 
 ## 4. Gaps to fill (the authoring backlog, from real homelab data)
+
+The highest-priority next additions from the 2026-06-24 audit are backup restore
+verification and network/DNS partition scenarios. Prefer replacing lower-priority
+extended cases over growing the default set indefinitely.
 
 Target **≥6 scenarios/class**. New classes + concrete cases grounded in data this
 cluster actually emits:
