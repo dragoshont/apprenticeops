@@ -1,0 +1,11 @@
+# Overlay for running mission-control ON the home node itself.
+#
+#   docker compose -f compose.yaml -f compose.host.yaml up -d --build
+#
+# host networking makes `ssh home` / `ssh home-ai.hont.ro` resolve inside the
+# container exactly as they do on the host (no bridge DNS games), and binds the
+# app directly on the host's LAN interface (192.168.1.201:8770). The base file's
+# `ports:` are ignored under host networking (Docker warns; harmless).
+services:
+  mission-control:
+    network_mode: host
