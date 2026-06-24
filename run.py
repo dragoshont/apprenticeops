@@ -1599,16 +1599,18 @@ def main():
                         "net.total_kb": round(sum(_net) * SAMPLE_INTERVAL_S, 1) if _net else None,
                         "disk.read_mb": round(sum(_disk) * SAMPLE_INTERVAL_S, 1) if _disk else None,
                         "samples": sampler.samples,
-                        # Verbatim model answer (+ thinking trace) retained in the
-                        # durable row so a run can be re-judged, shown as a transcript,
-                        # or a judge call audited against the actual output. The judge
-                        # still reads outputs/<...>.txt; this is the committed copy.
-                        "gen_ai.completion": text,
-                        "gen_ai.thinking": think_text or None,
                         **env_fp,
                         **meta,
                         **tel,
                     }
+                    # Verbatim model answer (+ thinking trace) retained in the durable
+                    # row so a run can be re-judged, shown as a transcript, or a judge
+                    # call audited against the actual output. Assigned AFTER the spreads
+                    # so a future gen_ai.* telemetry key can never silently clobber the
+                    # answer. The judge still reads outputs/<...>.txt; this is the
+                    # committed copy.
+                    row["gen_ai.completion"] = text
+                    row["gen_ai.thinking"] = think_text or None
                     fout.write(json.dumps(row) + "\n"); fout.flush()
                     suffix = f"__r{rep}" if args.repeats > 1 else ""
                     _osafe = model.replace('/', '_').replace(':', '_')

@@ -39,11 +39,11 @@ export default function App() {
   const hasRun = !!status?.run_id;
   const live = state === "running";
   const selected = sessions.find((s) => s.run_id === status?.run_id);
-  // Liveness is GLOBAL, not tied to the selected run: a run can be live while you
-  // browse a finished one. This drives the persistent "Follow" control + the
-  // Start guard, so the header never says "nothing running" while a run runs.
-  const liveSession = sessions.find((s) => s.state === "running");
-  const liveElsewhere = !!liveSession && liveSession.run_id !== status?.run_id;
+  // A run "owns" the single ai node while it is running OR paused (the backend
+  // rejects a new start in both states — app.py /api/control/start), so the guard
+  // and the Follow control must cover both, not just live.
+  const activeSession = sessions.find((s) => s.state === "running" || s.state === "paused");
+  const busyElsewhere = !!activeSession && activeSession.run_id !== status?.run_id;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -64,17 +64,25 @@ export default function App() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {(live || state === "paused") && <StatePill state={state} />}
-          {liveElsewhere && (
+          {busyElsewhere && activeSession && (
             <button
-              onClick={() => liveSession && refresh(liveSession.run_id)}
-              className="pill bg-good/15 text-good ring-1 ring-good/30 transition hover:bg-good/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-good"
-              title={`A run is live: ${liveSession!.run_id} — click to follow it`}
+              onClick={() => refresh(activeSession.run_id)}
+              className={`pill ring-1 transition focus:outline-none focus-visible:ring-2 ${
+                activeSession.state === "paused"
+                  ? "bg-warn/15 text-warn ring-warn/30 hover:bg-warn/25 focus-visible:ring-warn"
+                  : "bg-good/15 text-good ring-good/30 hover:bg-good/25 focus-visible:ring-good"
+              }`}
+              title={`A run is ${activeSession.state}: ${activeSession.run_id} — click to follow it`}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-good motion-safe:animate-pulse" />
-              run live · Follow
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  activeSession.state === "paused" ? "bg-warn" : "bg-good motion-safe:animate-pulse"
+                }`}
+              />
+              run {activeSession.state === "paused" ? "paused" : "live"} · Follow
             </button>
           )}
-          <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} liveElsewhere={liveElsewhere} />
+          <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} liveElsewhere={busyElsewhere} />
           {auth?.auth_enabled ? (
             <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />

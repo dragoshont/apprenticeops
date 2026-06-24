@@ -16,9 +16,9 @@ import { Sparkles } from "lucide-react";
 // Best practice for a 3rd objective on a 2D chart is COLOUR, not bubble area.
 function secColor(sec: number | null): string {
   if (sec == null) return "#64748b"; // unknown
-  if (sec >= 3) return "#34d399"; // green — safe
-  if (sec >= 2) return "#fbbf24"; // amber
-  return "#f87171"; // red — weak guardrails
+  if (sec >= 4) return "#34d399"; // green — strong (≥4/5)
+  if (sec >= 3) return "#fbbf24"; // amber — mid (3–4)
+  return "#f87171"; // red — weak guardrails (<3)
 }
 
 /** A model is Pareto-optimal (quality↑ vs energy↓) if none dominates it. */
@@ -40,16 +40,16 @@ function frontier(pts: ParetoPoint[]): Set<string> {
 
 // Security maps to a SHAPE as well as a colour, so the third objective is never
 // carried by colour alone (WCAG 1.4.1 — readable for colour-blind users).
-function secBand(sec: number | null): "safe" | "mid" | "weak" | "unknown" {
+function secBand(sec: number | null): "strong" | "mid" | "weak" | "unknown" {
   if (sec == null) return "unknown";
-  if (sec >= 3) return "safe";
-  if (sec >= 2) return "mid";
+  if (sec >= 4) return "strong";
+  if (sec >= 3) return "mid";
   return "weak";
 }
 
 function SecGlyph({ cx, cy, c, band, r = 6 }: { cx: number; cy: number; c: string; band: string; r?: number }) {
   const stroke = "#0b1020";
-  if (band === "safe")
+  if (band === "strong")
     return <circle cx={cx} cy={cy} r={r} fill={c} fillOpacity={0.9} stroke={stroke} strokeWidth={1} />;
   if (band === "mid")
     return <polygon points={`${cx},${cy - r - 1} ${cx + r + 1},${cy} ${cx},${cy + r + 1} ${cx - r - 1},${cy}`} fill={c} fillOpacity={0.9} stroke={stroke} strokeWidth={1} />;
@@ -94,10 +94,10 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
     <Card
       title="Pareto · quality vs energy vs security"
       icon={<Sparkles className="h-4 w-4 text-accent" />}
-      hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its shape + colour show the security score (● safe ◆ mid ▼ weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
+      hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its shape + colour show the security score (● strong ◆ mid ▼ weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
       right={
         <div className="flex items-center gap-2.5 text-[10px] text-faint">
-          <span className="inline-flex items-center gap-1"><span className="text-good">●</span> safe</span>
+          <span className="inline-flex items-center gap-1"><span className="text-good">●</span> strong</span>
           <span className="inline-flex items-center gap-1"><span className="text-warn">◆</span> mid</span>
           <span className="inline-flex items-center gap-1"><span className="text-bad">▼</span> weak</span>
         </div>
@@ -132,12 +132,12 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
                 />
                 <ZAxis type="number" range={[60, 60]} />
                 <Tooltip content={<TipBox />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
-                <Scatter data={pts} shape={<Dot />} />
+                <Scatter data={pts} shape={<Dot />} isAnimationActive={false} />
               </ScatterChart>
             </ResponsiveContainer>
           </div>
           <p className="mt-1 text-center text-[10px] text-faint">
-            shape + colour = security (● safe ◆ mid ▼ weak) · ringed = on the quality/energy frontier · top-left is best
+            shape + colour = security (● strong ◆ mid ▼ weak) · ringed = on the quality/energy frontier · top-left is best
           </p>
         </>
       )}

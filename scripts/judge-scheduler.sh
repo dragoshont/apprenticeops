@@ -10,7 +10,11 @@
 # It is decoupled from the producer (only the `.done` marker couples them),
 # idempotent, and safe to `kill -9` + restart. Every stage transition is appended
 # to data/runs/<RUN_ID>/pipeline-ledger.jsonl (the live status board AND the paper's
-# reproducibility trace). No secrets are ever written or committed.
+# reproducibility trace), including each model's verbatim answer (gen_ai.completion)
+# so a run can be re-judged or a judge call audited. That is intentional and safe: a
+# completion can only echo the already-public scenario context + gold answers, and the
+# models are never given real secret VALUES (scenarios carry secret NAMES + "does not
+# exist" signals only), so no real secret is ever written or committed.
 #
 #   RUN_ID=roster-YYYYMMDD-HHMM ./scripts/judge-scheduler.sh            # run until killed
 #   RUN_ID=... EXPECT=2 ./scripts/judge-scheduler.sh                    # dry-run: stop after 2 judged

@@ -81,7 +81,7 @@ export function QualityLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                 interval={0}
               />
               <Tooltip content={<TipN unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
-              <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={18}>
+              <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={18} isAnimationActive={false}>
                 {data.map((d, i) => (
                   <Cell key={i} fill={ACCENT} fillOpacity={d.n != null && d.n < fullN ? 0.4 : 1} />
                 ))}
@@ -114,7 +114,7 @@ export function ScoreDistribution({ scores }: { scores?: Scores }) {
               <XAxis dataKey="score" stroke={AXIS} fontSize={11} tickLine={false} />
               <YAxis stroke={AXIS} fontSize={11} tickLine={false} allowDecimals={false} />
               <Tooltip content={<Tip unit=" answers" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={48}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive={false}>
                 {data.map((d, i) => (
                   <Cell key={i} fill={Number(d.score) >= 3 ? GOOD : Number(d.score) >= 2 ? WARN : "#f87171"} />
                 ))}
@@ -155,7 +155,7 @@ export function ClassQuality({ scores }: { scores?: Scores }) {
                 interval={0}
               />
               <Tooltip content={<TipN unit=" / 5" />} cursor={{ fill: "rgba(127,127,127,0.08)" }} />
-              <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={16}>
+              <Bar dataKey="quality" radius={[0, 4, 4, 0]} maxBarSize={16} isAnimationActive={false}>
                 {data.map((d, i) => (
                   <Cell
                     key={i}
@@ -262,7 +262,6 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
   const rows = pareto
     .filter((p) => p.wh != null)
     .sort((a, b) => (a.wh ?? Infinity) - (b.wh ?? Infinity)); // lower energy first
-  const fullN = Math.max(1, ...rows.map((p) => p.n ?? 0));
   return (
     <Card
       title="Power leaderboard"
@@ -282,7 +281,6 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                 <th className="px-2 py-2 text-right font-medium">Wh/ans</th>
                 <th className="px-2 py-2 text-right font-medium">Watts</th>
                 <th className="px-2 py-2 text-right font-medium">Quality</th>
-                <th className="px-2 py-2 text-right font-medium">n</th>
               </tr>
             </thead>
             <tbody>
@@ -293,7 +291,6 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-good">{p.wh ?? "—"}</td>
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.watts ?? "—"}</td>
                   <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">{p.quality ?? "—"}</td>
-                  <td className={`px-2 py-2 text-right font-mono tabular-nums ${p.n < fullN ? "text-warn" : "text-faint"}`}>{p.n}</td>
                 </tr>
               ))}
             </tbody>

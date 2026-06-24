@@ -76,6 +76,8 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 |---|---|---|---|
 | `gen_ai.usage.input_tokens` / `output_tokens` | tokens | Ollama | Prompt / completion token counts |
 | `gen_ai.usage.output_chars` | chars | run.py | Completion character count → **tokenizer-independent** throughput (C2) |
+| `gen_ai.completion` | str | run.py | **Verbatim model answer** — retained in the durable row so a run can be re-judged, shown as a transcript, or a judge verdict audited against the actual output |
+| `gen_ai.thinking` | str \| null | run.py | Verbatim thinking-phase text (null when `--think` is off) |
 | `gen_ai.thinking.chars` | chars | run.py | Chars emitted inside the think phase (split from the answer) |
 | `gen_ai.server.time_to_first_token_s` | s | run.py | **TTFT** (prefill latency) |
 | `phase.prefill_s` / `phase.decode_s` / `phase.think_s` | s | run.py | Phase durations (prefill / answer-decode / thinking) |

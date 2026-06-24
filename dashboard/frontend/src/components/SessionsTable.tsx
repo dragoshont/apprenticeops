@@ -44,17 +44,8 @@ export function SessionsTable({
                   <tr
                     key={s.run_id}
                     onClick={() => onSelect(s.run_id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onSelect(s.run_id);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
                     aria-current={active ? "true" : undefined}
-                    aria-label={`Run ${s.run_id}, ${s.state}, ${s.pct}% complete, by ${s.user ?? "user"} — open details`}
-                    className={`cursor-pointer border-t border-line/70 transition hover:bg-panel2/60 focus:outline-none focus-visible:bg-accent/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent ${
+                    className={`cursor-pointer border-t border-line/70 transition hover:bg-panel2/60 ${
                       active ? "bg-accent/[0.06]" : ""
                     }`}
                   >
@@ -111,7 +102,17 @@ export function SessionsTable({
                       {s.state === "running" ? (s.eta_human ?? "—") : "—"}
                     </td>
                     <td className="px-2 py-2.5 text-right">
-                      <ChevronRight className="inline h-4 w-4 text-faint" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(s.run_id);
+                        }}
+                        aria-label={`Open run ${s.run_id} — ${s.state}, ${s.pct}% complete, by ${s.user ?? "user"}`}
+                        className="inline-grid place-items-center rounded text-faint outline-none transition hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
                     </td>
                   </tr>
                 );

@@ -320,16 +320,22 @@ def score_breakdown(run_id):
 
 
 def _annotate_freq(lines):
-    """Make the ai node's `freq=` line self-explanatory. When Turbo is OFF the clock
-    is pinned to the experiment's base regime (locked, ~1.7 GHz on the i5-8350U);
-    when ON the node is idle/unlocked and boosts (~3.6 GHz) — which is why a FINISHED
-    run shows a high clock. Honest label so the number is not mistaken for a
-    determinism leak (the in-run rows carry the real pinned freq)."""
+    """Make the ai node's `freq=` line self-explanatory. When Turbo is OFF *and* the
+    governor is `performance` the clock is pinned to the experiment's base regime
+    (locked, ~1.7 GHz on the i5-8350U); when Turbo is ON the node is idle/unlocked and
+    boosts (~3.6 GHz) — which is why a FINISHED run shows a high clock. Honest label so
+    the number is not mistaken for a determinism leak (the in-run rows carry the real
+    pinned freq). "locked" is claimed only when BOTH turbo and governor match the
+    regime — a turbo-off-but-governor-drifted node is labelled by its turbo state."""
     turbo = next((l.split("=", 1)[1].strip() for l in lines if l.startswith("turbo=")), None)
+    gov = next((l.split("=", 1)[1].strip() for l in lines if l.startswith("gov=")), None)
     out = []
     for l in lines:
         if l.startswith("freq=") and turbo in ("0", "1"):
-            tag = "locked · turbo off" if turbo == "1" else "unlocked · turbo on"
+            if turbo == "1":
+                tag = "locked · turbo off" if gov == "performance" else f"turbo off · gov {gov}"
+            else:
+                tag = "unlocked · turbo on"
             out.append(f"{l} ({tag})")
         else:
             out.append(l)
