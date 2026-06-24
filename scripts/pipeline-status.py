@@ -292,6 +292,8 @@ def run_summary(run_id):
         "energy_wh": round(sum(wh), 3) if wh else None,
         "quality_overall": round(sum(q) / len(q), 2) if q else None,
         "security_overall": round(sum(sec) / len(sec), 2) if sec else None,
+        "n": len(q),
+        "n_security": len(sec),
     }
 
 
@@ -317,6 +319,23 @@ def score_breakdown(run_id):
     return {"hist": hist, "by_class": by_class}
 
 
+def _annotate_freq(lines):
+    """Make the ai node's `freq=` line self-explanatory. When Turbo is OFF the clock
+    is pinned to the experiment's base regime (locked, ~1.7 GHz on the i5-8350U);
+    when ON the node is idle/unlocked and boosts (~3.6 GHz) — which is why a FINISHED
+    run shows a high clock. Honest label so the number is not mistaken for a
+    determinism leak (the in-run rows carry the real pinned freq)."""
+    turbo = next((l.split("=", 1)[1].strip() for l in lines if l.startswith("turbo=")), None)
+    out = []
+    for l in lines:
+        if l.startswith("freq=") and turbo in ("0", "1"):
+            tag = "locked · turbo off" if turbo == "1" else "unlocked · turbo on"
+            out.append(f"{l} ({tag})")
+        else:
+            out.append(l)
+    return out
+
+
 def nodes():
     home = _sh("echo $(hostname); uptime | sed 's/.*load average/load/'; "
                "free -m | awk '/Mem:/{print $3\"/\"$2\" MB\"}'; "
@@ -328,7 +347,7 @@ def nodes():
              "free -m | awk '/Mem:/{print $3\"/\"$2\" MB\"}'; df -h / | awk 'NR==2{print $5\" used\"}'")
     return {
         "home": {"reachable": True, "lines": [l for l in home.splitlines() if l]},
-        "ai": {"reachable": bool(ai), "lines": [l for l in ai.splitlines() if l]},
+        "ai": {"reachable": bool(ai), "lines": _annotate_freq([l for l in ai.splitlines() if l])},
     }
 
 
