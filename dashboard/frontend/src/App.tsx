@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { usePipeline } from "./usePipeline";
 import { useTheme } from "./useTheme";
+import { fetchConfig } from "./api";
 import { Controls } from "./components/Controls";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { RunProgress } from "./components/RunProgress";
@@ -8,13 +10,19 @@ import { PipelineFlow } from "./components/PipelineFlow";
 import { NodeCards } from "./components/NodeCards";
 import { ModelBars } from "./components/ModelBars";
 import { ParetoChart } from "./components/ParetoChart";
+import { QualityLeaderboard, ScoreDistribution, ClassQuality } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
 import { StatePill, fmtAgo } from "./components/ui";
-import { Radio, AlertTriangle, Terminal } from "lucide-react";
+import { Radio, AlertTriangle, Terminal, Lock, LockOpen } from "lucide-react";
 
 export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
   const { theme, toggle } = useTheme();
+  const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
+
+  useEffect(() => {
+    fetchConfig().then(setAuth).catch(() => setAuth(null));
+  }, []);
 
   const state = status?.state ?? "idle";
   const batches = status?.batches ?? [];
@@ -51,6 +59,21 @@ export default function App() {
         <div className="flex flex-wrap items-center gap-3">
           <StatePill state={state} />
           <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} />
+          {auth?.auth_enabled && (
+            <span
+              className="pill bg-good/15 text-good"
+              title={auth.user ? `signed in as ${auth.user}` : "Authentik enforced"}
+            >
+              <Lock className="h-3 w-3" />
+              {auth.user ?? "auth"}
+            </span>
+          )}
+          {auth && !auth.auth_enabled && (
+            <span className="pill bg-muted/15 text-muted" title="No authentication (open)">
+              <LockOpen className="h-3 w-3" />
+              open
+            </span>
+          )}
           <ThemeToggle theme={theme} onToggle={toggle} />
         </div>
       </header>
@@ -109,6 +132,17 @@ export default function App() {
             <div className="grid gap-4 lg:grid-cols-2">
               <ParetoChart data={status?.pareto ?? []} />
               <SkipsFeed consumer={status?.consumer} />
+            </div>
+          )}
+
+          {/* Analysis charts */}
+          {hasRun && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <QualityLeaderboard pareto={status?.pareto ?? []} />
+              <div className="space-y-4">
+                <ScoreDistribution scores={status?.scores} />
+                <ClassQuality scores={status?.scores} />
+              </div>
             </div>
           )}
 

@@ -67,6 +67,27 @@ export interface ParetoPoint {
   n: number;
 }
 
+export interface ScoreBucket {
+  score: number;
+  count: number;
+}
+
+export interface ClassQuality {
+  class: string;
+  quality: number;
+  n: number;
+}
+
+export interface Scores {
+  hist: ScoreBucket[];
+  by_class: ClassQuality[];
+}
+
+export interface AppConfig {
+  auth_enabled: boolean;
+  user: string | null;
+}
+
 export interface Progress {
   inf_done: number;
   inf_total: number;
@@ -128,6 +149,7 @@ export interface Status {
   models?: ModelStage[];
   model_progress?: ModelProgress[];
   pareto?: ParetoPoint[];
+  scores?: Scores;
   batches?: Batch[];
   sessions?: Session[];
   nodes?: { home: NodeInfo; ai: NodeInfo };

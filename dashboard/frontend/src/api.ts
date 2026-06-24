@@ -17,6 +17,12 @@ export async function fetchStatus(runId?: string | null): Promise<Status> {
   return res.json();
 }
 
+export async function fetchConfig(): Promise<{ auth_enabled: boolean; user: string | null }> {
+  const res = await fetch("/api/config");
+  if (!res.ok) throw new Error(`config → ${res.status}`);
+  return res.json();
+}
+
 export const control = {
   start: (batch: string) => jpost("/api/control/start", { batch }),
   stop: (runId?: string | null) => jpost("/api/control/stop", { run_id: runId ?? null }),

@@ -17,6 +17,7 @@ import shlex
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
@@ -39,7 +40,18 @@ def _scen_count():
         return 24
 
 
+def _scen_classes():
+    """Map scenario id -> class (judged rows carry only the scenario id)."""
+    try:
+        s = json.load(open(os.path.join(REPO, "data", "scenarios.json")))
+        items = s if isinstance(s, list) else s.get("scenarios", list(s.values()))
+        return {it.get("id"): it.get("class") for it in items if isinstance(it, dict)}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 SCEN = _scen_count()
+SCEN_CLASS = _scen_classes()
 
 
 def _count_lines(path):
@@ -246,6 +258,28 @@ def pareto(run_id, cons):
     return out
 
 
+def score_breakdown(run_id):
+    """Judge-score distribution + mean quality per scenario class, for the charts.
+    Judged rows carry score (1-5) + scenario id; class comes from scenarios.json."""
+    wd = os.path.join(RUNS, run_id)
+    judged = _read_jsonl(os.path.join(wd, f"judged.{run_id}.jsonl"))
+    buckets, cls = {}, {}
+    for r in judged:
+        sc = r.get("score")
+        if sc is None:
+            continue
+        sc = float(sc)
+        b = round(sc * 2) / 2          # nearest 0.5
+        buckets[b] = buckets.get(b, 0) + 1
+        c = SCEN_CLASS.get(r.get("scenario"))
+        if c:
+            cls.setdefault(c, []).append(sc)
+    hist = [{"score": k, "count": buckets[k]} for k in sorted(buckets)]
+    by_class = [{"class": c, "quality": round(sum(v) / len(v), 2), "n": len(v)}
+                for c, v in sorted(cls.items(), key=lambda kv: -sum(kv[1]) / len(kv[1]))]
+    return {"hist": hist, "by_class": by_class}
+
+
 def nodes():
     home = _sh("echo $(hostname); uptime | sed 's/.*load average/load/'; "
                "free -m | awk '/Mem:/{print $3\"/\"$2\" MB\"}'; "
@@ -393,6 +427,20 @@ def sessions():
         total = inf_total + judge_total
         pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
         started = meta.get("started_at")
+        # legacy runs predate run.meta — recover a start: the run-id timestamp
+        # (<batch>-YYYYMMDD-HHMMSS) if present, else the oldest artefact mtime.
+        if not started:
+            tm = re.search(r"(\d{8})-(\d{6})", rid)
+            if tm:
+                try:
+                    started = datetime.strptime(tm.group(1) + tm.group(2),
+                                                "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc).timestamp()
+                except ValueError:
+                    started = None
+        if not started:
+            arts = [os.path.getmtime(p) for p in glob.glob(os.path.join(d, "*")) if os.path.isfile(p)]
+            arts += [os.path.getmtime(p) for p in glob.glob(os.path.join(d, "_mirror", "*"))]
+            started = min(arts) if arts else None
         # last activity = newest mtime among the live artefacts
         act = [os.path.getmtime(p) for p in (
             os.path.join(d, ".committed"),
@@ -468,6 +516,7 @@ def main():
         "models": per_model_stage(run_id, prod, cons),
         "model_progress": model_progress(run_id, prod, cons),
         "pareto": pareto(run_id, cons),
+        "scores": score_breakdown(run_id),
         "batches": batches(),
         "sessions": sess,
         "nodes": nodes(),

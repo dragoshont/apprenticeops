@@ -37,7 +37,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -46,6 +46,13 @@ HOME_SSH = os.environ.get("HOME_SSH", "homelab")
 AI_SSH = os.environ.get("AI_SSH", "home-ai.hont.ro")
 REPO_DIR = os.environ.get("REPO_DIR", "~/apprenticeops")
 POLL_S = float(os.environ.get("POLL_S", "5"))
+
+# Auth toggle. When AUTH_ENABLED is true the app trusts an Authentik forward-auth
+# proxy in front of it: that proxy authenticates the user and injects a username
+# header (AUTH_HEADER). Requests without it are rejected. When false, no auth.
+AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+AUTH_HEADER = os.environ.get("AUTH_HEADER", "X-authentik-username")
+
 # Serve the built Vite app if present (frontend/dist); in dev, Vite serves the UI
 # itself and proxies /api + /ws here, so this mount is a no-op.
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "dist"
@@ -54,6 +61,27 @@ _RUNID_RE = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 _BATCHID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
 
 app = FastAPI(title="ApprenticeOps mission-control", version="0.1.0")
+
+
+@app.middleware("http")
+async def _auth_gate(request: Request, call_next):
+    """When auth is enabled, every request must carry the Authentik-injected user
+    header (set by the forward-auth proxy). /healthz is always open for probes."""
+    if AUTH_ENABLED and request.url.path != "/healthz":
+        if not request.headers.get(AUTH_HEADER):
+            return JSONResponse({"detail": "authentication required"}, status_code=401)
+    return await call_next(request)
+
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
+
+@app.get("/api/config")
+def api_config(request: Request):
+    return {"auth_enabled": AUTH_ENABLED,
+            "user": request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None}
 
 
 # ----------------------------------------------------------------------------- ssh
@@ -159,6 +187,13 @@ def api_start(req: StartReq):
     models = b.get("models", "")
     if not re.match(r"^[A-Za-z0-9._/-]{1,120}$", models):
         raise HTTPException(400, "batch points at an unsafe models path")
+    # one run at a time: refuse if a run is currently active (running or paused).
+    cur = status(None, max_age=0.0)
+    active = (cur.get("state") in ("running", "paused")
+              or (cur.get("producer") or {}).get("run_py_alive")
+              or (cur.get("consumer") or {}).get("alive"))
+    if active:
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
     run_id = f"{req.batch}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     inner = (_SYNC +
              f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' "
