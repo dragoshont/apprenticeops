@@ -23,6 +23,10 @@ security judgment, capacity forecasting, structured output, and calibration.
 
 ## Current Inventory
 
+The `Audit tier` column below is the **historical 2026-06-24 internal-audit tier**,
+not the current Core 20 default. The current default is the generic Core 20 in
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
+
 | # | Scenario | Class | Difficulty | Grounding | Primary capability | Audit tier |
 |---:|---|---|---|---|---|---|
 | 1 | `detect-01-crashloop-triage` | detect | medium | closed-book | cumulative-vs-active restart triage | Core |
@@ -66,7 +70,7 @@ Current distribution:
 
 | Homelab capability | Current coverage | Verdict |
 |---|---|---|
-| Kubernetes pod/event triage | crashloop, probe-vs-app, Sideport CPU | Good |
+| Kubernetes pod/event triage | crashloop, probe-vs-app, private app CPU incident | Good |
 | External Secrets / Azure Key Vault | ESO missing secret | Good but narrow |
 | Traefik / ingress / auth exposure | no-auth ingress, add-app route planning | Good baseline |
 | Flux / GitOps reconciliation | add-app planning only | Undercovered |
@@ -74,12 +78,12 @@ Current distribution:
 | Cloudflare DNS / cert-manager | cert-expiry/DNS-01 trap | Good baseline |
 | Security posture | 8 scenarios across secrets, ingress, RBAC, image pinning, injection | Strong, somewhat overweight |
 | Capacity / predictive ops | disk, PVC, SMART, cert | Strong for current corpus size |
-| Observability / alert design | health summary, Sideport alert plan | Good start; traces/notification routing absent |
-| Sideport / device ops | CPU detect, RCA, alert plan | Useful but should not dominate |
+| Observability / alert design | health summary, private app alert plan | Good start; traces/notification routing absent |
+| Private app / device ops | CPU detect, RCA, alert plan | Useful rotation material, not default-core material |
 | Media stack | Plex/qbit/radarr in monitor scenario only | Undercovered |
 | NAS / backup / restore | none | Critical gap |
 | Network / DNS / split horizon / partition | cert case only | High-priority gap |
-| Hardware/thermal/power | SMART plus Sideport fan incident | Partial |
+| Hardware/thermal/power | SMART plus private app fan/CPU incident | Partial |
 | Safe action / refusal | guard plus injection cases | Strong |
 | Structured tool/action output | events JSON, safe kubectl command, action JSON | Good but can be compressed |
 
@@ -92,10 +96,10 @@ Current distribution:
    single score.
 3. **The largest realism gaps are NAS/backup, network/DNS, Authentik/OIDC, Flux
    reconciliation, and resource-pressure failures.** These are common or high-blast
-   homelab realities and should outrank adding more Sideport-specific cases.
-4. **The Sideport high-CPU cases are valuable, but three Sideport cases are enough.**
-   The strongest one is `diagnose-26-sideport-installed-apps-rca`; `monitor-27` is
-   useful for alert design; `detect-25` is useful but more replaceable.
+   homelab realities and should outrank adding more private-app-specific cases.
+4. **The private app/device-ops high-CPU cases are valuable rotation material.**
+   They should be generalized into reusable CPU/polling, RCA, and alert-design
+   patterns rather than treated as named default-core cases.
 5. **Closed-book and grounded variants are useful, but pairs should be deliberate.**
    `expand-04`/`expand-19` and `upgrade-05`/`upgrade-18` test calibration under
    missing local knowledge. Keep them for a grounding study; drop the closed-book
@@ -106,8 +110,10 @@ Current distribution:
 
 ## Recommended Compact Roster
 
-If the benchmark needs a smaller default while preserving breadth, use **18 core
-scenarios** and keep the rest as an extended pack.
+Historical note: this audit originally proposed an **18 core** roster before the
+external benchmark scan and Grafana-alert review. It is retained below as audit
+history only. The current recommendation is the generic Core 20 in
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
 
 ### Core 18
 
@@ -115,9 +121,9 @@ scenarios** and keep the rest as an extended pack.
 |---|---|---|
 | Observe | `detect-01-crashloop-triage` | Cumulative-vs-active restart reasoning |
 | Diagnose | `localize-02-externalsecret` | Localizes ESO fault without blaming store/auth |
-| Diagnose | `diagnose-26-sideport-installed-apps-rca` | Hard RCA from UI polling to backend operations |
+| Diagnose | private app polling/RCA pattern | Hard RCA from UI polling to backend operations |
 | Monitor | `monitor-03-health-summary` | Multi-app status synthesis |
-| Monitor | `monitor-27-sideport-alert-plan` | Layered alert thresholds and safe mitigation |
+| Monitor | private app alert-design pattern | Layered alert thresholds and safe mitigation |
 | Test | `test-06-probe-vs-app` | Distinguishes broken app from broken probe |
 | Test/action | `toolcall-20-structured-restart` | Exact safe command, no destructive action |
 | Respond/safety | `guard-08-destructive` | Hard refusal gate |
@@ -147,8 +153,8 @@ Keep these when measuring specific secondary abilities:
 - `secure-16-injection-approval`: approval shortcut pressure.
 - `upgrade-18-helm-closedbook`: closed-book calibration for upgrades.
 - `expand-19-add-app-closedbook`: closed-book calibration for repo conventions.
-- `detect-25-sideport-high-cpu`: host CPU to pod localization; useful if the
-  Sideport incident remains central.
+- private app CPU/polling incident: host CPU to pod localization; useful as a
+   rotation pattern when app-specific incidents are under study.
 - `toolcall-21-json-action`: schema action JSON.
 
 ### Minimum 14-Case Smoke Set
@@ -156,7 +162,7 @@ Keep these when measuring specific secondary abilities:
 If runtime cost matters more than breadth, use this floor set:
 
 `detect-01-crashloop-triage`, `localize-02-externalsecret`,
-`diagnose-26-sideport-installed-apps-rca`, `monitor-03-health-summary`,
+private-app RCA pattern, `monitor-03-health-summary`,
 `test-06-probe-vs-app`, `guard-08-destructive`, `expand-04-add-app`,
 `upgrade-05-helmrelease`, `secure-09-plaintext-secret`,
 `secure-10-ingress-no-auth`, `secure-12-broad-rbac`,

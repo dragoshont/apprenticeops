@@ -38,10 +38,11 @@ browser ──HTTP──▶ FastAPI (backend/app.py) ──ssh──▶ home ─
 
 ## Controls
 
-- **Start** — pick a **batch** (`dryrun` = 2 small models, `full` = the roster)
-  and launch `run-e2e.sh` on home, detached, on its own `experiment/<run>` branch.
-  Batches come from [`data/batches.json`](../data/batches.json). **Only one run at
-  a time** — Start is refused (HTTP 409) while a run is active; stop it first.
+- **Start** — pick a **model set** (`dryrun` / `full`) and a **scenario set**
+  (`core-current` / `extended` / `all`), then launch `run-e2e.sh` on home,
+  detached, on its own `experiment/<run>` branch. Launch options come from
+  [`data/run-matrix.json`](../data/run-matrix.json). **Only one run at a time** —
+  Start is refused (HTTP 409) while a run is active; stop it first.
 - **Pause / Resume** — `SIGSTOP` / `SIGCONT` freezes the schedulers + inference
   process with all state intact; Resume continues exactly where it stopped (the
   ollama server is separate, so an in-flight token stream stalls, but no rows are
@@ -111,5 +112,6 @@ npm run dev          # → http://127.0.0.1:5290
 Single-operator tool for a trusted LAN. With `AUTH_ENABLED=false` there is **no
 auth** — anyone who can reach it can drive the run; keep it on the LAN (or turn
 on Authentik). Every privileged action shells into `home` over SSH; the client
-may only choose a server-validated *batch id* and *run id*, and nothing it sends
-is interpolated raw into a shell.
+may only choose server-validated *model_set*, *scenario_set*, and *run id* values;
+the backend resolves paths from `data/run-matrix.json` and shell-quotes launch
+environment values before calling the runner.

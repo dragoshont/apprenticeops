@@ -19,10 +19,14 @@ BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-https://github.com/dragoshont/apprenticeops}"
 RUN_ID="${RUN_ID:-roster-$(date -u +%Y%m%d-%H%M)}"
 MODELS="${MODELS:-data/models.txt}"
+MODEL_SET="${MODEL_SET:-manual}"
+SCENARIOS="${SCENARIOS:-data/scenarios.json}"
+SCENARIO_SET="${SCENARIO_SET:-all}"
 COLLECT="${COLLECT:-data/collected/${RUN_ID}}"
 SSH=(ssh -o BatchMode=yes -o ConnectTimeout=10 "$HOME_AI")
 ts() { date -uIs; }
 log() { echo "[$(ts)] $*"; }
+q() { printf '%q' "$1"; }
 
 require_ssh() {
   "${SSH[@]}" true 2>/dev/null || {
@@ -68,12 +72,12 @@ log "home-ai at commit ${COMMIT}"
 # 2) run
 if [ -n "${LIMIT:-}" ]; then
   log "--- LIMIT=${LIMIT} stop-and-audit batch (inline) ---"
-  "${SSH[@]}" "cd '${REMOTE_DIR}' && RUN_ID='${RUN_ID}' MODELS='${MODELS}' LIMIT='${LIMIT}' ./scripts/run-roster.sh" || log "WARN: audit batch returned non-zero"
+  "${SSH[@]}" "cd $(q "$REMOTE_DIR") && RUN_ID=$(q "$RUN_ID") MODELS=$(q "$MODELS") MODEL_SET=$(q "$MODEL_SET") SCENARIOS=$(q "$SCENARIOS") SCENARIO_SET=$(q "$SCENARIO_SET") LIMIT=$(q "$LIMIT") ./scripts/run-roster.sh" || log "WARN: audit batch returned non-zero"
   collect
   log "AUDIT NOW:  python3 scripts/audit-run.py ${COLLECT}/results.${RUN_ID}.jsonl   (must say AUDIT: PASS before the full run)"
 else
   log "--- full roster (detached on home-ai) ---"
-  "${SSH[@]}" "cd '${REMOTE_DIR}' && mkdir -p logs && RUN_ID='${RUN_ID}' MODELS='${MODELS}' setsid nohup ./scripts/run-roster.sh >'logs/${RUN_ID}.nohup' 2>&1 </dev/null & echo started-detached" </dev/null
+  "${SSH[@]}" "cd $(q "$REMOTE_DIR") && mkdir -p logs && RUN_ID=$(q "$RUN_ID") MODELS=$(q "$MODELS") MODEL_SET=$(q "$MODEL_SET") SCENARIOS=$(q "$SCENARIOS") SCENARIO_SET=$(q "$SCENARIO_SET") setsid nohup ./scripts/run-roster.sh >$(q "logs/${RUN_ID}.nohup") 2>&1 </dev/null & echo started-detached" </dev/null
   log "running detached on home-ai."
   log "  monitor:  ./scripts/run-from-homelab.sh status     (RUN_ID=${RUN_ID})"
   log "  collect:  ./scripts/run-from-homelab.sh collect     (RUN_ID=${RUN_ID})"

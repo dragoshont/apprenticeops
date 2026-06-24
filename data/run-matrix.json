@@ -1,0 +1,47 @@
+{
+  "_comment": "Server-approved run-launch matrix. Browser clients submit ids only; backend resolves paths and computes counts/hashes from files.",
+  "schema_version": 1,
+  "defaults": {
+    "model_set": "dryrun",
+    "scenario_set": "core-current"
+  },
+  "model_sets": [
+    {
+      "id": "dryrun",
+      "label": "Dry run - 2 small models",
+      "path": "data/models.dryrun.txt",
+      "kind": "validation",
+      "description": "End-to-end smoke test using the two tiny validation models."
+    },
+    {
+      "id": "full",
+      "label": "Full roster - all models",
+      "path": "data/models.txt",
+      "kind": "experiment",
+      "description": "The complete locked roster. Use with care; this can run for days."
+    }
+  ],
+  "scenario_sets": [
+    {
+      "id": "core-current",
+      "label": "Core current - implemented scenarios",
+      "path": "data/scenario_sets/core-current.json",
+      "kind": "default",
+      "description": "Implemented core roster. Planned Core 20 additions are not included until authored."
+    },
+    {
+      "id": "extended",
+      "label": "Additional / rotation scenarios",
+      "path": "data/scenario_sets/extended.json",
+      "kind": "rotation",
+      "description": "Non-core scenarios for targeted claims and calibration."
+    },
+    {
+      "id": "all",
+      "label": "All current scenarios",
+      "path": "data/scenarios.json",
+      "kind": "canonical",
+      "description": "The full current scenario corpus."
+    }
+  ]
+}

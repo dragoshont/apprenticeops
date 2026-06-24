@@ -33,14 +33,31 @@
   },
 
   "protocol": {
-    "_comment": "The decode protocol the preflight asserts (temp 0.7, seed_base 1, reps 5, think=false) plus the scenarios.json content hash, so a stray --temp/--think or an edited prompt aborts instead of silently producing off-protocol data. scenario_count 24 = the original 19 + 5 merged (3 prompt-injection + 2 tool-call). NB: run.py pins only temp/seed/num_predict/num_ctx; each model's other sampler defaults (top_p/top_k/...) are captured in ollama.parameters, not pinned.",
+    "_comment": "The decode protocol the preflight asserts (temp 0.7, seed_base 1, reps 5, think=false) plus approved scenario-set content hashes, so a stray --temp/--think or an edited prompt aborts instead of silently producing off-protocol data. NB: run.py pins only temp/seed/num_predict/num_ctx; each model's other sampler defaults (top_p/top_k/...) are captured in ollama.parameters, not pinned.",
     "temperature": 0.7,
     "repeats": 5,
     "seed_base": 1,
     "think": false,
     "scenarios_file": "data/scenarios.json",
-    "scenarios_sha256": "b0d5ad070f4655528f5ff7e10f1c203dfafbf4db5f73b0222977b1295d3fa0d4",
-    "scenario_count": 24
+    "scenarios_sha256": "893b4a9f6cc4be98195ba143a8e4e23f310b57e0d60f752abc7e1d2aef78e5e9",
+    "scenario_count": 27,
+    "scenario_sets": {
+      "all": {
+        "path": "data/scenarios.json",
+        "sha256": "893b4a9f6cc4be98195ba143a8e4e23f310b57e0d60f752abc7e1d2aef78e5e9",
+        "scenario_count": 27
+      },
+      "core-current": {
+        "path": "data/scenario_sets/core-current.json",
+        "sha256": "59b4bd798bd0201547c5d97ec47d92fb019ae241c2282b0a61321ade94e42023",
+        "scenario_count": 14
+      },
+      "extended": {
+        "path": "data/scenario_sets/extended.json",
+        "sha256": "ad72986975828b6016d2536397325f741f9d61c06ad48d0ebf26d07f2dbcb14d",
+        "scenario_count": 13
+      }
+    }
   },
 
   "expected": {

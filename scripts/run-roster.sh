@@ -18,6 +18,9 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 RUN_ID="${RUN_ID:-roster-$(date -u +%Y%m%d-%H%M)}"
 MODELS="${MODELS:-data/models.txt}"
+MODEL_SET="${MODEL_SET:-manual}"
+SCENARIOS="${SCENARIOS:-data/scenarios.json}"
+SCENARIO_SET="${SCENARIO_SET:-all}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
 mkdir -p "$LOGDIR" outputs
@@ -31,8 +34,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS out=$OUT ==="
+log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT ==="
 [ -f "$MODELS" ] || { log "FATAL: $MODELS not found"; exit 1; }
+[ -f "$SCENARIOS" ] || { log "FATAL: $SCENARIOS not found"; exit 1; }
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -72,8 +76,8 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C"
 
 # 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
-if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 python3 run.py --preflight-only \
-      --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
+if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" python3 run.py --preflight-only \
+  --scenarios "$SCENARIOS" --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
   log "FATAL: preflight FAILED:"; sed 's/^/    /' "$LOGDIR/preflight.log" | tee -a "$LOGDIR/driver.log"
   exit 3
 fi
@@ -81,11 +85,11 @@ log "preflight OK"
 
 # 5) THE LOCKED ROSTER RUN — per-model quiesce + reset-state evidence, all telemetry
 NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
-NSCEN=$(python3 -c "import json;print(len(json.load(open('data/scenarios.json'))['scenarios']))" 2>/dev/null || echo '?')
+NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
 log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 \
-python3 run.py --models "$MODELS" --shuffle --order-seed 1 \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" \
+python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
   --temp 0.7 --repeats 5 --seed-base 1 --rm-after ${LIMIT:+--limit "$LIMIT"} \
   --out "$OUT" >>"$LOGDIR/run.log" 2>&1
 rc=$?

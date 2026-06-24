@@ -54,9 +54,9 @@ export function SessionsTable({
                         {active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
                         <span className="font-mono text-xs text-fg">{s.run_id}</span>
                       </div>
-                      {s.batch && (
+                      {(s.model_set || s.scenario_set) && (
                         <span className="mt-0.5 inline-block rounded bg-panel2 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted">
-                          {s.batch}
+                          {s.model_set || "models"} × {s.scenario_set || "scenarios"}
                         </span>
                       )}
                     </td>

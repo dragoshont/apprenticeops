@@ -32,6 +32,7 @@ POLL_S="${POLL_S:-30}"
 ENSEMBLE="${ENSEMBLE:-copilot:gpt-5.4}"
 JUDGE_MODEL="${JUDGE_MODEL:-claude-opus-4.6}"
 EXPECT="${EXPECT:-0}"                               # >0 = exit once this many models are judged
+SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 
 RESULTS="results.${RUN_ID}.jsonl"
 WORK="data/runs/${RUN_ID}"
@@ -67,6 +68,11 @@ git push -q -u origin "$BRANCH" 2>/dev/null || true
 
 # n judges per answer = 1 primary + the comma-separated ensemble specs
 NJUDGES=$(( 1 + $(printf '%s' "$ENSEMBLE" | tr ',' '\n' | grep -c .) ))
+SCENARIO_SHA="$(python3 - "$SCENARIOS" <<'PY'
+import hashlib, sys
+print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest())
+PY
+)"
 COMMITTED="$WORK/.committed"; touch "$COMMITTED"
 log "streaming consumer: judge ${JUDGE_WORKERS:-8}-wide, ${NJUDGES} judges/answer, commit per model"
 
@@ -85,7 +91,7 @@ while true; do
     status "S6 judge: ${rows} answers available, ${before} judged so far (${JUDGE_WORKERS:-8}-wide)"
     JUDGE_BACKEND=copilot JUDGE_MODEL="$JUDGE_MODEL" JUDGE_WORKERS="${JUDGE_WORKERS:-8}" \
       python3 judge.py --judge --results "$MIRROR/$RESULTS" \
-        --outputs-dir "$MIRROR/outputs" --ensemble "$ENSEMBLE" \
+        --outputs-dir "$MIRROR/outputs" --scenarios "$SCENARIOS" --ensemble "$ENSEMBLE" \
         --out "$JUDGED" >>"$WORK/judge.log" 2>&1 || true
     after=$([ -f "$JUDGED" ] && wc -l <"$JUDGED" | tr -d ' ' || echo 0)
     [ "${after:-0}" -gt "${before:-0}" ] && ledger "*" judge 1 "judged ${before}->${after}"
@@ -98,7 +104,9 @@ while true; do
       [ -z "$m" ] && continue
       grep -qxF "$m" "$COMMITTED" && continue
       want=$(( ${units:-0} * NJUDGES ))
-      have=$(jq -r --arg m "$m" 'select(.model==$m)|1' "$JUDGED" 2>/dev/null | wc -l | tr -d ' ')
+      have=$(jq -r --arg m "$m" --arg sha "$SCENARIO_SHA" \
+        'select(.model==$m and .scenarios_sha256==$sha) | [.scenario, (.rep|tostring), .judge_model] | @tsv' \
+        "$JUDGED" 2>/dev/null | sort -u | wc -l | tr -d ' ')
       if [ "$want" -le 0 ] || [ "${have:-0}" -lt "$want" ]; then
         status "model $m: judged ${have}/${want}, waiting"; continue
       fi

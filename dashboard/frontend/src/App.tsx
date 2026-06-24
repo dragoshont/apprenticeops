@@ -20,7 +20,7 @@ import {
 } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
 import { StatePill, fmtAgo, Hint } from "./components/ui";
-import { Radio, AlertTriangle, Terminal, Lock, LockOpen } from "lucide-react";
+import { Radio, AlertTriangle, Terminal, Lock, LockOpen, ListChecks } from "lucide-react";
 
 export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
@@ -32,7 +32,7 @@ export default function App() {
   }, []);
 
   const state = status?.state ?? "idle";
-  const batches = status?.batches ?? [];
+  const runMatrix = status?.run_matrix;
   const models = status?.models ?? [];
   const modelProgress = status?.model_progress ?? [];
   const sessions = status?.sessions ?? [];
@@ -82,7 +82,7 @@ export default function App() {
               run {activeSession.state === "paused" ? "paused" : "live"} · Follow
             </button>
           )}
-          <Controls state={state} runId={status?.run_id ?? null} batches={batches} onAfter={refresh} liveElsewhere={busyElsewhere} />
+          <Controls state={state} runId={status?.run_id ?? null} runMatrix={runMatrix} onAfter={refresh} liveElsewhere={busyElsewhere} />
           {auth?.auth_enabled ? (
             <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />
@@ -99,7 +99,7 @@ export default function App() {
             text={
               auth?.auth_enabled
                 ? "You are signed in via Authentik SSO; runs you start are attributed to your username."
-                : "No sign-in is required — the dashboard is open on your LAN, so runs are attributed to 'user'. Enable Authentik SSO to require login and record who ran each batch."
+                : "No sign-in is required — the dashboard is open on your LAN, so runs are attributed to 'user'. Enable Authentik SSO to require login and record who launched each run."
             }
           />
           <ThemeToggle theme={theme} onToggle={toggle} />
@@ -129,7 +129,11 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm" aria-live="polite">
                 <span className="font-mono text-fg">{status!.run_id}</span>
                 <StatePill state={state} size="sm" />
-                {status?.meta?.batch && <span className="text-xs text-muted">{status.meta.batch}</span>}
+                {(status?.meta?.model_set || status?.meta?.scenario_set) && (
+                  <span className="text-xs text-muted">
+                    {status.meta.model_set ?? "models"} × {status.meta.scenario_set ?? "scenarios"}
+                  </span>
+                )}
                 <span className="text-xs text-faint">
                   by {status?.user ?? selected?.user ?? "user"}
                 </span>
@@ -188,6 +192,49 @@ export default function App() {
           )}
 
           {!hasRun && <NodeCards nodes={status?.nodes} />}
+
+          {runMatrix && (
+            <section className="card card-pad">
+              <header className="mb-3 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                  <ListChecks className="h-4 w-4 text-muted" />
+                  Scenarios
+                </h2>
+                <span className="text-xs text-faint">
+                  {runMatrix.scenarios.length} unique · {runMatrix.scenario_sets.length} sets
+                </span>
+              </header>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {runMatrix.scenario_sets.map((set) => {
+                  const rows = runMatrix.scenarios.filter((scenario) => scenario.sets.includes(set.id));
+                  return (
+                    <div key={set.id} className="rounded-xl border border-line bg-panel2/30 p-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-medium text-fg">{set.label}</div>
+                          <div className="text-[11px] text-faint">{set.description}</div>
+                        </div>
+                        <span className="pill bg-muted/15 text-muted">{set.scenario_count ?? rows.length}</span>
+                      </div>
+                      <div className="max-h-72 space-y-1 overflow-auto pr-1">
+                        {rows.map((scenario) => (
+                          <div key={`${set.id}-${scenario.id}`} className="rounded-lg border border-line/50 bg-panel/50 px-2.5 py-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="font-mono text-[11px] text-fg">{scenario.id}</span>
+                              {scenario.class && <span className="pill bg-accent/10 px-1.5 py-0 text-[10px] text-accent">{scenario.class}</span>}
+                              {scenario.difficulty && <span className="pill bg-muted/15 px-1.5 py-0 text-[10px] text-muted">{scenario.difficulty}</span>}
+                              {scenario.grounding && <span className="pill bg-info/10 px-1.5 py-0 text-[10px] text-info">{scenario.grounding}</span>}
+                            </div>
+                            {scenario.brief && <div className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">{scenario.brief}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <footer className="pt-2 text-center text-[11px] text-faint">
             ApprenticeOps mission-control · polls home over SSH every 4s · read the logs, not the vibes

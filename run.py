@@ -1328,11 +1328,18 @@ def preflight(models, fp, manifest_path, require_models_present=False, protocol=
             got = protocol.get(key)
             if want is not None and want != got:
                 problems.append(f"protocol {key}: manifest wants {want!r}, run uses {got!r}")
-    want_sha = prot.get("scenarios_sha256")
-    if want_sha and scenarios_path and os.path.exists(scenarios_path):
+    if scenarios_path and os.path.exists(scenarios_path):
         got_sha = hashlib.sha256(open(scenarios_path, "rb").read()).hexdigest()
-        if got_sha != want_sha:
-            problems.append(f"scenarios.json changed: sha256 {got_sha[:12]}\u2026 != manifest {want_sha[:12]}\u2026")
+        approved = set()
+        want_sha = prot.get("scenarios_sha256")
+        if want_sha:
+            approved.add(want_sha)
+        for item in (prot.get("scenario_sets") or {}).values():
+            if isinstance(item, dict) and item.get("sha256"):
+                approved.add(item["sha256"])
+        if approved and got_sha not in approved:
+            shown = ", ".join(sorted(s[:12] + "…" for s in approved))
+            problems.append(f"scenario set hash {got_sha[:12]}… is not approved by manifest ({shown})")
 
     if require_models_present and man.get("models_pinned", {}).get("require_all_present"):
         missing = [m for m, _ in models if not model_present(m)]
@@ -1414,7 +1421,10 @@ def main():
     # state before EACH model so a multi-day sweep aborts if the node moves (turbo
     # re-enabled by thermald/cron) instead of silently mislabelling rows.
     env_static = _env_static()
-    env_static["env.scenarios_sha"] = hashlib.sha256(open(args.scenarios, "rb").read()).hexdigest()
+    scenario_sha = hashlib.sha256(open(args.scenarios, "rb").read()).hexdigest()
+    env_static["env.scenarios_sha"] = scenario_sha
+    env_static["env.scenarios_path"] = args.scenarios
+    env_static["env.scenario_set"] = os.environ.get("SCENARIO_SET")
     _man = {}
     if args.manifest and os.path.exists(args.manifest):
         try:
@@ -1443,7 +1453,8 @@ def main():
     # partial rows are harmless and collapse in dedup. This makes the roster
     # recoverable + resumable at MODEL granularity: a re-launch continues where it
     # stopped instead of repeating days of compute.
-    expected_units = len(scen) * args.repeats
+    expected_pairs = {(s["id"], rep) for s in scen for rep in range(args.repeats)}
+    expected_units = len(expected_pairs)
     done_models = set()
     _seen = {}
     if os.path.exists(args.out):
@@ -1457,10 +1468,12 @@ def main():
                 except Exception:  # noqa: BLE001
                     continue
                 _m = _r.get("model")
-                if _m and _r.get("scenario") is not None and _r.get("rep") is not None \
-                        and _r.get("det_total") is not None:
-                    _seen.setdefault(_m, set()).add((_r["scenario"], _r["rep"]))
-        done_models = {m for m, u in _seen.items() if len(u) >= expected_units}
+                pair = (_r.get("scenario"), _r.get("rep"))
+                row_sha = _r.get("env.scenarios_sha")
+                if (_m and pair in expected_pairs and _r.get("det_total") is not None
+                    and row_sha == scenario_sha):
+                    _seen.setdefault(_m, set()).add(pair)
+            done_models = {m for m, u in _seen.items() if expected_pairs <= u}
         if done_models:
             sys.stderr.write(f"== resume: {len(done_models)} model(s) already complete in "
                              f"{args.out}; skipping them ==\n")
@@ -1625,12 +1638,11 @@ def main():
                     sys.stderr.flush()
             # model fully produced all (scenario x rep) rows -> signal the consumer
             # (the judge/commit scheduler) that this model is ready to evaluate.
-            try:
-                with open(args.out + ".done", "a") as _df:
-                    _df.write(json.dumps({"model": model, "bracket": bracket,
-                                          "ts": time.time(), "units": expected_units}) + "\n")
-            except Exception:  # noqa: BLE001
-                pass
+            with open(args.out + ".done", "a") as _df:
+                _df.write(json.dumps({"model": model, "bracket": bracket,
+                                      "ts": time.time(), "units": expected_units}) + "\n")
+                _df.flush()
+                os.fsync(_df.fileno())
             unload(model)
             quiesce()
             # bound disk: drop a model we pulled for this run (keep pre-existing ones)

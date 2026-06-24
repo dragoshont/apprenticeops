@@ -14,10 +14,10 @@ running this backend must already hold the SSH key for ``home`` (the ``homelab``
 alias on the Mac, or a mounted key + ssh-config in the container). Do not expose
 it to an untrusted network.
 
-Injection safety: the browser can only pick a *batch id* (validated against the
-server-side allowlist loaded from ``data/batches.json``) and a *run id* (validated
-against ``^[A-Za-z0-9._-]+$``). RUN_IDs for new runs are generated server-side.
-Nothing the client sends is interpolated raw into a shell.
+Injection safety: the browser can only pick a *model_set* id and a *scenario_set*
+id from the server-side allowlist loaded from ``data/run-matrix.json``. RUN_IDs for
+new runs are generated server-side. Shell environment values are server-resolved
+and quoted before being sent to ``home``.
 
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
@@ -29,9 +29,11 @@ Env:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 import re
+import shlex
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -58,7 +60,7 @@ AUTH_HEADER = os.environ.get("AUTH_HEADER", "X-authentik-username")
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
 _RUNID_RE = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
-_BATCHID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
+_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
 
 app = FastAPI(title="ApprenticeOps mission-control", version="0.1.0")
 
@@ -102,7 +104,16 @@ def _home_cmd(inner: str) -> str:
 # always uses current code (e.g. run-e2e.sh that writes run.meta), without
 # touching the current branch or the untracked run data. Best-effort.
 _SYNC = ("git fetch -q origin 2>/dev/null; "
-         "git checkout -q origin/main -- scripts data/batches.json data/scenarios.json 2>/dev/null; ")
+         "git checkout -q origin/main -- scripts data/run-matrix.json data/run-manifest.json "
+         "data/scenarios.json data/scenario_sets 2>/dev/null; ")
+
+
+def _q(value: object) -> str:
+    return shlex.quote(str(value))
+
+
+def _env_assign(values: dict[str, object]) -> str:
+    return " ".join(f"{key}={_q(value)}" for key, value in values.items())
 
 
 def _marker(run_id: str, name: str, create: bool) -> None:
@@ -142,29 +153,176 @@ def status(run_id: str | None, max_age: float = 3.0) -> dict:
     return data
 
 
-def _batches() -> list[dict]:
-    cp = _ssh(_home_cmd("cat data/batches.json"), timeout=15)
-    if cp.returncode == 0:
-        try:
-            return json.loads(cp.stdout).get("batches", [])
-        except json.JSONDecodeError:
-            pass
-    # fall back to whatever a status call carries
-    return status(None).get("batches", [])
+_MATRIX_SCRIPT = r'''
+import hashlib, json, re, sys
+from collections import Counter
+from pathlib import Path
+
+ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
+PATH_RE = re.compile(r"^[A-Za-z0-9._/-]{1,160}$")
+root = Path.cwd().resolve()
+
+def fail(message):
+    print(json.dumps({"error": message}))
+    sys.exit(1)
+
+def safe_path(raw, suffix):
+    if not isinstance(raw, str) or not PATH_RE.match(raw) or raw.startswith("/") or ".." in Path(raw).parts:
+        fail(f"unsafe path: {raw!r}")
+    if not raw.endswith(suffix):
+        fail(f"path {raw!r} must end with {suffix}")
+    full = (root / raw).resolve()
+    if root not in (full, *full.parents):
+        fail(f"path escapes repo: {raw!r}")
+    if not full.exists():
+        fail(f"missing path: {raw}")
+    return full
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def model_count(path):
+    return sum(1 for line in path.read_text().splitlines() if line.strip() and not line.lstrip().startswith("#"))
+
+def load_scenarios(path):
+    try:
+        data = json.loads(path.read_text())
+    except Exception as exc:
+        fail(f"scenario file {path} is not valid JSON: {exc}")
+    items = data.get("scenarios") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        fail(f"scenario file {path} must contain a scenarios list")
+    seen = set()
+    for item in items:
+        sid = item.get("id") if isinstance(item, dict) else None
+        if not sid or sid in seen:
+            fail(f"scenario file {path} has missing/duplicate scenario id {sid!r}")
+        seen.add(sid)
+    return items
+
+matrix_path = safe_path("data/run-matrix.json", ".json")
+try:
+    matrix = json.loads(matrix_path.read_text())
+except Exception as exc:
+    fail(f"run matrix is not valid JSON: {exc}")
+
+def resolve_model_set(raw):
+    mid = raw.get("id") if isinstance(raw, dict) else None
+    if not ID_RE.match(str(mid or "")):
+        fail(f"invalid model_set id: {mid!r}")
+    path = safe_path(raw.get("path"), ".txt")
+    return {**raw, "model_count": model_count(path), "sha256": sha(path)}
+
+def resolve_scenario_set(raw):
+    sid = raw.get("id") if isinstance(raw, dict) else None
+    if not ID_RE.match(str(sid or "")):
+        fail(f"invalid scenario_set id: {sid!r}")
+    path = safe_path(raw.get("path"), ".json")
+    scenarios = load_scenarios(path)
+    return {
+        **raw,
+        "scenario_count": len(scenarios),
+        "class_counts": dict(Counter(s.get("class") or "unknown" for s in scenarios)),
+        "difficulty_counts": dict(Counter(s.get("difficulty") or "unknown" for s in scenarios)),
+        "grounding_counts": dict(Counter(s.get("grounding") or "unknown" for s in scenarios)),
+        "scenario_ids": [s["id"] for s in scenarios],
+        "sha256": sha(path),
+    }
+
+model_sets = [resolve_model_set(item) for item in matrix.get("model_sets", [])]
+scenario_sets = [resolve_scenario_set(item) for item in matrix.get("scenario_sets", [])]
+if len({m["id"] for m in model_sets}) != len(model_sets):
+    fail("duplicate model_set id")
+if len({s["id"] for s in scenario_sets}) != len(scenario_sets):
+    fail("duplicate scenario_set id")
+
+scenario_rows = {}
+for scenario_set in scenario_sets:
+    for scenario in load_scenarios(safe_path(scenario_set["path"], ".json")):
+        row = scenario_rows.setdefault(scenario["id"], {
+            "id": scenario["id"],
+            "class": scenario.get("class"),
+            "difficulty": scenario.get("difficulty"),
+            "grounding": scenario.get("grounding"),
+            "brief": (scenario.get("question") or scenario.get("gold_answer") or "").split("\n", 1)[0][:180],
+            "sets": [],
+        })
+        if scenario_set["id"] not in row["sets"]:
+            row["sets"].append(scenario_set["id"])
+
+print(json.dumps({
+    "schema_version": matrix.get("schema_version", 1),
+    "defaults": matrix.get("defaults", {}),
+    "model_sets": model_sets,
+    "scenario_sets": scenario_sets,
+    "scenarios": sorted(scenario_rows.values(), key=lambda row: row["id"]),
+}))
+'''
 
 
-def _resolve_batch(batch_id: str) -> dict:
-    if not _BATCHID_RE.match(batch_id or ""):
-        raise HTTPException(400, "invalid batch id")
-    for b in _batches():
-        if b.get("id") == batch_id:
-            return b
-    raise HTTPException(404, f"unknown batch '{batch_id}'")
+def _run_matrix() -> dict:
+    cp = _ssh(_home_cmd("python3 - <<'PY'\n" + _MATRIX_SCRIPT + "\nPY"), timeout=25)
+    if cp.returncode != 0:
+        detail = (cp.stderr or cp.stdout or "run matrix failed").strip()[:800]
+        raise HTTPException(500, detail)
+    try:
+        data = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, f"run matrix was not JSON: {exc}") from exc
+    if data.get("error"):
+        raise HTTPException(500, data["error"])
+    return data
+
+
+def _resolve_run_selection(model_set: str, scenario_set: str) -> tuple[dict, dict, dict]:
+    if not _ID_RE.match(model_set or ""):
+        raise HTTPException(400, "invalid model_set id")
+    if not _ID_RE.match(scenario_set or ""):
+        raise HTTPException(400, "invalid scenario_set id")
+    matrix = _run_matrix()
+    model = next((item for item in matrix.get("model_sets", []) if item.get("id") == model_set), None)
+    scenarios = next((item for item in matrix.get("scenario_sets", []) if item.get("id") == scenario_set), None)
+    if not model:
+        raise HTTPException(404, f"unknown model_set '{model_set}'")
+    if not scenarios:
+        raise HTTPException(404, f"unknown scenario_set '{scenario_set}'")
+    if not model.get("model_count"):
+        raise HTTPException(400, f"model_set '{model_set}' contains no models")
+    if not scenarios.get("scenario_count"):
+        raise HTTPException(400, f"scenario_set '{scenario_set}' contains no scenarios")
+    return matrix, model, scenarios
+
+
+def _read_run_meta(run_id: str) -> dict:
+    if not _RUNID_RE.match(run_id or ""):
+        raise HTTPException(400, "invalid run_id")
+    cp = _ssh(_home_cmd(f"cat {_q(f'data/runs/{run_id}/run.meta')}"), timeout=15)
+    if cp.returncode != 0:
+        raise HTTPException(409, "run has no run.meta; start a new run")
+    try:
+        meta = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(409, "run.meta is not valid JSON; start a new run") from exc
+    if int(meta.get("schema_version") or 0) < 2:
+        raise HTTPException(409, "run predates run-matrix metadata; start a new run")
+    return meta
+
+
+def _validate_run_meta_for_resume(meta: dict) -> None:
+    scenarios = meta.get("scenarios")
+    expected_sha = meta.get("scenarios_sha256")
+    if not scenarios or not expected_sha:
+        raise HTTPException(409, "run.meta missing scenario hash; start a new run")
+    cp = _ssh(_home_cmd(f"python3 - <<'PY'\nimport hashlib, pathlib\np=pathlib.Path({_q(scenarios)!r})\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\nPY"), timeout=15)
+    got = (cp.stdout or "").strip()
+    if cp.returncode != 0 or got != expected_sha:
+        raise HTTPException(409, "run.meta scenario hash mismatch; start a new run")
 
 
 # ----------------------------------------------------------------------------- api
 class StartReq(BaseModel):
-    batch: str
+    model_set: str
+    scenario_set: str
 
 
 class RunReq(BaseModel):
@@ -176,17 +334,16 @@ def api_status(run_id: str | None = None):
     return JSONResponse(status(run_id))
 
 
-@app.get("/api/batches")
-def api_batches():
-    return {"batches": _batches()}
+@app.get("/api/run-matrix")
+def api_run_matrix():
+    return JSONResponse(_run_matrix())
 
 
 @app.post("/api/control/start")
 def api_start(req: StartReq, request: Request):
-    b = _resolve_batch(req.batch)
-    models = b.get("models", "")
-    if not re.match(r"^[A-Za-z0-9._/-]{1,120}$", models):
-        raise HTTPException(400, "batch points at an unsafe models path")
+    _, model_set, scenario_set = _resolve_run_selection(req.model_set, req.scenario_set)
+    models = model_set["path"]
+    scenarios = scenario_set["path"]
     # one run at a time: refuse if a run is currently active (running or paused).
     cur = status(None, max_age=0.0)
     active = (cur.get("state") in ("running", "paused")
@@ -197,15 +354,24 @@ def api_start(req: StartReq, request: Request):
     # who started it: the Authentik user when gated, else a generic "user".
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    run_id = f"{req.batch}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
-    inner = (_SYNC +
-             f"RUN_ID='{run_id}' MODELS='{models}' BATCH='{req.batch}' RUN_USER='{user}' "
-             f"setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.{run_id}.boot 2>&1 </dev/null & "
-             f"echo launched {run_id}")
+    run_id = f"{req.model_set}-{req.scenario_set}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    env = _env_assign({
+        "RUN_ID": run_id,
+        "MODELS": models,
+        "MODEL_SET": req.model_set,
+        "SCENARIOS": scenarios,
+        "SCENARIO_SET": req.scenario_set,
+        "RUN_USER": user,
+    })
+    inner = (_SYNC + env + " "
+             f"setsid nohup ./scripts/run-e2e.sh >{_q(f'/tmp/e2e.{run_id}.boot')} 2>&1 </dev/null & "
+             f"echo launched {_q(run_id)}")
     cp = _ssh(_home_cmd(inner), timeout=40)
     ok = cp.returncode == 0 and "launched" in cp.stdout
     _cache["ts"] = 0.0
-    return {"ok": ok, "run_id": run_id, "batch": req.batch, "models": models, "user": user,
+    return {"ok": ok, "run_id": run_id,
+            "model_set": req.model_set, "scenario_set": req.scenario_set,
+            "models": models, "scenarios": scenarios, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 
@@ -260,17 +426,30 @@ def api_resume(req: RunReq):
         raise HTTPException(409, "run was canceled — start a new run instead")
     prod_alive = st.get("producer", {}).get("run_py_alive")
     cons_alive = st.get("consumer", {}).get("alive")
+    if prod_alive or cons_alive:
+        _marker(req.run_id, ".paused", create=False)
+        return {**_signal_all("CONT"), "action": "continue", "run_id": req.run_id}
+    meta = _read_run_meta(req.run_id)
+    for key in ("models", "model_set", "scenarios", "scenario_set"):
+        if not meta.get(key):
+            raise HTTPException(409, f"run.meta missing {key}; start a new run")
+    _validate_run_meta_for_resume(meta)
     _marker(req.run_id, ".paused", create=False)
-    cont = _signal_all("CONT")
-    if not (prod_alive or cons_alive):
-        inner = (_SYNC +
-                 f"RUN_ID='{req.run_id}' setsid nohup ./scripts/run-e2e.sh "
-                 f">/tmp/e2e.{req.run_id}.boot 2>&1 </dev/null & echo relaunched {req.run_id}")
-        cp = _ssh(_home_cmd(inner), timeout=40)
-        _cache["ts"] = 0.0
-        return {"ok": cp.returncode == 0, "action": "relaunch", "run_id": req.run_id,
-                "detail": (cp.stdout or cp.stderr).strip()[:400]}
-    return {**cont, "action": "continue", "run_id": req.run_id}
+    env = _env_assign({
+        "RUN_ID": req.run_id,
+        "MODELS": meta["models"],
+        "MODEL_SET": meta["model_set"],
+        "SCENARIOS": meta["scenarios"],
+        "SCENARIO_SET": meta["scenario_set"],
+        "RUN_USER": meta.get("user") or "user",
+    })
+    inner = (_SYNC + env + " "
+             f"setsid nohup ./scripts/run-e2e.sh >{_q(f'/tmp/e2e.{req.run_id}.boot')} "
+             f"2>&1 </dev/null & echo relaunched {_q(req.run_id)}")
+    cp = _ssh(_home_cmd(inner), timeout=40)
+    _cache["ts"] = 0.0
+    return {"ok": cp.returncode == 0, "action": "relaunch", "run_id": req.run_id,
+            "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 
 @app.websocket("/ws")

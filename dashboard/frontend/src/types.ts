@@ -13,13 +13,44 @@ export const STAGE_ORDER = [
 ] as const;
 export type Stage = (typeof STAGE_ORDER)[number];
 
-export interface Batch {
+export interface ModelSet {
   id: string;
   label: string;
-  models: string;
+  path: string;
   kind?: string;
-  desc?: string;
-  count?: number | null;
+  description?: string;
+  model_count?: number | null;
+  sha256?: string;
+}
+
+export interface ScenarioSet {
+  id: string;
+  label: string;
+  path: string;
+  kind?: string;
+  description?: string;
+  scenario_count?: number | null;
+  class_counts?: Record<string, number>;
+  difficulty_counts?: Record<string, number>;
+  grounding_counts?: Record<string, number>;
+  scenario_ids?: string[];
+  sha256?: string;
+}
+
+export interface ScenarioInventoryRow {
+  id: string;
+  class?: string | null;
+  difficulty?: string | null;
+  grounding?: string | null;
+  brief?: string | null;
+  sets: string[];
+}
+
+export interface RunMatrix {
+  defaults?: { model_set?: string; scenario_set?: string };
+  model_sets: ModelSet[];
+  scenario_sets: ScenarioSet[];
+  scenarios: ScenarioInventoryRow[];
 }
 
 export interface NodeInfo {
@@ -127,7 +158,9 @@ export interface ModelProgress {
 
 export interface Session {
   run_id: string;
-  batch: string;
+  model_set: string;
+  scenario_set: string;
+  historical?: boolean;
   user?: string;
   state: PipelineState | string;
   started_at: number | null;
@@ -155,7 +188,7 @@ export interface Status {
   error?: string;
   user?: string;
   markers?: { canceled: boolean; paused: boolean };
-  meta?: { run_id?: string; models?: string; batch?: string; expect?: number; started_at?: number };
+  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; expect?: number; started_at?: number };
   progress?: Progress;
   summary?: RunSummary;
   producer?: Producer;
@@ -165,7 +198,7 @@ export interface Status {
   model_progress?: ModelProgress[];
   pareto?: ParetoPoint[];
   scores?: Scores;
-  batches?: Batch[];
+  run_matrix?: RunMatrix;
   sessions?: Session[];
   nodes?: { home: NodeInfo; ai: NodeInfo };
   runs?: string[];

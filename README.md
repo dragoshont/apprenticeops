@@ -133,7 +133,7 @@ agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 The original paper run used **19 scenarios**. The working corpus now contains
 **27 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
 homelab incidents plus later repo-grounded security, capacity, tool-action, and
-Sideport high-CPU cases. The 2026-06-24 external research pass recommends a
+private app/device-ops incident cases. The 2026-06-24 external research pass recommends a
 **20-case core roster** for the next expensive run; see
 [`docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
 for the decision summary,

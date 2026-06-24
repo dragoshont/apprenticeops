@@ -43,7 +43,8 @@ started narrower; the live corpus now includes `secure` and `capacity` cases.
 
 The table below records the original seed coverage. It is historically useful,
 but no longer describes the live corpus: `data/scenarios.json` now has 27
-scenarios, including `secure`, `capacity`, and Sideport high-CPU cases. See
+scenarios, including `secure`, `capacity`, and private app/device-ops incident
+cases. See
 [`SCENARIO_AUDIT_2026-06-24.md`](SCENARIO_AUDIT_2026-06-24.md) for the current
 inventory and [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
 for the external benchmark scan and Core 20 recommendation. The concise decision
@@ -70,8 +71,9 @@ scenarios.
 ## 4. Gaps to fill (the authoring backlog, from real homelab data)
 
 The highest-priority next additions from the 2026-06-24 external research pass
-are backup restore verification, home-network/WAN/DNS localization, Flux drift,
-Home Assistant recorder/MQTT, and Linux/Kubernetes resource-pressure scenarios.
+are external tool/session liveness, backup restore verification,
+home-network/WAN/DNS localization, Flux drift, Home Assistant recorder/MQTT, and
+Linux/Kubernetes resource-pressure scenarios.
 Prefer replacing lower-priority extended cases over growing the default set
 indefinitely.
 
@@ -79,8 +81,9 @@ The historical backlog below explains how the original seed was widened. It is
 retained as the taxonomy rationale, not as the current next-action list. The
 current next-action list is the Core 20 delta in
 [`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md):
-backup restore verification, home-network/WAN/DNS localization, Flux drift, Home
-Assistant recorder/MQTT, and Linux/Kubernetes resource pressure.
+external tool/session liveness, backup restore verification,
+home-network/WAN/DNS localization, Flux drift, Home Assistant recorder/MQTT, and
+Linux/Kubernetes resource pressure.
 
 Target **≥6 scenarios/class** over time. Classes + concrete cases grounded in data
 this cluster emits:
@@ -129,7 +132,7 @@ Plex transcode errors, DNS resolution failures, etc.
 
 ## 6. Next action
 
-Author the five Core 20 delta scenarios named in
+Author the six Core 20 delta scenarios named in
 [`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
 as real-data scenarios. Operator review still gates the gold answers. Add them to
 [`data/scenarios.json`](../data/scenarios.json) with `grounding` labels, then the

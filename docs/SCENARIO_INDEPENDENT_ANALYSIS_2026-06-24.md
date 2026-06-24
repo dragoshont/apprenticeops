@@ -44,7 +44,7 @@ This is a change in the **default run roster**, not a deletion of the corpus.
 | 12 | `foresee-14-disk-fill-predict` | Proactive capacity math. |
 | 13 | `foresee-17-cert-expiry` | TLS/DNS-01 blast-radius reasoning. |
 | 14 | `toolcall-20-structured-restart` | Exact safe command and structured-action discipline. |
-| 15 | `diagnose-26-sideport-installed-apps-rca` | One deep real incident from Sideport high CPU. |
+| 15 | `new-external-tool-session-or-credential-degraded` | A tool/API integration is functionally broken although the pod or optimistic health check is green. |
 | 16 | `new-backup-restore-drill` | Backups matter only if restore is verified. |
 | 17 | `new-home-network-wan-dns` | ISP/WAN, Cloudflare, split-horizon DNS, tunnel, ingress, app. |
 | 18 | `new-flux-drift-source-not-ready` | GitOps source/readiness chain, not manual apply. |
@@ -53,13 +53,14 @@ This is a change in the **default run roster**, not a deletion of the corpus.
 
 ## What Should Change
 
-Add these five scenario designs before the next expensive run:
+Add these six scenario designs before the next expensive run:
 
-1. `new-backup-restore-drill`
-2. `new-home-network-wan-dns`
-3. `new-flux-drift-source-not-ready`
-4. `new-homeassistant-recorder-or-mqtt`
-5. `new-linux-oom-or-node-pressure`
+1. `new-external-tool-session-or-credential-degraded`
+2. `new-backup-restore-drill`
+3. `new-home-network-wan-dns`
+4. `new-flux-drift-source-not-ready`
+5. `new-homeassistant-recorder-or-mqtt`
+6. `new-linux-oom-or-node-pressure`
 
 Move these to rotation rather than the default run:
 
@@ -69,16 +70,17 @@ Move these to rotation rather than the default run:
 | Duplicate closed-book variants, such as `upgrade-18-helm-closedbook` and `expand-19-add-app-closedbook` | Good calibration cases, not default-core cases. |
 | Secondary injection/security variants | The core keeps the main safety boundaries without letting security dominate the score. |
 | `foresee-16-smart-prefail` | Still useful, but Linux/OOM/node pressure is broader host-resource coverage. |
-| `detect-25-sideport-high-cpu` and `monitor-27-sideport-alert-plan` | Sideport is represented by one stronger RCA case; it should not dominate the benchmark. |
+| Private app-specific CPU, polling, and alert-design incidents | Useful as rotation examples, but the default benchmark should use reusable failure shapes rather than one operator's app. |
 
 ## Why This Is The Better Default
 
-The current 27-case corpus overweights security and recent Sideport history. The
-external scan points to missing operational domains: backup/restore, home network
-and DNS, GitOps drift, Home Assistant, and Linux/Kubernetes resource pressure.
+The current 27-case corpus overweights security and one private-app incident
+cluster. The external scan and Grafana alert inventory point to missing operational
+domains: external tool/session liveness, backup/restore, home network and DNS,
+GitOps drift, Home Assistant, and Linux/Kubernetes resource pressure.
 
 Core 20 is the smallest recommendation that covers those gaps while keeping the
-existing safety, GitOps, structured-action, capacity, and real-incident signals.
+existing safety, GitOps, structured-action, capacity, and integration-liveness signals.
 Core 16 remains available when we need a cheap smoke run, but it should not be
 used as the main evidence base for the paper.
 
@@ -89,8 +91,8 @@ Do not report one aggregate score only. Report at least:
 1. **Core operational score** over Core 20.
 2. **Safety score** over guard/security/injection cases.
 3. **Grounding lift** over closed-book vs grounded pairs.
-4. **Home-specific score** over backup, network, Home Assistant, Sideport, NAS,
-   and Linux host cases.
+4. **Home-specific score** over backup, network, Home Assistant, external-tool,
+   NAS, and Linux host cases.
 5. **Structured-action score** over the Core 20 exact-command case plus rotation
    JSON/action-output cases.
 
@@ -101,14 +103,14 @@ operations.
 ## Decision
 
 **Change the next default run to Core 20.** Keep the 27 current scenarios as the
-extended pack. Author the five missing scenarios before a full 150+ model run.
+extended pack. Author the six missing scenarios before a full 150+ model run.
 Treat Core 16 as a smoke-test roster only.
 
 ## Threats To Validity
 
 | Threat | Type | Mitigation |
 |---|---|---|
-| This is a portfolio recommendation, not a measured result. | Construct validity | Implement the five new scenarios and run the normal deterministic/judge checks before claiming performance. |
+| This is a portfolio recommendation, not a measured result. | Construct validity | Implement the six new scenarios and run the normal deterministic/judge checks before claiming performance. |
 | The evidence comes from one homelab plus public benchmarks. | External validity | Label the paper as a single-environment case study and invite re-runs on other home labs. |
 | New scenarios may duplicate existing capabilities once written. | Internal validity | Review each gold answer against the Core 20 table before adding it to `data/scenarios.json`. |
 | Larger models might benefit from the extended pack differently than small local models. | Analysis validity | Report Core 20 separately from rotation-pack results. |

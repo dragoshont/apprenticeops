@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures as cf
+import hashlib
 import json
 import os
 import re
@@ -323,7 +324,9 @@ def main():
             print(f"{mid}\t{who}{tag}")
         return
 
-    scen = {s["id"]: s for s in json.load(open(args.scenarios))["scenarios"]}
+    scen_path = args.scenarios
+    scen_sha = hashlib.sha256(open(scen_path, "rb").read()).hexdigest()
+    scen = {s["id"]: s for s in json.load(open(scen_path))["scenarios"]}
 
     if args.reference:
         if not args.out:
@@ -386,6 +389,10 @@ def main():
             sid = row.get("scenario")
             if not sid or sid not in scen:
                 continue
+            row_sha = row.get("env.scenarios_sha")
+            if row_sha != scen_sha:
+                sys.stderr.write(f"skip {row.get('model')} {sid}: result scenario hash {row_sha!r} != selected {scen_sha[:12]}…\n")
+                continue
             rep = row.get("rep", 0)
             if all((row["model"], sid, str(rep), mo) in done for _, mo in specs):
                 continue
@@ -432,6 +439,8 @@ def main():
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
                 f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
+                                    "scenarios_path": scen_path,
+                                    "scenarios_sha256": scen_sha,
                                     "judge_backend": be, "judge_model": mo,
                                     "usage": u, **j}) + "\n")
                 f.flush()

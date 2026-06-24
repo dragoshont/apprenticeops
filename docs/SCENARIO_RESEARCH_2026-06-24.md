@@ -83,13 +83,13 @@ are listed in the source appendix.
 | GitOps/IaC | Flux source not ready, Kustomization suspended, HelmRelease install retries, webhook dry-run, drift spam | add-app only | Gap |
 | Secrets/identity | ESO remoteRef missing, Key Vault auth, Authentik/OIDC redirect/session, API auth | ESO only | Missing Authentik/OIDC and token/session cases |
 | Ingress/DNS/TLS | Traefik routing, middleware auth, Cloudflare DNS, DNS-01, split horizon, cert expiry | ingress auth, cert expiry, add-app | Missing split-horizon / ISP / Cloudflare auth failure |
-| Observability | Prometheus/Loki/Grafana availability, alert routing, metamonitoring, noisy alerts | health summary, Sideport alert plan | Missing monitoring-pipeline blind spot |
+| Observability | Prometheus/Loki/Grafana availability, alert routing, metamonitoring, noisy alerts | health summary, private app alert plan | Missing monitoring-pipeline blind spot |
 | Backup/storage/NAS | restic repo lock/wrong password/damaged index, restore drill, NFS mount, NAS full/offline | none direct | Critical gap |
-| Linux host | high CPU/fan, cpufreq/turbo/governor, OOM killer, memory reclaim, SMART, disk IO | SMART, Sideport CPU | Missing Linux memory/OOM/thermal root cause |
+| Linux host | high CPU/fan, cpufreq/turbo/governor, OOM killer, memory reclaim, SMART, disk IO | SMART, private app CPU | Missing Linux memory/OOM/thermal root cause |
 | Home Assistant | YAML/config dependency, recorder DB/disk, MQTT broker/discovery/availability, Zigbee coordinator/interference/mesh, lockout | none | Gap |
 | Linux services | failed systemd units, dependency ordering, journal evidence, network-online, service restart policy | none direct | Gap |
 | Media stack | Plex transcode/GPU, qbit disk, *arr indexer/API, import pipeline | monitor-03 only | Thin |
-| Sideport / device ops | iPhone visibility, usbmux/netmuxd, Anisette, installed-apps CPU, scheduler jobs | high CPU RCA/alert | Good enough; do not add more by default |
+| Private app / device ops | device visibility, adapter errors, expensive polling, scheduler jobs | CPU RCA/alert | Good rotation material; do not add more by default |
 | Security/safety | Plaintext secrets, RBAC, ingress auth, privileged containers, image tags, prompt injection | strong | Overweighted |
 | Cost/energy/capacity | disk trends, model/node energy, cloud cost if any, resource limits | capacity, paper telemetry | Good for current scope, missing FinOps-style case |
 | Structured action/tool use | exact safe command, JSON action, event extraction | present | Good; can be compressed |
@@ -136,7 +136,7 @@ much smaller than an unbounded benchmark.
 | 12 | `foresee-14-disk-fill-predict` | existing | trend/capacity math | Proactive failure notification. |
 | 13 | `foresee-17-cert-expiry` | existing | cert/DNS-01 blast radius | Keeps TLS/DNS chain. |
 | 14 | `toolcall-20-structured-restart` | existing | exact safe kubectl command | Preserves structured-action discipline in the default score. |
-| 15 | `diagnose-26-sideport-installed-apps-rca` | existing | deep RCA + metrics probes | Strong real incident; keep one Sideport deep case. |
+| 15 | `new-external-tool-session-or-credential-degraded` | new | tool/API liveness beyond pod health | Grafana alerts show integrations can be broken while health checks are green. |
 | 16 | `new-backup-restore-drill` | new | restic restore/check/repo-lock/data-integrity | Critical gap; backups are only useful if restorable. |
 | 17 | `new-home-network-wan-dns` | new | ISP/WAN vs LAN/DNS/split-horizon localization | Homelab-specific and high blast radius. |
 | 18 | `new-flux-drift-source-not-ready` | new | GitOps drift/source/Helm readiness | Flux is the source of truth; current coverage is too thin. |
@@ -146,12 +146,13 @@ much smaller than an unbounded benchmark.
 ### Why Core 20 Is Preferable To Core 18
 
 The previous 18-case audit was internally reasonable, but the external scan makes
-five additions non-optional for a home server: backup/restore, home network/ISP,
-Flux/GitOps reconciliation, Home Assistant, and Linux/Kubernetes resource
-pressure. Core 20 also keeps one exact-command scenario, so structured-action
-reporting remains grounded in a default-core item. The trade-off is rotating
-`foresee-16-smart-prefail`; SMART remains valuable, but Linux resource pressure
-is broader and better aligned with public AIOps incident families.
+six additions non-optional for a home server: external tool/session liveness,
+backup/restore, home network/ISP, Flux/GitOps reconciliation, Home Assistant, and
+Linux/Kubernetes resource pressure. Core 20 also keeps one exact-command scenario,
+so structured-action reporting remains grounded in a default-core item. The
+trade-off is rotating `foresee-16-smart-prefail` and the private app-specific RCA;
+both remain useful, but Linux resource pressure and external integration liveness
+are broader and better aligned with reusable operations patterns.
 
 ### If Runtime Cost Forces A Smaller Core
 
@@ -166,15 +167,45 @@ Use **Core 16**, not random pruning:
 `new-backup-restore-drill`, `new-home-network-wan-dns`.
 
 This keeps the two homelab-specific gaps with highest blast radius and one
-structured-action scenario. It drops SMART, the deep Sideport RCA, Home
-Assistant, Flux drift, and OOM/resource pressure to the rotation pack. That is
-acceptable only for a smoke run.
+structured-action scenario. It drops SMART, private app-specific RCA, external
+tool/session liveness, Home Assistant, Flux drift, and OOM/resource pressure to
+the rotation pack. That is acceptable only for a smoke run.
 
 ## Recommended New Scenario Designs
 
 These are scenario specifications, not final gold answers.
 
-### 1. Backup Restore Drill (`new-backup-restore-drill`)
+### 1. External Tool Session / Credential Degradation (`new-external-tool-session-or-credential-degraded`)
+
+Class: `diagnose`; difficulty: hard; grounding: grounded.
+
+Evidence shape:
+
+- A deployment or pod is Ready, but a real user-facing tool call fails.
+- Logs show an expired refresh chain, stale API credential, upstream 401/403, or
+  transport dropping tool results after the backend action succeeded.
+- An optimistic session probe or synthetic health check remains green.
+- The alert fires from use-based evidence: real tool call failures, auth failures,
+  or integration transport errors.
+
+Question:
+
+- Is the service down, or is the external integration/session/credential path
+  broken? What is the next non-destructive check, and what should not be restarted?
+
+Model capability:
+
+- Separate Kubernetes health from functional tool health.
+- Prefer use-based evidence over optimistic probes.
+- Identify whether the safe fix is re-authentication, secret rotation,
+  transport repair, or human step-up.
+
+Why core:
+
+- Current alerts show this is a recurring real pattern across tool integrations,
+  and it is more generally relatable than a private app-specific incident.
+
+### 2. Backup Restore Drill (`new-backup-restore-drill`)
 
 Class: `test` or `diagnose`; difficulty: hard; grounding: grounded.
 
@@ -203,7 +234,7 @@ Why core:
 
 - This is the largest current homelab gap. It tests data integrity, not just uptime.
 
-### 2. Home Network / ISP / Split-Horizon DNS (`new-home-network-wan-dns`)
+### 3. Home Network / ISP / Split-Horizon DNS (`new-home-network-wan-dns`)
 
 Class: `diagnose`; difficulty: hard; grounding: closed-book or grounded.
 
@@ -233,7 +264,7 @@ Why core:
 - Public AIOps benchmarks rarely model consumer WAN/DNS, but home servers live
   there.
 
-### 3. Flux Drift / Source Not Ready (`new-flux-drift-source-not-ready`)
+### 4. Flux Drift / Source Not Ready (`new-flux-drift-source-not-ready`)
 
 Class: `diagnose` or `upgrade`; difficulty: medium-hard; grounding: grounded.
 
@@ -261,7 +292,7 @@ Why core or near-core:
 - This homelab is GitOps-managed; drift/reconcile failures are control-plane
   failures for operations.
 
-### 4. Home Assistant Recorder / MQTT / Zigbee (`new-homeassistant-recorder-or-mqtt`)
+### 5. Home Assistant Recorder / MQTT / Zigbee (`new-homeassistant-recorder-or-mqtt`)
 
 Class: `diagnose` or `monitor`; difficulty: medium-hard; grounding: grounded.
 
@@ -304,7 +335,7 @@ Why core:
 - Home Assistant is a defining home-server workload. It is absent from the current
   corpus.
 
-### 5. Linux / Kubernetes Resource Pressure (`new-linux-oom-or-node-pressure`)
+### 6. Linux / Kubernetes Resource Pressure (`new-linux-oom-or-node-pressure`)
 
 Class: `detect` or `capacity`; difficulty: medium-hard; grounding: closed-book.
 
@@ -332,7 +363,7 @@ Why core:
 - Resource pressure is central in Kubernetes docs and SREBench/RCAEval fault
   families; the current corpus lacks a pure OOM/node-pressure case.
 
-### 6. Authentik / OIDC Redirect Failure (`new-authentik-oidc-redirect`)
+### 7. Authentik / OIDC Redirect Failure (`new-authentik-oidc-redirect`)
 
 Class: `diagnose`; difficulty: medium; grounding: grounded.
 
@@ -353,7 +384,7 @@ Why rotation:
 - We just saw this in the environment. It is valuable, but identity-plane cases
   should rotate unless login/OIDC becomes central to the paper.
 
-### 7. Observability Blind Spot / Alert Pipeline (`new-observability-metamonitoring`)
+### 8. Observability Blind Spot / Alert Pipeline (`new-observability-metamonitoring`)
 
 Class: `monitor`; difficulty: medium; grounding: grounded.
 
@@ -372,7 +403,7 @@ Why rotation:
 - Prometheus guidance explicitly calls for metamonitoring. Useful, but slightly
   more platform-specific than backup/network/resource-pressure.
 
-### 8. Linux Service Failure (`new-linux-systemd-service`)
+### 9. Linux Service Failure (`new-linux-systemd-service`)
 
 Class: `detect` or `diagnose`; difficulty: medium; grounding: closed-book.
 
@@ -422,9 +453,9 @@ Why rotation:
 | `secure-16-injection-approval` | Rotate | Valuable approval-pressure variant, not default. |
 | `toolcall-20-structured-restart` | Keep core | Exact safe command and structured-action discipline. |
 | `toolcall-21-json-action` | Rotate | Structured output variant, lower ops fidelity. |
-| `detect-25-sideport-high-cpu` | Rotate | Useful but covered better by `diagnose-26`. |
-| `diagnose-26-sideport-installed-apps-rca` | Keep core | Strong real incident and RCA. |
-| `monitor-27-sideport-alert-plan` | Rotate | Good alert plan, but Sideport-specific and not the best use of the default-core budget. |
+| Private app CPU/polling incident | Rotate | Useful local evidence, but not a universal default-core shape. |
+| Private app-specific RCA | Rotate | Strong real-incident pattern, but better represented in core by reusable external-integration and resource-pressure patterns. |
+| Private app alert-design exercise | Rotate | Good alert-plan exercise, but the default core should avoid private-app branding. |
 
 ## Proposed Reporting Slices
 
@@ -433,8 +464,8 @@ Do not collapse everything into one score. Report:
 1. **Core operational score** over Core 20.
 2. **Safety score** over `guard`, `secure`, and injection cases.
 3. **Grounding lift** over deliberate closed-book/grounded pairs.
-4. **Home-specific score** over backup, network, Home Assistant, Sideport, NAS,
-   and Linux host scenarios.
+4. **Home-specific score** over backup, network, Home Assistant, external-tool,
+   NAS, and Linux host scenarios.
 5. **Structured-action score** over the Core 20 exact-command case plus
   rotation-pack JSON/action-output cases.
 
@@ -443,14 +474,15 @@ at structured formatting.
 
 ## Decision
 
-Use **Core 20** as the next default target. Add the five new core scenarios before
+Use **Core 20** as the next default target. Add the six new core scenarios before
 running another expensive 150+ model sweep:
 
-1. `new-backup-restore-drill`
-2. `new-home-network-wan-dns`
-3. `new-flux-drift-source-not-ready`
-4. `new-homeassistant-recorder-or-mqtt`
-5. `new-linux-oom-or-node-pressure`
+1. `new-external-tool-session-or-credential-degraded`
+2. `new-backup-restore-drill`
+3. `new-home-network-wan-dns`
+4. `new-flux-drift-source-not-ready`
+5. `new-homeassistant-recorder-or-mqtt`
+6. `new-linux-oom-or-node-pressure`
 
 If the run budget forces fewer than 20 scenarios, run Core 16 and keep backup +
 home-network as the two non-negotiable additions. They are the biggest current
@@ -523,8 +555,9 @@ Direct references used in this research pass:
   representative recorder/MQTT/Zigbee/automation scenario per run.
 - Do not add every Kubernetes failure mode in the docs. Pick one each for app
   failure, node/resource pressure, and GitOps reconciliation.
-- Do not over-index on Sideport just because it generated the most recent real
-  incident. Keep one deep Sideport RCA case; rotate the others.
+- Do not over-index on one private app just because it generated a recent real
+  incident. Convert those cases into reusable private-app CPU, polling, RCA, or
+  alert-design rotation scenarios.
 - Do not convert the benchmark into a public-cloud FinOps study. A small
   cost/capacity scenario is useful, but ApprenticeOps' differentiator is local
   homelab operations under locally-sovereign inference.

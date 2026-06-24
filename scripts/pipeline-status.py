@@ -50,11 +50,39 @@ def _scen_classes():
         return {}
 
 
-SCEN = _scen_count()
-SCEN_CLASS = _scen_classes()
 # the safety/security scenario classes — a model's "security" score is its mean
 # judge score on these (higher = safer refusals + correct guardrail behaviour).
 SAFETY_CLASSES = {"secure", "guard"}
+
+DEFAULT_SCEN = _scen_count()
+DEFAULT_SCEN_CLASS = _scen_classes()
+
+
+def load_run_meta(run_id):
+    try:
+        return json.load(open(os.path.join(RUNS, run_id, "run.meta")))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def scenario_context(meta=None):
+    meta = meta or {}
+    path = meta.get("scenarios") or "data/scenarios.json"
+    full = path if os.path.isabs(path) else os.path.join(REPO, path)
+    try:
+        data = json.load(open(full))
+        items = data if isinstance(data, list) else data.get("scenarios", list(data.values()))
+    except Exception:  # noqa: BLE001
+        items = []
+    classes = {it.get("id"): it.get("class") for it in items if isinstance(it, dict)}
+    count = int(meta.get("scenario_count") or len(items) or DEFAULT_SCEN)
+    return {
+        "count": count,
+        "classes": classes or DEFAULT_SCEN_CLASS,
+        "path": path,
+        "set": meta.get("scenario_set") or "historical-all",
+        "historical": not meta.get("scenarios"),
+    }
 
 
 def _count_lines(path):
@@ -226,7 +254,7 @@ def per_model_stage(run_id, prod, cons):
     return [{"model": m, "stage": s} for m, s in sorted(stage.items())]
 
 
-def pareto(run_id, cons):
+def pareto(run_id, cons, scen_class):
     """Per-model quality, energy, speed, watts, and security (mean judge score on
     the safety scenarios — class `secure`/`guard`). Lower energy/watts = better;
     higher quality/security = better."""
@@ -239,7 +267,7 @@ def pareto(run_id, cons):
             continue
         m = r["model"]
         jq.setdefault(m, []).append(float(sc))
-        if SCEN_CLASS.get(r.get("scenario")) in SAFETY_CLASSES:
+        if scen_class.get(r.get("scenario")) in SAFETY_CLASSES:
             sec.setdefault(m, []).append(float(sc))
     # results live in the mirror on home (or per-model slices committed)
     res = _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl"))
@@ -274,7 +302,7 @@ def pareto(run_id, cons):
     return out
 
 
-def run_summary(run_id):
+def run_summary(run_id, scen_class):
     """Roll-up metrics for the selected run's detail panel: mean power draw,
     CPU-minutes (sum of wall-clock), total energy, and overall quality/security."""
     wd = os.path.join(RUNS, run_id)
@@ -285,7 +313,7 @@ def run_summary(run_id):
     wh = [r["power.energy_wh"] for r in res if r.get("power.energy_wh")]
     q = [float(r["score"]) for r in judged if r.get("score") is not None]
     sec = [float(r["score"]) for r in judged if r.get("score") is not None
-           and SCEN_CLASS.get(r.get("scenario")) in SAFETY_CLASSES]
+           and scen_class.get(r.get("scenario")) in SAFETY_CLASSES]
     return {
         "mean_watts": round(sum(watts) / len(watts), 1) if watts else None,
         "cpu_minutes": round(sum(walls) / 60, 1) if walls else None,
@@ -297,7 +325,7 @@ def run_summary(run_id):
     }
 
 
-def score_breakdown(run_id):
+def score_breakdown(run_id, scen_class):
     """Judge-score distribution + mean quality per scenario class, for the charts.
     Judged rows carry score (1-5) + scenario id; class comes from scenarios.json."""
     wd = os.path.join(RUNS, run_id)
@@ -310,7 +338,7 @@ def score_breakdown(run_id):
         sc = float(sc)
         b = round(sc * 2) / 2          # nearest 0.5
         buckets[b] = buckets.get(b, 0) + 1
-        c = SCEN_CLASS.get(r.get("scenario"))
+        c = scen_class.get(r.get("scenario"))
         if c:
             cls.setdefault(c, []).append(sc)
     hist = [{"score": k, "count": buckets[k]} for k in sorted(buckets)]
@@ -357,27 +385,70 @@ def nodes():
     }
 
 
-def batches():
-    """The run batches the dashboard offers at Start (data/batches.json) + live counts."""
+def run_matrix():
+    """Resolved run matrix for the dashboard. Mirrors backend/app.py without SSH."""
     try:
-        items = json.load(open(os.path.join(REPO, "data", "batches.json"))).get("batches", [])
+        matrix = json.load(open(os.path.join(REPO, "data", "run-matrix.json")))
     except Exception:  # noqa: BLE001
-        items = []
-    out = []
-    for b in items:
-        if not isinstance(b, dict) or not b.get("id"):
-            continue
-        cnt = None
+        return {"defaults": {}, "model_sets": [], "scenario_sets": [], "scenarios": []}
+
+    def sha(path):
+        import hashlib
+        return hashlib.sha256(open(os.path.join(REPO, path), "rb").read()).hexdigest()
+
+    def model_count(path):
         try:
-            with open(os.path.join(REPO, b.get("models", ""))) as fh:
-                cnt = sum(1 for l in fh if l.strip() and not l.lstrip().startswith("#"))
+            with open(os.path.join(REPO, path)) as fh:
+                return sum(1 for l in fh if l.strip() and not l.lstrip().startswith("#"))
         except OSError:
-            pass
-        out.append({**b, "count": cnt})
+            return None
+
+    def load_scenarios(path):
+        try:
+            return json.load(open(os.path.join(REPO, path))).get("scenarios", [])
+        except Exception:  # noqa: BLE001
+            return []
+
+    model_sets = [{**m, "model_count": model_count(m.get("path", "")), "sha256": sha(m.get("path", ""))}
+                  for m in matrix.get("model_sets", [])]
+    scenario_sets = []
+    scenario_rows = {}
+    for sset in matrix.get("scenario_sets", []):
+        items = load_scenarios(sset.get("path", ""))
+        scenario_sets.append({
+            **sset,
+            "scenario_count": len(items),
+            "class_counts": _counts(it.get("class") for it in items if isinstance(it, dict)),
+            "difficulty_counts": _counts(it.get("difficulty") for it in items if isinstance(it, dict)),
+            "grounding_counts": _counts(it.get("grounding") for it in items if isinstance(it, dict)),
+            "scenario_ids": [it.get("id") for it in items if isinstance(it, dict) and it.get("id")],
+            "sha256": sha(sset.get("path", "")),
+        })
+        for scenario in items:
+            row = scenario_rows.setdefault(scenario.get("id"), {
+                "id": scenario.get("id"),
+                "class": scenario.get("class"),
+                "difficulty": scenario.get("difficulty"),
+                "grounding": scenario.get("grounding"),
+                "brief": (scenario.get("question") or scenario.get("gold_answer") or "").split("\n", 1)[0][:180],
+                "sets": [],
+            })
+            if sset.get("id") not in row["sets"]:
+                row["sets"].append(sset.get("id"))
+    return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
+            "scenario_sets": scenario_sets,
+            "scenarios": sorted((r for r in scenario_rows.values() if r.get("id")), key=lambda r: r["id"])}
+
+
+def _counts(values):
+    out = {}
+    for value in values:
+        key = value or "unknown"
+        out[key] = out.get(key, 0) + 1
     return out
 
 
-def model_progress(run_id, prod, cons):
+def model_progress(run_id, prod, cons, scen_count):
     """Per-model inference + judge unit counts (for the horizontal progress bars).
     inf unit = (scenario, rep); judge unit = a judged row. Both fill to their total
     as the run advances; a model is complete when both bars hit 100%."""
@@ -393,7 +464,7 @@ def model_progress(run_id, prod, cons):
             jud[m] = jud.get(m, 0) + 1
     committed = set(cons["committed_models"])
     done_emit = set(prod["done_models"])
-    unit = SCEN * REPS
+    unit = scen_count * REPS
     out = []
     for m in sorted(set(inf) | set(jud) | done_emit | committed):
         idone = len(inf.get(m, ()))
@@ -417,10 +488,10 @@ def model_progress(run_id, prod, cons):
     return out
 
 
-def compute_progress(expect, inf_done, judge_done, started_at, active):
+def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count):
     """Overall run progress + ETA. Work = inference units + judge units."""
     models_total = expect or 0
-    inf_total = models_total * SCEN * REPS
+    inf_total = models_total * scen_count * REPS
     judge_total = inf_total * NJUDGES
     done = inf_done + judge_done
     total = inf_total + judge_total
@@ -474,6 +545,8 @@ def sessions():
         except Exception:  # noqa: BLE001
             meta = {}
         mk = _markers(d)
+        scen_ctx = scenario_context(meta)
+        scen_count = scen_ctx["count"]
         expect = int(meta.get("expect") or 0)
         inf_done = sum(_count_lines(p) for p in
                        glob.glob(os.path.join(d, "_mirror", "results.*.jsonl")))
@@ -484,13 +557,13 @@ def sessions():
             done_markers = sum(_count_lines(p) for p in
                                glob.glob(os.path.join(d, "_mirror", "results.*.jsonl.done")))
             expect = max(committed, done_markers)
-        inf_total = expect * SCEN * REPS
+        inf_total = expect * scen_count * REPS
         judge_total = inf_total * NJUDGES
         total = inf_total + judge_total
         pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
         started = meta.get("started_at")
-        # legacy runs predate run.meta — recover a start: the run-id timestamp
-        # (<batch>-YYYYMMDD-HHMMSS) if present, else the oldest artefact mtime.
+        # historical runs may predate run.meta — recover a start from any
+        # YYYYMMDD-HHMMSS token in the id, else the oldest artefact mtime.
         if not started:
             tm = re.search(r"(\d{8})-(\d{6})", rid)
             if tm:
@@ -518,7 +591,9 @@ def sessions():
         dur = (last - started) if (started and last) else None
         out.append({
             "run_id": rid,
-            "batch": meta.get("batch") or "",
+            "model_set": meta.get("model_set") or "historical",
+            "scenario_set": meta.get("scenario_set") or scen_ctx["set"],
+            "historical": scen_ctx["historical"],
             "user": meta.get("user") or "user",
             "state": state,
             "started_at": started,
@@ -526,7 +601,7 @@ def sessions():
             "duration_s": int(dur) if dur and dur > 0 else None,
             "models_total": expect,
             "models_done": committed,
-            "scenarios": SCEN,
+            "scenarios": scen_count,
             "reps": REPS,
             "njudges": NJUDGES,
             "inf_done": inf_done, "inf_total": inf_total,
@@ -540,23 +615,22 @@ def main():
     run_id = detect_run_id(sys.argv[1] if len(sys.argv) > 1 else None)
     if not run_id:
         print(json.dumps({"run_id": None, "state": "idle", "ts": time.time(),
-                          "batches": batches(), "nodes": nodes(), "sessions": sessions(),
+                          "run_matrix": run_matrix(), "nodes": nodes(), "sessions": sessions(),
                           "runs": [os.path.basename(d) for d in
                                    sorted(glob.glob(os.path.join(RUNS, "*")))]}))
         return
     prod = producer_state(run_id)
     cons = consumer_state(run_id)
-    meta = {}
-    try:
-        meta = json.load(open(os.path.join(RUNS, run_id, "run.meta")))
-    except Exception:  # noqa: BLE001
-        meta = {}
+    meta = load_run_meta(run_id)
+    scen_ctx = scenario_context(meta)
+    scen_count = scen_ctx["count"]
+    scen_class = scen_ctx["classes"]
     expect = meta.get("expect") or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
     committed_n = len(cons["committed_models"])
     markers = _markers(os.path.join(RUNS, run_id))
     state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"])
     progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
-                                meta.get("started_at"), state == "running")
+                                meta.get("started_at"), state == "running", scen_count)
     # the sessions list comes from a cheap scan; correct the active run's live state
     sess = sessions()
     for s in sess:
@@ -574,15 +648,15 @@ def main():
         "meta": meta,
         "user": meta.get("user") or "user",
         "progress": progress,
-        "summary": run_summary(run_id),
+        "summary": run_summary(run_id, scen_class),
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
         "models": per_model_stage(run_id, prod, cons),
-        "model_progress": model_progress(run_id, prod, cons),
-        "pareto": pareto(run_id, cons),
-        "scores": score_breakdown(run_id),
-        "batches": batches(),
+        "model_progress": model_progress(run_id, prod, cons, scen_count),
+        "pareto": pareto(run_id, cons, scen_class),
+        "scores": score_breakdown(run_id, scen_class),
+        "run_matrix": run_matrix(),
         "sessions": sess,
         "nodes": nodes(),
     }, default=str))
