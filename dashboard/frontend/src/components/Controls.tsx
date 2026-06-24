@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Play, Pause, RotateCw, Square, ChevronDown, Loader2 } from "lucide-react";
 import { control } from "../api";
 import type { Batch, PipelineState } from "../types";
@@ -14,9 +14,17 @@ export function Controls({
   batches: Batch[];
   onAfter: (runId?: string | null) => void;
 }) {
-  const [batch, setBatch] = useState<string>(batches[0]?.id ?? "");
+  const [batch, setBatch] = useState<string>("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Batches load on the first status poll (after mount), so default the selection
+  // once they arrive and keep it pointed at a batch that actually exists.
+  useEffect(() => {
+    if (batches.length && !batches.some((b) => b.id === batch)) {
+      setBatch(batches[0].id);
+    }
+  }, [batches, batch]);
 
   const running = state === "running";
   const paused = state === "paused";
@@ -59,7 +67,7 @@ export function Controls({
           <button
             className="btn btn-primary rounded-none border-0 border-l border-line"
             disabled={!chosen || busy != null}
-            onClick={() => run("start", () => control.start(batch))}
+            onClick={() => chosen && run("start", () => control.start(chosen.id))}
           >
             {busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Start
