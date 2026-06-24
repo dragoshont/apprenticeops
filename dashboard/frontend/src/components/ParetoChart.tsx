@@ -26,10 +26,10 @@ function TipBox({ active, payload }: { active?: boolean; payload?: Array<{ paylo
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-lg border border-line bg-ink-900/95 px-3 py-2 text-xs shadow-xl">
-      <div className="mb-1 font-mono font-semibold text-slate-200">{p.model}</div>
-      <div className="text-slate-400">quality {p.quality ?? "—"} · {p.tok_s ?? "—"} tok/s</div>
-      <div className="text-slate-400">{p.wh != null ? `${p.wh} Wh/ans` : "energy —"} · n={p.n}</div>
+    <div className="rounded-lg border border-line bg-panel px-3 py-2 text-xs shadow-xl">
+      <div className="mb-1 font-mono font-semibold text-fg">{p.model}</div>
+      <div className="text-muted">quality {p.quality ?? "—"} · {p.tok_s ?? "—"} tok/s</div>
+      <div className="text-muted">{p.wh != null ? `${p.wh} Wh/ans` : "energy —"} · n={p.n}</div>
     </div>
   );
 }
@@ -43,7 +43,7 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
       right={<span className="text-xs text-slate-500">{pts.length} scored</span>}
     >
       {pts.length === 0 ? (
-        <p className="py-12 text-center text-sm text-slate-600">
+        <p className="py-12 text-center text-sm text-faint">
           Awaiting judged + telemetry data…
         </p>
       ) : (

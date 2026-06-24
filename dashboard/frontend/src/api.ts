@@ -19,7 +19,7 @@ export async function fetchStatus(runId?: string | null): Promise<Status> {
 
 export const control = {
   start: (batch: string) => jpost("/api/control/start", { batch }),
-  stop: () => jpost("/api/control/stop"),
-  pause: () => jpost("/api/control/pause"),
+  stop: (runId?: string | null) => jpost("/api/control/stop", { run_id: runId ?? null }),
+  pause: (runId?: string | null) => jpost("/api/control/pause", { run_id: runId ?? null }),
   resume: (runId?: string | null) => jpost("/api/control/resume", { run_id: runId ?? null }),
 };

@@ -2,8 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Semantic palette as `R G B` triplets so Tailwind's rgb(var(--x) / alpha) works.
+   Dark is the default; html.light swaps the variables. */
 :root {
+  --bg: 6 8 15;
+  --panel: 14 19 34;
+  --panel2: 18 24 41;
+  --line: 29 39 64;
+  --fg: 226 232 240;
+  --muted: 148 163 184;
+  --faint: 100 116 139;
+  --accent: 91 140 255;
+  --good: 52 211 153;
+  --warn: 251 191 36;
+  --bad: 248 113 113;
+  --info: 56 189 248;
   color-scheme: dark;
+}
+
+html.light {
+  --bg: 246 248 251;
+  --panel: 255 255 255;
+  --panel2: 241 245 249;
+  --line: 214 222 235;
+  --fg: 15 23 42;
+  --muted: 71 85 105;
+  --faint: 100 116 139;
+  --accent: 37 99 235;
+  --good: 5 150 105;
+  --warn: 217 119 6;
+  --bad: 220 38 38;
+  --info: 2 132 199;
+  color-scheme: light;
 }
 
 html,
@@ -13,11 +43,15 @@ body,
 }
 
 body {
-  @apply bg-ink-950 text-slate-300 antialiased;
+  @apply bg-bg text-fg antialiased;
   font-feature-settings: "tnum" 1, "cv01" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html:not(.light) body {
   background-image:
-    radial-gradient(900px 500px at 12% -10%, rgba(91, 140, 255, 0.10), transparent 60%),
-    radial-gradient(800px 500px at 95% 0%, rgba(52, 211, 153, 0.06), transparent 55%);
+    radial-gradient(900px 500px at 12% -10%, rgb(var(--accent) / 0.1), transparent 60%),
+    radial-gradient(800px 500px at 95% 0%, rgb(var(--good) / 0.06), transparent 55%);
   background-attachment: fixed;
 }
 
@@ -34,25 +68,25 @@ body {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-line/80 bg-ink-850/70 backdrop-blur-sm;
+    @apply rounded-2xl border border-line bg-panel/80 backdrop-blur-sm;
   }
   .card-pad {
     @apply p-4 sm:p-5;
   }
   .label {
-    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500;
+    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-faint;
   }
   .stat {
-    @apply font-mono text-2xl font-semibold text-slate-100 tabular-nums;
+    @apply font-mono text-2xl font-semibold text-fg tabular-nums;
   }
   .pill {
     @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
   }
   .btn {
-    @apply inline-flex items-center gap-2 rounded-xl border border-line px-3.5 py-2 text-sm font-medium text-slate-200 transition;
+    @apply inline-flex items-center gap-2 rounded-xl border border-line bg-panel2/50 px-3.5 py-2 text-sm font-medium text-fg transition;
   }
   .btn:hover:not(:disabled) {
-    @apply border-accent/60 bg-accent-soft text-white;
+    @apply border-accent/60 bg-accent/10 text-accent;
   }
   .btn:disabled {
     @apply cursor-not-allowed opacity-40;
@@ -62,5 +96,12 @@ body {
   }
   .btn-danger:hover:not(:disabled) {
     @apply border-bad/60 bg-bad/10 text-bad;
+  }
+  .track {
+    @apply relative h-2 w-full overflow-hidden rounded-full bg-line/70;
+  }
+  .track-live::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer;
   }
 }

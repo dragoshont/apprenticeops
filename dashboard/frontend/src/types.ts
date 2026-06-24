@@ -67,19 +67,70 @@ export interface ParetoPoint {
   n: number;
 }
 
+export interface Progress {
+  inf_done: number;
+  inf_total: number;
+  judge_done: number;
+  judge_total: number;
+  units_done: number;
+  units_total: number;
+  pct: number;
+  pct_remaining: number;
+  elapsed_s: number | null;
+  eta_s: number | null;
+  eta_human: string | null;
+  rate_per_min: number | null;
+}
+
+export interface ModelProgress {
+  model: string;
+  inf_done: number;
+  inf_total: number;
+  judge_done: number;
+  judge_total: number;
+  committed: boolean;
+  stage: string;
+}
+
+export interface Session {
+  run_id: string;
+  batch: string;
+  state: PipelineState | string;
+  started_at: number | null;
+  ended_at: number | null;
+  duration_s: number | null;
+  models_total: number;
+  models_done: number;
+  scenarios: number;
+  reps: number;
+  njudges: number;
+  inf_done: number;
+  inf_total: number;
+  judge_done: number;
+  judge_total: number;
+  pct: number;
+  eta_s?: number | null;
+  eta_human?: string | null;
+}
+
 export interface Status {
   run_id: string | null;
   ts: number;
   state: PipelineState;
   expect?: number;
   error?: string;
+  markers?: { canceled: boolean; paused: boolean };
   meta?: { run_id?: string; models?: string; batch?: string; expect?: number; started_at?: number };
+  progress?: Progress;
   producer?: Producer;
   consumer?: Consumer;
   stages?: string[];
   models?: ModelStage[];
+  model_progress?: ModelProgress[];
   pareto?: ParetoPoint[];
   batches?: Batch[];
+  sessions?: Session[];
   nodes?: { home: NodeInfo; ai: NodeInfo };
   runs?: string[];
 }
+

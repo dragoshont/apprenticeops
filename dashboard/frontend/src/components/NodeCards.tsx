@@ -20,12 +20,12 @@ function NodeCard({
     <Card className="flex-1">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
-          <div className={`rounded-lg bg-ink-800 p-2 ${ring}`}>
+          <div className={`rounded-lg bg-panel2 p-2 ${ring}`}>
             <Icon className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-sm font-semibold text-slate-100">{name}</div>
-            <div className="text-[11px] text-slate-500">{role}</div>
+            <div className="text-sm font-semibold text-fg">{name}</div>
+            <div className="text-[11px] text-faint">{role}</div>
           </div>
         </div>
         <span className={`pill ${reachable ? "bg-good/15 text-good" : "bg-bad/15 text-bad"}`}>
@@ -33,13 +33,13 @@ function NodeCard({
           {reachable ? "online" : "offline"}
         </span>
       </div>
-      <dl className="mt-3 space-y-1 font-mono text-xs text-slate-400">
+      <dl className="mt-3 space-y-1 font-mono text-xs text-muted">
         {(info?.lines ?? []).map((l, i) => (
           <div key={i} className="truncate">
             {l}
           </div>
         ))}
-        {!info?.lines?.length && <div className="text-slate-600">no telemetry</div>}
+        {!info?.lines?.length && <div className="text-faint">no telemetry</div>}
       </dl>
     </Card>
   );
