@@ -591,6 +591,227 @@
       ],
       "gold_answer": "{\"action\": \"scale\", \"target\": \"api\", \"namespace\": \"core\", \"replicas\": 4}",
       "judge_rubric": "Full marks: a single valid JSON object, action=scale, target=api, namespace=core, replicas within 3-5. Partial: valid JSON but wrong field. Zero: prose instead of JSON, invalid JSON, or an out-of-policy/destructive action."
+    },
+    {
+      "id": "detect-25-sideport-high-cpu",
+      "difficulty": "medium",
+      "class": "detect",
+      "aiopslab_task": "detection",
+      "grounding": "closed-book",
+      "context": "Incident snapshot from a MicroK8s homelab node named home.\n\nHost top excerpt:\n- load average: 2.29 2.72 3.29\n- CPU: 38.9% user, 16.7% system, 43.1% idle, 0.0% iowait\n- top processes: dotnet 100% CPU, netdata 100% CPU, Sonarr 50%, containerd 41.7%, dockerd 33.3%\n- CPU package temperature: 78 C; CPU pressure avg10=21.29\n\nkubectl top pods --sort-by=cpu:\n- default/sideport-789c7d689f-sqpwz 999m CPU 145Mi\n- default/sonarr-6dd45f85b6-4xdh5 189m CPU\n- observability/otel-collector-agent-c2cg8 154m CPU\n\nRecent Sideport log count over 30m:\n- 32 GET /api/devices\n- 30 GET /api/devices/00008140-001A41390242801C/installed-apps\n- provisioning_profile_warnings=1110\n\nDisk IO wait is ~0-1%; recent dmesg err/crit is empty.",
+      "question": "The operator says the server fan is loud. Identify the primary culprit, the most likely hot path, and the next non-destructive check. Also say what this evidence does NOT support.",
+      "gold_answer": "Primary culprit is Sideport, specifically pod default/sideport-789c7d689f-sqpwz, not Sonarr or generic Docker alone: kubectl top shows Sideport at ~999m, matching the hot dotnet process. The likely hot path is repeated /api/devices/{udid}/installed-apps polling, correlated with 30 calls in 30m and 1110 provisioning-profile warnings. Next non-destructive check: inspect Sideport logs/request counts and, if possible, thread/process detail for dotnet or per-endpoint metrics; do not restart/delete system pods. Evidence does NOT support disk failure or storage pressure: iowait is low and dmesg has no errors. Netdata/otel may add observer load, but Sideport is the app workload to localize first.",
+      "deterministic_checks": [
+        {
+          "type": "must_include",
+          "patterns": [
+            "sideport"
+          ],
+          "desc": "identifies Sideport as the culprit"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "999m",
+            "one full cpu",
+            "full core",
+            "dotnet",
+            "\\.net"
+          ],
+          "desc": "uses CPU evidence rather than raw fan symptom"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "installed-apps",
+            "provisioning-profile",
+            "profile warnings",
+            "warnings"
+          ],
+          "desc": "connects the culprit to the hot endpoint/log pattern"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "logs",
+            "request counts",
+            "thread",
+            "metrics",
+            "non-destructive",
+            "inspect"
+          ],
+          "desc": "prescribes a non-destructive next check"
+        },
+        {
+          "type": "must_exclude_action",
+          "patterns": [
+            "delete namespace",
+            "delete kube-system",
+            "restart coredns",
+            "restart calico",
+            "wipe",
+            "rebuild the node"
+          ],
+          "desc": "does not recommend destructive unrelated mitigation"
+        }
+      ],
+      "judge_rubric": "Reward localizing from host CPU to the Sideport pod and then to installed-apps/profile-warning evidence. Reward explicitly rejecting disk/hardware as unsupported by low iowait and clean dmesg. Penalize blaming Netdata alone, treating Docker/containerd as the root cause without pod localization, or recommending restarts/deletes before inspection.",
+      "max_tokens": 550,
+      "timeout_s": 120
+    },
+    {
+      "id": "diagnose-26-sideport-installed-apps-rca",
+      "difficulty": "hard",
+      "class": "diagnose",
+      "aiopslab_task": "analysis",
+      "grounding": "grounded",
+      "context": "Sideport source summary plus runtime logs.\n\nUI code: every admin snapshot runs fetchSnapshot() every 15 seconds. It fetches /api/devices, then fetchInstalledApps() calls /api/devices/{udid}/installed-apps for every reachable device with a UDID.\n\nAPI code: GET /api/devices/{udid}/installed-apps calls devices.ListInstalledAppsAsync(udid).\n\nController code: ListInstalledAppsAsync always does two backend calls: _backend.ListInstalledAppsAsync(udid) for installation_proxy Browse, then _backend.ListProvisioningProfilesAsync(udid), parses every mobileprovision blob, and joins profile expiry to each user app.\n\nBackend code: ListProvisioningProfilesAsync calls misagent.GetInstalledProvisioningProfiles(); for every returned PropertyNode it tries profile.AsDataNode().Value, and logs: 'unexpected provisioning-profile node shape: {Error}' if the node is not Data.\n\nRuntime: installed-apps was called ~30 times in 30m and emitted 1110 'unexpected provisioning-profile node shape: Invalid type expected Data found Dict' warnings. One installed-apps call took 1437ms.",
+      "question": "Give a root-cause analysis. Which part of the request path is most suspicious, what hypotheses remain, and what metrics would disambiguate them?",
+      "gold_answer": "Most suspicious path: the installed-apps read model, especially its provisioning-profile half. The endpoint is not a cheap app list; each poll performs installation_proxy Browse plus misagent GetInstalledProvisioningProfiles, parses every profile, and joins expiry data. The runtime warning storm comes from misagent/profile nodes returned as Dict where Sideport expects Data, so the profile retrieval/parse path is at least noisy and plausibly CPU-expensive. UI polling every 15s can repeat that cost indefinitely for every reachable device. Remaining hypotheses: installation_proxy Browse itself is slow; misagent profile retrieval is slow; profile parsing/join is slow; warning/log pipeline amplifies CPU; observer tools add secondary load. Metrics: per-endpoint installed-apps request count/duration/result; backend sub-operation duration/count for installation_proxy_browse vs misagent_profiles; number of apps/profiles returned; provisioning-profile shape warning counter by node type; pod CPU and log-rate panels. Avoid labels with UDID/bundle ID/IP.",
+      "deterministic_checks": [
+        {
+          "type": "must_include",
+          "patterns": [
+            "installed-apps"
+          ],
+          "desc": "names the installed-apps path"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "misagent",
+            "provisioning",
+            "profile"
+          ],
+          "desc": "identifies the profile/misagent half as suspicious"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "installation_proxy",
+            "browse"
+          ],
+          "desc": "does not ignore the app browse half"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "poll",
+            "15 seconds",
+            "every snapshot",
+            "repeated"
+          ],
+          "desc": "connects repeated UI polling to sustained load"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "duration",
+            "counter",
+            "metrics",
+            "histogram",
+            "warning"
+          ],
+          "desc": "proposes metrics/probes rather than guessing"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "udid",
+            "bundle",
+            "high-cardinality",
+            "cardinality",
+            "ip"
+          ],
+          "desc": "mentions cardinality/label caution"
+        }
+      ],
+      "judge_rubric": "Reward explaining the full request path and separating installation_proxy from misagent/profile parsing. Reward a hypothesis matrix with metrics that can distinguish browse latency, profile retrieval/parse latency, warning storms, and polling cadence. Penalize one-cause certainty without probes, or metrics that leak UDIDs/bundle IDs as labels.",
+      "max_tokens": 700,
+      "timeout_s": 150
+    },
+    {
+      "id": "monitor-27-sideport-alert-plan",
+      "difficulty": "medium",
+      "class": "monitor",
+      "aiopslab_task": "mitigation",
+      "grounding": "grounded",
+      "context": "After the Sideport high-CPU incident, the operator wants Grafana alerts. Available signals include Kubernetes pod CPU from cAdvisor/kubelet, kube-state-metrics for pod/deployment state, Loki logs, and host temperature/pressure from Netdata/node exporter. Planned Sideport app metrics: sideport_device_installed_apps_requests_total{result}, sideport_device_installed_apps_duration_seconds, sideport_device_backend_operation_duration_seconds{operation,connection_type,result}, sideport_device_provisioning_profile_shape_warnings_total{node_type}.\n\nOperational constraint: Sideport signs apps with one free-tier Apple certificate. It must never be scaled to multiple replicas; safe temporary mitigation is close the admin tab, scale Sideport to zero, or keep GitOps paused until fixed.",
+      "question": "Design a concise alert plan for this class of incident: what should page, what should be a warning/dashboard panel, and what mitigation is safe?",
+      "gold_answer": "Page on sustained Sideport CPU near its single-core limit, e.g. container CPU >0.9 cores for 15m, especially when installed-apps duration/rate or backend operation duration is elevated. Warn on CPU >0.7 for 10m, provisioning-profile shape warning rate spikes (for example >100 in 10m or >1/s for 5m), and host package temperature >75 C for 10m. Dashboard panels: Sideport pod CPU vs limit, host package temp/CPU pressure, /api installed-apps request rate and latency, backend operation split (installation_proxy_browse vs misagent_profiles), profile-shape warning rate by node_type, deployment desired/ready replicas. Safe mitigation: close/pause the admin UI polling, scale Sideport to zero or keep the GitOps manifest paused, and investigate logs/metrics. Do NOT scale Sideport above one replica because two signers can revoke the free-tier cert.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "0.9",
+            "near its.*limit",
+            "single-core",
+            "single core",
+            "15m",
+            "15 min"
+          ],
+          "desc": "has a critical sustained CPU threshold"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "0.7",
+            "warning",
+            "10m",
+            "10 min"
+          ],
+          "desc": "has a warning threshold"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "provisioning-profile",
+            "shape warning",
+            "warning rate",
+            "loki",
+            "log"
+          ],
+          "desc": "alerts on the parser/log storm"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "installed-apps",
+            "backend operation",
+            "installation_proxy",
+            "misagent"
+          ],
+          "desc": "includes Sideport app metrics, not only pod CPU"
+        },
+        {
+          "type": "any_include",
+          "patterns": [
+            "temperature",
+            "temp",
+            "cpu pressure",
+            "psi",
+            "host"
+          ],
+          "desc": "includes host thermal/pressure signal"
+        },
+        {
+          "type": "must_not_endorse",
+          "patterns": [
+            "scale sideport to (2|two)",
+            "scale sideport .*replicas.*(2|two)",
+            "increase sideport replicas",
+            "increase replicas for sideport",
+            "add another sideport replica",
+            "run two sideport",
+            "restart everything",
+            "delete namespace"
+          ],
+          "desc": "does not endorse unsafe multi-signer or broad destructive mitigation"
+        }
+      ],
+      "judge_rubric": "Reward a layered alert plan: pod CPU page, app-specific installed-apps/profile-warning signals, host temp/pressure, and replica state. Reward safe mitigation that respects the single-signer invariant. Penalize only alerting on generic host load, or suggesting more Sideport replicas as a fix.",
+      "max_tokens": 650,
+      "timeout_s": 150
     }
   ]
 }
