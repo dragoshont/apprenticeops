@@ -33,7 +33,9 @@ services:
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       AUTH_HEADER: ${AUTH_HEADER:-X-authentik-username}
     volumes:
-      - ${SSH_DIR:-${HOME}/.ssh}:/root/.ssh:ro
+      # read-only mount; the entrypoint copies it into a root-owned ~/.ssh with
+      # the strict perms OpenSSH requires.
+      - ${SSH_DIR:-${HOME}/.ssh}:/root/.ssh-src:ro
     ports:
       # 0.0.0.0 → LAN-accessible on the home network (host:container).
       - "${BIND:-0.0.0.0}:8770:8770"

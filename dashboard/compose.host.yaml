@@ -9,3 +9,7 @@
 services:
   mission-control:
     network_mode: host
+    # the container gets its own /etc/hosts under host networking, so map the
+    # bare `home` alias to its LAN IP (ai is a FQDN and resolves via DNS).
+    extra_hosts:
+      - "home:192.168.1.201"
