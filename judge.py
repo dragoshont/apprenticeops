@@ -376,7 +376,13 @@ def main():
         specs = [(jg.backend, jg.model) for jg in judges]
         tasks = []
         for line in open(args.results):
-            row = json.loads(line)
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # tolerate a partial last line (mid-rsync snapshot)
             sid = row.get("scenario")
             if not sid or sid not in scen:
                 continue
