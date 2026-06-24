@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-ink-950 text-slate-300 antialiased;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  background-image:
+    radial-gradient(900px 500px at 12% -10%, rgba(91, 140, 255, 0.10), transparent 60%),
+    radial-gradient(800px 500px at 95% 0%, rgba(52, 211, 153, 0.06), transparent 55%);
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-line rounded-full;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line/80 bg-ink-850/70 backdrop-blur-sm;
+  }
+  .card-pad {
+    @apply p-4 sm:p-5;
+  }
+  .label {
+    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500;
+  }
+  .stat {
+    @apply font-mono text-2xl font-semibold text-slate-100 tabular-nums;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-xl border border-line px-3.5 py-2 text-sm font-medium text-slate-200 transition;
+  }
+  .btn:hover:not(:disabled) {
+    @apply border-accent/60 bg-accent-soft text-white;
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+  .btn-primary {
+    @apply border-accent/50 bg-accent/15 text-accent;
+  }
+  .btn-danger:hover:not(:disabled) {
+    @apply border-bad/60 bg-bad/10 text-bad;
+  }
+}

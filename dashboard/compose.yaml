@@ -1,0 +1,29 @@
+# ApprenticeOps mission-control.
+#
+# The container SSHes into the `home` node to read pipeline status and drive the
+# run. It therefore needs your SSH key + an ssh config that defines `home` (and,
+# for home → ai control, the `home-ai.hont.ro` host home itself reaches).
+#
+# Mount your ~/.ssh read-only. The key must be passphrase-less or already in an
+# agent forwarded into the container (simplest: a dedicated passphrase-less key
+# referenced by an ssh config Host block).
+#
+#   HOME_SSH=home  → the Host alias inside the mounted ssh config.
+#
+# Binds to localhost only — this tool has no auth (single-operator, trusted LAN).
+
+services:
+  mission-control:
+    build: .
+    image: apprenticeops/mission-control:0.1.0
+    container_name: apprenticeops-mc
+    restart: unless-stopped
+    environment:
+      HOME_SSH: home
+      AI_SSH: home-ai.hont.ro
+      REPO_DIR: /home/dragos/apprenticeops
+      POLL_S: "5"
+    volumes:
+      - ${HOME}/.ssh:/root/.ssh:ro
+    ports:
+      - "127.0.0.1:8770:8770"

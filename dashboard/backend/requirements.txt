@@ -1,0 +1,4 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+# pydantic is pulled in by fastapi; left unpinned so prebuilt wheels resolve on
+# the host Python (3.12 in the container, possibly newer on a dev Mac).
