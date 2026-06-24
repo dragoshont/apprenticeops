@@ -1,0 +1,19 @@
+{
+  "_comment": "Run batches the dashboard offers at Start. Each maps to a models file (one ollama tag per line, '#' comments allowed). 'dryrun' is the 2-model end-to-end validation; 'full' is the whole locked roster. Add more batches here (e.g. a single-bracket subset) and they appear in the UI automatically.",
+  "batches": [
+    {
+      "id": "dryrun",
+      "label": "Dry run \u2014 2 small models",
+      "models": "data/models.dryrun.txt",
+      "kind": "validation",
+      "desc": "End-to-end smoke test (smollm2:135m + qwen2.5:0.5b). ~minutes."
+    },
+    {
+      "id": "full",
+      "label": "Full roster \u2014 all models",
+      "models": "data/models.txt",
+      "kind": "experiment",
+      "desc": "The complete locked roster. The real run (~days, judged 8-wide)."
+    }
+  ]
+}
