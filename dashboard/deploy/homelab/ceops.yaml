@@ -1,0 +1,77 @@
+# ceops.hont.ro — Traefik IngressRoute for the ApprenticeOps Mission Control dashboard.
+#
+# STAGED / INERT: this file is NOT in any kustomization and is NOT applied by Flux.
+# Per homelab rule HL-11, an Authentik forward-auth gate is attached LAST, after the
+# provider exists, and the live flip is verified by a human sign-in (cannot be
+# automated). Follow deploy/homelab/README.md to go live.
+#
+# Backend = the Docker container already running ON the home node (192.168.1.201:8770).
+# A selector-less Service + Endpoints points Traefik at that host port, so we reuse the
+# proven SSH/shell access to `home` + `ai` instead of re-plumbing it inside a pod.
+# Mirrors apps/homeautomation/home-assistant/forward-auth.yaml (the authgated pattern).
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apprenticeops-ceops
+  namespace: default
+  labels: { app.kubernetes.io/name: apprenticeops-ceops }
+spec:
+  ports:
+    - name: http
+      port: 8770
+      targetPort: 8770
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: apprenticeops-ceops          # must match the Service name
+  namespace: default
+  labels: { app.kubernetes.io/name: apprenticeops-ceops }
+subsets:
+  - addresses:
+      - ip: 192.168.1.201            # the home node, where the container is published
+    ports:
+      - name: http
+        port: 8770
+---
+# The Authentik-gated route. Mirrors the media apps: websecure + the shared
+# `authentik-forwardauth` middleware (default ns) + the wildcard cert.
+# The container must also run with AUTH_ENABLED=true so it trusts the injected
+# X-authentik-username header (defense in depth) — see README step 4.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ceops-authgated
+  namespace: default
+  labels: { app.kubernetes.io/name: apprenticeops-ceops, app.kubernetes.io/component: forward-auth }
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`ceops.hont.ro`)
+      kind: Rule
+      middlewares:
+        - name: authentik-forwardauth     # shared domain-level forward-auth (default ns)
+      services:
+        - name: apprenticeops-ceops
+          port: 8770
+  tls:
+    secretName: wildcard-hont-ro-tls
+---
+# ceops.hont.ro :80 -> 301 https (reuses the shared redirect middleware in default ns).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ceops-https-redirect
+  namespace: default
+  labels: { app.kubernetes.io/name: apprenticeops-ceops }
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`ceops.hont.ro`)
+      kind: Rule
+      middlewares:
+        - name: authentik-https-redirect
+      services:
+        - name: apprenticeops-ceops
+          port: 8770
