@@ -74,6 +74,7 @@ export function ParetoChart({ data }: { data: ParetoPoint[] }) {
     <Card
       title="Pareto · quality vs energy vs security"
       icon={<Sparkles className="h-4 w-4 text-accent" />}
+      hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its colour is the security score (green safe → red weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
       right={
         <div className="flex items-center gap-2 text-[10px] text-faint">
           <span className="inline-flex items-center gap-1">

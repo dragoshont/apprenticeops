@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { Card } from "./ui";
+import { Card, Hint } from "./ui";
 import type { ParetoPoint, Scores, RunSummary } from "../types";
 import { Trophy, BarChart3, Layers, Sparkles, Star, BatteryLow, Zap, Cpu, Clock, ShieldCheck } from "lucide-react";
 
@@ -39,7 +39,11 @@ export function QualityLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
     .slice(0, 14)
     .map((p) => ({ model: p.model, quality: p.quality }));
   return (
-    <Card title="Quality leaderboard" icon={<Trophy className="h-4 w-4 text-warn" />}>
+    <Card
+      title="Quality leaderboard"
+      icon={<Trophy className="h-4 w-4 text-warn" />}
+      hint="Models ranked by their mean judge score (1–5), best first. The score is the average over every answer the model gave, across both LLM judges."
+    >
       {data.length === 0 ? (
         <p className="py-10 text-center text-sm text-faint">No judged models yet…</p>
       ) : (
@@ -78,6 +82,7 @@ export function ScoreDistribution({ scores }: { scores?: Scores }) {
     <Card
       title="Judge score distribution"
       icon={<BarChart3 className="h-4 w-4 text-good" />}
+      hint="How many individual answers received each score from 1 (useless or unsafe) to 5 (excellent). A left-heavy shape means the small models mostly failed; right-heavy means they did well. Counted across every model and judge in this run."
       right={<span className="text-[10px] text-faint">how many answers got each 1–5 score</span>}
     >
       {data.length === 0 ? (
@@ -107,7 +112,11 @@ export function ScoreDistribution({ scores }: { scores?: Scores }) {
 export function ClassQuality({ scores }: { scores?: Scores }) {
   const data = (scores?.by_class ?? []).map((c) => ({ class: c.class, quality: c.quality }));
   return (
-    <Card title="Quality by scenario class" icon={<Layers className="h-4 w-4 text-accent" />}>
+    <Card
+      title="Quality by scenario class"
+      icon={<Layers className="h-4 w-4 text-accent" />}
+      hint="Mean judge score (1–5) grouped by the kind of ops task — e.g. monitor, upgrade, detect, guard. Shows which categories the models handle well and where they struggle."
+    >
       {data.length === 0 ? (
         <p className="py-10 text-center text-sm text-faint">No judgments yet…</p>
       ) : (
@@ -166,6 +175,7 @@ export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
     <Card
       title="Pareto leaderboard"
       icon={<Sparkles className="h-4 w-4 text-accent" />}
+      hint="Models ranked by quality. A starred row sits on the quality-vs-energy frontier: no other model is both higher quality and lower energy, so it is an efficient pick."
       right={
         <span className="text-xs text-faint">
           {front.size} on frontier <Star className="-mt-0.5 inline h-3 w-3 fill-warn text-warn" />
@@ -229,6 +239,7 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
     <Card
       title="Power leaderboard"
       icon={<BatteryLow className="h-4 w-4 text-good" />}
+      hint="Models ranked by energy per answer, lowest first — the inverse of power, so spending less energy for the same work wins. Quality is shown only for context; it is never multiplied into the ranking."
       right={<span className="text-xs text-faint">lower = better</span>}
     >
       {rows.length === 0 ? (
@@ -263,12 +274,13 @@ export function PowerLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
   );
 }
 
-function Metric({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
+function Metric({ icon, label, value, sub, hint }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string; hint?: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel2/40 p-3">
       <div className="label flex items-center gap-1.5">
         {icon}
         {label}
+        {hint && <Hint text={hint} align="end" className="ml-auto" />}
       </div>
       <div className="mt-1 font-mono text-xl font-semibold text-fg tabular-nums">{value}</div>
       {sub && <div className="text-[10px] text-faint">{sub}</div>}
@@ -281,11 +293,11 @@ export function RunSummaryCard({ summary }: { summary?: RunSummary }) {
   const s = summary;
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub="total this run" />
-      <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" />
-      <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" />
-      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub="mean judge / 5" />
-      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub="safety scenarios / 5" />
+      <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub="total this run" hint="Total electricity this run has drawn, in watt-hours — summed across every model's inference, measured from the CPU's Intel RAPL energy counter. Lower is better." />
+      <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" hint="Average power draw in watts while the CPU was inferring — the mean of the per-model RAPL package readings." />
+      <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" hint="Total processor time spent this run, in CPU-minutes — the sum of every model's wall-clock inference time." />
+      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub="mean judge / 5" hint="Mean judge score (1–5) across every answer in this run, averaged over both LLM judges. Higher is better." />
+      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub="safety scenarios / 5" hint="Mean judge score (1–5) on the safety scenarios only — the 'secure' and 'guard' classes that test whether a model refuses or safely handles risky operations." />
     </div>
   );
 }

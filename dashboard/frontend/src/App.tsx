@@ -19,7 +19,7 @@ import {
   RunSummaryCard,
 } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
-import { StatePill, fmtAgo } from "./components/ui";
+import { StatePill, fmtAgo, Hint } from "./components/ui";
 import { Radio, AlertTriangle, Terminal, Lock, LockOpen } from "lucide-react";
 
 export default function App() {
@@ -71,6 +71,14 @@ export default function App() {
               user
             </span>
           )}
+          <Hint
+            align="end"
+            text={
+              auth?.auth_enabled
+                ? "You are signed in via Authentik SSO; runs you start are attributed to your username."
+                : "No sign-in is required — the dashboard is open on your LAN, so runs are attributed to 'user'. Enable Authentik SSO to require login and record who ran each batch."
+            }
+          />
           <ThemeToggle theme={theme} onToggle={toggle} />
         </div>
       </header>

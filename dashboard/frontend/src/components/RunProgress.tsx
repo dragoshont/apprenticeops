@@ -1,5 +1,5 @@
 import type { Progress } from "../types";
-import { Bar } from "./ui";
+import { Bar, Hint } from "./ui";
 import { Gauge, Cpu, Scale, Clock, Timer } from "lucide-react";
 
 function Row({
@@ -9,6 +9,7 @@ function Row({
   total,
   tone,
   live,
+  hint,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -16,6 +17,7 @@ function Row({
   total: number;
   tone: string;
   live: boolean;
+  hint?: string;
 }) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
@@ -24,6 +26,7 @@ function Row({
         <span className="flex items-center gap-1.5 font-medium text-muted">
           {icon}
           {label}
+          {hint && <Hint text={hint} />}
         </span>
         <span className="font-mono text-faint">
           <span className="text-fg">{done.toLocaleString()}</span> / {total.toLocaleString()}
@@ -90,6 +93,7 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
             total={p?.inf_total ?? 0}
             tone="info"
             live={live}
+            hint="A 'unit' is one model answering one scenario once. Inference runs on the ai node; this bar is units done vs. planned (scenarios × repetitions × models)."
           />
           <Row
             icon={<Scale className="h-3.5 w-3.5" />}
@@ -98,6 +102,7 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
             total={p?.judge_total ?? 0}
             tone="warn"
             live={live}
+            hint="Every finished answer is graded by 2 LLM judges on the home node. This bar is judgements done vs. planned (units × 2 judges), so it trails inference."
           />
           {p?.rate_per_min != null && (
             <div className="text-right text-[11px] text-faint">

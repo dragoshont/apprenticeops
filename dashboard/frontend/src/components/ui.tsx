@@ -1,15 +1,53 @@
 import type { ReactNode } from "react";
+import { HelpCircle } from "lucide-react";
+
+/**
+ * A small "?" help affordance. Hover or focus it to reveal a short, honest
+ * explanation of the label it sits next to. The tooltip resets text-case and
+ * tracking because some parent labels are uppercased.
+ */
+export function Hint({
+  text,
+  align = "start",
+  className = "",
+}: {
+  text: string;
+  align?: "start" | "center" | "end";
+  className?: string;
+}) {
+  const pos =
+    align === "center" ? "left-1/2 -translate-x-1/2" : align === "end" ? "right-0" : "left-0";
+  return (
+    <span className={`group/hint relative inline-flex align-middle ${className}`}>
+      <button
+        type="button"
+        aria-label={text}
+        className="inline-grid place-items-center rounded-full text-faint outline-none transition-colors hover:text-accent focus-visible:text-accent"
+      >
+        <HelpCircle className="h-3.5 w-3.5" />
+      </button>
+      <span
+        role="tooltip"
+        className={`pointer-events-none absolute top-full z-40 mt-1.5 w-56 max-w-[calc(100vw-1.5rem)] ${pos} rounded-lg border border-line bg-panel px-3 py-2 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-muted opacity-0 shadow-xl transition-opacity duration-150 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100`}
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
 
 export function Card({
   title,
   icon,
   right,
+  hint,
   children,
   className = "",
 }: {
   title?: string;
   icon?: ReactNode;
   right?: ReactNode;
+  hint?: string;
   children: ReactNode;
   className?: string;
 }) {
@@ -20,6 +58,7 @@ export function Card({
           <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
             {icon}
             {title}
+            {hint && <Hint text={hint} />}
           </h2>
           {right}
         </header>
