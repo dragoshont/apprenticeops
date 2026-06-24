@@ -1,29 +1,45 @@
-# ApprenticeOps mission-control.
+# ApprenticeOps mission-control — LAN deployment (Docker on the home node).
 #
 # The container SSHes into the `home` node to read pipeline status and drive the
-# run. It therefore needs your SSH key + an ssh config that defines `home` (and,
-# for home → ai control, the `home-ai.hont.ro` host home itself reaches).
+# run, and onward to `ai` for control. It therefore needs an SSH key + an ssh
+# config that defines the `HOME_SSH` host (and `home` must itself reach
+# `home-ai.hont.ro` passwordlessly, which it already does).
 #
-# Mount your ~/.ssh read-only. The key must be passphrase-less or already in an
-# agent forwarded into the container (simplest: a dedicated passphrase-less key
-# referenced by an ssh config Host block).
+# Mount the operator's ~/.ssh read-only. The key must be passphrase-less (or in a
+# forwarded agent). Simplest: a dedicated key referenced by a Host block.
 #
-#   HOME_SSH=home  → the Host alias inside the mounted ssh config.
+# LAN access: published on 0.0.0.0:8770 — reachable from the home network. Keep it
+# on the trusted LAN; gate it with Authentik (AUTH_ENABLED=true) if you expose it
+# through the ingress.
 #
-# Binds to localhost only — this tool has no auth (single-operator, trusted LAN).
+# Auth toggle:
+#   AUTH_ENABLED=false → no auth (open on the LAN).
+#   AUTH_ENABLED=true  → require the Authentik forward-auth header (AUTH_HEADER,
+#                        default X-authentik-username). Put it behind the Authentik
+#                        proxy/outpost so that header is injected; direct hits
+#                        without it get 401.
 
 services:
   mission-control:
     build: .
-    image: apprenticeops/mission-control:0.1.0
+    image: apprenticeops/mission-control:0.2.0
     container_name: apprenticeops-mc
     restart: unless-stopped
     environment:
-      HOME_SSH: home
-      AI_SSH: home-ai.hont.ro
-      REPO_DIR: /home/dragos/apprenticeops
+      HOME_SSH: ${HOME_SSH:-home}
+      AI_SSH: ${AI_SSH:-home-ai.hont.ro}
+      REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops}
       POLL_S: "5"
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_HEADER: ${AUTH_HEADER:-X-authentik-username}
     volumes:
-      - ${HOME}/.ssh:/root/.ssh:ro
+      - ${SSH_DIR:-${HOME}/.ssh}:/root/.ssh:ro
     ports:
-      - "127.0.0.1:8770:8770"
+      # 0.0.0.0 → LAN-accessible on the home network (host:container).
+      - "${BIND:-0.0.0.0}:8770:8770"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8770/healthz',timeout=4).status==200 else 1)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 10s
