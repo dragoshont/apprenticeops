@@ -24,6 +24,57 @@ AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 STAGES = ["lock", "reset", "infer", "emit", "collect", "judge", "persist"]
 
+# experiment protocol — total work = models x SCEN x REPS inference units, each
+# judged by NJUDGES judges. Overridable via env for non-default runs.
+REPS = int(os.environ.get("REPS", "5"))
+NJUDGES = int(os.environ.get("NJUDGES", "2"))
+
+
+def _scen_count():
+    try:
+        s = json.load(open(os.path.join(REPO, "data", "scenarios.json")))
+        items = s if isinstance(s, list) else s.get("scenarios", list(s.values()))
+        return len(items)
+    except Exception:  # noqa: BLE001
+        return 24
+
+
+SCEN = _scen_count()
+
+
+def _count_lines(path):
+    n = 0
+    try:
+        with open(path, errors="ignore") as f:
+            for ln in f:
+                if ln.strip():
+                    n += 1
+    except OSError:
+        return 0
+    return n
+
+
+def _markers(wd):
+    return {"canceled": os.path.exists(os.path.join(wd, ".canceled")),
+            "paused": os.path.exists(os.path.join(wd, ".paused"))}
+
+
+def _fmt_eta(seconds):
+    """Seconds -> compact 'Xd Yh Zm' (or 'Zm' / 'Ys')."""
+    if seconds is None or seconds < 0:
+        return None
+    s = int(seconds)
+    d, s = divmod(s, 86400)
+    h, s = divmod(s, 3600)
+    m, s = divmod(s, 60)
+    if d:
+        return f"{d}d {h}h {m}m"
+    if h:
+        return f"{h}h {m}m"
+    if m:
+        return f"{m}m"
+    return f"{s}s"
+
 
 def _sh(cmd, timeout=12):
     try:
@@ -230,11 +281,150 @@ def batches():
     return out
 
 
+def model_progress(run_id, prod, cons):
+    """Per-model inference + judge unit counts (for the horizontal progress bars).
+    inf unit = (scenario, rep); judge unit = a judged row. Both fill to their total
+    as the run advances; a model is complete when both bars hit 100%."""
+    wd = os.path.join(RUNS, run_id)
+    inf, jud = {}, {}
+    for r in _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl")):
+        m = r.get("model")
+        if m and r.get("scenario") is not None and r.get("rep") is not None:
+            inf.setdefault(m, set()).add((r["scenario"], r["rep"]))
+    for r in _read_jsonl(os.path.join(wd, f"judged.{run_id}.jsonl")):
+        m = r.get("model")
+        if m:
+            jud[m] = jud.get(m, 0) + 1
+    committed = set(cons["committed_models"])
+    done_emit = set(prod["done_models"])
+    unit = SCEN * REPS
+    out = []
+    for m in sorted(set(inf) | set(jud) | done_emit | committed):
+        idone = len(inf.get(m, ()))
+        jdone = jud.get(m, 0)
+        if m in committed:
+            stage = "persist"
+        elif jdone >= unit * NJUDGES and unit:
+            stage = "judge"
+        elif jdone:
+            stage = "judge"
+        elif m in done_emit:
+            stage = "emit"
+        else:
+            stage = "infer"
+        out.append({
+            "model": m,
+            "inf_done": idone, "inf_total": unit,
+            "judge_done": jdone, "judge_total": unit * NJUDGES,
+            "committed": m in committed, "stage": stage,
+        })
+    return out
+
+
+def compute_progress(expect, inf_done, judge_done, started_at, active):
+    """Overall run progress + ETA. Work = inference units + judge units."""
+    models_total = expect or 0
+    inf_total = models_total * SCEN * REPS
+    judge_total = inf_total * NJUDGES
+    done = inf_done + judge_done
+    total = inf_total + judge_total
+    pct = round(100 * done / total, 1) if total else 0.0
+    now = time.time()
+    elapsed = (now - started_at) if started_at else None
+    eta_s = rate = None
+    if active and elapsed and elapsed > 5 and 0 < done < total:
+        rate = done / elapsed              # units/sec
+        if rate > 0:
+            eta_s = (total - done) / rate
+    return {
+        "inf_done": inf_done, "inf_total": inf_total,
+        "judge_done": judge_done, "judge_total": judge_total,
+        "units_done": done, "units_total": total,
+        "pct": pct, "pct_remaining": round(100 - pct, 1),
+        "elapsed_s": int(elapsed) if elapsed else None,
+        "eta_s": int(eta_s) if eta_s else None,
+        "eta_human": _fmt_eta(eta_s),
+        "rate_per_min": round(rate * 60, 1) if rate else None,
+    }
+
+
+def resolve_state(markers, committed, expect, prod_alive, cons_alive):
+    """canceled > done > running > paused > stopped/idle."""
+    if markers["canceled"]:
+        return "canceled"
+    if expect and committed >= expect:
+        return "done"
+    if prod_alive or cons_alive:
+        return "running"
+    if markers["paused"]:
+        return "paused"
+    if committed or prod_alive is not None:
+        return "stopped"
+    return "idle"
+
+
+def sessions():
+    """Lightweight scan of every run dir for the sessions table. Uses line counts
+    (one row == one unit) so it stays fast even for full runs. The active run's
+    'running' status is set by the caller (it owns the live process check)."""
+    out = []
+    for d in sorted(glob.glob(os.path.join(RUNS, "*")), reverse=True):
+        if not os.path.isdir(d):
+            continue
+        rid = os.path.basename(d)
+        meta = {}
+        try:
+            meta = json.load(open(os.path.join(d, "run.meta")))
+        except Exception:  # noqa: BLE001
+            meta = {}
+        mk = _markers(d)
+        expect = int(meta.get("expect") or 0)
+        inf_done = sum(_count_lines(p) for p in
+                       glob.glob(os.path.join(d, "_mirror", "results.*.jsonl")))
+        judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(d, "judged.*.jsonl")))
+        committed = _count_lines(os.path.join(d, ".committed"))
+        inf_total = expect * SCEN * REPS
+        judge_total = inf_total * NJUDGES
+        total = inf_total + judge_total
+        pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
+        started = meta.get("started_at")
+        # last activity = newest mtime among the live artefacts
+        act = [os.path.getmtime(p) for p in (
+            os.path.join(d, ".committed"),
+            os.path.join(d, "judge-scheduler.status"),
+            os.path.join(d, f"judged.{rid}.jsonl"),
+            os.path.join(d, ".canceled"),
+        ) if os.path.exists(p)]
+        last = max(act) if act else (os.path.getmtime(d) if os.path.isdir(d) else None)
+        state = ("canceled" if mk["canceled"]
+                 else "done" if expect and committed >= expect
+                 else "paused" if mk["paused"]
+                 else "stopped")
+        dur = (last - started) if (started and last) else None
+        out.append({
+            "run_id": rid,
+            "batch": meta.get("batch") or "",
+            "state": state,
+            "started_at": started,
+            "ended_at": last,
+            "duration_s": int(dur) if dur and dur > 0 else None,
+            "models_total": expect,
+            "models_done": committed,
+            "scenarios": SCEN,
+            "reps": REPS,
+            "njudges": NJUDGES,
+            "inf_done": inf_done, "inf_total": inf_total,
+            "judge_done": judge_done, "judge_total": judge_total,
+            "pct": pct,
+        })
+    return out
+
+
 def main():
     run_id = detect_run_id(sys.argv[1] if len(sys.argv) > 1 else None)
     if not run_id:
         print(json.dumps({"run_id": None, "state": "idle", "ts": time.time(),
-                          "batches": batches(), "nodes": nodes(),
+                          "batches": batches(), "nodes": nodes(), "sessions": sessions(),
                           "runs": [os.path.basename(d) for d in
                                    sorted(glob.glob(os.path.join(RUNS, "*")))]}))
         return
@@ -246,21 +436,35 @@ def main():
     except Exception:  # noqa: BLE001
         meta = {}
     expect = meta.get("expect") or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
-    running = prod["run_py_alive"] or cons["alive"]
-    done = expect and len(cons["committed_models"]) >= expect
-    state = "done" if done else ("running" if running else "paused")
+    committed_n = len(cons["committed_models"])
+    markers = _markers(os.path.join(RUNS, run_id))
+    state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"])
+    progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
+                                meta.get("started_at"), state == "running")
+    # the sessions list comes from a cheap scan; correct the active run's live state
+    sess = sessions()
+    for s in sess:
+        if s["run_id"] == run_id:
+            s["state"] = state
+            if state == "running" and progress.get("eta_s"):
+                s["eta_s"] = progress["eta_s"]
+                s["eta_human"] = progress["eta_human"]
     print(json.dumps({
         "run_id": run_id,
         "ts": time.time(),
         "state": state,
+        "markers": markers,
         "expect": expect,
         "meta": meta,
+        "progress": progress,
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
         "models": per_model_stage(run_id, prod, cons),
+        "model_progress": model_progress(run_id, prod, cons),
         "pareto": pareto(run_id, cons),
         "batches": batches(),
+        "sessions": sess,
         "nodes": nodes(),
     }, default=str))
 
