@@ -87,43 +87,28 @@ def detect_run_id(explicit=None):
 
 
 def producer_state(run_id):
-    """Inference side, on the ai node."""
-    rid = run_id
-    blob = _ai(
-        f"cd {AI_REPO} 2>/dev/null; "
-        f"echo ROWS=$(wc -l < results.{rid}.jsonl 2>/dev/null); "
-        f"echo DONE=$(grep -c . results.{rid}.jsonl.done 2>/dev/null); "
-        f"echo ALIVE=$(pgrep -fc '[r]un.py --models' || echo 0); "
-        f"echo MODELS=$(grep -cvE '^[[:space:]]*(#|$)' \"$(grep -oE 'data/models[^ ]+' logs/{rid}/driver.log 2>/dev/null | head -1)\" 2>/dev/null); "
-        f"echo ---DONE---; cat results.{rid}.jsonl.done 2>/dev/null; "
-        f"echo ---DRIVER---; tail -n 4 logs/{rid}/driver.log 2>/dev/null"
-    )
-    rows = done = alive = models = 0
-    done_models, driver = [], []
-    section = None
-    for ln in blob.splitlines():
-        if ln == "---DONE---":
-            section = "done"; continue
-        if ln == "---DRIVER---":
-            section = "driver"; continue
-        if section == "done":
-            try:
-                done_models.append(json.loads(ln).get("model"))
-            except Exception:  # noqa: BLE001
-                pass
-        elif section == "driver":
-            driver.append(ln)
-        elif ln.startswith("ROWS="):
-            rows = int(ln[5:] or 0)
-        elif ln.startswith("DONE="):
-            done = int(ln[5:] or 0)
-        elif ln.startswith("ALIVE="):
-            alive = int(ln[6:] or 0)
-        elif ln.startswith("MODELS="):
-            models = int(ln[7:] or 0)
-    return {"rows": rows, "models_emitted": done, "models_total": models or None,
-            "run_py_alive": bool(alive), "done_models": [m for m in done_models if m],
-            "driver_tail": driver}
+    """Inference side. Rows/.done come from home's local mirror (reliable); the ai
+    node is asked only whether run.py is still inferring + for the driver tail."""
+    wd = os.path.join(RUNS, run_id)
+    mres = os.path.join(wd, "_mirror", f"results.{run_id}.jsonl")
+    rows = 0
+    if os.path.exists(mres):
+        try:
+            with open(mres, errors="ignore") as f:
+                rows = sum(1 for ln in f if ln.strip())
+        except OSError:
+            rows = 0
+    done_models = [d.get("model") for d in
+                   _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl.done"))]
+    done_models = [m for m in done_models if m]
+    alive = False
+    try:
+        alive = int(_ai("pgrep -fc '[r]un.py --models' 2>/dev/null || echo 0") or 0) > 0
+    except ValueError:
+        pass
+    driver = [l for l in _ai(f"tail -n 4 {AI_REPO}/logs/{run_id}/driver.log 2>/dev/null").splitlines() if l]
+    return {"rows": rows, "models_emitted": len(done_models),
+            "run_py_alive": alive, "done_models": done_models, "driver_tail": driver}
 
 
 def consumer_state(run_id):
@@ -253,7 +238,12 @@ def main():
         return
     prod = producer_state(run_id)
     cons = consumer_state(run_id)
-    expect = prod["models_total"] or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
+    meta = {}
+    try:
+        meta = json.load(open(os.path.join(RUNS, run_id, "run.meta")))
+    except Exception:  # noqa: BLE001
+        meta = {}
+    expect = meta.get("expect") or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
     running = prod["run_py_alive"] or cons["alive"]
     done = expect and len(cons["committed_models"]) >= expect
     state = "done" if done else ("running" if running else "paused")
@@ -262,6 +252,7 @@ def main():
         "ts": time.time(),
         "state": state,
         "expect": expect,
+        "meta": meta,
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
