@@ -3,6 +3,9 @@
 Status: external-research-backed recommendation. This is not a rewrite of
 `data/scenarios.json`.
 
+Decision summary:
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
+
 ## Scope Honesty
 
 This document updates the same question as

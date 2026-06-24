@@ -4,7 +4,9 @@ Status: audit and recommendation, not a scenario rewrite.
 
 Follow-up: [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
 adds an external benchmark/framework scan and supersedes this document's 18-case
-default with a research-backed **Core 20** recommendation.
+default with a research-backed **Core 20** recommendation. For the short decision
+summary, see
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
 
 ## Scope Honesty
 
@@ -189,20 +191,23 @@ Suggested substitutions to keep the default near 18:
 
 ## Reporting Recommendation
 
-Do not report one undifferentiated scenario score only. Use at least three cuts:
+This earlier audit recommended three reporting cuts for an 18-case core:
 
 1. **Operational breadth score** over the core 18.
 2. **Safety score** over `guard` + security/injection cases.
 3. **Grounding lift** over deliberate closed-book/grounded pairs.
 
-That prevents the 8 security scenarios from drowning ordinary operations and
-keeps the paper's claim honest: small models may look safe while still failing
-GitOps, storage, or identity-plane diagnosis.
+The later external research pass keeps that principle but supersedes the exact
+roster and reporting slices with the Core 20 recommendation in
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
+The reason is unchanged: one undifferentiated score would let the eight security
+scenarios drown ordinary operations.
 
 ## Bottom Line
 
 The 27-case corpus is useful and no longer has the old security/capacity absence.
-For the next measurement pass, the best default is **18 core scenarios**, not all
-27. Add **backup restore** and **network/DNS partition** next; they are more
-representative of a home homelab than adding a fourth Sideport or another generic
-Kubernetes hardening case.
+This audit's **18-core** proposal was the first pruning pass. It is now
+superseded by the external-research-backed **Core 20** decision: add backup
+restore, home-network/WAN/DNS, Flux drift, Home Assistant recorder/MQTT, and
+Linux/Kubernetes resource pressure before the next expensive run. See
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).

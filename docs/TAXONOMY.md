@@ -3,8 +3,8 @@
 > **The blueprint we test against.** Every test class is grounded in an established
 > operations framework, so the benchmark covers *what operators actually do*, not
 > an ad-hoc list. Scenarios are then authored from **real `home.hont.ro` data** to
-> fill each cell. Pairs with [`scenarios.json`](scenarios.json) (the cases) and
-> [`PAPER.md`](PAPER.md) (the method).
+> fill each cell. Pairs with [`data/scenarios.json`](../data/scenarios.json) (the
+> cases) and [`PAPER.md`](PAPER.md) (the method).
 
 ## 1. Grounding frameworks (the sources of truth)
 
@@ -30,13 +30,14 @@ test class(es).
 | **P2** | **Diagnose** — what & why? | reactive | SRE *Effective Troubleshooting* (Ch12) · AIOpsLab localization+analysis | logs, traces, events | `diagnose`, `test` (signal-vs-fault) | localization, analysis |
 | **P3** | **Respond** — fix it, safely | reactive | SRE *Emergency Response* (Ch13), *Managing Incidents* (Ch14) | incident context | `remediate`*, `guard` (safety) | mitigation |
 | **P4** | **Change** — deliver/evolve | reactive→proactive | SRE *Release Eng* (Ch8), *Canarying* (Ch16) · DORA *CD*, *Deployment automation*, *DB change mgmt*, *Change approval* · ITIL change | repo/config/changelog | `expand`, `upgrade`, `config`* | mitigation |
-| **P5** | **Secure** — protect (DevSecOps) | reactive→proactive | DORA *Pervasive security* · CIS · OWASP | manifests, RBAC, secrets, audit | `secure`* **(GAP)** | analysis/mitigation |
-| **P6** | **Foresee** — prevent/predict | **proactive→predictive** | DORA *Proactive failure notification* · SRE *Addressing Cascading Failures* (Ch22) · AIOps predictive | metric trends, capacity | `capacity`*, `predict`* **(GAP)** | (beyond AIOpsLab) |
+| **P5** | **Secure** — protect (DevSecOps) | reactive→proactive | DORA *Pervasive security* · CIS · OWASP | manifests, RBAC, secrets, audit | `secure` | analysis/mitigation |
+| **P6** | **Foresee** — prevent/predict | **proactive→predictive** | DORA *Proactive failure notification* · SRE *Addressing Cascading Failures* (Ch22) · AIOps predictive | metric trends, capacity | `capacity`, `predict`* | (beyond AIOpsLab) |
 | **(cross)** | **Toil/Automate** — reduce manual work | all rungs | SRE *Eliminating Toil* (Ch5), *Automation* (Ch7) · DORA *Test automation* | any | `augment` (data shaping) | analysis |
 
-`*` = proposed (see §4). The maturity column shows the paper tests **P1–P5
+`*` = still proposed. The maturity column shows the paper tests **P1–P5
 (reactive + early-proactive)** thoroughly and **opens P6** as the predictive
-frontier (honestly scoped as future work, per PAPER.md §1).
+frontier (honestly scoped as future work, per PAPER.md §1). The original seed
+started narrower; the live corpus now includes `secure` and `capacity` cases.
 
 ## 3. Original coverage seed and current audit
 
@@ -45,7 +46,9 @@ but no longer describes the live corpus: `data/scenarios.json` now has 27
 scenarios, including `secure`, `capacity`, and Sideport high-CPU cases. See
 [`SCENARIO_AUDIT_2026-06-24.md`](SCENARIO_AUDIT_2026-06-24.md) for the current
 inventory and [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
-for the external benchmark scan and Core 20 recommendation.
+for the external benchmark scan and Core 20 recommendation. The concise decision
+summary is
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
 
 | Pillar | Class | Scenarios now | Grounding | Real-data source |
 |---|---|---|---|---|
@@ -72,10 +75,17 @@ Home Assistant recorder/MQTT, and Linux/Kubernetes resource-pressure scenarios.
 Prefer replacing lower-priority extended cases over growing the default set
 indefinitely.
 
-Target **≥6 scenarios/class**. New classes + concrete cases grounded in data this
-cluster actually emits:
+The historical backlog below explains how the original seed was widened. It is
+retained as the taxonomy rationale, not as the current next-action list. The
+current next-action list is the Core 20 delta in
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md):
+backup restore verification, home-network/WAN/DNS localization, Flux drift, Home
+Assistant recorder/MQTT, and Linux/Kubernetes resource pressure.
 
-### P5 — `secure` (DevSecOps) — **NEW, highest priority**
+Target **≥6 scenarios/class** over time. Classes + concrete cases grounded in data
+this cluster emits:
+
+### P5 — `secure` (DevSecOps) — **seed gap now covered**
 Real signals available: SOPS/ESO secrets, Traefik ingress, NetworkPolicies,
 Kyverno policies, RBAC, cert-manager, image tags.
 - A Secret committed in plaintext to a manifest → spot it, prescribe SOPS/ESO.
@@ -86,7 +96,7 @@ Kyverno policies, RBAC, cert-manager, image tags.
 - A NetworkPolicy gap letting a namespace reach the registry → restrict.
 - `:latest` image tag in a Deployment → pin + why (supply-chain).
 
-### P6 — `capacity` / `predict` (proactive) — **NEW**
+### P6 — `capacity` / `predict` (proactive) — **capacity seeded; prediction still frontier**
 Real signals: netdata metrics, `host_disk`, `host_smart`, `kube_pvc_usage`,
 `media_disk_pressure`.
 - Disk at 75% + growth rate → *when* will it fill; act before it does.
@@ -95,7 +105,7 @@ Real signals: netdata metrics, `host_disk`, `host_smart`, `kube_pvc_usage`,
 - RAM/swap trend under load → capacity headroom verdict.
 - Cert expiring in 10 days → renew-ahead (preventive, not reactive).
 
-### P4 — `config` (config validation) — **NEW (or fold into upgrade)**
+### P4 — `config` (config validation) — **rotation candidate, or fold into upgrade**
 - A malformed `HelmRelease`/Kustomization YAML → find the error.
 - A `values.yaml` change that breaks a dependency → catch pre-apply.
 
@@ -119,10 +129,11 @@ Plex transcode errors, DNS resolution failures, etc.
 
 ## 6. Next action
 
-Author the §4 backlog as real-data scenarios (operator reviews the gold answers
-per the option-C de-bias flow), add `secure`/`capacity`/`config` to
-`scenarios.json` with `grounding` labels, and the per-taxonomy report
-([`report.py`](report.py)) will automatically score every new class.
+Author the five Core 20 delta scenarios named in
+[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
+as real-data scenarios. Operator review still gates the gold answers. Add them to
+[`data/scenarios.json`](../data/scenarios.json) with `grounding` labels, then the
+per-taxonomy report ([`report.py`](../report.py)) will score the updated classes.
 
 ## 7. Connection to DORA (capabilities, NOT the Four-Keys metrics)
 

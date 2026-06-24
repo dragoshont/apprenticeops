@@ -135,8 +135,10 @@ The original paper run used **19 scenarios**. The working corpus now contains
 homelab incidents plus later repo-grounded security, capacity, tool-action, and
 Sideport high-CPU cases. The 2026-06-24 external research pass recommends a
 **20-case core roster** for the next expensive run; see
+[`docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
+for the decision summary,
 [`docs/SCENARIO_RESEARCH_2026-06-24.md`](docs/SCENARIO_RESEARCH_2026-06-24.md)
-and the earlier inventory audit in
+for the source-backed scan, and the earlier inventory audit in
 [`docs/SCENARIO_AUDIT_2026-06-24.md`](docs/SCENARIO_AUDIT_2026-06-24.md).
 
 The scenarios are drawn from a production homelab cluster (`home.hont.ro`,
@@ -212,7 +214,7 @@ python3 run.py --help                                 # stdlib-only; no pip need
 python3 baselines.py --out /tmp/bl.jsonl              # sanity-check: no model; random~0.26 keyword~0.73
 ```
 
-**Pilot run — one model, all 19 scenarios (~5 min):**
+**Pilot run — one model, current scenario corpus (~5-10 min):**
 ```bash
 printf '# bracket: 0-1B\nqwen2.5:0.5b\n' > one.txt
 python3 run.py --models one.txt
@@ -245,7 +247,7 @@ See [`REPRODUCE.md`](REPRODUCE.md) for the full pipeline — including locking t
 | [`docs/MODELS.md`](docs/MODELS.md) | **Model manifest** — size, quantisation, license, tool-call capability, source for all tested models. |
 | [`docs/MARKET.md`](docs/MARKET.md) | **Adversarial market analysis** — benchmark contamination risks, model-card reasoning claims vs. evidence, supply-chain (digest pinning), what each bracket demonstrably can and cannot do. |
 | [`docs/analysis/`](docs/analysis/) | **Analysis notebooks + figures** — the sovereign quality × safety × energy story ([`wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb)) + judge agreement, with machine-readable exports in [`data/site/`](data/site) and a one-command static-site build ([`scripts/build-analysis-site.sh`](scripts/build-analysis-site.sh)). |
-| [`data/SCENARIOS.md`](data/SCENARIOS.md) | **Scenario book (human-readable)** — all 19 scenarios with context, task, **gold answer, deterministic checks, and judge rubric**. Auto-generated from `scenarios.json` by [`render_scenarios.py`](render_scenarios.py); the file a human reviewer actually reads. |
+| [`data/SCENARIOS.md`](data/SCENARIOS.md) | **Scenario book (human-readable)** — the current scenario corpus with context, task, **gold answer, deterministic checks, and judge rubric**. Auto-generated from `scenarios.json` by [`render_scenarios.py`](render_scenarios.py); the file a human reviewer actually reads. |
 | [`data/MODEL-PROMPTS.md`](data/MODEL-PROMPTS.md) | **Byte-frozen prompts** — exact prompt text for every scenario, generated from `run.build_prompt()`. Reproducibility requires these to be immutable after the run begins. |
 
 ---
@@ -263,7 +265,7 @@ apprenticeops/
 ├── REPRODUCE.md         # reproducibility contract
 ├── requirements.txt     # analysis deps only; harness is stdlib-first
 ├── data/
-│   ├── scenarios.json   # the benchmark — 19 frozen real incidents
+│   ├── scenarios.json   # the benchmark corpus — 27 current scenarios
 │   ├── models.txt       # model manifest (bracket, tag, quant)
 │   └── MODEL-PROMPTS.md # byte-frozen prompt text
 ├── docs/
