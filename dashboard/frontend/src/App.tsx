@@ -10,7 +10,7 @@ import { PipelineFlow } from "./components/PipelineFlow";
 import { NodeCards } from "./components/NodeCards";
 import { ModelBars } from "./components/ModelBars";
 import { ParetoChart } from "./components/ParetoChart";
-import { QualityLeaderboard, ScoreDistribution, ClassQuality } from "./components/Charts";
+import { QualityLeaderboard, ScoreDistribution, ClassQuality, ParetoLeaderboard } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
 import { StatePill, fmtAgo } from "./components/ui";
 import { Radio, AlertTriangle, Terminal, Lock, LockOpen } from "lucide-react";
@@ -127,11 +127,11 @@ export default function App() {
           )}
           {!hasRun && <NodeCards nodes={status?.nodes} />}
 
-          {/* Pareto + skips */}
+          {/* Pareto: scatter + leaderboard */}
           {hasRun && (
             <div className="grid gap-4 lg:grid-cols-2">
               <ParetoChart data={status?.pareto ?? []} />
-              <SkipsFeed consumer={status?.consumer} />
+              <ParetoLeaderboard pareto={status?.pareto ?? []} />
             </div>
           )}
 
@@ -145,6 +145,9 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* Skips / errors */}
+          {hasRun && <SkipsFeed consumer={status?.consumer} />}
 
           <footer className="pt-2 text-center text-[11px] text-faint">
             ApprenticeOps mission-control · polls home over SSH every 4s · read the logs, not the vibes

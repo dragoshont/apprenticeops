@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { Card } from "./ui";
 import type { ParetoPoint, Scores } from "../types";
-import { Trophy, BarChart3, Layers } from "lucide-react";
+import { Trophy, BarChart3, Layers, Sparkles, Star } from "lucide-react";
 
 const ACCENT = "#5b8cff";
 const GOOD = "#34d399";
@@ -129,6 +129,86 @@ export function ClassQuality({ scores }: { scores?: Scores }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Models on the quality-vs-energy efficiency frontier: a model is Pareto-optimal
+ * if no other model has both >= quality AND <= Wh/answer. */
+function paretoFront(pts: ParetoPoint[]): Set<string> {
+  const v = pts.filter((p) => p.quality != null && p.wh != null);
+  const front = new Set<string>();
+  for (const m of v) {
+    const dominated = v.some(
+      (n) =>
+        n !== m &&
+        (n.quality ?? 0) >= (m.quality ?? 0) &&
+        (n.wh ?? Infinity) <= (m.wh ?? Infinity) &&
+        ((n.quality ?? 0) > (m.quality ?? 0) || (n.wh ?? Infinity) < (m.wh ?? Infinity)),
+    );
+    if (!dominated) front.add(m.model);
+  }
+  return front;
+}
+
+export function ParetoLeaderboard({ pareto }: { pareto: ParetoPoint[] }) {
+  const rows = pareto
+    .filter((p) => p.quality != null)
+    .sort((a, b) => (b.quality ?? 0) - (a.quality ?? 0) || (b.tok_s ?? 0) - (a.tok_s ?? 0));
+  const front = paretoFront(pareto);
+  return (
+    <Card
+      title="Pareto leaderboard"
+      icon={<Sparkles className="h-4 w-4 text-accent" />}
+      right={
+        <span className="text-xs text-faint">
+          {front.size} on frontier <Star className="-mt-0.5 inline h-3 w-3 fill-warn text-warn" />
+        </span>
+      }
+    >
+      {rows.length === 0 ? (
+        <p className="py-10 text-center text-sm text-faint">No judged + telemetry data yet…</p>
+      ) : (
+        <div className="max-h-[26rem] overflow-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="sticky top-0 bg-panel text-left text-[11px] uppercase tracking-wider text-faint">
+                <th className="px-2 py-2 font-medium">#</th>
+                <th className="px-2 py-2 font-medium">Model</th>
+                <th className="px-2 py-2 text-right font-medium">Quality</th>
+                <th className="px-2 py-2 text-right font-medium">tok/s</th>
+                <th className="px-2 py-2 text-right font-medium">Wh/ans</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p, i) => {
+                const onFront = front.has(p.model);
+                return (
+                  <tr
+                    key={p.model}
+                    className={`border-t border-line/70 ${onFront ? "bg-warn/[0.06]" : ""}`}
+                  >
+                    <td className="px-2 py-2 font-mono text-xs text-faint">{i + 1}</td>
+                    <td className="px-2 py-2">
+                      <span className="flex items-center gap-1.5 font-mono text-xs text-fg">
+                        {onFront && <Star className="h-3 w-3 shrink-0 fill-warn text-warn" />}
+                        {p.model}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-fg">{p.quality}</td>
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">
+                      {p.tok_s ?? "—"}
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted">
+                      {p.wh ?? "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </Card>
