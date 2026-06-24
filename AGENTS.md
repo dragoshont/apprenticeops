@@ -83,6 +83,9 @@ ssh home-ai.hont.ro "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
 - Judges are **CLI-gated**: the headless `copilot` CLI exposes up to
   `claude-opus-4.6` / `gpt-5.4` (4.8/5.5 are VS Code IDE-only). True 4.8/5.5 judging
   needs `JUDGE_BACKEND=anthropic` + key or GitHub Models.
+- **Judging runs 8-wide** by default (`JUDGE_WORKERS=8`, the Copilot-CLI concurrency
+  ceiling before it rate-limits — see `docs/CONSOLIDATION-PLAN.md`). Set lower if the
+  CLI throttles, `1` for serial. This is what keeps the 158-model judge in hours, not days.
 
 ## Determinism (why a run is reproducible)
 

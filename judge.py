@@ -40,6 +40,7 @@ evidence, grades vs frozen gold+rubric, 1-5; hand-validate a κ subset.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures as cf
 import json
 import os
 import re
@@ -302,6 +303,9 @@ def main():
                     help="comma list of extra judges as backend:model for bias control, "
                          "e.g. 'copilot:gpt-5.5'. Each answer is scored by every judge.")
     ap.add_argument("--outputs-dir", default="outputs", help="where run.py wrote model answers")
+    ap.add_argument("--workers", type=int, default=int(os.environ.get("JUDGE_WORKERS", "8")),
+                    help="parallel judge calls (default 8 = the Copilot-CLI concurrency ceiling; "
+                         "set 1 for serial). Each call is an independent Copilot agent.")
     args = ap.parse_args()
     primary = Judge(backend=args.backend, model=args.model)
     judges = [primary]
@@ -365,55 +369,67 @@ def main():
                 sys.stderr.write(f"resume: {len(done)} judged rows already in {args.out}; skipping them\n")
         cost = {"calls": 0, "ai_credits": 0.0, "tokens_in": 0, "tokens_out": 0,
                 "cache_read": 0, "cache_write": 0}
-        with open(args.out, "a") as f:
-            for line in open(args.results):
-                row = json.loads(line)
-                sid = row.get("scenario")
-                if not sid or sid not in scen:
+        # Build the task list (one per pending model x judge), then run them through a
+        # bounded pool. 8 parallel Copilot agents is the historical ceiling before the
+        # CLI rate-limits (docs/CONSOLIDATION-PLAN.md). Each task builds its OWN Judge
+        # so the per-call `last_usage` is never shared across threads.
+        specs = [(jg.backend, jg.model) for jg in judges]
+        tasks = []
+        for line in open(args.results):
+            row = json.loads(line)
+            sid = row.get("scenario")
+            if not sid or sid not in scen:
+                continue
+            rep = row.get("rep", 0)
+            if all((row["model"], sid, str(rep), mo) in done for _, mo in specs):
+                continue
+            base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
+            answer = ""  # run.py suffixes __r{rep} only when repeats>1; try both
+            for cand in (f"{base}__r{rep}.txt", f"{base}.txt"):
+                fp = os.path.join(args.outputs_dir, cand)
+                if os.path.exists(fp):
+                    answer = open(fp).read()
+                    break
+            for be, mo in specs:
+                if (row["model"], sid, str(rep), mo) in done:
                     continue
-                rep = row.get("rep", 0)
-                pending = [jg for jg in judges
-                           if (row["model"], sid, str(rep), jg.model) not in done]
-                if not pending:
-                    continue
-                base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
-                answer = ""  # run.py suffixes __r{rep} only when repeats>1; try both
-                for cand in (f"{base}__r{rep}.txt", f"{base}.txt"):
-                    fp = os.path.join(args.outputs_dir, cand)
-                    if os.path.exists(fp):
-                        answer = open(fp).read()
-                        break
-                for jg in pending:
-                    if not answer:
-                        j, u = {"score": 1, "verdict": "empty"}, None
+                tasks.append((row["model"], sid, rep, answer, be, mo))
+
+        def _judge_task(t):
+            model, sid, rep, answer, be, mo = t
+            if not answer:
+                return (model, sid, rep, be, mo, {"score": 1, "verdict": "empty"}, None)
+            jg = Judge(backend=be, model=mo)   # fresh per task -> thread-safe usage
+            for attempt in range(4):
+                try:
+                    j = judge_one(jg, scen[sid], answer)
+                    return (model, sid, rep, be, mo, j, jg.last_usage)
+                except Exception as e:  # noqa: BLE001
+                    if attempt == 3:
+                        sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} "
+                                         f"SKIP after 4 tries: {str(e)[:120]}\n")
                     else:
-                        # a single transient copilot-CLI failure (e.g. SIGHUP when
-                        # VS Code blips) must NOT kill a multi-hour run: retry, then
-                        # skip the row so a later resume pass re-judges it.
-                        j = u = None
-                        for attempt in range(4):
-                            try:
-                                j = judge_one(jg, scen[sid], answer)
-                                u = jg.last_usage
-                                break
-                            except Exception as e:  # noqa: BLE001
-                                if attempt == 3:
-                                    sys.stderr.write(f"judge[{jg.model}] {row['model']} {sid} "
-                                                     f"r{rep} SKIP after 4 tries: {str(e)[:120]}\n")
-                                else:
-                                    time.sleep(5 * (attempt + 1))
-                        if j is None:
-                            continue  # leave unjudged; resume picks it up next run
-                    if u:
-                        cost["calls"] += 1
-                        for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
-                            cost[k] += u.get(k) or 0
-                    f.write(json.dumps({"model": row["model"], "scenario": sid, "rep": rep,
-                                        "judge_backend": jg.backend, "judge_model": jg.model,
-                                        "usage": u, **j}) + "\n")
-                    f.flush()
-                    sys.stderr.write(f"judge[{jg.model}] {row['model']} {sid} r{rep} "
-                                     f"-> {j.get('score')}\n")
+                        time.sleep(5 * (attempt + 1))
+            return None  # leave unjudged; a resume pass re-judges it
+
+        workers = max(1, args.workers)
+        sys.stderr.write(f"judging {len(tasks)} (answer x judge) calls, {workers}-wide\n")
+        # single writer (the main thread) -> no lock needed; write as each completes.
+        with open(args.out, "a") as f, cf.ThreadPoolExecutor(max_workers=workers) as ex:
+            for fut in cf.as_completed([ex.submit(_judge_task, t) for t in tasks]):
+                res = fut.result()
+                if res is None:
+                    continue
+                model, sid, rep, be, mo, j, u = res
+                if u:
+                    cost["calls"] += 1
+                    for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
+                        cost[k] += u.get(k) or 0
+                f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
+                                    "judge_backend": be, "judge_model": mo,
+                                    "usage": u, **j}) + "\n")
+                f.flush()
+                sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} -> {j.get('score')}\n")
         ci = cost["tokens_in"]
         hit = round(100 * cost["cache_read"] / ci, 1) if ci else None
         sys.stderr.write(
