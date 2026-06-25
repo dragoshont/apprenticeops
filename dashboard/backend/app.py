@@ -128,15 +128,19 @@ def _marker(run_id: str, name: str, create: bool) -> None:
 
 
 def _active_pipeline_processes() -> dict:
-    """Fail-closed process check across home and ai, independent of run dirs.
+    """Fail-closed AI process check, independent of run dirs.
 
     This protects the single ai node even if CEOps is pointed at a clean checkout
-    while an older checkout still has a detached producer or judge running.
+    while an older checkout still has a detached producer running. Home-side
+    judge processes do not own the ai node and must not block a new inference
+    launch by themselves.
     """
     inner = (
-        "home_count=$(pgrep -fc '[j]udge-scheduler|[j]udge.py' 2>/dev/null || echo 0); "
+        "home_count=$(pgrep -fc '[j]udge-scheduler|[j]udge.py' 2>/dev/null); "
+        "home_count=${home_count:-0}; "
         f"ai_count=$(ssh -o BatchMode=yes -o ConnectTimeout=8 {_q(AI_SSH)} "
-        "\"pgrep -fc '[r]un-roster|[r]un.py --models' 2>/dev/null || echo 0\" 2>/dev/null || echo unknown); "
+        "\"count=\\$(pgrep -fc '[r]un-roster|[r]un.py --models' 2>/dev/null); printf '%s' \\\"${count:-0}\\\"\" "
+        "2>/dev/null || echo unknown); "
         "printf '{\"home\":\"%s\",\"ai\":\"%s\"}' \"$home_count\" \"$ai_count\""
     )
     cp = _ssh(_home_cmd(inner), timeout=20)
@@ -153,7 +157,7 @@ def _active_pipeline_processes() -> dict:
         ai_count = int(payload.get("ai") or 0)
     except ValueError:
         return {"active": True, "detail": f"active process check returned {payload}"}
-    return {"active": home_count > 0 or ai_count > 0, "home": home_count, "ai": ai_count,
+    return {"active": ai_count > 0, "home": home_count, "ai": ai_count,
             "detail": f"home_judge={home_count}, ai_run={ai_count}"}
 
 
@@ -624,8 +628,7 @@ def api_start(req: StartReq, request: Request):
     # one run at a time: refuse if a run is currently active (running or paused).
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
-              or (cur.get("producer") or {}).get("run_py_alive")
-              or (cur.get("consumer") or {}).get("alive"))
+              or (cur.get("producer") or {}).get("run_py_alive"))
     process_active = _active_pipeline_processes()
     active = active or process_active["active"]
     if active:
@@ -672,8 +675,7 @@ def api_start_batch(req: BatchStartReq, request: Request):
     scenarios = resolved[0][2]["path"]
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
-              or (cur.get("producer") or {}).get("run_py_alive")
-              or (cur.get("consumer") or {}).get("alive"))
+              or (cur.get("producer") or {}).get("run_py_alive"))
     process_active = _active_pipeline_processes()
     active = active or process_active["active"]
     if active:
@@ -727,8 +729,7 @@ def api_start_phase(req: PlanPhaseReq, request: Request):
     _resolve_run_selection(req.model_set, req.scenario_set, phase["memory_context"])
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
-              or (cur.get("producer") or {}).get("run_py_alive")
-              or (cur.get("consumer") or {}).get("alive"))
+              or (cur.get("producer") or {}).get("run_py_alive"))
     process_active = _active_pipeline_processes()
     active = active or process_active["active"]
     if active:
