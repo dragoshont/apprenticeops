@@ -6,10 +6,12 @@ export function SessionsTable({
   sessions,
   activeRunId,
   onSelect,
+  emptyText = "No runs yet.",
 }: {
   sessions: Session[];
   activeRunId: string | null;
   onSelect: (runId: string) => void;
+  emptyText?: string;
 }) {
   return (
     <Card
@@ -18,7 +20,7 @@ export function SessionsTable({
       right={<span className="text-xs text-faint">{sessions.length} runs</span>}
     >
       {sessions.length === 0 ? (
-        <p className="py-6 text-center text-sm text-faint">No runs yet.</p>
+        <p className="py-6 text-center text-sm text-faint">{emptyText}</p>
       ) : (
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-sm">

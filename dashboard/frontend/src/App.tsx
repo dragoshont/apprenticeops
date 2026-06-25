@@ -26,6 +26,8 @@ export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
   const { theme, toggle } = useTheme();
   const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
+  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "" });
+  const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
 
   useEffect(() => {
     fetchConfig().then(setAuth).catch(() => setAuth(null));
@@ -44,6 +46,13 @@ export default function App() {
   // and the Follow control must cover both, not just live.
   const activeSession = sessions.find((s) => s.state === "running" || s.state === "paused");
   const busyElsewhere = !!activeSession && activeSession.run_id !== status?.run_id;
+  const matchingSessions = sessions.filter(
+    (session) =>
+      session.model_set === controlSelection.modelSet &&
+      session.scenario_set === controlSelection.scenarioSet &&
+      (session.memory_context ?? "none") === (controlSelection.memoryContext || "none"),
+  );
+  const visibleSessions = sessionScope === "matching" ? matchingSessions : sessions;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -126,10 +135,37 @@ export default function App() {
             sessions={sessions}
             experiments={status?.experiments ?? []}
             activeSession={activeSession ?? null}
+            onSelectionChange={setControlSelection}
             onAfter={refresh}
           />
 
-          <SessionsTable sessions={sessions} activeRunId={status?.run_id ?? null} onSelect={refresh} />
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+            <div className="text-xs text-faint">
+              Sessions view follows the selected model × scenario × memory unless you switch to all history.
+            </div>
+            <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
+              <button
+                type="button"
+                onClick={() => setSessionScope("matching")}
+                className={`px-2.5 py-1.5 transition ${sessionScope === "matching" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+              >
+                Matching selection · {matchingSessions.length}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSessionScope("all")}
+                className={`border-l border-line px-2.5 py-1.5 transition ${sessionScope === "all" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+              >
+                All sessions · {sessions.length}
+              </button>
+            </div>
+          </div>
+          <SessionsTable
+            sessions={visibleSessions}
+            activeRunId={status?.run_id ?? null}
+            onSelect={refresh}
+            emptyText={sessionScope === "matching" ? "No runs match the selected model, scenario, and memory context yet." : "No runs yet."}
+          />
 
           {hasRun && (
             <div className="space-y-4">

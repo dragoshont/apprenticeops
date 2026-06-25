@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { control } from "../api";
 import type { ExperimentState, RunMatrix, Session } from "../types";
-import { Card, StatePill, fmtClock, fmtDur } from "./ui";
+import { Card, StatePill } from "./ui";
 
 export function RunControlCenter({
   state,
@@ -24,6 +24,7 @@ export function RunControlCenter({
   sessions,
   experiments,
   activeSession,
+  onSelectionChange,
   onAfter,
 }: {
   state: string;
@@ -32,6 +33,7 @@ export function RunControlCenter({
   sessions: Session[];
   experiments: ExperimentState[];
   activeSession?: Session | null;
+  onSelectionChange?: (selection: { modelSet: string; scenarioSet: string; memoryContext: string }) => void;
   onAfter: (runId?: string | null) => void;
 }) {
   const [modelSet, setModelSet] = useState("");
@@ -85,6 +87,10 @@ export function RunControlCenter({
       session.scenario_set === scenarioSet &&
       (session.memory_context ?? "none") === (memoryContext || "none"),
   );
+
+  useEffect(() => {
+    onSelectionChange?.({ modelSet, scenarioSet, memoryContext });
+  }, [modelSet, scenarioSet, memoryContext, onSelectionChange]);
 
   async function run(action: string, fn: () => Promise<{ run_id?: string }>) {
     setBusy(action);
@@ -251,7 +257,6 @@ export function RunControlCenter({
         </div>
 
         <div className="space-y-4">
-          <MatchingRuns runs={matchingRuns} onSelect={onAfter} />
           <PhaseControls
             plans={plans}
             sessions={sessions}
@@ -262,6 +267,7 @@ export function RunControlCenter({
             runActive={activeLocked}
             busy={busy}
             onStartPhase={startPhase}
+            matchingRunCount={matchingRuns.length}
           />
         </div>
       </div>
@@ -340,41 +346,6 @@ function ActionButton({
   );
 }
 
-function MatchingRuns({ runs, onSelect }: { runs: Session[]; onSelect: (runId: string) => void }) {
-  return (
-    <div className="rounded-xl border border-line bg-panel2/30 p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-sm font-medium text-fg">Runs For This Selection</div>
-        <span className="text-xs text-faint">{runs.length}</span>
-      </div>
-      {runs.length === 0 ? (
-        <p className="text-xs leading-relaxed text-muted">No completed or active run matches these parameters yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {runs.slice(0, 5).map((run) => (
-            <button
-              key={run.run_id}
-              type="button"
-              onClick={() => onSelect(run.run_id)}
-              className="w-full rounded-lg border border-line/60 bg-panel/50 px-2.5 py-2 text-left transition hover:border-accent/50 hover:bg-accent/10"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate font-mono text-[11px] text-fg">{run.run_id}</span>
-                <StatePill state={run.state} size="sm" />
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-faint">
-                <span>{fmtClock(run.started_at)}</span>
-                <span>{fmtDur(run.duration_s)}</span>
-                <span>{run.models_done}/{run.models_total || "?"} models</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function PhaseControls({
   plans,
   sessions,
@@ -385,6 +356,7 @@ function PhaseControls({
   runActive,
   busy,
   onStartPhase,
+  matchingRunCount,
 }: {
   plans: RunMatrix["experiment_plans"];
   sessions: Session[];
@@ -395,6 +367,7 @@ function PhaseControls({
   runActive: boolean;
   busy: string | null;
   onStartPhase: (planId: string, phaseId: string) => Promise<void>;
+  matchingRunCount: number;
 }) {
   if (!plans?.length || !modelSet || !scenarioSet) return null;
   return (
@@ -402,10 +375,13 @@ function PhaseControls({
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-medium text-fg">
           <FlaskConical className="h-4 w-4 text-muted" />
-          Memory Comparison
+          Memory Comparison Workflow
         </div>
-        <span className="font-mono text-[10px] text-faint">{modelSet} × {scenarioSet}</span>
+        <span className="font-mono text-[10px] text-faint">{modelSet} × {scenarioSet} · {matchingRunCount} matching</span>
       </div>
+      <p className="mb-3 text-xs leading-relaxed text-muted">
+        Run the baseline first, review the gate, then run the memory-conditioned comparison on the same model and scenario set.
+      </p>
       <div className="space-y-3">
         {plans.map((plan) => {
           const existing = experiments.find(
@@ -427,6 +403,15 @@ function PhaseControls({
                 const actionKey = `${plan.id}:${phase.id}`;
                 const canStart = status === "pending" && priorCompleted && !runActive && busy == null;
                 const memory = memoryContexts.find((item) => item.id === phase.memory_context);
+                const actionLabel = !priorCompleted
+                  ? "Locked"
+                  : status === "pending"
+                    ? phase.memory_context === "none"
+                      ? "Run baseline"
+                      : "Run memory condition"
+                    : displayStatus === "canceled"
+                      ? "Canceled"
+                      : "Started";
                 return (
                   <div key={phase.id} className="rounded-lg border border-line/60 bg-panel/50 p-2.5">
                     <div className="flex items-start justify-between gap-2">
@@ -448,7 +433,7 @@ function PhaseControls({
                       className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {busy === actionKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                      {priorCompleted ? `Start Phase ${index + 1}` : "Locked"}
+                      {actionLabel}
                     </button>
                   </div>
                 );
