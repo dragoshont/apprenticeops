@@ -1,4 +1,4 @@
-import type { Status } from "./types";
+import type { InputDetails, Status } from "./types";
 
 async function jpost(path: string, body?: unknown) {
   const res = await fetch(path, {
@@ -20,6 +20,13 @@ export async function fetchStatus(runId?: string | null): Promise<Status> {
 export async function fetchConfig(): Promise<{ auth_enabled: boolean; user: string | null }> {
   const res = await fetch("/api/config");
   if (!res.ok) throw new Error(`config → ${res.status}`);
+  return res.json();
+}
+
+export async function fetchInputs(modelSet: string, scenarioSet: string, memoryContext: string): Promise<InputDetails> {
+  const q = new URLSearchParams({ model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext });
+  const res = await fetch(`/api/inputs?${q.toString()}`);
+  if (!res.ok) throw new Error(`inputs → ${res.status}`);
   return res.json();
 }
 

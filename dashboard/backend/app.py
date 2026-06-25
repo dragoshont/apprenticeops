@@ -359,6 +359,130 @@ def _run_matrix() -> dict:
     return data
 
 
+_INPUTS_SCRIPT = r'''
+import json, re, sys
+from pathlib import Path
+
+ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,40}$")
+PATH_RE = re.compile(r"^[A-Za-z0-9._/-]{1,160}$")
+root = Path.cwd().resolve()
+
+model_set_id = sys.argv[1]
+scenario_set_id = sys.argv[2]
+memory_context_id = sys.argv[3]
+
+def fail(message):
+    print(json.dumps({"error": message}))
+    sys.exit(1)
+
+def safe_path(raw, suffix):
+    if not isinstance(raw, str) or not PATH_RE.match(raw) or raw.startswith("/") or ".." in Path(raw).parts:
+        fail(f"unsafe path: {raw!r}")
+    if not raw.endswith(suffix):
+        fail(f"path {raw!r} must end with {suffix}")
+    full = (root / raw).resolve()
+    if root not in (full, *full.parents):
+        fail(f"path escapes repo: {raw!r}")
+    if not full.exists():
+        fail(f"missing path: {raw}")
+    return full
+
+def by_id(items, wanted, kind):
+    if not ID_RE.match(wanted or ""):
+        fail(f"invalid {kind} id: {wanted!r}")
+    for item in items:
+        if item.get("id") == wanted:
+            return item
+    fail(f"unknown {kind}: {wanted}")
+
+def load_scenarios(path):
+    data = json.loads(path.read_text())
+    items = data.get("scenarios") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        fail(f"scenario file {path} must contain scenarios list")
+    return items
+
+def read_models(path):
+    out = []
+    bracket = None
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            text = line.lstrip("#").strip()
+            if text.lower().startswith("bracket:"):
+                bracket = text.split(":", 1)[1].strip()
+            continue
+        out.append({"id": line, "bracket": bracket})
+    return out
+
+def build_prompt(s, memory_text=""):
+    memory = ""
+    if memory_text:
+        memory = ("--- HOMELAB MEMORY ---\n"
+                  "The following is stable, curated background about the homelab. "
+                  "Use it only when it is relevant to the scenario; the scenario "
+                  "context remains authoritative for incident-specific facts.\n"
+                  f"{memory_text}\n\n")
+    return ("You are a homelab operations assistant. Use ONLY the information "
+            "given. Be concise and specific.\n\n"
+            f"{memory}--- CONTEXT ---\n{s['context']}\n\n--- TASK ---\n{s['question']}")
+
+matrix = json.loads(safe_path("data/run-matrix.json", ".json").read_text())
+model_set = by_id(matrix.get("model_sets", []), model_set_id, "model_set")
+scenario_set = by_id(matrix.get("scenario_sets", []), scenario_set_id, "scenario_set")
+memory_context = by_id(matrix.get("memory_contexts", []), memory_context_id, "memory_context")
+
+model_path = safe_path(model_set["path"], ".txt")
+scenario_path = safe_path(scenario_set["path"], ".json")
+memory_text = ""
+if memory_context.get("path"):
+    memory_text = safe_path(memory_context["path"], ".md").read_text(encoding="utf-8").strip()
+
+scenarios = []
+for item in load_scenarios(scenario_path):
+    prompt = build_prompt(item, memory_text)
+    scenarios.append({
+        "id": item.get("id"),
+        "class": item.get("class"),
+        "difficulty": item.get("difficulty"),
+        "grounding": item.get("grounding"),
+        "context": item.get("context", ""),
+        "question": item.get("question", ""),
+        "gold_answer": item.get("gold_answer", ""),
+        "judge_rubric": item.get("judge_rubric", ""),
+        "deterministic_checks": item.get("deterministic_checks", []),
+        "max_tokens": item.get("max_tokens"),
+        "timeout_s": item.get("timeout_s"),
+        "prompt": prompt,
+        "prompt_chars": len(prompt),
+    })
+
+print(json.dumps({
+    "model_set": {**model_set, "models": read_models(model_path)},
+    "scenario_set": scenario_set,
+    "memory_context": {**memory_context, "markdown": memory_text, "chars": len(memory_text)},
+    "scenarios": scenarios,
+}))
+'''
+
+
+def _input_details(model_set: str, scenario_set: str, memory_context: str) -> dict:
+    _resolve_run_selection(model_set, scenario_set, memory_context)
+    cp = _ssh(_home_cmd("python3 - " + " ".join(_q(arg) for arg in (model_set, scenario_set, memory_context)) + " <<'PY'\n" + _INPUTS_SCRIPT + "\nPY"), timeout=30)
+    if cp.returncode != 0:
+        detail = (cp.stderr or cp.stdout or "input details failed").strip()[:800]
+        raise HTTPException(500, detail)
+    try:
+        data = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, f"input details were not JSON: {exc}") from exc
+    if data.get("error"):
+        raise HTTPException(500, data["error"])
+    return data
+
+
 def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str) -> tuple[dict, dict, dict, dict]:
     if not _ID_RE.match(model_set or ""):
         raise HTTPException(400, "invalid model_set id")
@@ -446,6 +570,11 @@ def api_status(run_id: str | None = None):
 @app.get("/api/run-matrix")
 def api_run_matrix():
     return JSONResponse(_run_matrix())
+
+
+@app.get("/api/inputs")
+def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none"):
+    return JSONResponse(_input_details(model_set, scenario_set, memory_context))
 
 
 @app.post("/api/control/start")

@@ -7,6 +7,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { RunProgress } from "./components/RunProgress";
 import { SessionsTable } from "./components/SessionsTable";
 import { PipelineFlow } from "./components/PipelineFlow";
+import { InputInspector } from "./components/InputInspector";
 import { NodeCards } from "./components/NodeCards";
 import { ModelBars } from "./components/ModelBars";
 import { ParetoChart } from "./components/ParetoChart";
@@ -138,6 +139,8 @@ export default function App() {
             onSelectionChange={setControlSelection}
             onAfter={refresh}
           />
+
+          <InputInspector selection={controlSelection} />
 
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="text-xs text-faint">

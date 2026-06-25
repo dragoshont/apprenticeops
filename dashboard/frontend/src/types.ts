@@ -100,6 +100,34 @@ export interface RunMatrix {
   scenarios: ScenarioInventoryRow[];
 }
 
+export interface InputModelRow {
+  id: string;
+  bracket?: string | null;
+}
+
+export interface InputScenarioDetails {
+  id: string;
+  class?: string | null;
+  difficulty?: string | null;
+  grounding?: string | null;
+  context: string;
+  question: string;
+  gold_answer: string;
+  judge_rubric: string;
+  deterministic_checks: Array<{ type?: string; patterns?: string[]; desc?: string }>;
+  max_tokens?: number | null;
+  timeout_s?: number | null;
+  prompt: string;
+  prompt_chars: number;
+}
+
+export interface InputDetails {
+  model_set: ModelSet & { models: InputModelRow[] };
+  scenario_set: ScenarioSet;
+  memory_context: MemoryContext & { markdown: string; chars: number };
+  scenarios: InputScenarioDetails[];
+}
+
 export interface NodeInfo {
   reachable: boolean;
   lines: string[];
