@@ -7,7 +7,7 @@ import {
   FlaskConical,
   Loader2,
   Pause,
-  Play,
+  Rocket,
   RotateCw,
   ShieldCheck,
   Square,
@@ -249,8 +249,8 @@ export function RunControlCenter({
               onClick={startSingleRun}
               className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {spin("start", <Play className="h-4 w-4" />)}
-              Start Run
+              {spin("start", <Rocket className="h-4 w-4" />)}
+              Start selected run
             </button>
             {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
           </div>
@@ -380,7 +380,7 @@ function PhaseControls({
         <span className="font-mono text-[10px] text-faint">{modelSet} × {scenarioSet} · {matchingRunCount} matching</span>
       </div>
       <p className="mb-3 text-xs leading-relaxed text-muted">
-        Run the baseline first, review the gate, then run the memory-conditioned comparison on the same model and scenario set.
+        Use the selected model and scenario set, then launch the no-memory control before the OKF-memory comparison.
       </p>
       <div className="space-y-3">
         {plans.map((plan) => {
@@ -404,11 +404,11 @@ function PhaseControls({
                 const canStart = status === "pending" && priorCompleted && !runActive && busy == null;
                 const memory = memoryContexts.find((item) => item.id === phase.memory_context);
                 const actionLabel = !priorCompleted
-                  ? "Locked"
+                  ? "No-memory control first"
                   : status === "pending"
                     ? phase.memory_context === "none"
-                      ? "Run baseline"
-                      : "Run memory condition"
+                      ? "Start no-memory control"
+                      : "Start OKF-memory run"
                     : displayStatus === "canceled"
                       ? "Canceled"
                       : "Started";
@@ -432,7 +432,7 @@ function PhaseControls({
                       onClick={() => void onStartPhase(plan.id, phase.id)}
                       className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {busy === actionKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                      {busy === actionKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
                       {actionLabel}
                     </button>
                   </div>
