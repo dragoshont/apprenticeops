@@ -26,8 +26,8 @@ services:
     container_name: apprenticeops-mc
     restart: unless-stopped
     environment:
-      HOME_SSH: ${HOME_SSH:-home}
-      AI_SSH: ${AI_SSH:-home-ai.hont.ro}
+      HOME_SSH: ${HOME_SSH:-dragos@home.hont.ro}
+      AI_SSH: ${AI_SSH:-dragos@home-ai.hont.ro}
       REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops}
       POLL_S: "5"
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
