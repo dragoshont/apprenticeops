@@ -113,15 +113,25 @@ while true; do
       msafe="${m//\//_}"; msafe="${msafe//:/_}"
       jq -c --arg m "$m" 'select(.model==$m)' "$MIRROR/$RESULTS" >"$WORK/$msafe.results.jsonl" 2>/dev/null
       gzip -kf "$WORK/$msafe.results.jsonl"
-      git add "$WORK/$msafe.results.jsonl.gz" "$JUDGED" "$LEDGER" "$STATUS" 2>/dev/null || true
-      if git commit -q -m "experiment($RUN_ID): judged $m (${have} judge rows)"; then
-        git push -q origin "$BRANCH" 2>/dev/null && ledger "$m" persist 1 "$(git rev-parse --short HEAD)" \
-          || ledger "$m" persist 0 "push failed (committed locally)"
-      else
-        ledger "$m" persist 0 "nothing to commit"
+      git add -f "$WORK/$msafe.results.jsonl.gz" "$JUDGED" "$LEDGER" "$STATUS" 2>/dev/null || true
+      if git diff --cached --quiet; then
+        ledger "$m" persist 0 "nothing staged"
+        status "model $m: nothing staged, not marking committed"
+        continue
       fi
-      echo "$m" >>"$COMMITTED"
-      status "model $m -> COMMITTED (${have} judge rows)"
+      if git commit -q -m "experiment($RUN_ID): judged $m (${have} judge rows)"; then
+        if git push -q origin "$BRANCH" 2>/dev/null; then
+          ledger "$m" persist 1 "$(git rev-parse --short HEAD)"
+          echo "$m" >>"$COMMITTED"
+          status "model $m -> COMMITTED (${have} judge rows)"
+        else
+          ledger "$m" persist 0 "push failed"
+          status "model $m: push failed, not marking committed"
+        fi
+      else
+        ledger "$m" persist 0 "commit failed"
+        status "model $m: commit failed, not marking committed"
+      fi
     done < <(jq -r '"\(.model) \(.units)"' "$MIRROR/$RESULTS.done" 2>/dev/null)
   fi
 

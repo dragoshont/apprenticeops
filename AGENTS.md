@@ -41,6 +41,46 @@ The `setsid nohup … </dev/null &` wrapper is what makes it **detach from your 
 session** — verified: the launch returns the same second it starts, and a fresh
 connection shows it still running.
 
+## Run the memory axis autonomously
+
+Use this when the question is: run the same model and scenario set with multiple
+memory contexts as separate sequential runs. The worker is file-backed under
+`data/run-batches/<BATCH_ID>/`, holds a single lock, and advances one memory context
+at a time so the `ai` node is never double-booked.
+
+From **home** (full CEOps pipeline: inference on `ai`, judge + commit on `home`):
+
+```bash
+BATCH_ID=mem-dryrun-core-$(date -u +%Y%m%d-%H%M%S)
+setsid nohup python3 scripts/run-memory-batch.py launch \
+  --batch-id "$BATCH_ID" \
+  --model-set dryrun \
+  --scenario-set core-current \
+  --memory-context none \
+  --memory-context homelab-okf-v1 \
+  --runner e2e \
+  >/tmp/${BATCH_ID}.boot 2>&1 </dev/null &
+```
+
+From **ai only** (portable inference-only runner on an identical node checkout):
+
+```bash
+BATCH_ID=mem-dryrun-core-$(date -u +%Y%m%d-%H%M%S)
+setsid nohup python3 scripts/run-memory-batch.py launch \
+  --batch-id "$BATCH_ID" \
+  --model-set dryrun \
+  --scenario-set core-current \
+  --memory-context none \
+  --memory-context homelab-okf-v1 \
+  --runner local-roster \
+  >/tmp/${BATCH_ID}.boot 2>&1 </dev/null &
+```
+
+`--runner local-roster` calls `run-roster.sh` on the current node, so it still uses
+the locked preflight, model download, per-model reset/quiesce, telemetry, and
+`--rm-after` behavior. It does **not** run the home-side Copilot judge/commit
+scheduler; use `--runner e2e` when judged results and commits are required.
+
 ## Watch progress (read-only, any time, any session)
 
 ```bash

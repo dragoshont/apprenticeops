@@ -33,6 +33,8 @@ export async function fetchInputs(modelSet: string, scenarioSet: string, memoryC
 export const control = {
   start: (modelSet: string, scenarioSet: string, memoryContext: string) =>
     jpost("/api/control/start", { model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext }),
+  startBatch: (modelSet: string, scenarioSet: string, memoryContexts: string[]) =>
+    jpost("/api/control/start-batch", { model_set: modelSet, scenario_set: scenarioSet, memory_contexts: memoryContexts }),
   startPhase: (planId: string, phaseId: string, modelSet: string, scenarioSet: string, experimentId?: string | null) =>
     jpost("/api/control/start-phase", { plan_id: planId, phase_id: phaseId, model_set: modelSet, scenario_set: scenarioSet, experiment_id: experimentId ?? null }),
   stop: (runId?: string | null) => jpost("/api/control/stop", { run_id: runId ?? null }),

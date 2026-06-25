@@ -27,7 +27,7 @@ export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
   const { theme, toggle } = useTheme();
   const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
-  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "" });
+  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[] });
   const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
 
   useEffect(() => {
@@ -51,7 +51,9 @@ export default function App() {
     (session) =>
       session.model_set === controlSelection.modelSet &&
       session.scenario_set === controlSelection.scenarioSet &&
-      (session.memory_context ?? "none") === (controlSelection.memoryContext || "none"),
+      (controlSelection.memoryContexts.length
+        ? controlSelection.memoryContexts.includes(session.memory_context ?? "none")
+        : (session.memory_context ?? "none") === (controlSelection.memoryContext || "none")),
   );
   const visibleSessions = sessionScope === "matching" ? matchingSessions : sessions;
 
@@ -134,7 +136,7 @@ export default function App() {
             runId={status?.run_id ?? null}
             runMatrix={runMatrix}
             sessions={sessions}
-            experiments={status?.experiments ?? []}
+            runBatches={status?.run_batches ?? []}
             activeSession={activeSession ?? null}
             onSelectionChange={setControlSelection}
             onAfter={refresh}
@@ -144,7 +146,7 @@ export default function App() {
 
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="text-xs text-faint">
-              Sessions view follows the selected model × scenario × memory unless you switch to all history.
+              Sessions view follows the selected model × scenario × selected memory contexts unless you switch to all history.
             </div>
             <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
               <button

@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
 EXPERIMENTS = os.path.join(REPO, "data", "experiments")
+RUN_BATCHES = os.path.join(REPO, "data", "run-batches")
 AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 STAGES = ["lock", "reset", "infer", "emit", "collect", "judge", "persist"]
@@ -69,6 +70,16 @@ def load_run_meta(run_id):
 def experiments():
     out = []
     for path in sorted(glob.glob(os.path.join(EXPERIMENTS, "*", "phase-state.json")), reverse=True):
+        try:
+            out.append(json.load(open(path)))
+        except Exception:  # noqa: BLE001
+            continue
+    return out
+
+
+def run_batches():
+    out = []
+    for path in sorted(glob.glob(os.path.join(RUN_BATCHES, "*", "batch-state.json")), reverse=True):
         try:
             out.append(json.load(open(path)))
         except Exception:  # noqa: BLE001
@@ -213,7 +224,25 @@ def producer_state(run_id):
         alive = int(_ai("pgrep -fc '[r]un.py --models' 2>/dev/null || echo 0") or 0) > 0
     except ValueError:
         pass
-    driver = [l for l in _ai(f"tail -n 4 {AI_REPO}/logs/{run_id}/driver.log 2>/dev/null").splitlines() if l]
+    except Exception:  # noqa: BLE001
+        alive = False
+    local_driver = os.path.join(REPO, "logs", run_id, "driver.log")
+    if not alive and os.path.exists(local_driver):
+        try:
+            local_alive = subprocess.check_output("pgrep -fc '[r]un.py --models' 2>/dev/null || echo 0", shell=True, text=True).strip()
+            alive = int(local_alive or 0) > 0
+        except Exception:  # noqa: BLE001
+            alive = False
+    try:
+        driver_text = _ai(f"tail -n 4 {AI_REPO}/logs/{run_id}/driver.log 2>/dev/null")
+    except Exception:  # noqa: BLE001
+        driver_text = ""
+    if not driver_text:
+        try:
+            driver_text = subprocess.check_output(f"tail -n 4 {shlex.quote(local_driver)} 2>/dev/null", shell=True, text=True)
+        except Exception:  # noqa: BLE001
+            driver_text = ""
+    driver = [l for l in driver_text.splitlines() if l]
     return {"rows": rows, "models_emitted": len(done_models),
             "run_py_alive": alive, "done_models": done_models, "driver_tail": driver}
 
@@ -511,11 +540,15 @@ def model_progress(run_id, prod, cons, scen_count):
     return out
 
 
-def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count):
+def inference_only(meta):
+    return (meta or {}).get("runner") == "local-roster" or (meta or {}).get("judge_expected") is False
+
+
+def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count, judge_expected=True):
     """Overall run progress + ETA. Work = inference units + judge units."""
     models_total = expect or 0
     inf_total = models_total * scen_count * REPS
-    judge_total = inf_total * NJUDGES
+    judge_total = inf_total * NJUDGES if judge_expected else 0
     done = inf_done + judge_done
     total = inf_total + judge_total
     pct = round(100 * done / total, 1) if total else 0.0
@@ -538,11 +571,11 @@ def compute_progress(expect, inf_done, judge_done, started_at, active, scen_coun
     }
 
 
-def resolve_state(markers, committed, expect, prod_alive, cons_alive):
+def resolve_state(markers, committed, expect, prod_alive, cons_alive, emitted=0, judge_expected=True):
     """canceled > done > running > paused > stopped/idle."""
     if markers["canceled"]:
         return "canceled"
-    if expect and committed >= expect:
+    if expect and ((committed >= expect) if judge_expected else (emitted >= expect)):
         return "done"
     if prod_alive or cons_alive:
         return "running"
@@ -571,17 +604,18 @@ def sessions():
         scen_ctx = scenario_context(meta)
         scen_count = scen_ctx["count"]
         expect = int(meta.get("expect") or 0)
+        judge_expected = not inference_only(meta)
         inf_done = sum(_count_lines(p) for p in
                        glob.glob(os.path.join(d, "_mirror", "results.*.jsonl")))
         judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(d, "judged.*.jsonl")))
         committed = _count_lines(os.path.join(d, ".committed"))
+        emitted = sum(_count_lines(p) for p in
+                      glob.glob(os.path.join(d, "_mirror", "results.*.jsonl.done")))
         if not expect:
             # historical runs predate run.meta — recover a total from the markers
-            done_markers = sum(_count_lines(p) for p in
-                               glob.glob(os.path.join(d, "_mirror", "results.*.jsonl.done")))
-            expect = max(committed, done_markers)
+            expect = max(committed, emitted)
         inf_total = expect * scen_count * REPS
-        judge_total = inf_total * NJUDGES
+        judge_total = inf_total * NJUDGES if judge_expected else 0
         total = inf_total + judge_total
         pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
         started = meta.get("started_at")
@@ -608,7 +642,7 @@ def sessions():
         ) if os.path.exists(p)]
         last = max(act) if act else (os.path.getmtime(d) if os.path.isdir(d) else None)
         state = ("canceled" if mk["canceled"]
-                 else "done" if expect and committed >= expect
+                 else "done" if expect and ((committed >= expect) if judge_expected else (emitted >= expect))
                  else "paused" if mk["paused"]
                  else "stopped")
         dur = (last - started) if (started and last) else None
@@ -624,7 +658,7 @@ def sessions():
             "ended_at": last,
             "duration_s": int(dur) if dur and dur > 0 else None,
             "models_total": expect,
-            "models_done": committed,
+            "models_done": committed if judge_expected else emitted,
             "scenarios": scen_count,
             "reps": REPS,
             "njudges": NJUDGES,
@@ -640,7 +674,7 @@ def main():
     if not run_id:
         print(json.dumps({"run_id": None, "state": "idle", "ts": time.time(),
                           "run_matrix": run_matrix(), "nodes": nodes(), "sessions": sessions(),
-                          "experiments": experiments(),
+                          "experiments": experiments(), "run_batches": run_batches(),
                           "runs": [os.path.basename(d) for d in
                                    sorted(glob.glob(os.path.join(RUNS, "*")))]}))
         return
@@ -652,10 +686,13 @@ def main():
     scen_class = scen_ctx["classes"]
     expect = meta.get("expect") or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
     committed_n = len(cons["committed_models"])
+    judge_expected = not inference_only(meta)
     markers = _markers(os.path.join(RUNS, run_id))
-    state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"])
+    state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"],
+                          emitted=prod["models_emitted"], judge_expected=judge_expected)
     progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
-                                meta.get("started_at"), state == "running", scen_count)
+                                meta.get("started_at"), state == "running", scen_count,
+                                judge_expected=judge_expected)
     # the sessions list comes from a cheap scan; correct the active run's live state
     sess = sessions()
     for s in sess:
@@ -684,6 +721,7 @@ def main():
         "run_matrix": run_matrix(),
         "sessions": sess,
         "experiments": experiments(),
+        "run_batches": run_batches(),
         "nodes": nodes(),
     }, default=str))
 

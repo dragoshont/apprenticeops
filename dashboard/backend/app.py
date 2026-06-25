@@ -547,6 +547,12 @@ class StartReq(BaseModel):
     memory_context: str = "none"
 
 
+class BatchStartReq(BaseModel):
+    model_set: str
+    scenario_set: str
+    memory_contexts: list[str]
+
+
 class RunReq(BaseModel):
     run_id: str | None = None
 
@@ -616,6 +622,60 @@ def api_start(req: StartReq, request: Request):
             "model_set": req.model_set, "scenario_set": req.scenario_set,
             "memory_context": req.memory_context,
             "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "user": user,
+            "detail": (cp.stdout or cp.stderr).strip()[:400]}
+
+
+@app.post("/api/control/start-batch")
+def api_start_batch(req: BatchStartReq, request: Request):
+    if len(req.memory_contexts) < 2:
+        raise HTTPException(400, "select at least two memory contexts for a batch")
+    seen: list[str] = []
+    for memory_context in req.memory_contexts:
+        if memory_context not in seen:
+            seen.append(memory_context)
+    if len(seen) != len(req.memory_contexts):
+        raise HTTPException(400, "memory contexts must be unique")
+    resolved = [_resolve_run_selection(req.model_set, req.scenario_set, memory_context) for memory_context in seen]
+    models = resolved[0][1]["path"]
+    scenarios = resolved[0][2]["path"]
+    cur = status(None, max_age=0.0, force=True)
+    active = (cur.get("state") in ("running", "paused")
+              or (cur.get("producer") or {}).get("run_py_alive")
+              or (cur.get("consumer") or {}).get("alive"))
+    if active:
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+    active_batch = _ssh(_home_cmd(_SYNC + " python3 scripts/run-memory-batch.py active"), timeout=20)
+    if active_batch.returncode == 0:
+        try:
+            payload = json.loads(active_batch.stdout)
+            if payload.get("active"):
+                raise HTTPException(409, "a memory batch is already active")
+        except json.JSONDecodeError:
+            pass
+    user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
+    user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
+    batch_id = f"batch-{req.model_set}-{req.scenario_set}-memory-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    args = [
+        "python3", "scripts/run-memory-batch.py", "launch",
+        "--batch-id", batch_id,
+        "--model-set", req.model_set,
+        "--scenario-set", req.scenario_set,
+        "--user", user,
+    ]
+    for memory_context in seen:
+        args.extend(["--memory-context", memory_context])
+    boot = f"/tmp/ao-batch.{batch_id}.boot"
+    inner = (_SYNC + " "
+             f"setsid nohup {' '.join(_q(arg) for arg in args)} >{_q(boot)} 2>&1 </dev/null & "
+             f"echo launched {_q(batch_id)}")
+    cp = _ssh(_home_cmd(inner), timeout=40)
+    ok = cp.returncode == 0 and "launched" in cp.stdout
+    if not ok:
+        detail = (cp.stderr or cp.stdout or "batch launch failed").strip()[:800]
+        raise HTTPException(500, detail)
+    _invalidate_status(None)
+    return {"ok": True, "batch_id": batch_id, "model_set": req.model_set, "scenario_set": req.scenario_set,
+            "memory_contexts": seen, "models": models, "scenarios": scenarios, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 

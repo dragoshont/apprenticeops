@@ -119,3 +119,4 @@ PY
 log "=== ROSTER RUN $RUN_ID DONE rc=$rc rows=$(wc -l <"$OUT" 2>/dev/null || echo 0) ==="
 log "audit:  python3 scripts/audit-run.py $OUT"
 # node-power.sh teardown runs via the EXIT trap.
+exit "$rc"

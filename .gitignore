@@ -26,6 +26,8 @@ MANIFEST
 results.*.jsonl
 results/
 outputs/
+logs/
+data/run-batches/
 .tmp/
 
 # Released evidence artifacts — tracked despite the broad *.jsonl ignore above.

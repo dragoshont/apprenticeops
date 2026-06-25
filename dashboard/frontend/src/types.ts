@@ -82,6 +82,33 @@ export interface ExperimentState {
   phases: ExperimentPhaseState[];
 }
 
+export interface RunBatchItem {
+  run_id: string;
+  model_set: string;
+  scenario_set: string;
+  memory_context: string;
+  memory_context_file?: string | null;
+  status: string;
+  started_at?: number | null;
+  ended_at?: number | null;
+  progress_pct?: number | null;
+}
+
+export interface RunBatch {
+  batch_id: string;
+  model_set: string;
+  scenario_set: string;
+  memory_contexts: string[];
+  status: string;
+  user?: string;
+  created_at?: number;
+  updated_at?: number;
+  current_index?: number;
+  log?: string;
+  error?: string;
+  runs: RunBatchItem[];
+}
+
 export interface ScenarioInventoryRow {
   id: string;
   class?: string | null;
@@ -276,6 +303,7 @@ export interface Status {
   scores?: Scores;
   run_matrix?: RunMatrix;
   experiments?: ExperimentState[];
+  run_batches?: RunBatch[];
   sessions?: Session[];
   nodes?: { home: NodeInfo; ai: NodeInfo };
   runs?: string[];
