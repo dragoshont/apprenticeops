@@ -28,7 +28,7 @@ services:
     environment:
       HOME_SSH: ${HOME_SSH:-dragos@home.hont.ro}
       AI_SSH: ${AI_SSH:-dragos@home-ai.hont.ro}
-      REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops}
+      REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops-main}
       POLL_S: "5"
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       AUTH_HEADER: ${AUTH_HEADER:-X-authentik-username}

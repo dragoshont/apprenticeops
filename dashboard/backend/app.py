@@ -127,6 +127,36 @@ def _marker(run_id: str, name: str, create: bool) -> None:
     _ssh(_home_cmd(inner), timeout=15)
 
 
+def _active_pipeline_processes() -> dict:
+    """Fail-closed process check across home and ai, independent of run dirs.
+
+    This protects the single ai node even if CEOps is pointed at a clean checkout
+    while an older checkout still has a detached producer or judge running.
+    """
+    inner = (
+        "home_count=$(pgrep -fc '[j]udge-scheduler|[j]udge.py' 2>/dev/null || echo 0); "
+        f"ai_count=$(ssh -o BatchMode=yes -o ConnectTimeout=8 {_q(AI_SSH)} "
+        "\"pgrep -fc '[r]un-roster|[r]un.py --models' 2>/dev/null || echo 0\" 2>/dev/null || echo unknown); "
+        "printf '{\"home\":\"%s\",\"ai\":\"%s\"}' \"$home_count\" \"$ai_count\""
+    )
+    cp = _ssh(_home_cmd(inner), timeout=20)
+    if cp.returncode != 0:
+        return {"active": True, "detail": "could not verify active pipeline processes"}
+    try:
+        payload = json.loads(cp.stdout)
+    except json.JSONDecodeError:
+        return {"active": True, "detail": "active process check was not JSON"}
+    if payload.get("ai") == "unknown":
+        return {"active": True, "detail": "could not verify ai node activity"}
+    try:
+        home_count = int(payload.get("home") or 0)
+        ai_count = int(payload.get("ai") or 0)
+    except ValueError:
+        return {"active": True, "detail": f"active process check returned {payload}"}
+    return {"active": home_count > 0 or ai_count > 0, "home": home_count, "ai": ai_count,
+            "detail": f"home_judge={home_count}, ai_run={ai_count}"}
+
+
 # --------------------------------------------------------------------------- status
 _cache: dict = {"ts": 0.0, "run_id": None, "data": None}
 _status_cache: dict[str | None, tuple[float, dict]] = {}
@@ -596,8 +626,10 @@ def api_start(req: StartReq, request: Request):
     active = (cur.get("state") in ("running", "paused")
               or (cur.get("producer") or {}).get("run_py_alive")
               or (cur.get("consumer") or {}).get("alive"))
+    process_active = _active_pipeline_processes()
+    active = active or process_active["active"]
     if active:
-        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id') or process_active.get('detail')}) — stop it first")
     # who started it: the Authentik user when gated, else a generic "user".
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
@@ -642,8 +674,10 @@ def api_start_batch(req: BatchStartReq, request: Request):
     active = (cur.get("state") in ("running", "paused")
               or (cur.get("producer") or {}).get("run_py_alive")
               or (cur.get("consumer") or {}).get("alive"))
+    process_active = _active_pipeline_processes()
+    active = active or process_active["active"]
     if active:
-        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id') or process_active.get('detail')}) — stop it first")
     active_batch = _ssh(_home_cmd(_SYNC + " python3 scripts/run-memory-batch.py active"), timeout=20)
     if active_batch.returncode == 0:
         try:
@@ -695,8 +729,10 @@ def api_start_phase(req: PlanPhaseReq, request: Request):
     active = (cur.get("state") in ("running", "paused")
               or (cur.get("producer") or {}).get("run_py_alive")
               or (cur.get("consumer") or {}).get("alive"))
+    process_active = _active_pipeline_processes()
+    active = active or process_active["active"]
     if active:
-        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id') or process_active.get('detail')}) — stop it first")
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
     args = [
