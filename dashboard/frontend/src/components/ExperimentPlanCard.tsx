@@ -70,8 +70,19 @@ export function ExperimentPlanCard({
                 {plan.phases.map((phase, index) => {
                   const phaseState = existing?.phases.find((item) => item.id === phase.id);
                   const status = phaseState?.status ?? "pending";
+                  const priorPhasesCompleted = plan.phases
+                    .slice(0, index)
+                    .every((prior) => existing?.phases.find((item) => item.id === prior.id)?.status === "completed");
                   const memory = memoryContexts.find((item) => item.id === phase.memory_context);
                   const actionKey = `${plan.id}:${phase.id}`;
+                  const canStart = status === "pending" && priorPhasesCompleted && !runActive;
+                  const disabledReason = runActive
+                    ? "A run is already running or paused."
+                    : status !== "pending"
+                      ? `Phase status is ${status}.`
+                      : !priorPhasesCompleted
+                        ? "Complete and review the previous phase first."
+                        : undefined;
                   return (
                     <div key={phase.id} className="rounded-xl border border-line bg-panel2/30 p-3">
                       <div className="flex items-start justify-between gap-2">
@@ -85,12 +96,13 @@ export function ExperimentPlanCard({
                       {phase.gate && <div className="mt-2 text-[11px] leading-relaxed text-faint">{phase.gate}</div>}
                       <button
                         type="button"
-                        disabled={busy != null || runActive || status !== "pending"}
+                        disabled={busy != null || !canStart}
+                        title={disabledReason}
                         onClick={() => startPhase(plan.id, phase.id)}
                         className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {busy === actionKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                        Start Phase {index + 1}
+                        {priorPhasesCompleted ? `Start Phase ${index + 1}` : "Locked"}
                       </button>
                     </div>
                   );
