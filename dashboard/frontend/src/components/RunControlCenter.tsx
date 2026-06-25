@@ -254,6 +254,7 @@ export function RunControlCenter({
           <MatchingRuns runs={matchingRuns} onSelect={onAfter} />
           <PhaseControls
             plans={plans}
+            sessions={sessions}
             experiments={experiments}
             memoryContexts={memoryContexts}
             modelSet={chosenModel?.id}
@@ -376,6 +377,7 @@ function MatchingRuns({ runs, onSelect }: { runs: Session[]; onSelect: (runId: s
 
 function PhaseControls({
   plans,
+  sessions,
   experiments,
   memoryContexts,
   modelSet,
@@ -385,6 +387,7 @@ function PhaseControls({
   onStartPhase,
 }: {
   plans: RunMatrix["experiment_plans"];
+  sessions: Session[];
   experiments: ExperimentState[];
   memoryContexts: NonNullable<RunMatrix["memory_contexts"]>;
   modelSet?: string;
@@ -413,6 +416,11 @@ function PhaseControls({
               {plan.phases.map((phase, index) => {
                 const phaseState = existing?.phases.find((item) => item.id === phase.id);
                 const status = phaseState?.status ?? "pending";
+                const phaseRun = phaseState?.run_id ? sessions.find((session) => session.run_id === phaseState.run_id) : undefined;
+                const displayStatus =
+                  status === "running" && phaseRun && phaseRun.state !== "running" && phaseRun.state !== "paused"
+                    ? phaseRun.state
+                    : status;
                 const priorCompleted = plan.phases
                   .slice(0, index)
                   .every((prior) => existing?.phases.find((item) => item.id === prior.id)?.status === "completed");
@@ -426,8 +434,11 @@ function PhaseControls({
                         <div className="font-mono text-[10px] text-faint">PHASE {index + 1}</div>
                         <div className="text-xs font-medium text-fg">{phase.label}</div>
                         <div className="mt-0.5 text-[11px] text-muted">{memory?.label ?? phase.memory_context}</div>
+                        {phaseRun && phaseRun.state !== status && (
+                          <div className="mt-1 text-[10px] text-faint">run state: {phaseRun.state}</div>
+                        )}
                       </div>
-                      <StatePill state={status} size="sm" />
+                      <StatePill state={displayStatus} size="sm" />
                     </div>
                     <button
                       type="button"
