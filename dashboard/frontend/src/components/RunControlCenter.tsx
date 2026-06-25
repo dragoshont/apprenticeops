@@ -123,12 +123,13 @@ export function RunControlCenter({
     void run("stop", () => control.stop(runId));
   }
 
-  async function startPhase(planId: string, phaseId: string) {
+  async function startPhase(planId: string, phaseId: string, experimentId?: string | null) {
     if (!chosenModel || !chosenScenario) return;
     const existing = experiments.find(
       (item) => item.plan_id === planId && item.model_set === chosenModel.id && item.scenario_set === chosenScenario.id,
     );
-    await run(`${planId}:${phaseId}`, () => control.startPhase(planId, phaseId, chosenModel.id, chosenScenario.id, existing?.experiment_id));
+    const targetExperimentId = experimentId === null ? undefined : experimentId ?? existing?.experiment_id;
+    await run(`${planId}:${phaseId}`, () => control.startPhase(planId, phaseId, chosenModel.id, chosenScenario.id, targetExperimentId));
   }
 
   const spin = (key: string, icon: React.ReactNode) =>
@@ -366,7 +367,7 @@ function PhaseControls({
   scenarioSet?: string;
   runActive: boolean;
   busy: string | null;
-  onStartPhase: (planId: string, phaseId: string) => Promise<void>;
+  onStartPhase: (planId: string, phaseId: string, experimentId?: string | null) => Promise<void>;
   matchingRunCount: number;
 }) {
   if (!plans?.length || !modelSet || !scenarioSet) return null;
@@ -375,12 +376,13 @@ function PhaseControls({
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-medium text-fg">
           <FlaskConical className="h-4 w-4 text-muted" />
-          Memory Comparison Workflow
+          Memory effect test
         </div>
         <span className="font-mono text-[10px] text-faint">{modelSet} × {scenarioSet} · {matchingRunCount} matching</span>
       </div>
       <p className="mb-3 text-xs leading-relaxed text-muted">
-        Use the selected model and scenario set, then launch the no-memory control before the OKF-memory comparison.
+        Optional paper workflow. It launches two runs with the same model and scenario set: first with no memory, then with OKF memory.
+        Use <span className="font-medium text-fg">Start selected run</span> above for a normal one-off run.
       </p>
       <div className="space-y-3">
         {plans.map((plan) => {
@@ -402,34 +404,47 @@ function PhaseControls({
                   .every((prior) => existing?.phases.find((item) => item.id === prior.id)?.status === "completed");
                 const actionKey = `${plan.id}:${phase.id}`;
                 const canStart = status === "pending" && priorCompleted && !runActive && busy == null;
+                const canStartFreshPair = index === 0 && displayStatus === "canceled" && !runActive && busy == null;
                 const memory = memoryContexts.find((item) => item.id === phase.memory_context);
-                const actionLabel = !priorCompleted
-                  ? "No-memory control first"
-                  : status === "pending"
-                    ? phase.memory_context === "none"
-                      ? "Start no-memory control"
-                      : "Start OKF-memory run"
-                    : displayStatus === "canceled"
-                      ? "Canceled"
-                      : "Started";
+                const isNoMemory = phase.memory_context === "none";
+                const jobLabel = isNoMemory ? "No-memory control" : "OKF-memory comparison";
+                const actionLabel = canStartFreshPair
+                  ? "Start fresh no-memory control"
+                  : !priorCompleted
+                    ? "Waiting for no-memory control"
+                    : status === "pending"
+                      ? isNoMemory
+                        ? "Start no-memory control"
+                        : "Start OKF-memory run"
+                      : displayStatus === "canceled"
+                        ? "Canceled"
+                        : "Started";
+                const stateNote = canStartFreshPair
+                  ? "The previous no-memory attempt was canceled. Start a fresh pair to restart this test."
+                  : !priorCompleted
+                    ? "Locked until the no-memory control completes and passes review."
+                    : isNoMemory
+                      ? "Control condition: model receives only the scenario prompt."
+                      : "Comparison condition: model receives the same prompt plus OKF memory.";
                 return (
                   <div key={phase.id} className="rounded-lg border border-line/60 bg-panel/50 p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="font-mono text-[10px] text-faint">PHASE {index + 1}</div>
-                        <div className="text-xs font-medium text-fg">{phase.label}</div>
-                        <div className="mt-0.5 text-[11px] text-muted">{memory?.label ?? phase.memory_context}</div>
+                        <div className="font-mono text-[10px] text-faint">JOB {index + 1}</div>
+                        <div className="text-xs font-medium text-fg">{jobLabel}</div>
+                        <div className="mt-0.5 text-[11px] text-muted">memory_context={phase.memory_context} · {memory?.label ?? phase.memory_context}</div>
+                        <div className="mt-1 text-[10px] text-faint">{stateNote}</div>
                         {phaseRun && phaseRun.state !== status && (
-                          <div className="mt-1 text-[10px] text-faint">run state: {phaseRun.state}</div>
+                          <div className="mt-1 text-[10px] text-faint">last run state: {phaseRun.state}</div>
                         )}
                       </div>
                       <StatePill state={displayStatus} size="sm" />
                     </div>
                     <button
                       type="button"
-                      disabled={!canStart}
+                      disabled={!canStart && !canStartFreshPair}
                       title={runActive ? "A run is already running or paused." : !priorCompleted ? "Complete and review the previous phase first." : undefined}
-                      onClick={() => void onStartPhase(plan.id, phase.id)}
+                      onClick={() => void onStartPhase(plan.id, phase.id, canStartFreshPair ? null : existing?.experiment_id)}
                       className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {busy === actionKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
