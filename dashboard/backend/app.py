@@ -14,10 +14,10 @@ running this backend must already hold the SSH key for ``home`` (the ``homelab``
 alias on the Mac, or a mounted key + ssh-config in the container). Do not expose
 it to an untrusted network.
 
-Injection safety: the browser can only pick a *model_set* id and a *scenario_set*
-id from the server-side allowlist loaded from ``data/run-matrix.json``. RUN_IDs for
-new runs are generated server-side. Shell environment values are server-resolved
-and quoted before being sent to ``home``.
+Injection safety: the browser can only pick a *model_set* id, a *scenario_set* id,
+and a *memory_context* id from the server-side allowlist loaded from
+``data/run-matrix.json``. RUN_IDs for new runs are generated server-side. Shell
+environment values are server-resolved and quoted before being sent to ``home``.
 
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
@@ -107,7 +107,7 @@ def _home_cmd(inner: str) -> str:
 # touching the current branch or the untracked run data. Best-effort.
 _SYNC = ("git fetch -q origin 2>/dev/null; "
          "git checkout -q origin/main -- scripts data/run-matrix.json data/run-manifest.json "
-         "data/scenarios.json data/scenario_sets 2>/dev/null; ")
+         "data/scenarios.json data/scenario_sets data/memory 2>/dev/null; ")
 
 
 def _q(value: object) -> str:
@@ -293,12 +293,31 @@ def resolve_scenario_set(raw):
         "sha256": sha(path),
     }
 
+def resolve_memory_context(raw):
+    mid = raw.get("id") if isinstance(raw, dict) else None
+    if not ID_RE.match(str(mid or "")):
+        fail(f"invalid memory_context id: {mid!r}")
+    item = dict(raw)
+    path_raw = item.get("path")
+    if path_raw:
+        path = safe_path(path_raw, ".md")
+        item["byte_count"] = path.stat().st_size
+        item["sha256"] = sha(path)
+    else:
+        item["path"] = None
+        item["byte_count"] = 0
+        item["sha256"] = None
+    return item
+
 model_sets = [resolve_model_set(item) for item in matrix.get("model_sets", [])]
 scenario_sets = [resolve_scenario_set(item) for item in matrix.get("scenario_sets", [])]
+memory_contexts = [resolve_memory_context(item) for item in matrix.get("memory_contexts", [])]
 if len({m["id"] for m in model_sets}) != len(model_sets):
     fail("duplicate model_set id")
 if len({s["id"] for s in scenario_sets}) != len(scenario_sets):
     fail("duplicate scenario_set id")
+if len({m["id"] for m in memory_contexts}) != len(memory_contexts):
+    fail("duplicate memory_context id")
 
 scenario_rows = {}
 for scenario_set in scenario_sets:
@@ -319,6 +338,7 @@ print(json.dumps({
     "defaults": matrix.get("defaults", {}),
     "model_sets": model_sets,
     "scenario_sets": scenario_sets,
+    "memory_contexts": memory_contexts,
     "scenarios": sorted(scenario_rows.values(), key=lambda row: row["id"]),
 }))
 '''
@@ -338,23 +358,28 @@ def _run_matrix() -> dict:
     return data
 
 
-def _resolve_run_selection(model_set: str, scenario_set: str) -> tuple[dict, dict, dict]:
+def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str) -> tuple[dict, dict, dict, dict]:
     if not _ID_RE.match(model_set or ""):
         raise HTTPException(400, "invalid model_set id")
     if not _ID_RE.match(scenario_set or ""):
         raise HTTPException(400, "invalid scenario_set id")
+    if not _ID_RE.match(memory_context or ""):
+        raise HTTPException(400, "invalid memory_context id")
     matrix = _run_matrix()
     model = next((item for item in matrix.get("model_sets", []) if item.get("id") == model_set), None)
     scenarios = next((item for item in matrix.get("scenario_sets", []) if item.get("id") == scenario_set), None)
+    memory = next((item for item in matrix.get("memory_contexts", []) if item.get("id") == memory_context), None)
     if not model:
         raise HTTPException(404, f"unknown model_set '{model_set}'")
     if not scenarios:
         raise HTTPException(404, f"unknown scenario_set '{scenario_set}'")
+    if not memory:
+        raise HTTPException(404, f"unknown memory_context '{memory_context}'")
     if not model.get("model_count"):
         raise HTTPException(400, f"model_set '{model_set}' contains no models")
     if not scenarios.get("scenario_count"):
         raise HTTPException(400, f"scenario_set '{scenario_set}' contains no scenarios")
-    return matrix, model, scenarios
+    return matrix, model, scenarios, memory
 
 
 def _read_run_meta(run_id: str) -> dict:
@@ -381,12 +406,20 @@ def _validate_run_meta_for_resume(meta: dict) -> None:
     got = (cp.stdout or "").strip()
     if cp.returncode != 0 or got != expected_sha:
         raise HTTPException(409, "run.meta scenario hash mismatch; start a new run")
+    memory_file = meta.get("memory_context_file")
+    memory_sha = meta.get("memory_context_sha256")
+    if memory_file and memory_sha:
+        cp = _ssh(_home_cmd(f"python3 - <<'PY'\nimport hashlib, pathlib\np=pathlib.Path({_q(memory_file)!r})\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\nPY"), timeout=15)
+        got = (cp.stdout or "").strip()
+        if cp.returncode != 0 or got != memory_sha:
+            raise HTTPException(409, "run.meta memory context hash mismatch; start a new run")
 
 
 # ----------------------------------------------------------------------------- api
 class StartReq(BaseModel):
     model_set: str
     scenario_set: str
+    memory_context: str = "none"
 
 
 class RunReq(BaseModel):
@@ -408,9 +441,12 @@ def api_run_matrix():
 
 @app.post("/api/control/start")
 def api_start(req: StartReq, request: Request):
-    _, model_set, scenario_set = _resolve_run_selection(req.model_set, req.scenario_set)
+    _, model_set, scenario_set, memory_context = _resolve_run_selection(
+        req.model_set, req.scenario_set, req.memory_context
+    )
     models = model_set["path"]
     scenarios = scenario_set["path"]
+    memory_path = memory_context.get("path") or ""
     # one run at a time: refuse if a run is currently active (running or paused).
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
@@ -421,13 +457,15 @@ def api_start(req: StartReq, request: Request):
     # who started it: the Authentik user when gated, else a generic "user".
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    run_id = f"{req.model_set}-{req.scenario_set}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    run_id = f"{req.model_set}-{req.scenario_set}-{req.memory_context}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     env = _env_assign({
         "RUN_ID": run_id,
         "MODELS": models,
         "MODEL_SET": req.model_set,
         "SCENARIOS": scenarios,
         "SCENARIO_SET": req.scenario_set,
+        "MEMORY_CONTEXT": req.memory_context,
+        "MEMORY_CONTEXT_FILE": memory_path,
         "RUN_USER": user,
     })
     inner = (_SYNC + env + " "
@@ -438,7 +476,8 @@ def api_start(req: StartReq, request: Request):
     _invalidate_status(None, run_id)
     return {"ok": ok, "run_id": run_id,
             "model_set": req.model_set, "scenario_set": req.scenario_set,
-            "models": models, "scenarios": scenarios, "user": user,
+            "memory_context": req.memory_context,
+            "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 
@@ -512,6 +551,8 @@ def api_resume(req: RunReq):
         "MODEL_SET": meta["model_set"],
         "SCENARIOS": meta["scenarios"],
         "SCENARIO_SET": meta["scenario_set"],
+        "MEMORY_CONTEXT": meta.get("memory_context") or "none",
+        "MEMORY_CONTEXT_FILE": meta.get("memory_context_file") or "",
         "RUN_USER": meta.get("user") or "user",
     })
     inner = (_SYNC + env + " "

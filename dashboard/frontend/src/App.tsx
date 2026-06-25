@@ -131,7 +131,7 @@ export default function App() {
                 <StatePill state={state} size="sm" />
                 {(status?.meta?.model_set || status?.meta?.scenario_set) && (
                   <span className="text-xs text-muted">
-                    {status.meta.model_set ?? "models"} × {status.meta.scenario_set ?? "scenarios"}
+                    {status.meta.model_set ?? "models"} × {status.meta.scenario_set ?? "scenarios"} × {status.meta.memory_context ?? "none"}
                   </span>
                 )}
                 <span className="text-xs text-faint">

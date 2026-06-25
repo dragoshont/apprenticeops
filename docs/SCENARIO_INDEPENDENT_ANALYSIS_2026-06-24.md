@@ -6,7 +6,7 @@ the 2026-06-24 internal audit and external benchmark scan. It does **not** chang
 
 ## Scope Honesty
 
-The current working corpus has **27 scenarios** in `data/scenarios.json`. That is
+The current working corpus has **33 scenarios** in `data/scenarios.json`. That is
 useful as an extended pack, but it is too large to treat as the default for a
 150+ model sweep. At 150 models and five repeats, every extra scenario costs 750
 additional model answers before judging.
@@ -53,7 +53,8 @@ This is a change in the **default run roster**, not a deletion of the corpus.
 
 ## What Should Change
 
-Add these six scenario designs before the next expensive run:
+Implemented follow-up: these six scenario designs were added as full scenario
+objects before the next expensive run:
 
 1. `new-external-tool-session-or-credential-degraded`
 2. `new-backup-restore-drill`
@@ -103,7 +104,9 @@ operations.
 ## Decision
 
 **Change the next default run to Core 20.** Keep the 27 current scenarios as the
-extended pack. Author the six missing scenarios before a full 150+ model run.
+extended pack. The six Core 20 delta scenarios have now been authored; run the
+normal deterministic and judge checks before treating a full 150+ model sweep as
+final evidence.
 Treat Core 16 as a smoke-test roster only.
 
 ## Threats To Validity

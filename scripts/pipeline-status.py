@@ -390,7 +390,7 @@ def run_matrix():
     try:
         matrix = json.load(open(os.path.join(REPO, "data", "run-matrix.json")))
     except Exception:  # noqa: BLE001
-        return {"defaults": {}, "model_sets": [], "scenario_sets": [], "scenarios": []}
+        return {"defaults": {}, "model_sets": [], "scenario_sets": [], "memory_contexts": [], "scenarios": []}
 
     def sha(path):
         import hashlib
@@ -411,6 +411,17 @@ def run_matrix():
 
     model_sets = [{**m, "model_count": model_count(m.get("path", "")), "sha256": sha(m.get("path", ""))}
                   for m in matrix.get("model_sets", [])]
+    memory_contexts = []
+    for item in matrix.get("memory_contexts", []):
+        path = item.get("path")
+        if path:
+            full = os.path.join(REPO, path)
+            try:
+                memory_contexts.append({**item, "byte_count": os.path.getsize(full), "sha256": sha(path)})
+            except OSError:
+                memory_contexts.append({**item, "byte_count": None, "sha256": None})
+        else:
+            memory_contexts.append({**item, "path": None, "byte_count": 0, "sha256": None})
     scenario_sets = []
     scenario_rows = {}
     for sset in matrix.get("scenario_sets", []):
@@ -436,7 +447,7 @@ def run_matrix():
             if sset.get("id") not in row["sets"]:
                 row["sets"].append(sset.get("id"))
     return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
-            "scenario_sets": scenario_sets,
+            "scenario_sets": scenario_sets, "memory_contexts": memory_contexts,
             "scenarios": sorted((r for r in scenario_rows.values() if r.get("id")), key=lambda r: r["id"])}
 
 
@@ -593,6 +604,7 @@ def sessions():
             "run_id": rid,
             "model_set": meta.get("model_set") or "historical",
             "scenario_set": meta.get("scenario_set") or scen_ctx["set"],
+            "memory_context": meta.get("memory_context") or "none",
             "historical": scen_ctx["historical"],
             "user": meta.get("user") or "user",
             "state": state,

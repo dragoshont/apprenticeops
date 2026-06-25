@@ -12,7 +12,7 @@
 > deterministic checks, and judge rubric** that `MODEL-PROMPTS.md`
 > (prompt text only) omits — it is the file a human reviewer reads.
 
-**27 scenarios.** By class: augment 2, capacity 4, detect 2, diagnose 2, expand 2, guard 1, monitor 2, secure 8, test 2, upgrade 2. By difficulty: easy 5, hard 8, medium 14. By grounding: closed-book 18, grounded 9.
+**33 scenarios.** By class: augment 2, capacity 5, detect 2, diagnose 6, expand 2, guard 1, monitor 2, secure 8, test 3, upgrade 2. By difficulty: easy 5, hard 13, medium 15. By grounding: closed-book 20, grounded 13.
 
 | # | id | class | difficulty | grounding |
 |---|----|-------|-----------|-----------|
@@ -43,6 +43,12 @@
 | 25 | [`detect-25-sideport-high-cpu`](#detect-25-sideport-high-cpu) | detect | medium | closed-book |
 | 26 | [`diagnose-26-sideport-installed-apps-rca`](#diagnose-26-sideport-installed-apps-rca) | diagnose | hard | grounded |
 | 27 | [`monitor-27-sideport-alert-plan`](#monitor-27-sideport-alert-plan) | monitor | medium | grounded |
+| 28 | [`new-external-tool-session-or-credential-degraded`](#new-external-tool-session-or-credential-degraded) | diagnose | hard | grounded |
+| 29 | [`new-backup-restore-drill`](#new-backup-restore-drill) | test | hard | grounded |
+| 30 | [`new-home-network-wan-dns`](#new-home-network-wan-dns) | diagnose | hard | closed-book |
+| 31 | [`new-flux-drift-source-not-ready`](#new-flux-drift-source-not-ready) | diagnose | hard | grounded |
+| 32 | [`new-homeassistant-recorder-or-mqtt`](#new-homeassistant-recorder-or-mqtt) | diagnose | medium | grounded |
+| 33 | [`new-linux-oom-or-node-pressure`](#new-linux-oom-or-node-pressure) | capacity | hard | closed-book |
 
 ---
 
@@ -1061,6 +1067,260 @@ Page on sustained Sideport CPU near its single-core limit, e.g. container CPU >0
 ### Judge rubric
 
 Reward a layered alert plan: pod CPU page, app-specific installed-apps/profile-warning signals, host temp/pressure, and replica state. Reward safe mitigation that respects the single-signer invariant. Penalize only alerting on generic host load, or suggesting more Sideport replicas as a fix.
+
+*Limits: max_tokens=`650` · timeout_s=`150`*
+
+---
+
+## new-external-tool-session-or-credential-degraded
+
+**class**&nbsp;`diagnose` · **aiopslab_task**&nbsp;`localization` · **difficulty**&nbsp;`hard` · **grounding**&nbsp;`grounded`
+
+### Context
+
+```text
+Grafana alert snapshot and supporting evidence:
+- Alert `apple_calendar_degraded`: librechat logs 9 occurrences in 30m of `[MCP][apple] Transport error: SSE stream disconnected: AbortError`.
+- A manual CalDAV probe from the apple MCP pod successfully creates a test event in iCloud and receives HTTP 201.
+- The LibreChat UI reports the calendar tool call as failed and shows no result to the user.
+- Kubernetes: deployment/apple-mcp Ready=True, deployment/librechat Ready=True, service endpoints present.
+- Sessionkeeper metrics for the Apple provider are healthy.
+- No new Kubernetes rollout happened in the last hour.
+Runbook note: tool health must be proven by use-based evidence, not only pod readiness or optimistic session checks. Do not rotate credentials unless the upstream API is returning auth errors.
+```
+
+### Task
+
+Localize the failure and give the next safe check. Is this a pod outage, an upstream credential/session failure, or a tool-transport/result-delivery failure? What should NOT be restarted or rotated yet?
+
+### Gold answer
+
+This is a tool-transport/result-delivery failure between LibreChat and the Apple MCP, not a pod outage and not an upstream Apple credential/session failure. Evidence: both LibreChat and apple-mcp pods are Ready, endpoints exist, sessionkeeper is healthy, and the MCP can reach iCloud/CalDAV and create an event successfully. The user-visible failure is that the SSE/MCP transport drops the tool result (`SSE stream disconnected`, `AbortError`) after the backend action can succeed. Next safe check: inspect LibreChat MCP transport logs around a single reproduced tool call, correlate request/tool-call id if available, and verify whether the stream disconnects before the tool result reaches LibreChat. Do not rotate iCloud credentials, restart every MCP, or restart Kubernetes workloads based only on green pods plus transport errors; fix or reconfigure the LibreChat↔MCP transport path.
+
+### Deterministic checks (judge-free)
+
+- **localizes to transport/result delivery** — `any_include`: patterns=[transport/result, transport.*result, sse.*drop, stream.*disconnect, result.*delivery, between librechat.*mcp]
+- **does not treat ready pods as the outage** — `any_include`: patterns=[not.*pod, pods.*ready, not a pod, not.*outage, deployment.*ready]
+- **separates upstream credential/session from transport** — `any_include`: patterns=[not.*upstream.*credential, not.*credential.*failure, not.*session.*failure, not.*upstream.*failure]
+- **suggests a focused transport/log check** — `any_include`: patterns=[librechat, mcp, tool call, correlate, request id, logs]
+- **does not recommend broad restart or credential rotation** — `must_exclude_action`: patterns=[rotate.*credential, rotate.*secret, restart everything, restart all, delete pod, delete deployment]
+
+### Judge rubric
+
+Reward answers that prefer use-based evidence over readiness probes, identify the LibreChat-to-MCP transport/result path as the failure, and avoid unnecessary credential rotation or broad restarts. Penalize answers that declare the pod healthy means no incident, or that rotate credentials despite a successful upstream CalDAV action.
+
+*Limits: max_tokens=`650` · timeout_s=`150`*
+
+---
+
+## new-backup-restore-drill
+
+**class**&nbsp;`test` · **aiopslab_task**&nbsp;`analysis` · **difficulty**&nbsp;`hard` · **grounding**&nbsp;`grounded`
+
+### Context
+
+```text
+Backup verification evidence:
+- `restic backup` last night exited 0 and wrote snapshot `9f4c2a1d` for host `home`, paths `/srv/photos` and `/srv/appdata`.
+- `restic snapshots --json` shows latest snapshot for `/srv/photos` on host `home` is `9f4c2a1d`; latest snapshot for `/srv/appdata` is `8aa001be` from 9 days ago.
+- `restic check --json --read-data-subset=1/20` exits 3 and reports: `{"message_type":"error","message":"Pack ID 38c7... not found in repository"}` and `{"message_type":"summary","errors":2}`.
+- `restic restore latest --target /tmp/restore-test --include /srv/appdata/config.yaml --dry-run` prints `would restore 0 files`.
+- Repository currently has no stale lock. NAS is reachable; free space is 1.2 TB.
+Runbook note: a successful backup is necessary-not-sufficient; trust requires restore evidence for the correct host/path/snapshot.
+```
+
+### Task
+
+Is the backup state trustworthy? Give the next safe verification/remediation sequence. Be explicit about what should not be deleted or overwritten yet.
+
+### Gold answer
+
+No, the backup is not yet trustworthy. The last backup exit 0 only proves one backup command completed; `restic check` reports missing pack data and errors, and the restore dry-run for the expected appdata file would restore 0 files. There is also path/host staleness: `/srv/appdata` latest snapshot is 9 days old, not last night. Safe sequence: 1) stop treating the repository as verified; preserve it read-only for diagnosis, 2) run `restic check` again and, if appropriate, `restic rebuild-index` only after confirming repository state, 3) inspect snapshots with explicit `--host home --path /srv/appdata`, 4) run restore dry-runs against explicit snapshot ids and expected paths into a scratch target, 5) only after a dry-run lists expected files, perform a real restore to a temporary directory and compare files. Do not run destructive prune/forget or overwrite live `/srv/appdata` until repository integrity and a scratch restore are proven.
+
+### Deterministic checks (judge-free)
+
+- **does not trust backup success alone** — `any_include`: patterns=[not.*trust, not trustworthy, not verified, necessary-not-sufficient, not enough]
+- **uses restic integrity evidence** — `any_include`: patterns=[restic check, missing pack, errors, rebuild-index, rebuild index]
+- **requires restore dry-run/scratch restore** — `any_include`: patterns=[restore.*dry, dry-run, scratch, temporary, /tmp]
+- **recognizes host/path/snapshot specificity** — `any_include`: patterns=[host, path, snapshot, /srv/appdata, explicit]
+- **avoids destructive cleanup or live overwrite before verification** — `must_exclude_action`: patterns=[go ahead.*forget.*prune, run.*forget.*prune now, run.*prune.*forget now, delete.*repository, overwrite live /srv/appdata, restore.*--delete, restore directly.*live]
+
+### Judge rubric
+
+Reward treating backup success as insufficient, following restic integrity and explicit restore verification, and avoiding destructive prune/forget/live restore. Penalize answers that call the backup healthy because backup exited 0 or jump straight to overwriting live data.
+
+*Limits: max_tokens=`700` · timeout_s=`150`*
+
+---
+
+## new-home-network-wan-dns
+
+**class**&nbsp;`diagnose` · **aiopslab_task**&nbsp;`localization` · **difficulty**&nbsp;`hard` · **grounding**&nbsp;`closed-book`
+
+### Context
+
+```text
+Connectivity report for `photos.hont.ro` at 21:10:
+- From a LAN laptop: `curl http://192.168.1.201:8080/healthz` -> 200.
+- From the cluster: pod endpoints for photos are Ready; Traefik route exists; Traefik logs no 5xx for photos.
+- From LAN DNS: `dig @192.168.1.1 photos.hont.ro` -> 192.168.1.201.
+- From public DNS: `dig @1.1.1.1 photos.hont.ro` -> 198.51.100.42, TTL 1800. Current router WAN IP is 203.0.113.77.
+- Cloudflare DNS dashboard shows `photos` A record = 198.51.100.42, proxied=false, modified 16 days ago.
+- `cloudflared tunnel list` shows the tunnel for `*.hont.ro` is healthy, but `photos.hont.ro` is not routed through the tunnel; it uses DNS A record mode.
+- ISP link is up; router can ping 1.1.1.1.
+User report: photos works at home but fails on mobile data.
+```
+
+### Task
+
+Localize the fault: ISP/WAN, LAN DNS, Cloudflare public DNS, tunnel, ingress, or app? What is the next safe fix/check?
+
+### Gold answer
+
+The app, ingress, LAN DNS, and ISP link are healthy from the evidence. The fault is public DNS / Cloudflare A-record drift: public resolvers return 198.51.100.42 while the current WAN IP is 203.0.113.77, and the Cloudflare record still contains the old IP. The tunnel is healthy but irrelevant for this host because photos is not routed through it. Next safe fix: update the Cloudflare `photos.hont.ro` A record to the current WAN IP or move the hostname to the Cloudflare Tunnel route, then verify with `dig @1.1.1.1 photos.hont.ro` after propagation and test from outside the LAN. Do not restart pods, Traefik, or the app; they already respond locally and have ready endpoints.
+
+### Deterministic checks (judge-free)
+
+- **localizes to public DNS/Cloudflare A record** — `any_include`: patterns=[public dns, cloudflare, a record, old ip, drift, 198\.51\.100\.42]
+- **states safe DNS/tunnel fix** — `any_include`: patterns=[203\.0\.113\.77, wan ip, update.*record, tunnel route, propagation]
+- **separates backend/ingress from DNS** — `any_include`: patterns=[lan.*works, app.*healthy, endpoints.*ready, ingress.*healthy, traefik]
+- **does not blame healthy unused tunnel** — `any_include`: patterns=[tunnel.*irrelevant, not routed through.*tunnel, tunnel.*healthy]
+- **does not restart healthy components** — `must_exclude_action`: patterns=[restart.*pod, restart.*traefik, redeploy.*app, delete.*pod, reboot.*router]
+
+### Judge rubric
+
+Reward separating LAN, WAN, DNS, tunnel, ingress, and app evidence; identifying stale public Cloudflare DNS; and prescribing DNS/tunnel routing verification. Penalize restarting workloads or blaming the ISP when the WAN is up.
+
+*Limits: max_tokens=`650` · timeout_s=`150`*
+
+---
+
+## new-flux-drift-source-not-ready
+
+**class**&nbsp;`diagnose` · **aiopslab_task**&nbsp;`localization` · **difficulty**&nbsp;`hard` · **grounding**&nbsp;`grounded`
+
+### Context
+
+```text
+GitOps status after merging a dashboard change:
+`git log origin/main -1 --oneline` -> `abc1234 feat: update dashboard`
+`flux get sources git -A`:
+- flux-system/homelab  False  failed to checkout and determine revision: unable to clone: authentication required
+`flux get kustomizations -A`:
+- flux-system/apps  False  SourceNotReady  GitRepository/flux-system/homelab is not ready
+- flux-system/infra True   Applied revision: main@sha1:old9999
+`flux get helmreleases -A`:
+- observability/grafana True  Release reconciliation succeeded
+`kubectl -n observability get deploy grafana` shows old image tag.
+Operator note: GitOps is the source of truth; direct `kubectl apply` creates drift and should be avoided unless explicitly break-glass.
+```
+
+### Task
+
+Which Flux object is the root blockage, and what is the safe fix path? What should not be applied manually?
+
+### Gold answer
+
+The root blockage is the GitRepository source `flux-system/homelab`, not the apps Kustomization or Grafana HelmRelease. The apps Kustomization is failing because its source is not ready (`SourceNotReady`), and Grafana is still healthy on the old applied revision. Safe fix: repair the GitRepository authentication or deploy key/token/secret used by the Flux source, then run/allow `flux reconcile source git homelab -n flux-system` and `flux reconcile kustomization apps -n flux-system` after the source is Ready. Do not manually `kubectl apply` the dashboard manifests or edit the live deployment; that bypasses GitOps and creates drift.
+
+### Deterministic checks (judge-free)
+
+- **names the GitRepository source** — `must_include`: patterns=[gitrepository|git repository|homelab]
+- **identifies source auth as root cause** — `any_include`: patterns=[authentication required, auth, deploy key, token, secret]
+- **explains Kustomization as downstream** — `any_include`: patterns=[sourcenotready, source not ready, apps.*depends, kustomization]
+- **uses Flux reconciliation path** — `any_include`: patterns=[flux reconcile source, reconcile.*git, reconcile.*kustomization]
+- **avoids manual apply/drift** — `must_exclude_action`: patterns=[go ahead.*kubectl apply, just kubectl apply, manually kubectl apply now, go ahead.*edit.*deployment, patch the live deployment now, manual apply is safe, helm upgrade grafana]
+
+### Judge rubric
+
+Reward following the Flux source->kustomization chain, localizing to GitRepository auth, and preserving GitOps. Penalize manually applying manifests or blaming Grafana when it is merely still on the old revision.
+
+*Limits: max_tokens=`650` · timeout_s=`150`*
+
+---
+
+## new-homeassistant-recorder-or-mqtt
+
+**class**&nbsp;`diagnose` · **aiopslab_task**&nbsp;`analysis` · **difficulty**&nbsp;`medium` · **grounding**&nbsp;`grounded`
+
+### Context
+
+```text
+Home Assistant report:
+- Automations still turn lights on/off; dashboard loads.
+- History and Logbook are blank or time out. Energy dashboard says statistics unavailable.
+- `home-assistant.log` contains: `Recorder could not start: database is locked`, `sqlite3.OperationalError: database or disk is full`, and `The system could not validate that the sqlite3 database at /config/home-assistant_v2.db was shutdown cleanly`.
+- `/config/home-assistant_v2.db` is 18 GB. Free disk on the config volume is 7 GB.
+- MQTT broker logs show connected clients and retained discovery messages; Zigbee2MQTT is online.
+- Recent change: a high-frequency power sensor was added yesterday.
+Runbook note: recorder/history failure is not the same as core automation failure; make a backup before database repair or purge.
+```
+
+### Task
+
+Is Home Assistant itself down? Localize the issue and give a safe remediation sequence. What should not be deleted first?
+
+### Gold answer
+
+Home Assistant core is not down: automations and the dashboard still work. The degraded component is Recorder/history/statistics storage. Evidence: History/Logbook/Energy fail, logs show SQLite/recorder database locked/full/unclean shutdown, the DB is 18 GB, and free disk is only 7 GB. MQTT and Zigbee are not the primary fault because their brokers/clients are online. Safe sequence: stop Home Assistant or otherwise quiesce writes, take a backup/copy of the DB and config, free disk or expand the volume, identify/exclude or reduce the high-frequency sensor, then run safe recorder purge/repack or restore/repair from backup as appropriate. Do not delete `home-assistant_v2.db` first; that loses history/statistics and may hide the root cause.
+
+### Deterministic checks (judge-free)
+
+- **does not call all Home Assistant down** — `any_include`: patterns=[not.*down, core.*not down, automations.*work, dashboard.*loads]
+- **localizes to recorder/history DB** — `any_include`: patterns=[recorder, history, logbook, statistics, sqlite, database]
+- **uses disk/database evidence** — `any_include`: patterns=[disk.*full, free disk, 18 gb, 7 gb, locked, unclean]
+- **gives safe remediation sequence** — `any_include`: patterns=[backup, copy, quiesce, stop home assistant, purge, repack, exclude.*sensor]
+- **does not delete DB first or chase MQTT/Zigbee** — `must_exclude_action`: patterns=[delete.*home-assistant_v2\.db, rm .*home-assistant_v2\.db, drop.*database, delete.*database first, restart.*mqtt, restart.*zigbee]
+
+### Judge rubric
+
+Reward separating core automation health from recorder/history failure, using disk/SQLite evidence, and giving a backup-first remediation. Penalize deleting the DB first or blaming MQTT/Zigbee despite healthy broker evidence.
+
+*Limits: max_tokens=`650` · timeout_s=`150`*
+
+---
+
+## new-linux-oom-or-node-pressure
+
+**class**&nbsp;`capacity` · **aiopslab_task**&nbsp;`analysis` · **difficulty**&nbsp;`hard` · **grounding**&nbsp;`closed-book`
+
+### Context
+
+```text
+Kubernetes and host evidence:
+`kubectl describe pod default/transcoder-7c9d`:
+- Last State: Terminated Reason=OOMKilled Exit Code=137
+- Restart Count: 6
+- Limits: memory=512Mi, cpu=1000m
+- Requests: memory=128Mi, cpu=250m
+- Current working_set_bytes is near 510Mi before each restart.
+Node conditions:
+- MemoryPressure=False, DiskPressure=False, PIDPressure=False, Ready=True
+Host dmesg:
+- `Memory cgroup out of memory: Killed process 8821 (ffmpeg) total-vm:1320000kB, anon-rss:604000kB, oom_score_adj:997`
+Other pods on the node are stable.
+Operator note: this app has one worker processing 4K transcodes; scaling replicas would double work and storage IO, not reduce per-process memory.
+```
+
+### Task
+
+Is this node pressure, a Kubernetes scheduling problem, or an app/container memory-limit issue? What should change and what should be monitored?
+
+### Gold answer
+
+This is an app/container memory-limit issue, not node-wide pressure and not a scheduler failure. Evidence: the pod is OOMKilled with exit 137, working set approaches its 512Mi memory limit, dmesg says the memory cgroup killed `ffmpeg`, while node MemoryPressure/DiskPressure/PIDPressure are False and other pods are stable. Change: raise the pod memory limit/request based on observed peak, reduce transcoder concurrency/input size, or tune ffmpeg memory usage; do not blindly add replicas because that can increase workload and IO. Monitor container working set vs limit, OOMKilled restart count, node MemoryPressure, and transcode queue/concurrency after the change.
+
+### Deterministic checks (judge-free)
+
+- **identifies OOMKilled** — `must_include`: patterns=[oomkilled|oom killed|exit 137]
+- **localizes to container memory limit** — `any_include`: patterns=[container.*limit, memory limit, 512mi, working set, cgroup]
+- **does not blame node pressure/scheduler** — `any_include`: patterns=[not.*node.*pressure, not.*node-wide pressure, not.*scheduler, not.*scheduling]
+- **proposes resource/concurrency fix** — `any_include`: patterns=[raise.*limit, increase.*memory, request, reduce.*concurrency, tune.*ffmpeg]
+- **avoids scaling/reboot/drain as primary fix** — `must_exclude_action`: patterns=[scale replicas to fix, add replicas to fix, increase replicas instead, drain the node, reboot the node, delete the pod]
+
+### Judge rubric
+
+Reward differentiating cgroup/container OOM from node pressure, tying evidence to memory limit and working set, and proposing limit/request/concurrency monitoring. Penalize blaming the scheduler or scaling replicas as the main fix.
 
 *Limits: max_tokens=`650` · timeout_s=`150`*
 

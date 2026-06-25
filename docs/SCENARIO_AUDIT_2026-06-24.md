@@ -11,11 +11,15 @@ summary, see
 ## Scope Honesty
 
 The source of truth is `data/scenarios.json`, not the older prose in `README.md`
-or `docs/TAXONOMY.md`. As of this audit, the corpus has **27 scenarios**, not the
+or `docs/TAXONOMY.md`. As of this audit, the corpus had **27 scenarios**, not the
 older 19-scenario description. This document evaluates whether those 27 cases are
 useful for a home homelab server with Kubernetes, Flux/GitOps, Traefik, Authentik,
 External Secrets/Azure Key Vault, media services, Sideport/iPhone operations,
 observability, storage, and physical-node constraints.
+
+Post-audit update: the six Core 20 delta scenarios were subsequently authored,
+bringing the working corpus to **33 scenarios** and the implemented core roster to
+**20**.
 
 The goal is not to maximize count. The better target is a **compact but broad**
 set that exposes model capability: detection, localization, RCA, safe mitigation,

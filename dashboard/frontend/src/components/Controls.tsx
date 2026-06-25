@@ -18,11 +18,13 @@ export function Controls({
 }) {
   const [modelSet, setModelSet] = useState<string>("");
   const [scenarioSet, setScenarioSet] = useState<string>("");
+  const [memoryContext, setMemoryContext] = useState<string>("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   const modelSets = runMatrix?.model_sets ?? [];
   const scenarioSets = runMatrix?.scenario_sets ?? [];
+  const memoryContexts = runMatrix?.memory_contexts ?? [];
 
   // Matrix options load on the first status poll; default to the server-provided
   // ids and keep selections pointed at existing options.
@@ -33,7 +35,10 @@ export function Controls({
     if (scenarioSets.length && !scenarioSets.some((item) => item.id === scenarioSet)) {
       setScenarioSet(runMatrix?.defaults?.scenario_set ?? scenarioSets[0].id);
     }
-  }, [modelSets, scenarioSets, modelSet, scenarioSet, runMatrix?.defaults?.model_set, runMatrix?.defaults?.scenario_set]);
+    if (memoryContexts.length && !memoryContexts.some((item) => item.id === memoryContext)) {
+      setMemoryContext(runMatrix?.defaults?.memory_context ?? memoryContexts[0].id);
+    }
+  }, [modelSets, scenarioSets, memoryContexts, modelSet, scenarioSet, memoryContext, runMatrix?.defaults?.model_set, runMatrix?.defaults?.scenario_set, runMatrix?.defaults?.memory_context]);
 
   const running = state === "running";
   const paused = state === "paused";
@@ -41,6 +46,7 @@ export function Controls({
   const active = running || paused;
   const chosenModel = modelSets.find((item) => item.id === modelSet) ?? modelSets[0];
   const chosenScenario = scenarioSets.find((item) => item.id === scenarioSet) ?? scenarioSets[0];
+  const chosenMemory = memoryContexts.find((item) => item.id === memoryContext) ?? memoryContexts[0];
   const modelCount = chosenModel?.model_count ?? 0;
   const scenarioCount = chosenScenario?.scenario_count ?? 0;
   const inferenceUnits = modelCount * scenarioCount * 5;
@@ -102,19 +108,35 @@ export function Controls({
             </select>
             <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
           </div>
-          {chosenModel && chosenScenario && (
+          <div className="relative border-l border-line">
+            <select
+              aria-label="Memory context"
+              value={memoryContext}
+              onChange={(e) => setMemoryContext(e.target.value)}
+              className="appearance-none bg-transparent py-1.5 pl-2.5 pr-7 text-xs text-fg focus:outline-none"
+            >
+              {memoryContexts.map((item) => (
+                <option key={item.id} value={item.id} className="bg-panel text-fg">
+                  {item.label}
+                  {item.byte_count ? ` · ${Math.ceil(item.byte_count / 1024)}KB` : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
+          </div>
+          {chosenModel && chosenScenario && chosenMemory && (
             <span
               className="hidden border-l border-line px-2.5 py-1.5 font-mono text-[10px] text-faint md:inline"
-              title={`${modelCount} models × ${scenarioCount} scenarios × 5 reps = ${inferenceUnits} inference units; ×2 judges = ${judgeUnits} judge units`}
+              title={`${modelCount} models × ${scenarioCount} scenarios × 5 reps = ${inferenceUnits} inference units; ×2 judges = ${judgeUnits} judge units; memory=${chosenMemory.id}`}
             >
-              {modelCount}m×{scenarioCount}s×5 · {judgeUnits}j
+              {modelCount}m×{scenarioCount}s×5 · {judgeUnits}j · {chosenMemory.id}
             </span>
           )}
           <button
             className="inline-flex items-center gap-1 border-l border-line bg-accent/15 px-2.5 py-1.5 font-medium text-accent transition hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={!chosenModel || !chosenScenario || busy != null || liveElsewhere}
+            disabled={!chosenModel || !chosenScenario || !chosenMemory || busy != null || liveElsewhere}
             title={liveElsewhere ? "A run is already running or paused — only one run can use the ai node. Follow it to control it." : undefined}
-            onClick={() => chosenModel && chosenScenario && run("start", () => control.start(chosenModel.id, chosenScenario.id))}
+            onClick={() => chosenModel && chosenScenario && chosenMemory && run("start", () => control.start(chosenModel.id, chosenScenario.id, chosenMemory.id))}
           >
             {spin("start", <Play className="h-3.5 w-3.5" />)}
             Start

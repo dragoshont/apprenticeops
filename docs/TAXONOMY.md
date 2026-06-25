@@ -132,11 +132,11 @@ Plex transcode errors, DNS resolution failures, etc.
 
 ## 6. Next action
 
-Author the six Core 20 delta scenarios named in
+Review the implemented Core 20 delta scenarios named in
 [`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
-as real-data scenarios. Operator review still gates the gold answers. Add them to
-[`data/scenarios.json`](../data/scenarios.json) with `grounding` labels, then the
-per-taxonomy report ([`report.py`](../report.py)) will score the updated classes.
+against operator expectations, then run the Core 20 roster before expanding to
+the full 33-scenario corpus. The per-taxonomy report ([`report.py`](../report.py))
+will score the updated classes.
 
 ## 7. Connection to DORA (capabilities, NOT the Four-Keys metrics)
 

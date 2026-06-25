@@ -112,6 +112,6 @@ npm run dev          # → http://127.0.0.1:5290
 Single-operator tool for a trusted LAN. With `AUTH_ENABLED=false` there is **no
 auth** — anyone who can reach it can drive the run; keep it on the LAN (or turn
 on Authentik). Every privileged action shells into `home` over SSH; the client
-may only choose server-validated *model_set*, *scenario_set*, and *run id* values;
+may only choose server-validated *model_set*, *scenario_set*, *memory_context*, and *run id* values;
 the backend resolves paths from `data/run-matrix.json` and shell-quotes launch
 environment values before calling the runner.

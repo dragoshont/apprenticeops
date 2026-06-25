@@ -56,7 +56,7 @@ export function SessionsTable({
                       </div>
                       {(s.model_set || s.scenario_set) && (
                         <span className="mt-0.5 inline-block rounded bg-panel2 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted">
-                          {s.model_set || "models"} × {s.scenario_set || "scenarios"}
+                          {s.model_set || "models"} × {s.scenario_set || "scenarios"} × {s.memory_context || "none"}
                         </span>
                       )}
                     </td>

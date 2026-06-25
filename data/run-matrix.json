@@ -3,7 +3,8 @@
   "schema_version": 1,
   "defaults": {
     "model_set": "dryrun",
-    "scenario_set": "core-current"
+    "scenario_set": "core-current",
+    "memory_context": "none"
   },
   "model_sets": [
     {
@@ -24,17 +25,17 @@
   "scenario_sets": [
     {
       "id": "core-current",
-      "label": "Core current - implemented scenarios",
+      "label": "Core 20 - implemented scenarios",
       "path": "data/scenario_sets/core-current.json",
       "kind": "default",
-      "description": "Implemented core roster. Planned Core 20 additions are not included until authored."
+      "description": "The implemented Core 20 roster for serious runs."
     },
     {
       "id": "extended",
       "label": "Additional / rotation scenarios",
       "path": "data/scenario_sets/extended.json",
       "kind": "rotation",
-      "description": "Non-core scenarios for targeted claims and calibration."
+      "description": "Additional/rotation scenarios outside Core 20 for targeted claims and calibration."
     },
     {
       "id": "all",
@@ -42,6 +43,21 @@
       "path": "data/scenarios.json",
       "kind": "canonical",
       "description": "The full current scenario corpus."
+    }
+  ],
+  "memory_contexts": [
+    {
+      "id": "none",
+      "label": "No memory",
+      "kind": "baseline",
+      "description": "Current prompt shape: each scenario receives only its own context and task."
+    },
+    {
+      "id": "homelab-okf-v1",
+      "label": "Homelab OKF memory v1",
+      "path": "data/memory/homelab-okf-v1/context.md",
+      "kind": "generated",
+      "description": "Small generated homelab memory bundle, injected before each scenario for the memory-conditioned run."
     }
   ]
 }

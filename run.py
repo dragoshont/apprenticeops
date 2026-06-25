@@ -1354,6 +1354,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="data/models.txt")
     ap.add_argument("--scenarios", default="data/scenarios.json")
+    ap.add_argument("--memory-context-file", default="",
+                    help="optional markdown memory/context file prepended to every scenario prompt; "
+                         "used for memory-conditioned runs")
     ap.add_argument("--bracket", help="only run this bracket label (e.g. 0-1B)")
     ap.add_argument("--out", default="results.jsonl")
     ap.add_argument("--outputs-dir", default="outputs")
@@ -1390,6 +1393,12 @@ def main():
 
     os.makedirs(args.outputs_dir, exist_ok=True)
     scen = json.load(open(args.scenarios))["scenarios"]
+    memory_context = ""
+    memory_sha = None
+    if args.memory_context_file:
+        with open(args.memory_context_file, encoding="utf-8") as fh:
+            memory_context = fh.read().strip()
+        memory_sha = hashlib.sha256(open(args.memory_context_file, "rb").read()).hexdigest()
     models = load_models(args.models, args.bracket)
     if args.shuffle:
         random.Random(args.order_seed).shuffle(models)
@@ -1425,6 +1434,9 @@ def main():
     env_static["env.scenarios_sha"] = scenario_sha
     env_static["env.scenarios_path"] = args.scenarios
     env_static["env.scenario_set"] = os.environ.get("SCENARIO_SET")
+    env_static["env.memory_context"] = os.environ.get("MEMORY_CONTEXT") or "none"
+    env_static["env.memory_context_file"] = args.memory_context_file or None
+    env_static["env.memory_context_sha"] = memory_sha
     _man = {}
     if args.manifest and os.path.exists(args.manifest):
         try:
@@ -1538,7 +1550,7 @@ def main():
                     rapl0 = _rapl_uj()
                     sampler = Sampler(); sampler.start()
                     tel = run_chat(
-                        model, "", build_prompt(s),
+                        model, "", build_prompt(s, memory_context),
                         max_tokens=s.get("max_tokens", DEFAULT_MAX_TOKENS),
                         timeout_s=s.get("timeout_s", DEFAULT_TIMEOUT_S),
                         stall_s=DEFAULT_STALL_S, think=args.think, sampler=sampler,
@@ -1651,10 +1663,17 @@ def main():
     sys.stderr.write("== done ==\n")
 
 
-def build_prompt(s):
+def build_prompt(s, memory_context=""):
+    memory = ""
+    if memory_context:
+        memory = ("--- HOMELAB MEMORY ---\n"
+                  "The following is stable, curated background about the homelab. "
+                  "Use it only when it is relevant to the scenario; the scenario "
+                  "context remains authoritative for incident-specific facts.\n"
+                  f"{memory_context}\n\n")
     return (f"You are a homelab operations assistant. Use ONLY the information "
             f"given. Be concise and specific.\n\n"
-            f"--- CONTEXT ---\n{s['context']}\n\n--- TASK ---\n{s['question']}")
+            f"{memory}--- CONTEXT ---\n{s['context']}\n\n--- TASK ---\n{s['question']}")
 
 
 if __name__ == "__main__":

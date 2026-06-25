@@ -147,7 +147,7 @@ Example shape:
   "scenario_sets": [
     {
       "id": "core-current",
-      "label": "Core current - implemented scenarios",
+      "label": "Core 20 - implemented scenarios",
       "path": "data/scenario_sets/core-current.json",
       "kind": "default",
       "description": "Default serious-run roster using implemented scenarios only."
@@ -191,10 +191,9 @@ data/scenario_sets/core-current.json
 data/scenario_sets/extended.json
 ```
 
-Phase 1 uses `core-current`, not `core`, because the six planned Core 20 delta
-scenarios have not yet been authored with gold answers and deterministic checks.
-The planned Core 20 remains a documentation target until those scenario objects
-exist. The first scenario-set files are therefore:
+The scenario-set id remains `core-current`, but it now contains the implemented
+Core 20 roster. The name is kept stable so existing launcher code and URLs do not
+need to change.
 
 ```text
 data/scenario_sets/core-current.json
@@ -211,17 +210,9 @@ Phase 1 may duplicate scenario objects from `data/scenarios.json`. That is
 acceptable because the scenario set is an immutable run artifact. A later phase can
 introduce generated scenario sets from ID lists if duplication becomes painful.
 
-Important honesty note: the six new Core scenario designs are not implemented yet.
-Until they exist as full scenario objects with gold answers and deterministic
-checks, `core-current.json` includes only implemented scenarios. Do **not** label
-it "Core 20" in the UI. The UI may show "planned Core 20" as documentation, but
-must not launch it until the scenario files exist.
-
-Later, when the six scenario designs are implemented, we can either:
-
-- rename `core-current` to `core`, or
-- add a separate `core` scenario set only if it passes the same schema/review gates
-  as existing scenarios.
+The six Core 20 delta scenarios are now full scenario objects with context, gold
+answers, deterministic checks, and judge rubrics. If we later want a shorter alias,
+we can add `core` as a second id, but `core-current` remains the stable launch id.
 
 ### 5.3 Backend API
 
@@ -250,11 +241,11 @@ Returns resolved, server-approved launch options:
   "scenario_sets": [
     {
       "id": "core-current",
-      "label": "Core current",
+      "label": "Core 20",
       "path": "data/scenario_sets/core-current.json",
       "kind": "default",
       "description": "Default serious-run roster.",
-      "scenario_count": 14,
+      "scenario_count": 20,
       "class_counts": { "diagnose": 1 },
       "difficulty_counts": { "medium": 9, "hard": 5 },
       "grounding_counts": { "closed-book": 10, "grounded": 4 },
@@ -308,7 +299,7 @@ HTTP 422/400 because `batch` is no longer part of the product contract.
   "scenario_set": "core-current",
   "scenarios": "data/scenario_sets/core-current.json",
   "scenarios_sha256": "...",
-  "scenario_count": 14,
+  "scenario_count": 20,
   "class_counts": { "detect": 2 },
   "reps": 5,
   "judges": 2,
@@ -400,7 +391,7 @@ Phase 1 UI can be simple but honest:
   summary. If the full confirmation flow is too large for Phase 1, at minimum show:
 
 ```text
-2 models x 14 scenarios x 5 reps = 140 inference units; x2 judges = 280 judge units
+2 models x 20 scenarios x 5 reps = 200 inference units; x2 judges = 400 judge units
 ```
 
 - Add a compact **Scenario inventory** panel below Sessions or in the selected-run
@@ -481,7 +472,7 @@ Instead, update the manifest protocol to allow approved scenario hashes, for exa
 ```json
 "scenario_sets": {
   "all": { "path": "data/scenarios.json", "sha256": "...", "scenario_count": 27 },
-  "core-current": { "path": "data/scenario_sets/core-current.json", "sha256": "...", "scenario_count": 14 },
+  "core-current": { "path": "data/scenario_sets/core-current.json", "sha256": "...", "scenario_count": 20 },
   "extended": { "path": "data/scenario_sets/extended.json", "sha256": "..." }
 }
 ```
@@ -508,9 +499,9 @@ Implemented local gate results (2026-06-24):
 - `data/run-matrix.json` + manifest hash/count validation: **PASS**.
 - `python3 -m py_compile dashboard/backend/app.py scripts/pipeline-status.py run.py`: **PASS**.
 - `bash -n scripts/run-e2e.sh scripts/run-from-homelab.sh scripts/run-roster.sh`: **PASS**.
-- `scripts/pipeline-status.py` run-matrix payload (`core-current=14`, `extended=13`, `all=27`, no `batches`): **PASS**.
+- `scripts/pipeline-status.py` run-matrix payload (`core-current=20`, `extended=13`, `all=33`, memory contexts `none` + `homelab-okf-v1`, no `batches`): **PASS**.
 - Backend direct smoke (`/api/run-matrix`, old `{batch}` rejected, resume scenario-hash mismatch rejected): **PASS**.
-- Atomic `run.meta` smoke (`dryrun x core-current`, `expect=2`, `scenario_count=14`): **PASS**.
+- Atomic `run.meta` smoke (`dryrun x core-current`, `expect=2`, `scenario_count=20`): **PASS**.
 - `cd dashboard/frontend && npm run build`: **PASS**.
 
 Deterministic gates:
@@ -535,7 +526,7 @@ Deterministic gates:
 4. `cd dashboard/frontend && npm run build`
 5. Backend smoke using FastAPI TestClient or direct function tests if `httpx` is
    unavailable:
-   - `GET /api/run-matrix` returns model and scenario sets with counts;
+  - `GET /api/run-matrix` returns model, scenario, and memory-context sets with counts / byte counts;
   - new `{model_set: "dryrun", scenario_set: "core-current"}` resolves safely;
   - old `{batch: "dryrun"}` launch is rejected;
    - unknown IDs fail;

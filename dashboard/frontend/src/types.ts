@@ -37,6 +37,16 @@ export interface ScenarioSet {
   sha256?: string;
 }
 
+export interface MemoryContext {
+  id: string;
+  label: string;
+  path?: string | null;
+  kind?: string;
+  description?: string;
+  byte_count?: number | null;
+  sha256?: string | null;
+}
+
 export interface ScenarioInventoryRow {
   id: string;
   class?: string | null;
@@ -47,9 +57,10 @@ export interface ScenarioInventoryRow {
 }
 
 export interface RunMatrix {
-  defaults?: { model_set?: string; scenario_set?: string };
+  defaults?: { model_set?: string; scenario_set?: string; memory_context?: string };
   model_sets: ModelSet[];
   scenario_sets: ScenarioSet[];
+  memory_contexts?: MemoryContext[];
   scenarios: ScenarioInventoryRow[];
 }
 
@@ -160,6 +171,7 @@ export interface Session {
   run_id: string;
   model_set: string;
   scenario_set: string;
+  memory_context?: string;
   historical?: boolean;
   user?: string;
   state: PipelineState | string;
@@ -188,7 +200,7 @@ export interface Status {
   error?: string;
   user?: string;
   markers?: { canceled: boolean; paused: boolean };
-  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; expect?: number; started_at?: number };
+  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; expect?: number; started_at?: number };
   progress?: Progress;
   summary?: RunSummary;
   producer?: Producer;

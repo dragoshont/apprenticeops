@@ -21,6 +21,8 @@ MODELS="${MODELS:-data/models.txt}"
 MODEL_SET="${MODEL_SET:-manual}"
 SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 SCENARIO_SET="${SCENARIO_SET:-all}"
+MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
+MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
 mkdir -p "$LOGDIR" outputs
@@ -37,6 +39,9 @@ trap cleanup EXIT
 log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT ==="
 [ -f "$MODELS" ] || { log "FATAL: $MODELS not found"; exit 1; }
 [ -f "$SCENARIOS" ] || { log "FATAL: $SCENARIOS not found"; exit 1; }
+if [ -n "$MEMORY_CONTEXT_FILE" ]; then
+  [ -f "$MEMORY_CONTEXT_FILE" ] || { log "FATAL: $MEMORY_CONTEXT_FILE not found"; exit 1; }
+fi
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -88,8 +93,9 @@ NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
 NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
 log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
+  ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
   --temp 0.7 --repeats 5 --seed-base 1 --rm-after ${LIMIT:+--limit "$LIMIT"} \
   --out "$OUT" >>"$LOGDIR/run.log" 2>&1
 rc=$?

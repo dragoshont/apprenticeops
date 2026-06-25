@@ -4,7 +4,6 @@
   "frozen_from": "the controlled Turbo-off run, 2026-06-17..18, launched via scripts/node-power.sh setup",
   "platform": "linux",
   "enforce_on_platform": "linux",
-
   "cpu": {
     "_comment": "Set by scripts/node-power.sh setup. no_turbo=1 disables Turbo Boost; min=max=100 perf_pct pins to the non-turbo BASE clock (i5-8350U = 1.70 GHz). wave1 observed freq ceiling 1708 MHz; wave2 (turbo on) reached 3602 MHz.",
     "intel_pstate.no_turbo": "1",
@@ -13,12 +12,10 @@
     "max_perf_pct": "100",
     "freq_ceiling_mhz": 1750
   },
-
   "energy": {
     "_comment": "RAPL domain MUST be pinned. package-0 = CPU package only (what wave1 used, 100%). psys = whole-SoC (reads higher; 760 wave2 rows used it -> not comparable). Pin via RAPL_DOMAIN=package-0.",
     "rapl_domain": "package-0"
   },
-
   "telemetry": {
     "_comment": "perf counters must be readable for membw.series + perf.core. wave2 silently lost these on ~14% of runs (perf_event_paranoid too high or perf unavailable). Require paranoid<=2.",
     "perf_event_paranoid_max": 2,
@@ -26,12 +23,10 @@
     "require_perf_core": true,
     "sample_interval_s": 0.5
   },
-
   "model_runtime": {
     "_comment": "Ollama options applied per request. num_ctx is the run.py NUM_CTX constant.",
     "num_ctx": 8192
   },
-
   "protocol": {
     "_comment": "The decode protocol the preflight asserts (temp 0.7, seed_base 1, reps 5, think=false) plus approved scenario-set content hashes, so a stray --temp/--think or an edited prompt aborts instead of silently producing off-protocol data. NB: run.py pins only temp/seed/num_predict/num_ctx; each model's other sampler defaults (top_p/top_k/...) are captured in ollama.parameters, not pinned.",
     "temperature": 0.7,
@@ -39,32 +34,30 @@
     "seed_base": 1,
     "think": false,
     "scenarios_file": "data/scenarios.json",
-    "scenarios_sha256": "893b4a9f6cc4be98195ba143a8e4e23f310b57e0d60f752abc7e1d2aef78e5e9",
-    "scenario_count": 27,
+    "scenarios_sha256": "2aa8d7fce88837d1fb457e85b3a93ae3fd457da995a16ca1548a529ba982b7f5",
+    "scenario_count": 33,
     "scenario_sets": {
       "all": {
         "path": "data/scenarios.json",
-        "sha256": "893b4a9f6cc4be98195ba143a8e4e23f310b57e0d60f752abc7e1d2aef78e5e9",
-        "scenario_count": 27
+        "sha256": "2aa8d7fce88837d1fb457e85b3a93ae3fd457da995a16ca1548a529ba982b7f5",
+        "scenario_count": 33
       },
       "core-current": {
         "path": "data/scenario_sets/core-current.json",
-        "sha256": "59b4bd798bd0201547c5d97ec47d92fb019ae241c2282b0a61321ade94e42023",
-        "scenario_count": 14
+        "sha256": "012539dbc8a02d622a25d7f147a4822d48f6225134c390d113e38f954573d61a",
+        "scenario_count": 20
       },
       "extended": {
         "path": "data/scenario_sets/extended.json",
-        "sha256": "ad72986975828b6016d2536397325f741f9d61c06ad48d0ebf26d07f2dbcb14d",
+        "sha256": "da89640b997edecb0997b54447c7101dad81d2a664a4bc347917d16d24ad8742",
         "scenario_count": 13
       }
     }
   },
-
   "expected": {
     "_comment": "Ollama engine pinned from the home-ai node (hostname 'ai') on 2026-06-24; run.py stamps env.ollama_version into every row and the preflight refuses to run if the node's engine drifts from this. Re-pin only on a deliberate, reviewed engine upgrade.",
     "ollama_version": "0.30.8"
   },
-
   "models_pinned": {
     "_comment": "If true, the preflight requires EVERY model in --models to be present locally before the sweep starts (no mid-run pull_failed like wave2's 133). Pre-pull with: while read m; do [ -n \"$m\" ] && ollama pull \"$m\"; done < data/models.txt",
     "require_all_present": true

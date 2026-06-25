@@ -24,8 +24,8 @@ export async function fetchConfig(): Promise<{ auth_enabled: boolean; user: stri
 }
 
 export const control = {
-  start: (modelSet: string, scenarioSet: string) =>
-    jpost("/api/control/start", { model_set: modelSet, scenario_set: scenarioSet }),
+  start: (modelSet: string, scenarioSet: string, memoryContext: string) =>
+    jpost("/api/control/start", { model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext }),
   stop: (runId?: string | null) => jpost("/api/control/stop", { run_id: runId ?? null }),
   pause: (runId?: string | null) => jpost("/api/control/pause", { run_id: runId ?? null }),
   resume: (runId?: string | null) => jpost("/api/control/resume", { run_id: runId ?? null }),

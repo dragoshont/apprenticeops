@@ -131,7 +131,7 @@ agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 ## The scenarios
 
 The original paper run used **19 scenarios**. The working corpus now contains
-**27 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
+**33 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
 homelab incidents plus later repo-grounded security, capacity, tool-action, and
 private app/device-ops incident cases. The 2026-06-24 external research pass recommends a
 **20-case core roster** for the next expensive run; see

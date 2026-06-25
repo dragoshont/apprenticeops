@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "purpose": "Additional/rotation scenarios outside core-current for targeted claims.",
+    "purpose": "Additional/rotation scenarios outside Core 20 for targeted claims.",
     "taxonomy": "Classes map to AIOpsLab (MSFT, MLSys'25) canonical tasks: detection|localization|analysis(RCA)|mitigation, extended with the operator verbs expand|upgrade|test|augment|guard.",
     "ground_truth": "Mixed provenance, marked per scenario. detect-01/localize-02/monitor-03 use REAL home.hont.ro signals captured 2026-06-16 (kube_crashloop_pods, kube_events, pod logs). The remaining scenarios are SYNTHETIC-but-repo-grounded: constructed from this cluster's real config shapes (Traefik + wildcard cert, SOPS/ESO + Azure Key Vault, Cloudflare DNS-01, microk8s-hostpath, restic-to-NAS) but NOT captured incidents. CONTAMINATION CAVEAT: only the captured scenarios are provably absent from pretraining; the synthetic ones are plausibly-novel but not guaranteed unseen, so the 'real incidents in nobody's training set' defense applies in full only to the captured subset.",
     "scoring": "deterministic_checks run in run.py (0/1 each -> det score); judge.py grades 1-5 vs gold_answer via the frontier model.",
-    "fairness": "Every model gets byte-identical `context` + `question`. Only the model varies.",
+    "fairness": "Within a selected run condition, every model gets byte-identical scenario `context` + `question` and, when enabled, the same byte-identical memory context. Only the model varies.",
     "offline_definition": "OFFLINE = locally-sovereign INFERENCE: no external MODEL API (no Azure AI Foundry / Anthropic / OpenAI / frontier escalation); the model runs on owned hardware. It does NOT mean information-starved \u2014 local RAG, in-org MCP servers, runbooks, and the cluster's own telemetry are allowed (they never leave the trust boundary).",
     "grounding": "Per-scenario label. closed-book = answer from in-weights ops knowledge (incident data given, but no reference docs); grounded = reference material is supplied in-context (simulating LOCAL RAG / in-org MCP / runbooks). Reporting closed-book vs grounded shows how much local retrieval closes the gap for a small model.",
     "scenario_set": "extended"
