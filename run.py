@@ -1354,6 +1354,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="data/models.txt")
     ap.add_argument("--scenarios", default="data/scenarios.json")
+    ap.add_argument("--memory-context", default=None,
+                    help="run-level memory/context condition id; defaults to MEMORY_CONTEXT env or none")
     ap.add_argument("--memory-context-file", default="",
                     help="optional markdown memory/context file prepended to every scenario prompt; "
                          "used for memory-conditioned runs")
@@ -1393,6 +1395,11 @@ def main():
 
     os.makedirs(args.outputs_dir, exist_ok=True)
     scen = json.load(open(args.scenarios))["scenarios"]
+    memory_context_id = args.memory_context or os.environ.get("MEMORY_CONTEXT") or "none"
+    if args.memory_context_file and memory_context_id == "none":
+        sys.exit("--memory-context-file requires --memory-context (or MEMORY_CONTEXT) != none")
+    if not args.memory_context_file and memory_context_id != "none":
+        sys.exit("--memory-context without --memory-context-file would label an unconditioned run; pass both or use none")
     memory_context = ""
     memory_sha = None
     if args.memory_context_file:
@@ -1434,7 +1441,7 @@ def main():
     env_static["env.scenarios_sha"] = scenario_sha
     env_static["env.scenarios_path"] = args.scenarios
     env_static["env.scenario_set"] = os.environ.get("SCENARIO_SET")
-    env_static["env.memory_context"] = os.environ.get("MEMORY_CONTEXT") or "none"
+    env_static["env.memory_context"] = memory_context_id
     env_static["env.memory_context_file"] = args.memory_context_file or None
     env_static["env.memory_context_sha"] = memory_sha
     _man = {}
@@ -1469,6 +1476,8 @@ def main():
     expected_units = len(expected_pairs)
     done_models = set()
     _seen = {}
+    current_memory_context = env_static.get("env.memory_context")
+    current_memory_sha = env_static.get("env.memory_context_sha")
     if os.path.exists(args.out):
         with open(args.out) as _f:
             for _ln in _f:
@@ -1483,7 +1492,9 @@ def main():
                 pair = (_r.get("scenario"), _r.get("rep"))
                 row_sha = _r.get("env.scenarios_sha")
                 if (_m and pair in expected_pairs and _r.get("det_total") is not None
-                    and row_sha == scenario_sha):
+                    and row_sha == scenario_sha
+                    and (_r.get("env.memory_context") or "none") == current_memory_context
+                    and _r.get("env.memory_context_sha") == current_memory_sha):
                     _seen.setdefault(_m, set()).add(pair)
             done_models = {m for m, u in _seen.items() if expected_pairs <= u}
         if done_models:

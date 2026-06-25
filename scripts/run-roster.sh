@@ -95,6 +95,7 @@ log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
 SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
+  --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
   --temp 0.7 --repeats 5 --seed-base 1 --rm-after ${LIMIT:+--limit "$LIMIT"} \
   --out "$OUT" >>"$LOGDIR/run.log" 2>&1

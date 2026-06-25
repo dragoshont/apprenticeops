@@ -357,7 +357,10 @@ def main():
     if args.judge:
         if not args.out:
             sys.exit("--judge needs --out")
-        # resume: skip (model, scenario, rep, judge_model) already written to --out,
+        memory_context_by_unit = {}
+        # resume: skip (model, scenario, rep, memory_context, judge_model) already
+        # written to --out, so paired no-memory/memory runs can be judged together
+        # without one condition suppressing the other.
         # so a long ensemble run that dies (sleep/network) continues instead of
         # re-judging from scratch. Output is opened in APPEND mode.
         done = set()
@@ -367,7 +370,8 @@ def main():
                     d = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                done.add((d.get("model"), d.get("scenario"), str(d.get("rep")), d.get("judge_model")))
+                done.add((d.get("model"), d.get("scenario"), str(d.get("rep")),
+                          d.get("memory_context") or "none", d.get("judge_model")))
             if done:
                 sys.stderr.write(f"resume: {len(done)} judged rows already in {args.out}; skipping them\n")
         cost = {"calls": 0, "ai_credits": 0.0, "tokens_in": 0, "tokens_out": 0,
@@ -394,29 +398,35 @@ def main():
                 sys.stderr.write(f"skip {row.get('model')} {sid}: result scenario hash {row_sha!r} != selected {scen_sha[:12]}…\n")
                 continue
             rep = row.get("rep", 0)
-            if all((row["model"], sid, str(rep), mo) in done for _, mo in specs):
+            memory_context = row.get("env.memory_context") or "none"
+            memory_context_by_unit[(row["model"], sid, str(rep), memory_context)] = memory_context
+            if all((row["model"], sid, str(rep), memory_context, mo) in done for _, mo in specs):
                 continue
             base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
-            answer = ""  # run.py suffixes __r{rep} only when repeats>1; try both
-            for cand in (f"{base}__r{rep}.txt", f"{base}.txt"):
-                fp = os.path.join(args.outputs_dir, cand)
-                if os.path.exists(fp):
-                    answer = open(fp).read()
-                    break
+            answer = row.get("gen_ai.completion") or ""
+            if not answer:
+                # run.py suffixes __r{rep} only when repeats>1; try both. This is
+                # legacy fallback only; embedded completions avoid filename
+                # collisions when concatenating memory/no-memory twin runs.
+                for cand in (f"{base}__r{rep}.txt", f"{base}.txt"):
+                    fp = os.path.join(args.outputs_dir, cand)
+                    if os.path.exists(fp):
+                        answer = open(fp).read()
+                        break
             for be, mo in specs:
-                if (row["model"], sid, str(rep), mo) in done:
+                if (row["model"], sid, str(rep), memory_context, mo) in done:
                     continue
-                tasks.append((row["model"], sid, rep, answer, be, mo))
+                tasks.append((row["model"], sid, rep, memory_context, answer, be, mo))
 
         def _judge_task(t):
-            model, sid, rep, answer, be, mo = t
+            model, sid, rep, memory_context, answer, be, mo = t
             if not answer:
-                return (model, sid, rep, be, mo, {"score": 1, "verdict": "empty"}, None)
+                return (model, sid, rep, memory_context, be, mo, {"score": 1, "verdict": "empty"}, None)
             jg = Judge(backend=be, model=mo)   # fresh per task -> thread-safe usage
             for attempt in range(4):
                 try:
                     j = judge_one(jg, scen[sid], answer)
-                    return (model, sid, rep, be, mo, j, jg.last_usage)
+                    return (model, sid, rep, memory_context, be, mo, j, jg.last_usage)
                 except Exception as e:  # noqa: BLE001
                     if attempt == 3:
                         sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} "
@@ -433,12 +443,14 @@ def main():
                 res = fut.result()
                 if res is None:
                     continue
-                model, sid, rep, be, mo, j, u = res
+                model, sid, rep, memory_context, be, mo, j, u = res
                 if u:
                     cost["calls"] += 1
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
+                memory_context = memory_context_by_unit.get((model, sid, str(rep), memory_context), memory_context)
                 f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
+                                    "memory_context": memory_context,
                                     "scenarios_path": scen_path,
                                     "scenarios_sha256": scen_sha,
                                     "judge_backend": be, "judge_model": mo,

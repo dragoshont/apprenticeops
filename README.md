@@ -71,6 +71,16 @@ This redraws the requirement stack for a small local ops model:
 
 This is why we measure two grounding modes per scenario: **closed-book** (in-weights knowledge only) and **grounded** (correct reference material supplied in-context, simulating perfect local retrieval). The gap between them is directly actionable — it answers "do I need a vector database next to my tiny model, and how much does it buy me?"
 
+The updated experiment adds a second, orthogonal comparison: **memory context**.
+The dashboard and runner can execute the same model/scenario set with
+`memory_context=none` or `memory_context=homelab-okf-v1`. The memory condition is
+stamped into every raw row as `env.memory_context`, carried into the flat dataset
+and report tables, and should be compared only against a run with the same models,
+scenario set, repeats, sampler settings, judge configuration, and node manifest.
+The first memory file is intentionally a small OKF/LLM-wiki bundle, not vector RAG;
+this tests whether a compact curated homelab briefing helps before we pay the
+complexity cost of retrieval infrastructure.
+
 ---
 
 ## Research questions

@@ -168,6 +168,38 @@ python3 scripts/audit-run.py data/collected/<RUN_ID>/results.<RUN_ID>.jsonl   # 
 
 The node-side `run-roster.sh` guarantees per run:
 - **Locked + verified:** `node-power.sh setup`, then `run.py --preflight-only` must pass
+
+## 3d. Memory-conditioned comparison
+
+The updated experiment can compare the same run matrix with and without a compact
+homelab memory briefing. This is **not** vector RAG: the selected markdown file is
+prepended to every scenario prompt, and its id/path/hash are written to `run.meta`
+and every raw row as `env.memory_context`, `env.memory_context_file`, and
+`env.memory_context_sha`.
+
+Use `none` as the baseline and `homelab-okf-v1` as the memory condition:
+
+```bash
+# Baseline
+RUN_ID=core20-none-$(date -u +%Y%m%d-%H%M) \
+  MODELS=data/models.dryrun.txt MODEL_SET=dryrun \
+  SCENARIOS=data/scenario_sets/core-current.json SCENARIO_SET=core-current \
+  MEMORY_CONTEXT=none MEMORY_CONTEXT_FILE= \
+  setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.none.boot 2>&1 </dev/null &
+
+# Memory-conditioned twin
+RUN_ID=core20-memory-$(date -u +%Y%m%d-%H%M) \
+  MODELS=data/models.dryrun.txt MODEL_SET=dryrun \
+  SCENARIOS=data/scenario_sets/core-current.json SCENARIO_SET=core-current \
+  MEMORY_CONTEXT=homelab-okf-v1 \
+  MEMORY_CONTEXT_FILE=data/memory/homelab-okf-v1/context.md \
+  setsid nohup ./scripts/run-e2e.sh >/tmp/e2e.memory.boot 2>&1 </dev/null &
+```
+
+For a valid comparison, keep the model set, scenario set, repeats, sampler,
+judge configuration, and node manifest identical. Change only `MEMORY_CONTEXT` and
+`MEMORY_CONTEXT_FILE`. `report.py` and `dataset.py` expose `memory_context`, so the
+analysis can group by `none` vs `homelab-okf-v1` without inferring from filenames.
   (turbo off, governor performance, RAPL `package-0`, perf readable, protocol + scenarios
   hash + models). It refuses to run otherwise.
 - **Identical start per model (proven, not assumed):** between models `quiesce()` resets the
@@ -223,6 +255,9 @@ difficulty** table, the **paired RAG lift** table (within-pair, the clean
 estimate), and a **Statistics** section (bootstrap CIs + Friedman with
 numpy/scipy; judge-ensemble Cohen's κ). The bare closed-book/grounded columns are
 confounded class means — read the paired table for the retrieval effect.
+When multiple memory conditions are present, the headline and systems tables are
+faceted by `memory_context`; compare rows with the same model and different memory
+conditions for the memory-context effect.
 
 ## 5a. Notebook dependencies + setup (captured for reproducibility)
 

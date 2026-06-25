@@ -57,7 +57,7 @@
       "label": "Homelab OKF memory v1",
       "path": "data/memory/homelab-okf-v1/context.md",
       "kind": "generated",
-      "description": "Small generated homelab memory bundle, injected before each scenario for the memory-conditioned run."
+      "description": "Compact source-cited homelab memory briefing, injected before each scenario for the memory-conditioned comparison."
     }
   ]
 }

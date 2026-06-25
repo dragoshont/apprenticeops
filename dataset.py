@@ -10,7 +10,7 @@ task-quality label, which is what makes *quality-from-behaviour* possible here.
     python3 dataset.py --results results.jsonl --judged judged.jsonl --out dataset.csv
 
 Columns:
-  identity : model, bracket, params, quant, native_ctx, scenario, class, grounding, difficulty, rep
+    identity : model, bracket, memory_context, params, quant, native_ctx, scenario, class, grounding, difficulty, rep
   features : warmup_s, load_s, ttft_s, decode_tok_s, tpot_ms, output_tokens/chars,
              jitter p50/p95/max, peak_temp_c, start_temp_c, peak_rss_mb,
              rss_growth_mb, swap_delta_mb, min_avail_mb, mean_w, energy_wh,
@@ -51,10 +51,11 @@ def main():
     ap.add_argument("--out", default="dataset.csv")
     args = ap.parse_args()
 
-    jm = defaultdict(list)  # (model, scenario, rep) -> [judge scores]
+    jm = defaultdict(list)  # (model, scenario, rep, memory_context) -> [judge scores]
     for j in load(args.judged):
         if j.get("score") is not None:
-            jm[(j.get("model"), j.get("scenario"), j.get("rep"))].append(j["score"])
+            jm[(j.get("model"), j.get("scenario"), j.get("rep"),
+                j.get("memory_context") or "none")].append(j["score"])
 
     out = []
     for r in load(args.results):
@@ -66,9 +67,11 @@ def main():
         igpu_pct, mem_req_total = _igpu(r.get("membw.requests"))
         pc = r.get("perf.core") or {}
         finish = (r.get("gen_ai.response.finish_reasons") or [None])[0]
-        js = jm.get((r.get("model"), r.get("scenario"), r.get("rep")))
+        memory_context = r.get("env.memory_context") or "none"
+        js = jm.get((r.get("model"), r.get("scenario"), r.get("rep"), memory_context))
         out.append({
             "model": r.get("model"), "bracket": r.get("bracket"),
+            "memory_context": memory_context,
             "scenario": r.get("scenario"), "class": r.get("class"),
             "grounding": r.get("grounding"), "difficulty": r.get("difficulty"),
             "rep": r.get("rep"),
