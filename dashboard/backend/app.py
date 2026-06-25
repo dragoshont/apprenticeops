@@ -339,6 +339,7 @@ print(json.dumps({
     "model_sets": model_sets,
     "scenario_sets": scenario_sets,
     "memory_contexts": memory_contexts,
+    "experiment_plans": matrix.get("experiment_plans", []),
     "scenarios": sorted(scenario_rows.values(), key=lambda row: row["id"]),
 }))
 '''

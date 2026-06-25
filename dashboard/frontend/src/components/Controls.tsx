@@ -25,6 +25,7 @@ export function Controls({
   const modelSets = runMatrix?.model_sets ?? [];
   const scenarioSets = runMatrix?.scenario_sets ?? [];
   const memoryContexts = runMatrix?.memory_contexts ?? [];
+  const experimentPlans = runMatrix?.experiment_plans ?? [];
 
   // Matrix options load on the first status poll; default to the server-provided
   // ids and keep selections pointed at existing options.
@@ -72,8 +73,50 @@ export function Controls({
   const cbtn =
     "inline-flex items-center gap-1 rounded-lg border border-line bg-panel2/50 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40";
 
+  const startPhase = (memoryId: string) => {
+    const memory = memoryContexts.find((item) => item.id === memoryId);
+    if (chosenModel && chosenScenario && memory) {
+      setMemoryContext(memory.id);
+      run("start", () => control.start(chosenModel.id, chosenScenario.id, memory.id));
+    }
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-2">
+      {!active && experimentPlans.length > 0 && (
+        <div className="rounded-lg border border-line bg-panel2/40 px-3 py-2 text-xs">
+          {experimentPlans.map((plan) => (
+            <div key={plan.id} className="space-y-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div className="font-medium text-fg">{plan.label}</div>
+                  {plan.description && <div className="mt-0.5 max-w-3xl text-faint">{plan.description}</div>}
+                </div>
+                {plan.gate && <div className="max-w-lg text-[11px] text-muted">Gate: {plan.gate}</div>}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {plan.phases.map((phase, index) => {
+                  const phaseMemory = memoryContexts.find((item) => item.id === phase.memory_context);
+                  return (
+                    <button
+                      key={phase.id}
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-lg border border-line bg-panel/70 px-2.5 py-1.5 text-[11px] font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={!chosenModel || !chosenScenario || !phaseMemory || busy != null || liveElsewhere}
+                      title={phase.gate || phaseMemory?.description}
+                      onClick={() => startPhase(phase.memory_context)}
+                    >
+                      {busy === "start" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                      {index + 1}. {phase.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-1.5">
       {!active && (
         <div className="flex flex-wrap items-center overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
           <div className="relative">
@@ -174,6 +217,7 @@ export function Controls({
       )}
 
       {msg && <span className="max-w-[16rem] truncate text-xs text-bad" title={msg}>{msg}</span>}
+      </div>
     </div>
   );
 }

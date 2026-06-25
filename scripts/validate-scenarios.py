@@ -115,6 +115,8 @@ def validate_sets_and_manifest() -> None:
         entry["id"]: entry for entry in load_json("data/run-matrix.json")["scenario_sets"]
     }
     matrix = load_json("data/run-matrix.json")
+    if set(matrix_sets) != {"core-current", "extended", "all"}:
+        fail(f"unexpected scenario_set ids: {sorted(matrix_sets)}")
     if matrix_sets["core-current"]["label"] != "Core 20 - implemented scenarios":
         fail("run matrix core-current label is stale")
     if matrix.get("defaults", {}).get("memory_context") != "none":
@@ -127,6 +129,19 @@ def validate_sets_and_manifest() -> None:
     memory_path = memory_contexts["homelab-okf-v1"].get("path")
     if not memory_path or not (REPO / memory_path).exists():
         fail("homelab-okf-v1 memory context path is missing")
+    plans = {entry["id"]: entry for entry in matrix.get("experiment_plans", [])}
+    plan = plans.get("memory-comparison-v1")
+    if not plan:
+        fail("missing memory-comparison-v1 experiment plan")
+    gate = (plan.get("gate") or "").lower()
+    if "verify" not in gate or "phase" not in gate:
+        fail("memory-comparison-v1 gate must explicitly require phase verification")
+    phases = plan.get("phases") or []
+    if [phase.get("memory_context") for phase in phases] != ["none", "homelab-okf-v1"]:
+        fail("memory-comparison-v1 phases must be none -> homelab-okf-v1")
+    for phase in phases:
+        if not phase.get("gate"):
+            fail(f"memory-comparison phase {phase.get('id')} is missing gate text")
 
     manifest_sets = load_json("data/run-manifest.json")["protocol"]["scenario_sets"]
     expected = {
@@ -147,7 +162,7 @@ def validate_sets_and_manifest() -> None:
 def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
-    print("scenario validation passed: all=33 core-current=20 extended=13 memory_contexts=2")
+    print("scenario validation passed: all=33 core-current=20 extended=13 memory_contexts=2 plans=1")
 
 
 if __name__ == "__main__":

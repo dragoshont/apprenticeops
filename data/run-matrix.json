@@ -59,5 +59,27 @@
       "kind": "generated",
       "description": "Compact source-cited homelab memory briefing, injected before each scenario for the memory-conditioned comparison."
     }
+  ],
+  "experiment_plans": [
+    {
+      "id": "memory-comparison-v1",
+      "label": "Memory comparison v1",
+      "description": "Run the same model and scenario set twice: first without memory, then with homelab-okf-v1 after adversarial review of phase 1.",
+      "gate": "After each phase, verify run.meta, row counts, judge completion, scenario/memory hashes, and compare reports before starting the next phase.",
+      "phases": [
+        {
+          "id": "phase-1-baseline",
+          "label": "Phase 1 - no memory baseline",
+          "memory_context": "none",
+          "gate": "Adversarially verify baseline completeness and hashes before Phase 2."
+        },
+        {
+          "id": "phase-2-memory",
+          "label": "Phase 2 - homelab memory",
+          "memory_context": "homelab-okf-v1",
+          "gate": "Adversarially verify same model/scenario/sampler/judge/node settings; only memory_context changed."
+        }
+      ]
+    }
   ]
 }

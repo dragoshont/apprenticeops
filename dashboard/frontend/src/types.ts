@@ -47,6 +47,21 @@ export interface MemoryContext {
   sha256?: string | null;
 }
 
+export interface ExperimentPhase {
+  id: string;
+  label: string;
+  memory_context: string;
+  gate?: string;
+}
+
+export interface ExperimentPlan {
+  id: string;
+  label: string;
+  description?: string;
+  gate?: string;
+  phases: ExperimentPhase[];
+}
+
 export interface ScenarioInventoryRow {
   id: string;
   class?: string | null;
@@ -61,6 +76,7 @@ export interface RunMatrix {
   model_sets: ModelSet[];
   scenario_sets: ScenarioSet[];
   memory_contexts?: MemoryContext[];
+  experiment_plans?: ExperimentPlan[];
   scenarios: ScenarioInventoryRow[];
 }
 

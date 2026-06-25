@@ -390,7 +390,7 @@ def run_matrix():
     try:
         matrix = json.load(open(os.path.join(REPO, "data", "run-matrix.json")))
     except Exception:  # noqa: BLE001
-        return {"defaults": {}, "model_sets": [], "scenario_sets": [], "memory_contexts": [], "scenarios": []}
+        return {"defaults": {}, "model_sets": [], "scenario_sets": [], "memory_contexts": [], "experiment_plans": [], "scenarios": []}
 
     def sha(path):
         import hashlib
@@ -448,6 +448,7 @@ def run_matrix():
                 row["sets"].append(sset.get("id"))
     return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
             "scenario_sets": scenario_sets, "memory_contexts": memory_contexts,
+            "experiment_plans": matrix.get("experiment_plans", []),
             "scenarios": sorted((r for r in scenario_rows.values() if r.get("id")), key=lambda r: r["id"])}
 
 
