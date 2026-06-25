@@ -62,6 +62,26 @@ export interface ExperimentPlan {
   phases: ExperimentPhase[];
 }
 
+export interface ExperimentPhaseState extends ExperimentPhase {
+  order?: number;
+  run_id?: string;
+  status?: string;
+  started_at?: number;
+  gate_checked_at?: number;
+  gate_report?: string;
+  review?: { verdict?: string; reviewer?: string; notes?: string; reviewed_at?: number };
+}
+
+export interface ExperimentState {
+  experiment_id: string;
+  plan_id: string;
+  model_set: string;
+  scenario_set: string;
+  created_at?: number;
+  gate?: string;
+  phases: ExperimentPhaseState[];
+}
+
 export interface ScenarioInventoryRow {
   id: string;
   class?: string | null;
@@ -227,6 +247,7 @@ export interface Status {
   pareto?: ParetoPoint[];
   scores?: Scores;
   run_matrix?: RunMatrix;
+  experiments?: ExperimentState[];
   sessions?: Session[];
   nodes?: { home: NodeInfo; ai: NodeInfo };
   runs?: string[];

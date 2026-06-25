@@ -427,6 +427,14 @@ class RunReq(BaseModel):
     run_id: str | None = None
 
 
+class PlanPhaseReq(BaseModel):
+    plan_id: str
+    phase_id: str
+    model_set: str
+    scenario_set: str
+    experiment_id: str | None = None
+
+
 @app.get("/api/status")
 def api_status(run_id: str | None = None):
     data = status(run_id)
@@ -480,6 +488,50 @@ def api_start(req: StartReq, request: Request):
             "memory_context": req.memory_context,
             "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
+
+
+@app.post("/api/control/start-phase")
+def api_start_phase(req: PlanPhaseReq, request: Request):
+    matrix = _run_matrix()
+    plan = next((item for item in matrix.get("experiment_plans", []) if item.get("id") == req.plan_id), None)
+    phase = next((item for item in (plan or {}).get("phases", []) if item.get("id") == req.phase_id), None)
+    if not plan:
+        raise HTTPException(404, f"unknown experiment_plan '{req.plan_id}'")
+    if not phase:
+        raise HTTPException(404, f"unknown phase '{req.phase_id}'")
+    # Reuse the same allowlist resolver as manual starts. The controller will use
+    # the same ids, but this keeps client input fail-closed before shelling out.
+    _resolve_run_selection(req.model_set, req.scenario_set, phase["memory_context"])
+    cur = status(None, max_age=0.0, force=True)
+    active = (cur.get("state") in ("running", "paused")
+              or (cur.get("producer") or {}).get("run_py_alive")
+              or (cur.get("consumer") or {}).get("alive"))
+    if active:
+        raise HTTPException(409, f"a run is already active ({cur.get('run_id')}) — stop it first")
+    user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
+    user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
+    args = [
+        "python3", "scripts/experiment-plan.py", "launch-phase",
+        "--plan-id", req.plan_id,
+        "--phase-id", req.phase_id,
+        "--model-set", req.model_set,
+        "--scenario-set", req.scenario_set,
+        "--user", user,
+    ]
+    if req.experiment_id:
+        if not _RUNID_RE.match(req.experiment_id):
+            raise HTTPException(400, "invalid experiment_id")
+        args.extend(["--experiment-id", req.experiment_id])
+    cp = _ssh(_home_cmd(_SYNC + " " + " ".join(_q(arg) for arg in args)), timeout=40)
+    if cp.returncode != 0:
+        detail = (cp.stderr or cp.stdout or "phase launch failed").strip()[:800]
+        raise HTTPException(409, detail)
+    try:
+        payload = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, f"phase launch was not JSON: {exc}") from exc
+    _invalidate_status(None, payload.get("run_id"))
+    return payload
 
 
 def _signal_all(sig: str) -> dict:

@@ -179,6 +179,43 @@ and every raw row as `env.memory_context`, `env.memory_context_file`, and
 
 Use `none` as the baseline and `homelab-okf-v1` as the memory condition:
 
+The recommended no-UI path is the file-backed experiment-plan controller. It uses
+`data/run-matrix.json` as the plan source and writes durable state to
+`data/experiments/<experiment_id>/phase-state.json`, with a JSONL phase ledger and
+per-phase gate reports. The dashboard uses the same controller, so UI and CLI are
+two faces of the same contract.
+
+```bash
+# Initialize the phase ledger without starting work.
+python3 scripts/experiment-plan.py init \
+  --plan-id memory-comparison-v1 \
+  --model-set dryrun \
+  --scenario-set core-current
+
+# Launch Phase 1. This starts a normal run-e2e.sh run with MEMORY_CONTEXT=none.
+python3 scripts/experiment-plan.py launch-phase \
+  --experiment-id <experiment_id> \
+  --plan-id memory-comparison-v1 \
+  --phase-id phase-1-baseline \
+  --model-set dryrun \
+  --scenario-set core-current
+
+# After the run finishes, run the deterministic gate.
+python3 scripts/experiment-plan.py gate \
+  --experiment-id <experiment_id> \
+  --phase-id phase-1-baseline
+
+# Record adversarial/operator review. Phase 2 is blocked until Phase 1 is PASS.
+python3 scripts/experiment-plan.py review \
+  --experiment-id <experiment_id> \
+  --phase-id phase-1-baseline \
+  --verdict PASS \
+  --reviewer operator \
+  --notes "baseline complete; hashes and judge rows verified"
+```
+
+The raw environment-variable form still works for manual runs:
+
 ```bash
 # Baseline
 RUN_ID=core20-none-$(date -u +%Y%m%d-%H%M) \

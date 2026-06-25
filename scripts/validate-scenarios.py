@@ -137,6 +137,9 @@ def validate_sets_and_manifest() -> None:
     if "verify" not in gate or "phase" not in gate:
         fail("memory-comparison-v1 gate must explicitly require phase verification")
     phases = plan.get("phases") or []
+    phase_ids = [phase.get("id") for phase in phases]
+    if len(phase_ids) != len(set(phase_ids)) or any(not phase_id for phase_id in phase_ids):
+        fail("memory-comparison-v1 phases must have unique non-empty ids")
     if [phase.get("memory_context") for phase in phases] != ["none", "homelab-okf-v1"]:
         fail("memory-comparison-v1 phases must be none -> homelab-okf-v1")
     for phase in phases:

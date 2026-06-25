@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { Play, Pause, RotateCw, Square, ChevronDown, Loader2 } from "lucide-react";
 import { control } from "../api";
-import type { RunMatrix } from "../types";
+import type { ExperimentState, RunMatrix } from "../types";
 
 export function Controls({
   state,
   runId,
   runMatrix,
+  experiments = [],
   onAfter,
   liveElsewhere = false,
 }: {
   state: string;
   runId: string | null;
   runMatrix?: RunMatrix | null;
+  experiments?: ExperimentState[];
   onAfter: (runId?: string | null) => void;
   liveElsewhere?: boolean;
 }) {
@@ -73,11 +75,12 @@ export function Controls({
   const cbtn =
     "inline-flex items-center gap-1 rounded-lg border border-line bg-panel2/50 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40";
 
-  const startPhase = (memoryId: string) => {
+  const startPhase = (planId: string, phaseId: string, memoryId: string) => {
     const memory = memoryContexts.find((item) => item.id === memoryId);
     if (chosenModel && chosenScenario && memory) {
       setMemoryContext(memory.id);
-      run("start", () => control.start(chosenModel.id, chosenScenario.id, memory.id));
+      const existing = experiments.find((item) => item.plan_id === planId && item.model_set === chosenModel.id && item.scenario_set === chosenScenario.id);
+      run("start", () => control.startPhase(planId, phaseId, chosenModel.id, chosenScenario.id, existing?.experiment_id));
     }
   };
 
@@ -97,17 +100,21 @@ export function Controls({
               <div className="flex flex-wrap gap-1.5">
                 {plan.phases.map((phase, index) => {
                   const phaseMemory = memoryContexts.find((item) => item.id === phase.memory_context);
+                  const existing = experiments.find((item) => item.plan_id === plan.id && item.model_set === chosenModel?.id && item.scenario_set === chosenScenario?.id);
+                  const phaseState = existing?.phases.find((item) => item.id === phase.id);
+                  const phaseStatus = phaseState?.status ?? "pending";
                   return (
                     <button
                       key={phase.id}
                       type="button"
                       className="inline-flex items-center gap-1 rounded-lg border border-line bg-panel/70 px-2.5 py-1.5 text-[11px] font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!chosenModel || !chosenScenario || !phaseMemory || busy != null || liveElsewhere}
-                      title={phase.gate || phaseMemory?.description}
-                      onClick={() => startPhase(phase.memory_context)}
+                      title={`${phase.gate || phaseMemory?.description || ""}${existing ? ` Experiment: ${existing.experiment_id}; status: ${phaseStatus}` : ""}`}
+                      onClick={() => startPhase(plan.id, phase.id, phase.memory_context)}
                     >
                       {busy === "start" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                       {index + 1}. {phase.label}
+                      <span className="rounded bg-panel2 px-1 py-0.5 font-mono text-[10px] text-faint">{phaseStatus}</span>
                     </button>
                   );
                 })}

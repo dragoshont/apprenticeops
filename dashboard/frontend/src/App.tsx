@@ -82,7 +82,7 @@ export default function App() {
               run {activeSession.state === "paused" ? "paused" : "live"} · Follow
             </button>
           )}
-          <Controls state={state} runId={status?.run_id ?? null} runMatrix={runMatrix} onAfter={refresh} liveElsewhere={busyElsewhere} />
+          <Controls state={state} runId={status?.run_id ?? null} runMatrix={runMatrix} experiments={status?.experiments ?? []} onAfter={refresh} liveElsewhere={busyElsewhere} />
           {auth?.auth_enabled ? (
             <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />

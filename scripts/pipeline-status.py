@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
+EXPERIMENTS = os.path.join(REPO, "data", "experiments")
 AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 STAGES = ["lock", "reset", "infer", "emit", "collect", "judge", "persist"]
@@ -63,6 +64,16 @@ def load_run_meta(run_id):
         return json.load(open(os.path.join(RUNS, run_id, "run.meta")))
     except Exception:  # noqa: BLE001
         return {}
+
+
+def experiments():
+    out = []
+    for path in sorted(glob.glob(os.path.join(EXPERIMENTS, "*", "phase-state.json")), reverse=True):
+        try:
+            out.append(json.load(open(path)))
+        except Exception:  # noqa: BLE001
+            continue
+    return out
 
 
 def scenario_context(meta=None):
@@ -629,6 +640,7 @@ def main():
     if not run_id:
         print(json.dumps({"run_id": None, "state": "idle", "ts": time.time(),
                           "run_matrix": run_matrix(), "nodes": nodes(), "sessions": sessions(),
+                          "experiments": experiments(),
                           "runs": [os.path.basename(d) for d in
                                    sorted(glob.glob(os.path.join(RUNS, "*")))]}))
         return
@@ -671,6 +683,7 @@ def main():
         "scores": score_breakdown(run_id, scen_class),
         "run_matrix": run_matrix(),
         "sessions": sess,
+        "experiments": experiments(),
         "nodes": nodes(),
     }, default=str))
 
