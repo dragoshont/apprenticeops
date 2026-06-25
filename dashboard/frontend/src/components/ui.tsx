@@ -75,6 +75,10 @@ const STATE_STYLE: Record<string, string> = {
   canceled: "bg-bad/15 text-bad ring-1 ring-bad/30",
   stopped: "bg-muted/15 text-muted ring-1 ring-muted/25",
   idle: "bg-muted/15 text-muted ring-1 ring-muted/25",
+  pending: "bg-muted/15 text-muted ring-1 ring-muted/25",
+  completed: "bg-good/15 text-good ring-1 ring-good/30",
+  review_pending: "bg-warn/15 text-warn ring-1 ring-warn/30",
+  failed: "bg-bad/15 text-bad ring-1 ring-bad/30",
   error: "bg-bad/15 text-bad ring-1 ring-bad/30",
 };
 
@@ -85,6 +89,10 @@ const DOT: Record<string, string> = {
   canceled: "bg-bad",
   stopped: "bg-muted",
   idle: "bg-muted",
+  pending: "bg-muted",
+  completed: "bg-good",
+  review_pending: "bg-warn",
+  failed: "bg-bad",
   error: "bg-bad animate-pulse",
 };
 

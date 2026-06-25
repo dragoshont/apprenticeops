@@ -3,6 +3,7 @@ import { usePipeline } from "./usePipeline";
 import { useTheme } from "./useTheme";
 import { fetchConfig } from "./api";
 import { Controls } from "./components/Controls";
+import { ExperimentPlanCard } from "./components/ExperimentPlanCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { RunProgress } from "./components/RunProgress";
 import { SessionsTable } from "./components/SessionsTable";
@@ -19,8 +20,8 @@ import {
   RunSummaryCard,
 } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
-import { StatePill, fmtAgo, Hint } from "./components/ui";
-import { Radio, AlertTriangle, Terminal, Lock, LockOpen, ListChecks } from "lucide-react";
+import { Card, StatePill, fmtAgo, Hint } from "./components/ui";
+import { Radio, AlertTriangle, Terminal, Lock, LockOpen, ListChecks, SlidersHorizontal } from "lucide-react";
 
 export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
@@ -82,7 +83,6 @@ export default function App() {
               run {activeSession.state === "paused" ? "paused" : "live"} · Follow
             </button>
           )}
-          <Controls state={state} runId={status?.run_id ?? null} runMatrix={runMatrix} experiments={status?.experiments ?? []} onAfter={refresh} liveElsewhere={busyElsewhere} />
           {auth?.auth_enabled ? (
             <span className="pill bg-good/15 text-good" title={`signed in as ${auth.user ?? "?"}`}>
               <Lock className="h-3 w-3" />
@@ -120,8 +120,31 @@ export default function App() {
         <div className="py-24 text-center text-sm text-faint">Connecting to home…</div>
       ) : (
         <div className="space-y-4">
-          {/* Runs are the focus: the table on top, click a row to load its detail below */}
-          <SessionsTable sessions={sessions} activeRunId={status?.run_id ?? null} onSelect={refresh} />
+          {sessions.length > 0 && (
+            <SessionsTable sessions={sessions} activeRunId={status?.run_id ?? null} onSelect={refresh} />
+          )}
+
+          <div className="grid gap-4 xl:grid-cols-[0.95fr_1.35fr]">
+            <Card
+              title="Run Setup"
+              icon={<SlidersHorizontal className="h-4 w-4 text-muted" />}
+              right={<span className="text-xs text-faint">manual run</span>}
+              hint="Use this for an ad-hoc single run. Use the Experiment Plan card for the phase-gated memory comparison."
+            >
+              <div className="space-y-2">
+                <Controls state={state} runId={status?.run_id ?? null} runMatrix={runMatrix} onAfter={refresh} liveElsewhere={busyElsewhere} />
+                <p className="text-xs leading-relaxed text-faint">
+                  Manual launch starts exactly one run with the selected model set, scenario set, and memory context.
+                </p>
+              </div>
+            </Card>
+
+            <ExperimentPlanCard runMatrix={runMatrix} experiments={status?.experiments ?? []} runActive={!!activeSession} onAfter={refresh} />
+          </div>
+
+          {sessions.length === 0 && (
+            <SessionsTable sessions={sessions} activeRunId={status?.run_id ?? null} onSelect={refresh} />
+          )}
 
           {hasRun && (
             <div className="space-y-4">

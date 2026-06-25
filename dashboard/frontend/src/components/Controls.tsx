@@ -1,20 +1,18 @@
 import { useEffect, useState } from "react";
 import { Play, Pause, RotateCw, Square, ChevronDown, Loader2 } from "lucide-react";
 import { control } from "../api";
-import type { ExperimentState, RunMatrix } from "../types";
+import type { RunMatrix } from "../types";
 
 export function Controls({
   state,
   runId,
   runMatrix,
-  experiments = [],
   onAfter,
   liveElsewhere = false,
 }: {
   state: string;
   runId: string | null;
   runMatrix?: RunMatrix | null;
-  experiments?: ExperimentState[];
   onAfter: (runId?: string | null) => void;
   liveElsewhere?: boolean;
 }) {
@@ -27,7 +25,6 @@ export function Controls({
   const modelSets = runMatrix?.model_sets ?? [];
   const scenarioSets = runMatrix?.scenario_sets ?? [];
   const memoryContexts = runMatrix?.memory_contexts ?? [];
-  const experimentPlans = runMatrix?.experiment_plans ?? [];
 
   // Matrix options load on the first status poll; default to the server-provided
   // ids and keep selections pointed at existing options.
@@ -75,55 +72,8 @@ export function Controls({
   const cbtn =
     "inline-flex items-center gap-1 rounded-lg border border-line bg-panel2/50 px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40";
 
-  const startPhase = (planId: string, phaseId: string, memoryId: string) => {
-    const memory = memoryContexts.find((item) => item.id === memoryId);
-    if (chosenModel && chosenScenario && memory) {
-      setMemoryContext(memory.id);
-      const existing = experiments.find((item) => item.plan_id === planId && item.model_set === chosenModel.id && item.scenario_set === chosenScenario.id);
-      run("start", () => control.startPhase(planId, phaseId, chosenModel.id, chosenScenario.id, existing?.experiment_id));
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-2">
-      {!active && experimentPlans.length > 0 && (
-        <div className="rounded-lg border border-line bg-panel2/40 px-3 py-2 text-xs">
-          {experimentPlans.map((plan) => (
-            <div key={plan.id} className="space-y-2">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="font-medium text-fg">{plan.label}</div>
-                  {plan.description && <div className="mt-0.5 max-w-3xl text-faint">{plan.description}</div>}
-                </div>
-                {plan.gate && <div className="max-w-lg text-[11px] text-muted">Gate: {plan.gate}</div>}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {plan.phases.map((phase, index) => {
-                  const phaseMemory = memoryContexts.find((item) => item.id === phase.memory_context);
-                  const existing = experiments.find((item) => item.plan_id === plan.id && item.model_set === chosenModel?.id && item.scenario_set === chosenScenario?.id);
-                  const phaseState = existing?.phases.find((item) => item.id === phase.id);
-                  const phaseStatus = phaseState?.status ?? "pending";
-                  return (
-                    <button
-                      key={phase.id}
-                      type="button"
-                      className="inline-flex items-center gap-1 rounded-lg border border-line bg-panel/70 px-2.5 py-1.5 text-[11px] font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40"
-                      disabled={!chosenModel || !chosenScenario || !phaseMemory || busy != null || liveElsewhere}
-                      title={`${phase.gate || phaseMemory?.description || ""}${existing ? ` Experiment: ${existing.experiment_id}; status: ${phaseStatus}` : ""}`}
-                      onClick={() => startPhase(plan.id, phase.id, phase.memory_context)}
-                    >
-                      {busy === "start" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                      {index + 1}. {phase.label}
-                      <span className="rounded bg-panel2 px-1 py-0.5 font-mono text-[10px] text-faint">{phaseStatus}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {!active && (
         <div className="flex flex-wrap items-center overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
           <div className="relative">
@@ -224,7 +174,6 @@ export function Controls({
       )}
 
       {msg && <span className="max-w-[16rem] truncate text-xs text-bad" title={msg}>{msg}</span>}
-      </div>
     </div>
   );
 }
