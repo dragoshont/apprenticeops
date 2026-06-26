@@ -73,3 +73,4 @@
 {"model":"qwen2.5:0.5b","stage":"persist","ts":1782482018,"ok":0,"detail":"push failed"}
 {"model":"smollm2:135m","stage":"persist","ts":1782482019,"ok":0,"detail":"push failed"}
 {"model":"qwen2.5:0.5b","stage":"persist","ts":1782482035,"ok":0,"detail":"push failed"}
+{"model":"smollm2:135m","stage":"persist","ts":1782482036,"ok":0,"detail":"push failed"}
