@@ -100,7 +100,10 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C"
 # 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
 if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" python3 run.py --preflight-only \
-  --scenarios "$SCENARIOS" --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
+  --scenarios "$SCENARIOS" \
+  --memory-context "$MEMORY_CONTEXT" \
+  ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
+  --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
   log "FATAL: preflight FAILED:"; sed 's/^/    /' "$LOGDIR/preflight.log" | tee -a "$LOGDIR/driver.log"
   exit 3
 fi
