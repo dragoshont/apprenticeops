@@ -122,13 +122,17 @@ def validate_sets_and_manifest() -> None:
     if matrix.get("defaults", {}).get("memory_context") != "none":
         fail("run matrix default memory_context must be none")
     memory_contexts = {entry["id"]: entry for entry in matrix.get("memory_contexts", [])}
-    if set(memory_contexts) != {"none", "homelab-okf-v1"}:
+    if set(memory_contexts) != {"none", "homelab-okf-v1", "homelab-okf-3kb-v1"}:
         fail(f"unexpected memory_context ids: {sorted(memory_contexts)}")
     if memory_contexts["none"].get("path"):
         fail("memory_context none must not have a path")
-    memory_path = memory_contexts["homelab-okf-v1"].get("path")
-    if not memory_path or not (REPO / memory_path).exists():
-        fail("homelab-okf-v1 memory context path is missing")
+    for memory_id in ("homelab-okf-v1", "homelab-okf-3kb-v1"):
+        memory_path = memory_contexts[memory_id].get("path")
+        if not memory_path or not (REPO / memory_path).exists():
+            fail(f"{memory_id} memory context path is missing")
+    compact_path = REPO / memory_contexts["homelab-okf-3kb-v1"]["path"]
+    if compact_path.stat().st_size > 3000:
+        fail("homelab-okf-3kb-v1 memory context exceeds 3KB")
     plans = {entry["id"]: entry for entry in matrix.get("experiment_plans", [])}
     plan = plans.get("memory-comparison-v1")
     if not plan:
@@ -165,7 +169,7 @@ def validate_sets_and_manifest() -> None:
 def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
-    print("scenario validation passed: all=33 core-current=20 extended=13 memory_contexts=2 plans=1")
+    print("scenario validation passed: all=33 core-current=20 extended=13 memory_contexts=3 plans=1")
 
 
 if __name__ == "__main__":

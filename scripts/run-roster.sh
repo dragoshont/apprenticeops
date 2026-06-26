@@ -39,9 +39,27 @@ trap cleanup EXIT
 log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT ==="
 [ -f "$MODELS" ] || { log "FATAL: $MODELS not found"; exit 1; }
 [ -f "$SCENARIOS" ] || { log "FATAL: $SCENARIOS not found"; exit 1; }
+if [ -z "$MEMORY_CONTEXT_FILE" ] && [ "$MEMORY_CONTEXT" != "none" ]; then
+  MEMORY_CONTEXT_FILE="$(python3 - "$MEMORY_CONTEXT" <<'PY'
+import json, sys
+memory_id = sys.argv[1]
+with open("data/run-matrix.json", encoding="utf-8") as fh:
+    matrix = json.load(fh)
+for item in matrix.get("memory_contexts", []):
+    if item.get("id") == memory_id:
+        print(item.get("path") or "")
+        break
+PY
+)"
+fi
 if [ -n "$MEMORY_CONTEXT_FILE" ]; then
   [ -f "$MEMORY_CONTEXT_FILE" ] || { log "FATAL: $MEMORY_CONTEXT_FILE not found"; exit 1; }
 fi
+if [ "$MEMORY_CONTEXT" != "none" ] && [ -z "$MEMORY_CONTEXT_FILE" ]; then
+  log "FATAL: MEMORY_CONTEXT=$MEMORY_CONTEXT requires MEMORY_CONTEXT_FILE (or data/run-matrix.json path)"
+  exit 1
+fi
+log "memory: context=$MEMORY_CONTEXT file=${MEMORY_CONTEXT_FILE:-none}"
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -82,7 +100,10 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C"
 # 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
 if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" python3 run.py --preflight-only \
-  --scenarios "$SCENARIOS" --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
+  --scenarios "$SCENARIOS" \
+  --memory-context "$MEMORY_CONTEXT" \
+  ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
+  --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
   log "FATAL: preflight FAILED:"; sed 's/^/    /' "$LOGDIR/preflight.log" | tee -a "$LOGDIR/driver.log"
   exit 3
 fi
