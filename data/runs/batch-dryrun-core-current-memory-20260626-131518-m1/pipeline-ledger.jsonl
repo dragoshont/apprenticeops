@@ -28,3 +28,5 @@
 {"model":"*","stage":"judge","ts":1782481052,"ok":1,"detail":"judged 186->190"}
 {"model":"*","stage":"judge","ts":1782481103,"ok":1,"detail":"judged 190->196"}
 {"model":"*","stage":"judge","ts":1782481153,"ok":1,"detail":"judged 196->206"}
+{"model":"qwen2.5:0.5b","stage":"persist","ts":1782481154,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1782481224,"ok":1,"detail":"judged 206->230"}
