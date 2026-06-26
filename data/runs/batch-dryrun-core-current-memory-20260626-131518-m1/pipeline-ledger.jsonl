@@ -182,3 +182,4 @@
 {"model":"smollm2:135m","stage":"persist","ts":1782482955,"ok":0,"detail":"push failed"}
 {"model":"qwen2.5:0.5b","stage":"persist","ts":1782482972,"ok":0,"detail":"push failed"}
 {"model":"smollm2:135m","stage":"persist","ts":1782482973,"ok":0,"detail":"push failed"}
+{"model":"qwen2.5:0.5b","stage":"persist","ts":1782482990,"ok":0,"detail":"push failed"}
