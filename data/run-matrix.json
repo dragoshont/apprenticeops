@@ -15,6 +15,13 @@
       "description": "End-to-end smoke test using the two tiny validation models."
     },
     {
+      "id": "spread10",
+      "label": "Spread 10 - 2 per bracket",
+      "path": "data/models.spread10.txt",
+      "kind": "experiment",
+      "description": "Ten-model spread across the locked size/footprint brackets: two models each from 0-1B, 1-2B, 2-3B, 3-4B, and 4-5GB."
+    },
+    {
       "id": "full",
       "label": "Full roster - all models",
       "path": "data/models.txt",
@@ -58,6 +65,13 @@
       "path": "data/memory/homelab-okf-v1/context.md",
       "kind": "generated",
       "description": "Compact source-cited homelab memory briefing, injected before each scenario for the memory-conditioned comparison."
+    },
+    {
+      "id": "homelab-okf-3kb-v1",
+      "label": "Homelab OKF compact memory v1 (3KB)",
+      "path": "data/memory/homelab-okf-3kb-v1/context.md",
+      "kind": "generated",
+      "description": "Scenario-aware compact homelab memory briefing capped at 3KB; no citations section and no scenario-specific gold answers."
     }
   ],
   "experiment_plans": [

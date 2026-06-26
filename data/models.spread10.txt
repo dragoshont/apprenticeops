@@ -1,0 +1,23 @@
+# Spread-10 roster - 2 models per size bracket from the locked full roster.
+# Purpose: medium-cost memory-axis experiment across the size curve.
+# Brackets: 0-1B, 1-2B, 2-3B, 3-4B, 4-5GB.
+
+# bracket: 0-1B
+qwen2.5:0.5b
+smollm2:360m
+
+# bracket: 1-2B
+qwen2.5:1.5b
+qwen3:1.7b
+
+# bracket: 2-3B
+granite4:micro
+qwen2.5:3b
+
+# bracket: 3-4B
+llama3.2:3b
+qwen3:4b-instruct-2507-q4_K_M
+
+# bracket: 4-5GB
+granite4:tiny-h
+mistral:7b-instruct-q4_K_M
