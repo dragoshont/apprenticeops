@@ -5,31 +5,22 @@ import {
   ChevronDown,
   Database,
   Loader2,
-  Pause,
   Rocket,
-  RotateCw,
   ShieldCheck,
-  Square,
   Zap,
 } from "lucide-react";
 import { control } from "../api";
 import type { RunBatch, RunMatrix, Session } from "../types";
-import { Card, StatePill } from "./ui";
+import { Card } from "./ui";
 
 export function RunControlCenter({
-  state,
-  runId,
   runMatrix,
-  sessions,
   runBatches,
   activeSession,
   onSelectionChange,
   onAfter,
 }: {
-  state: string;
-  runId: string | null;
   runMatrix?: RunMatrix | null;
-  sessions: Session[];
   runBatches: RunBatch[];
   activeSession?: Session | null;
   onSelectionChange?: (selection: { modelSet: string; scenarioSet: string; memoryContext: string; memoryContexts: string[] }) => void;
@@ -84,17 +75,7 @@ export function RunControlCenter({
   const inferenceUnits = modelCount * scenarioCount * 5 * memoryCount;
   const judgeUnits = inferenceUnits * 2;
   const activeLocked = !!activeSession;
-  const running = state === "running";
-  const paused = state === "paused";
-  const stopped = state === "stopped";
-  const currentRunActive = !!runId && activeSession?.run_id === runId;
   const activeBatch = runBatches.find((batch) => batch.status === "running" || batch.status === "starting");
-  const matchingRuns = sessions.filter(
-    (session) =>
-      session.model_set === modelSet &&
-      session.scenario_set === scenarioSet &&
-      selectedMemoryContexts.includes(session.memory_context ?? "none"),
-  );
 
   useEffect(() => {
     onSelectionChange?.({ modelSet, scenarioSet, memoryContext: primaryMemoryContext, memoryContexts: orderedMemoryContextIds });
@@ -141,12 +122,6 @@ export function RunControlCenter({
     void run("batch", () => control.startBatch(chosenModel.id, chosenScenario.id, orderedMemoryContextIds));
   }
 
-  function cancelCurrentRun() {
-    const ok = window.confirm(`Cancel run ${runId ?? ""}? This stops the current pipeline and leaves the run marked canceled.`);
-    if (!ok) return;
-    void run("stop", () => control.stop(runId));
-  }
-
   const spin = (key: string, icon: React.ReactNode) =>
     busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon;
 
@@ -169,11 +144,10 @@ export function RunControlCenter({
     <Card
       title="Experiment Control"
       icon={<Activity className="h-4 w-4 text-muted" />}
-      right={<span className="text-xs text-faint">model × scenario × memory</span>}
+      right={<span className="text-xs text-faint">run axes</span>}
     >
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
+      <div className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-3">
             <Selector
               label="Model set"
               value={modelSet}
@@ -194,19 +168,18 @@ export function RunControlCenter({
                 meta: item.scenario_count != null ? `${item.scenario_count} scenarios` : item.kind,
               }))}
             />
+            <MemoryContextPicker
+              contexts={memoryContexts}
+              selected={selectedMemoryContexts}
+              onToggle={toggleMemoryContext}
+            />
           </div>
-          <MemoryContextPicker
-            contexts={memoryContexts}
-            selected={selectedMemoryContexts}
-            onToggle={toggleMemoryContext}
-          />
 
-          <div className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-xl border border-line bg-panel2/30 p-3">
+          <div className="rounded-xl border border-line bg-panel2/30 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-fg">Run Intent</div>
+                <div className="text-sm font-medium text-fg">Experiment summary</div>
                 <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">
-                  {modelCount}m × {scenarioCount}s × {memoryCount} memory × 5 reps · {judgeUnits} judge rows
+                  {modelCount} models · {scenarioCount} scenarios · {memoryCount} memory {memoryCount === 1 ? "run" : "runs"} · 5 reps · {judgeUnits} judge rows
                 </span>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -219,48 +192,6 @@ export function RunControlCenter({
                 <p className="mt-3 text-xs leading-relaxed text-muted">{chosenScenario.description}</p>
               )}
             </div>
-
-            <div className="rounded-xl border border-line bg-panel2/30 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-fg">AI Node Ownership</div>
-                {activeSession ? <StatePill state={activeSession.state} size="sm" /> : <StatePill state="idle" size="sm" />}
-              </div>
-              {activeSession ? (
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    className="block max-w-full truncate rounded-lg bg-panel px-2.5 py-1.5 text-left font-mono text-xs text-fg transition hover:bg-accent/10"
-                    onClick={() => onAfter(activeSession.run_id)}
-                    title={activeSession.run_id}
-                  >
-                    {activeSession.run_id}
-                  </button>
-                  <div className="flex flex-wrap gap-1.5">
-                    {currentRunActive && running && (
-                      <ActionButton busy={busy === "pause"} onClick={() => void run("pause", () => control.pause(runId))}>
-                        {spin("pause", <Pause className="h-3.5 w-3.5" />)} Pause
-                      </ActionButton>
-                    )}
-                    {currentRunActive && (paused || stopped) && (
-                      <ActionButton busy={busy === "resume"} accent onClick={() => void run("resume", () => control.resume(runId))}>
-                        {spin("resume", <RotateCw className="h-3.5 w-3.5" />)} {paused ? "Resume" : "Continue"}
-                      </ActionButton>
-                    )}
-                    {currentRunActive && (running || paused) && (
-                      <ActionButton busy={busy === "stop"} danger onClick={cancelCurrentRun}>
-                        {spin("stop", <Square className="h-3.5 w-3.5" />)} Cancel
-                      </ActionButton>
-                    )}
-                    {!currentRunActive && (
-                      <ActionButton onClick={() => onAfter(activeSession.run_id)}>Follow active run</ActionButton>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs leading-relaxed text-muted">No run is holding the node. A new launch can start immediately.</p>
-              )}
-            </div>
-          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -275,17 +206,6 @@ export function RunControlCenter({
             </button>
             {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <MemoryBatchPanel
-            batches={runBatches}
-            modelSet={chosenModel?.id}
-            scenarioSet={chosenScenario?.id}
-            matchingRunCount={matchingRuns.length}
-            selectedMemoryContexts={orderedMemoryContextIds}
-          />
-        </div>
       </div>
     </Card>
   );
@@ -335,19 +255,16 @@ function MemoryContextPicker({
   return (
     <div className="rounded-xl border border-line bg-panel2/30 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div>
-          <div className="label">Memory contexts</div>
-          <div className="mt-1 text-[11px] text-faint">Select one for a normal run, or select both to compare memory as a separate run axis.</div>
-        </div>
+        <div className="label">Memory contexts</div>
         <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{selected.length} selected</span>
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="space-y-1.5">
         {contexts.map((context) => {
           const checked = selected.includes(context.id);
           return (
             <label
               key={context.id}
-              className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 transition ${
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 transition ${
                 checked ? "border-accent/50 bg-accent/10" : "border-line/60 bg-panel/50 hover:border-accent/40"
               }`}
             >
@@ -360,7 +277,6 @@ function MemoryContextPicker({
               <span className="min-w-0">
                 <span className="block text-xs font-medium text-fg">{context.label}</span>
                 <span className="mt-0.5 block font-mono text-[10px] text-faint">memory_context={context.id}</span>
-                {context.description && <span className="mt-1 block text-[11px] leading-snug text-muted">{context.description}</span>}
               </span>
             </label>
           );
@@ -378,95 +294,6 @@ function Axis({ icon, label, detail }: { icon: React.ReactNode; label: string; d
         {label}
       </div>
       <div className="mt-0.5 text-[11px] text-faint">{detail}</div>
-    </div>
-  );
-}
-
-function ActionButton({
-  children,
-  onClick,
-  busy = false,
-  accent = false,
-  danger = false,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  busy?: boolean;
-  accent?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-xs font-medium text-fg transition hover:border-accent/50 disabled:cursor-not-allowed disabled:opacity-40 ${
-        accent ? "border-accent/50 bg-accent/15 text-accent" : ""
-      } ${danger ? "hover:border-bad/60 hover:bg-bad/10 hover:text-bad" : ""}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function MemoryBatchPanel({
-  batches,
-  modelSet,
-  scenarioSet,
-  matchingRunCount,
-  selectedMemoryContexts,
-}: {
-  batches: RunBatch[];
-  modelSet?: string;
-  scenarioSet?: string;
-  matchingRunCount: number;
-  selectedMemoryContexts: string[];
-}) {
-  if (!modelSet || !scenarioSet || selectedMemoryContexts.length < 2) return null;
-  const matchingBatches = batches.filter(
-    (batch) =>
-      batch.model_set === modelSet &&
-      batch.scenario_set === scenarioSet &&
-      selectedMemoryContexts.every((memoryContext) => batch.memory_contexts.includes(memoryContext)),
-  );
-  const latest = matchingBatches[0];
-  if (!latest) {
-    return (
-      <div className="rounded-xl border border-line bg-panel2/30 p-3 text-xs leading-relaxed text-muted">
-        This selection will run as an autonomous memory batch: one job per selected memory context, sequentially on the single ai node.
-        No batch has been launched for this exact model × scenario × memory selection yet.
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-xl border border-line bg-panel2/30 p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div>
-          <div className="text-sm font-medium text-fg">Autonomous memory batch</div>
-          <div className="mt-0.5 font-mono text-[10px] text-faint">{latest.batch_id}</div>
-        </div>
-        <StatePill state={latest.status} size="sm" />
-      </div>
-      <p className="mb-3 text-xs leading-relaxed text-muted">
-        CEOps will launch each selected memory context as a separate run and wait for one to finish before starting the next.
-        Matching completed/running sessions: {matchingRunCount}.
-      </p>
-      <div className="space-y-3">
-        {latest.runs.map((run, index) => (
-          <div key={run.run_id} className="rounded-lg border border-line/60 bg-panel/50 p-2.5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="font-mono text-[10px] text-faint">JOB {index + 1}</div>
-                <div className="truncate text-xs font-medium text-fg">{run.run_id}</div>
-                <div className="mt-0.5 font-mono text-[10px] text-muted">memory_context={run.memory_context}</div>
-                <div className="mt-1 text-[10px] text-faint">progress {Math.round(run.progress_pct ?? 0)}%</div>
-              </div>
-              <StatePill state={run.status} size="sm" />
-            </div>
-          </div>
-        ))}
-        {latest.error && <div className="text-xs text-bad">{latest.error}</div>}
-      </div>
     </div>
   );
 }
