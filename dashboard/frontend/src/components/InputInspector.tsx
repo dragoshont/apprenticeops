@@ -6,7 +6,7 @@ import { Card } from "./ui";
 
 type Tab = "memory" | "scenarios" | "models";
 
-export function InputInspector({ selection }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string } }) {
+export function InputInspector({ selection, title = "Experiment Inputs" }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string }; title?: string }) {
   const [tab, setTab] = useState<Tab>("memory");
   const [query, setQuery] = useState("");
   const [details, setDetails] = useState<InputDetails | null>(null);
@@ -51,7 +51,7 @@ export function InputInspector({ selection }: { selection: { modelSet: string; s
 
   return (
     <Card
-      title="Experiment Inputs"
+      title={title}
       icon={<FileSearch className="h-4 w-4 text-muted" />}
       right={loading ? <Loader2 className="h-4 w-4 animate-spin text-faint" /> : <span className="text-xs text-faint">read-only</span>}
       hint="Inspect the exact memory, scenarios, prompts, and model roster used for the selected run condition."

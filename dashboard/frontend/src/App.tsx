@@ -30,6 +30,9 @@ export default function App() {
   const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
   const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[] });
   const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionStatus, setSessionStatus] = useState("all");
+  const [sessionDate, setSessionDate] = useState<"today" | "week" | "month" | "all">("today");
 
   useEffect(() => {
     fetchConfig().then(setAuth).catch(() => setAuth(null));
@@ -57,7 +60,18 @@ export default function App() {
         ? controlSelection.memoryContexts.includes(session.memory_context ?? "none")
         : (session.memory_context ?? "none") === (controlSelection.memoryContext || "none")),
   );
-  const visibleSessions = sessionScope === "matching" ? matchingSessions : sessions;
+  const scopedSessions = sessionScope === "matching" ? matchingSessions : sessions;
+  const visibleSessions = scopedSessions.filter((session) => {
+    const query = sessionSearch.trim().toLowerCase();
+    const text = [session.run_id, session.model_set, session.scenario_set, session.memory_context, session.state, session.user]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchesText = !query || text.includes(query);
+    const matchesStatus = sessionStatus === "all" || session.state === sessionStatus;
+    const matchesDate = inDateScope(session.started_at, sessionDate);
+    return matchesText && matchesStatus && matchesDate;
+  });
   const selectedBatch = runBatches.find((batch) => batch.runs.some((run) => run.run_id === status?.run_id));
   const activeBatch = runBatches.find((batch) => batch.status === "running" || batch.status === "starting");
   const displayBatch = selectedBatch ?? activeBatch;
@@ -75,6 +89,11 @@ export default function App() {
   const batchNotice = batchStillRunning
     ? `Selected child is complete; parent memory batch is still running ${selectedBatch.progress?.current_memory_context ?? "the next context"}.`
     : null;
+  const selectedInputSelection = {
+    modelSet: analyticsScope.model_set ?? controlSelection.modelSet,
+    scenarioSet: analyticsScope.scenario_set ?? controlSelection.scenarioSet,
+    memoryContext: analyticsScope.memory_context ?? controlSelection.memoryContext ?? "none",
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -151,41 +170,73 @@ export default function App() {
       ) : (
         <div className="space-y-4">
           <RunControlCenter
-            state={state}
-            runId={status?.run_id ?? null}
             runMatrix={runMatrix}
-            sessions={sessions}
             runBatches={runBatches}
             activeSession={activeSession ?? null}
             onSelectionChange={setControlSelection}
             onAfter={refresh}
           />
 
-          <InputInspector selection={controlSelection} />
-
           {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={status?.run_id ?? null} onSelect={refresh} />}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-            <div className="text-xs text-faint">
-              Sessions view follows the selected model × scenario × selected memory contexts unless you switch to all history.
+          <section className="rounded-xl border border-line bg-panel2/30 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-medium text-fg">Sessions</div>
+              <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSessionScope("matching")}
+                  className={`px-2.5 py-1.5 transition ${sessionScope === "matching" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+                >
+                  Matching selection · {matchingSessions.length}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSessionScope("all")}
+                  className={`border-l border-line px-2.5 py-1.5 transition ${sessionScope === "all" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+                >
+                  All sessions · {sessions.length}
+                </button>
+              </div>
             </div>
-            <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel2 text-xs">
-              <button
-                type="button"
-                onClick={() => setSessionScope("matching")}
-                className={`px-2.5 py-1.5 transition ${sessionScope === "matching" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+            <div className="mt-3 grid gap-2 lg:grid-cols-[1fr_auto_auto]">
+              <label>
+                <span className="sr-only">Search sessions</span>
+                <input
+                  value={sessionSearch}
+                  onChange={(event) => setSessionSearch(event.target.value)}
+                  placeholder="Search by run, status, model, scenario, memory…"
+                  className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-xs text-fg outline-none transition placeholder:text-faint focus:border-accent/60"
+                />
+              </label>
+              <select
+                value={sessionStatus}
+                onChange={(event) => setSessionStatus(event.target.value)}
+                className="rounded-lg border border-line bg-panel px-3 py-2 text-xs text-fg outline-none transition focus:border-accent/60"
+                aria-label="Filter sessions by status"
               >
-                Matching selection · {matchingSessions.length}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSessionScope("all")}
-                className={`border-l border-line px-2.5 py-1.5 transition ${sessionScope === "all" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
-              >
-                All sessions · {sessions.length}
-              </button>
+                <option value="all">Any status</option>
+                <option value="running">Running</option>
+                <option value="done">Done</option>
+                <option value="canceled">Canceled</option>
+                <option value="failed">Failed</option>
+                <option value="stopped">Stopped</option>
+              </select>
+              <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
+                {(["today", "week", "month", "all"] as const).map((dateScope) => (
+                  <button
+                    key={dateScope}
+                    type="button"
+                    onClick={() => setSessionDate(dateScope)}
+                    className={`px-2.5 py-2 capitalize transition ${sessionDate === dateScope ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
+                  >
+                    {dateScope === "week" ? "This week" : dateScope === "month" ? "This month" : dateScope}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+            <div className="mt-2 text-[11px] text-faint">Showing {visibleSessions.length} of {scopedSessions.length} sessions in this scope.</div>
+          </section>
           <SessionsTable
             sessions={visibleSessions}
             activeRunId={status?.run_id ?? null}
@@ -197,6 +248,8 @@ export default function App() {
             <div className="space-y-4">
               {/* selected-run header */}
               <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
+
+              <InputInspector selection={selectedInputSelection} title="Current experiment inputs" />
 
               {/* live-only: progress hero + judge line + pipeline */}
               {live && (
@@ -304,6 +357,25 @@ export default function App() {
   );
 }
 
+function inDateScope(ts: number | null, scope: "today" | "week" | "month" | "all") {
+  if (scope === "all") return true;
+  if (!ts) return false;
+  const date = new Date(ts * 1000);
+  const now = new Date();
+  const start = new Date(now);
+  if (scope === "today") {
+    start.setHours(0, 0, 0, 0);
+  } else if (scope === "week") {
+    const day = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - day);
+    start.setHours(0, 0, 0, 0);
+  } else {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+  }
+  return date >= start;
+}
+
 function persistenceLabel(persistence?: PersistenceStatus) {
   if (!persistence) return "persistence unknown";
   if (persistence.status === "clean") return `persisted ${persistence.committed_count}/${persistence.committed_total}`;
@@ -362,7 +434,7 @@ function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; se
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold text-fg">
-            Memory batch
+            Current experiment
             <StatePill state={batch.status} size="sm" />
           </div>
           <div className="mt-1 font-mono text-[11px] text-faint">{batch.batch_id}</div>
@@ -373,7 +445,7 @@ function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; se
         </div>
         <div className="min-w-40 text-right">
           <div className="font-mono text-lg font-semibold text-fg">{Math.round(progress?.pct ?? 0)}%</div>
-          <div className="text-[11px] text-faint">batch progress</div>
+          <div className="text-[11px] text-faint">experiment progress</div>
         </div>
       </div>
       <Bar value={progress?.units_done ?? 0} max={progress?.units_total ?? 0} tone="accent" live={batch.status === "running"} className="mb-3 h-2" />
