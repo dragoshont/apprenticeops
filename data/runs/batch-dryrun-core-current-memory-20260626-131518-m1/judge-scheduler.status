@@ -1,1 +1,1 @@
-[2026-06-26T13:52:46+00:00] model qwen2.5:0.5b: push failed, not marking committed
+[2026-06-26T13:53:03+00:00] S6 judge: 200 answers available, 400 judged so far (8-wide)
