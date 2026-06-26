@@ -81,10 +81,111 @@ def run_batches():
     out = []
     for path in sorted(glob.glob(os.path.join(RUN_BATCHES, "*", "batch-state.json")), reverse=True):
         try:
-            out.append(json.load(open(path)))
+            out.append(enrich_batch(json.load(open(path))))
         except Exception:  # noqa: BLE001
             continue
     return out
+
+
+def child_work_totals(run):
+    meta = load_run_meta(run.get("run_id"))
+    if not meta:
+        return int(run.get("units_done") or 0), int(run.get("units_total") or 0)
+    scen_count = scenario_context(meta)["count"]
+    reps = int(meta.get("reps") or REPS)
+    judges = int(meta.get("judges") or NJUDGES)
+    expect = int(meta.get("expect") or 0)
+    inf_total = expect * scen_count * reps
+    judge_total = inf_total * judges if not inference_only(meta) else 0
+    units_total = inf_total + judge_total
+    wd = os.path.join(RUNS, run.get("run_id", ""))
+    inf_done = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "_mirror", "results.*.jsonl")))
+    judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "judged.*.jsonl")))
+    return inf_done + judge_done, units_total
+
+
+def child_persistence(run):
+    run_id = run.get("run_id")
+    meta = load_run_meta(run_id)
+    if not meta:
+        return "not_started"
+    if inference_only(meta):
+        return "not_expected"
+    wd = os.path.join(RUNS, run_id)
+    expect = int(meta.get("expect") or 0)
+    committed = _count_lines(os.path.join(wd, ".committed"))
+    pending = _count_lines(os.path.join(wd, ".push-pending"))
+    scen_count = scenario_context(meta)["count"]
+    judged = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "judged.*.jsonl")))
+    scen_count = scenario_context(meta)["count"]
+    reps = int(meta.get("reps") or REPS)
+    judges = int(meta.get("judges") or NJUDGES)
+    if expect and committed >= expect:
+        return "pushed"
+    if pending:
+        return "push_pending"
+    if judged >= expect * scen_count * reps * judges and expect:
+        return "commit_pending"
+    if judged:
+        return "judging"
+    return "not_started"
+
+
+def enrich_batch(batch):
+    runs = batch.get("runs") or []
+    current_index = int(batch.get("current_index") or 0)
+    completed = []
+    running = []
+    pending = []
+    failed = []
+    units_done = 0
+    units_total = 0
+    for index, run in enumerate(runs):
+        done, total = child_work_totals(run)
+        units_done += done
+        units_total += total
+        persistence = child_persistence(run)
+        status = run.get("status") or "pending"
+        if persistence == "pushed" and status not in ("canceled", "failed", "error"):
+            status = "done"
+        work_pct = round(100 * done / total, 1) if total else float(run.get("progress_pct") or 0)
+        run["ordinal"] = index + 1
+        run["units_done"] = done
+        run["units_total"] = total
+        run["work_pct"] = work_pct
+        run["progress_pct"] = work_pct
+        run["persistence_status"] = persistence
+        run["status"] = status
+        if status == "done":
+            completed.append(run.get("memory_context"))
+        elif status in ("running", "starting"):
+            running.append(run.get("memory_context"))
+        elif status in ("failed", "error"):
+            failed.append(run.get("memory_context"))
+        else:
+            pending.append(run.get("memory_context"))
+    current = next((run for run in runs if run.get("status") in ("running", "starting")), None)
+    if current is None and 0 <= current_index < len(runs):
+        current = runs[current_index]
+    batch["runs"] = runs
+    batch["progress"] = {
+        "scope": "batch",
+        "pct": round(100 * units_done / units_total, 1) if units_total else 0.0,
+        "units_done": units_done,
+        "units_total": units_total,
+        "completed_runs": len(completed),
+        "total_runs": len(runs),
+        "current_index": current_index,
+        "current_run_id": current.get("run_id") if current else None,
+        "current_memory_context": current.get("memory_context") if current else None,
+        "completed_memory_contexts": [item for item in completed if item],
+        "running_memory_context": running[0] if running else None,
+        "pending_memory_contexts": [item for item in pending if item],
+        "failed_memory_contexts": [item for item in failed if item],
+    }
+    if runs and len(completed) == len(runs) and batch.get("status") == "running":
+        batch["status"] = "done"
+    return batch
 
 
 def scenario_context(meta=None):
@@ -261,6 +362,11 @@ def consumer_state(run_id):
         status = open(os.path.join(wd, "judge-scheduler.status")).read().strip()
     except OSError:
         pass
+    push_pending = []
+    try:
+        push_pending = [m.strip() for m in open(os.path.join(wd, ".push-pending")) if m.strip()]
+    except OSError:
+        pass
     ledger = _read_jsonl(os.path.join(wd, "pipeline-ledger.jsonl"))
     # errors / skips from the judge log
     skips = [l.strip() for l in _tail(os.path.join(wd, "judge.log"), 400) if "SKIP after" in l]
@@ -271,6 +377,7 @@ def consumer_state(run_id):
         "judged_rows": len(judged),
         "judged_models": judged_models,
         "committed_models": committed,
+        "push_pending_models": push_pending,
         "ledger_tail": ledger[-30:],
         "skips": skips[-30:],
         "skip_count": len(skips),
@@ -500,7 +607,7 @@ def _counts(values):
     return out
 
 
-def model_progress(run_id, prod, cons, scen_count):
+def model_progress(run_id, prod, cons, scen_count, reps=REPS, judges=NJUDGES):
     """Per-model inference + judge unit counts (for the horizontal progress bars).
     inf unit = (scenario, rep); judge unit = a judged row. Both fill to their total
     as the run advances; a model is complete when both bars hit 100%."""
@@ -516,14 +623,14 @@ def model_progress(run_id, prod, cons, scen_count):
             jud[m] = jud.get(m, 0) + 1
     committed = set(cons["committed_models"])
     done_emit = set(prod["done_models"])
-    unit = scen_count * REPS
+    unit = scen_count * reps
     out = []
     for m in sorted(set(inf) | set(jud) | done_emit | committed):
         idone = len(inf.get(m, ()))
         jdone = jud.get(m, 0)
         if m in committed:
             stage = "persist"
-        elif jdone >= unit * NJUDGES and unit:
+        elif jdone >= unit * judges and unit:
             stage = "judge"
         elif jdone:
             stage = "judge"
@@ -534,7 +641,7 @@ def model_progress(run_id, prod, cons, scen_count):
         out.append({
             "model": m,
             "inf_done": idone, "inf_total": unit,
-            "judge_done": jdone, "judge_total": unit * NJUDGES,
+            "judge_done": jdone, "judge_total": unit * judges,
             "committed": m in committed, "stage": stage,
         })
     return out
@@ -544,11 +651,11 @@ def inference_only(meta):
     return (meta or {}).get("runner") == "local-roster" or (meta or {}).get("judge_expected") is False
 
 
-def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count, judge_expected=True):
+def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count, judge_expected=True, reps=REPS, judges=NJUDGES):
     """Overall run progress + ETA. Work = inference units + judge units."""
     models_total = expect or 0
-    inf_total = models_total * scen_count * REPS
-    judge_total = inf_total * NJUDGES if judge_expected else 0
+    inf_total = models_total * scen_count * reps
+    judge_total = inf_total * judges if judge_expected else 0
     done = inf_done + judge_done
     total = inf_total + judge_total
     pct = round(100 * done / total, 1) if total else 0.0
@@ -560,6 +667,8 @@ def compute_progress(expect, inf_done, judge_done, started_at, active, scen_coun
         if rate > 0:
             eta_s = (total - done) / rate
     return {
+        "scope": "selected_run",
+        "kind": "inference_judge_units",
         "inf_done": inf_done, "inf_total": inf_total,
         "judge_done": judge_done, "judge_total": judge_total,
         "units_done": done, "units_total": total,
@@ -569,6 +678,98 @@ def compute_progress(expect, inf_done, judge_done, started_at, active, scen_coun
         "eta_human": _fmt_eta(eta_s),
         "rate_per_min": round(rate * 60, 1) if rate else None,
     }
+
+
+def persistence_status(expect, cons, judge_expected=True):
+    if not judge_expected:
+        return {
+            "status": "not_expected",
+            "committed_models": [],
+            "push_pending_models": [],
+            "committed_count": 0,
+            "committed_total": 0,
+            "push_pending_count": 0,
+            "pct": 100.0,
+            "waiting_on": "none",
+        }
+    committed = cons.get("committed_models") or []
+    pending = cons.get("push_pending_models") or []
+    total = int(expect or 0)
+    if total and len(committed) >= total:
+        state = "clean"
+        waiting = "none"
+    elif pending:
+        state = "retrying_push"
+        waiting = "git_push"
+    elif cons.get("alive"):
+        state = "in_progress"
+        waiting = "judge_or_persist"
+    else:
+        state = "incomplete"
+        waiting = "scheduler"
+    return {
+        "status": state,
+        "committed_models": committed,
+        "push_pending_models": pending,
+        "committed_count": len(committed),
+        "committed_total": total,
+        "push_pending_count": len(pending),
+        "pct": round(100 * len(committed) / total, 1) if total else 0.0,
+        "waiting_on": waiting,
+    }
+
+
+def analytics_scope(run_id, meta):
+    return {
+        "kind": "selected_run",
+        "source": "selected_run",
+        "run_id": run_id,
+        "model_set": meta.get("model_set"),
+        "scenario_set": meta.get("scenario_set"),
+        "memory_context": meta.get("memory_context") or "none",
+    }
+
+
+def selected_scope(run_id, state, meta, batches):
+    scope = {
+        "kind": "run" if run_id else "idle",
+        "run_id": run_id,
+        "batch_id": None,
+        "batch_index": None,
+        "batch_total": None,
+        "batch_status": None,
+        "batch_current_run_id": None,
+        "model_set": meta.get("model_set"),
+        "scenario_set": meta.get("scenario_set"),
+        "memory_context": meta.get("memory_context") or "none",
+        "analytics_scope": "selected_run",
+        "state": state,
+    }
+    for batch in batches:
+        for run in batch.get("runs") or []:
+            if run.get("run_id") == run_id:
+                scope.update({
+                    "kind": "batch_child",
+                    "batch_id": batch.get("batch_id"),
+                    "batch_index": run.get("ordinal"),
+                    "batch_total": len(batch.get("runs") or []),
+                    "batch_status": batch.get("status"),
+                    "batch_current_run_id": (batch.get("progress") or {}).get("current_run_id"),
+                    "model_set": run.get("model_set") or batch.get("model_set"),
+                    "scenario_set": run.get("scenario_set") or batch.get("scenario_set"),
+                    "memory_context": run.get("memory_context") or meta.get("memory_context") or "none",
+                    "state": run.get("status") or state,
+                })
+                return scope
+    return scope
+
+
+def batch_child_from_run(run_id, batches):
+    for batch in batches:
+        for run in batch.get("runs") or []:
+            if run.get("run_id") == run_id:
+                return batch, run
+    return None, None
 
 
 def resolve_state(markers, committed, expect, prod_alive, cons_alive, emitted=0, judge_expected=True):
@@ -603,6 +804,8 @@ def sessions():
         mk = _markers(d)
         scen_ctx = scenario_context(meta)
         scen_count = scen_ctx["count"]
+        reps = int(meta.get("reps") or REPS)
+        judges = int(meta.get("judges") or NJUDGES)
         expect = int(meta.get("expect") or 0)
         judge_expected = not inference_only(meta)
         inf_done = sum(_count_lines(p) for p in
@@ -614,8 +817,8 @@ def sessions():
         if not expect:
             # historical runs predate run.meta — recover a total from the markers
             expect = max(committed, emitted)
-        inf_total = expect * scen_count * REPS
-        judge_total = inf_total * NJUDGES if judge_expected else 0
+        inf_total = expect * scen_count * reps
+        judge_total = inf_total * judges if judge_expected else 0
         total = inf_total + judge_total
         pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
         started = meta.get("started_at")
@@ -660,8 +863,8 @@ def sessions():
             "models_total": expect,
             "models_done": committed if judge_expected else emitted,
             "scenarios": scen_count,
-            "reps": REPS,
-            "njudges": NJUDGES,
+            "reps": reps,
+            "njudges": judges,
             "inf_done": inf_done, "inf_total": inf_total,
             "judge_done": judge_done, "judge_total": judge_total,
             "pct": pct,
@@ -687,12 +890,43 @@ def main():
     expect = meta.get("expect") or len(set(prod["done_models"]) | set(cons["committed_models"])) or 0
     committed_n = len(cons["committed_models"])
     judge_expected = not inference_only(meta)
+    reps = int(meta.get("reps") or REPS)
+    judges = int(meta.get("judges") or NJUDGES)
     markers = _markers(os.path.join(RUNS, run_id))
     state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"],
                           emitted=prod["models_emitted"], judge_expected=judge_expected)
-    progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
-                                meta.get("started_at"), state == "running", scen_count,
-                                judge_expected=judge_expected)
+    batches = run_batches()
+    selected_batch, selected_batch_child = batch_child_from_run(run_id, batches)
+    if not meta and selected_batch_child:
+        state = selected_batch_child.get("status") or state
+        progress = {
+            "scope": "selected_run",
+            "kind": "not_started",
+            "inf_done": 0,
+            "inf_total": 0,
+            "judge_done": 0,
+            "judge_total": 0,
+            "units_done": 0,
+            "units_total": 0,
+            "pct": float(selected_batch_child.get("progress_pct") or 0),
+            "pct_remaining": round(100 - float(selected_batch_child.get("progress_pct") or 0), 1),
+            "elapsed_s": None,
+            "eta_s": None,
+            "eta_human": None,
+            "rate_per_min": None,
+        }
+    else:
+        progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
+                                    meta.get("started_at"), state == "running", scen_count,
+                                    judge_expected=judge_expected, reps=reps, judges=judges)
+    persist = persistence_status(expect, cons, judge_expected=judge_expected)
+    scope = selected_scope(run_id, state, meta, batches)
+    chart_scope = analytics_scope(run_id, {**meta, "memory_context": scope.get("memory_context") or meta.get("memory_context") or "none",
+                                           "model_set": scope.get("model_set") or meta.get("model_set"),
+                                           "scenario_set": scope.get("scenario_set") or meta.get("scenario_set")})
+    pareto_rows = pareto(run_id, cons, scen_class)
+    for row in pareto_rows:
+        row.update(chart_scope)
     # the sessions list comes from a cheap scan; correct the active run's live state
     sess = sessions()
     for s in sess:
@@ -709,19 +943,22 @@ def main():
         "expect": expect,
         "meta": meta,
         "user": meta.get("user") or "user",
+        "selected_scope": scope,
+        "analytics_scope": chart_scope,
+        "persistence": persist,
         "progress": progress,
         "summary": run_summary(run_id, scen_class),
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
         "models": per_model_stage(run_id, prod, cons),
-        "model_progress": model_progress(run_id, prod, cons, scen_count),
-        "pareto": pareto(run_id, cons, scen_class),
+        "model_progress": model_progress(run_id, prod, cons, scen_count, reps=reps, judges=judges),
+        "pareto": pareto_rows,
         "scores": score_breakdown(run_id, scen_class),
         "run_matrix": run_matrix(),
         "sessions": sess,
         "experiments": experiments(),
-        "run_batches": run_batches(),
+        "run_batches": batches,
         "nodes": nodes(),
     }, default=str))
 

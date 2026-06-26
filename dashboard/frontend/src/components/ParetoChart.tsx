@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card } from "./ui";
-import type { ParetoPoint } from "../types";
+import type { AnalyticsScope, ParetoPoint } from "../types";
 import { Sparkles } from "lucide-react";
 
 // Security (mean judge score on the safety scenarios, 1–5) → colour.
@@ -85,18 +85,19 @@ function TipBox({ active, payload }: { active?: boolean; payload?: Array<{ paylo
   );
 }
 
-export function ParetoChart({ data }: { data: ParetoPoint[] }) {
+export function ParetoChart({ data, scope }: { data: ParetoPoint[]; scope?: AnalyticsScope }) {
   const front = frontier(data);
   const pts = data
     .filter((d) => d.quality != null && d.wh != null)
     .map((d) => ({ ...d, _front: front.has(d.model) }));
   return (
     <Card
-      title="Pareto · quality vs energy vs security"
+      title={`Pareto · ${scope?.memory_context ?? "none"}`}
       icon={<Sparkles className="h-4 w-4 text-accent" />}
       hint="A trade-off map. Each dot is a model placed by energy per answer (x — left is cheaper) and quality (y — higher is better); its shape + colour show the security score (● strong ◆ mid ▼ weak). Ringed dots are Pareto-optimal — nothing else is both better and cheaper. The top-left corner is the sweet spot."
       right={
         <div className="flex items-center gap-2.5 text-[10px] text-faint">
+          <span className="font-mono">selected run</span>
           <span className="inline-flex items-center gap-1"><span className="text-good">●</span> strong</span>
           <span className="inline-flex items-center gap-1"><span className="text-warn">◆</span> mid</span>
           <span className="inline-flex items-center gap-1"><span className="text-bad">▼</span> weak</span>

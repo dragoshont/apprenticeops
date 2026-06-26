@@ -1,6 +1,6 @@
 // Mirrors the JSON emitted by scripts/pipeline-status.py.
 
-export type PipelineState = "idle" | "running" | "paused" | "done" | "error";
+export type PipelineState = "idle" | "starting" | "pending" | "running" | "paused" | "stopped" | "done" | "canceled" | "failed" | "error";
 
 export const STAGE_ORDER = [
   "lock",
@@ -92,6 +92,28 @@ export interface RunBatchItem {
   started_at?: number | null;
   ended_at?: number | null;
   progress_pct?: number | null;
+  work_pct?: number | null;
+  units_done?: number | null;
+  units_total?: number | null;
+  last_progress_at?: number | null;
+  ordinal?: number | null;
+  persistence_status?: string | null;
+}
+
+export interface RunBatchProgress {
+  scope: "batch";
+  pct: number;
+  units_done: number;
+  units_total: number;
+  completed_runs: number;
+  total_runs: number;
+  current_index: number;
+  current_run_id?: string | null;
+  current_memory_context?: string | null;
+  completed_memory_contexts: string[];
+  running_memory_context?: string | null;
+  pending_memory_contexts: string[];
+  failed_memory_contexts: string[];
 }
 
 export interface RunBatch {
@@ -106,6 +128,7 @@ export interface RunBatch {
   current_index?: number;
   log?: string;
   error?: string;
+  progress?: RunBatchProgress;
   runs: RunBatchItem[];
 }
 
@@ -194,6 +217,10 @@ export interface ModelStage {
 
 export interface ParetoPoint {
   model: string;
+  run_id?: string | null;
+  model_set?: string | null;
+  scenario_set?: string | null;
+  memory_context?: string | null;
   quality: number | null;
   security: number | null;
   tok_s: number | null;
@@ -234,6 +261,8 @@ export interface AppConfig {
 }
 
 export interface Progress {
+  scope?: string;
+  kind?: string;
   inf_done: number;
   inf_total: number;
   judge_done: number;
@@ -246,6 +275,41 @@ export interface Progress {
   eta_s: number | null;
   eta_human: string | null;
   rate_per_min: number | null;
+}
+
+export interface PersistenceStatus {
+  status: "clean" | "retrying_push" | "in_progress" | "incomplete" | "not_expected" | string;
+  committed_models: string[];
+  push_pending_models: string[];
+  committed_count: number;
+  committed_total: number;
+  push_pending_count: number;
+  pct: number;
+  waiting_on: string;
+}
+
+export interface AnalyticsScope {
+  kind: "selected_run" | string;
+  source?: "selected_run" | string;
+  run_id?: string | null;
+  model_set?: string | null;
+  scenario_set?: string | null;
+  memory_context?: string | null;
+}
+
+export interface SelectedScope {
+  kind: "idle" | "run" | "batch_child" | string;
+  run_id?: string | null;
+  batch_id?: string | null;
+  batch_index?: number | null;
+  batch_total?: number | null;
+  batch_status?: string | null;
+  batch_current_run_id?: string | null;
+  model_set?: string | null;
+  scenario_set?: string | null;
+  memory_context?: string | null;
+  analytics_scope?: string | null;
+  state?: string | null;
 }
 
 export interface ModelProgress {
@@ -292,6 +356,9 @@ export interface Status {
   user?: string;
   markers?: { canceled: boolean; paused: boolean };
   meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; expect?: number; started_at?: number };
+  selected_scope?: SelectedScope;
+  analytics_scope?: AnalyticsScope;
+  persistence?: PersistenceStatus;
   progress?: Progress;
   summary?: RunSummary;
   producer?: Producer;
