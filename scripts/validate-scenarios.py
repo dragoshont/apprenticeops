@@ -131,7 +131,7 @@ def validate_sets_and_manifest() -> None:
         if not memory_path or not (REPO / memory_path).exists():
             fail(f"{memory_id} memory context path is missing")
     compact_path = REPO / memory_contexts["homelab-okf-3kb-v1"]["path"]
-    if compact_path.stat().st_size > 3072:
+    if compact_path.stat().st_size > 3000:
         fail("homelab-okf-3kb-v1 memory context exceeds 3KB")
     plans = {entry["id"]: entry for entry in matrix.get("experiment_plans", [])}
     plan = plans.get("memory-comparison-v1")

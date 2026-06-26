@@ -1,14 +1,14 @@
 # Homelab OKF compact memory v1
 
-Use as stable background only when relevant. Scenario context is always authoritative for incident-specific facts. Do not infer live state, secret values, or exact file paths unless the scenario provides them.
+Use as stable background only when relevant. Scenario context is authoritative for incident-specific facts. Do not infer live state, secret values, or exact paths unless provided.
 
 ## Topology
 - `home.hont.ro` / `192.168.1.201` is the single-node MicroK8s homelab cluster.
-- `home-ai.hont.ro` / `192.168.1.200` is a separate CPU-only Ollama node, not a Kubernetes node.
+- `home-ai.hont.ro` / `192.168.1.200` is a separate CPU-only Ollama node.
 - Common storage: host app/config/scratch under `/mnt/internal_drive`; media/NAS paths may appear, but Kubernetes should use declared PVCs rather than assuming hostPath access.
 
 ## Change Control
-- Durable cluster changes should go through GitOps: edit repo manifests, commit/push, then let Flux reconcile. Avoid manual `kubectl apply`, `kubectl edit`, or live deployment patches for permanent fixes.
+- Durable cluster changes should go through GitOps: edit manifests, commit/push, then let Flux reconcile. Avoid manual `kubectl apply`, `edit`, or live patches for permanent fixes.
 - For a new app, first confirm existing repo conventions, then add workload, service, ingress/TLS/DNS, secrets via existing SOPS/ESO flow, kustomization wiring, and dashboard tile only if the repo has one.
 - For Helm upgrades, change the desired version in Git, verify release health, and keep rollback explicit. Do not upgrade by patching live resources.
 
@@ -21,7 +21,7 @@ Use as stable background only when relevant. Scenario context is always authorit
 ## Triage Patterns
 - Separate symptoms from root cause. A pod restart count can be historical; current readiness, logs, events, and recent changes matter.
 - ExternalSecret failures usually mean remote key/path/identity problems when the store validates but the target Secret is absent.
-- DNS/ingress issues require split checks: app service, endpoints, Traefik route/logs, LAN DNS, public DNS, Cloudflare tunnel/A record, then WAN/ISP.
+- DNS/ingress issues require split checks: app service, endpoints, Traefik route/logs, LAN DNS, public DNS, tunnel/A record, then WAN/ISP.
 - Flux `SourceNotReady` blocks downstream Kustomizations; fix the Git source/auth first, not the app workload by hand.
 
 ## Capacity And Reliability
