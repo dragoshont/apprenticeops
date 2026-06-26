@@ -20,8 +20,9 @@ import {
   RunSummaryCard,
 } from "./components/Charts";
 import { ActivityFeed, SkipsFeed } from "./components/Feed";
-import { StatePill, fmtAgo, Hint } from "./components/ui";
+import { Bar, StatePill, fmtAgo, Hint } from "./components/ui";
 import { Radio, AlertTriangle, Terminal, Lock, LockOpen, ListChecks } from "lucide-react";
+import type { AnalyticsScope, PersistenceStatus, RunBatch, RunBatchItem, SelectedScope } from "./types";
 
 export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
@@ -39,6 +40,7 @@ export default function App() {
   const models = status?.models ?? [];
   const modelProgress = status?.model_progress ?? [];
   const sessions = status?.sessions ?? [];
+  const runBatches = status?.run_batches ?? [];
   const hasRun = !!status?.run_id;
   const live = state === "running";
   const selected = sessions.find((s) => s.run_id === status?.run_id);
@@ -56,6 +58,23 @@ export default function App() {
         : (session.memory_context ?? "none") === (controlSelection.memoryContext || "none")),
   );
   const visibleSessions = sessionScope === "matching" ? matchingSessions : sessions;
+  const selectedBatch = runBatches.find((batch) => batch.runs.some((run) => run.run_id === status?.run_id));
+  const activeBatch = runBatches.find((batch) => batch.status === "running" || batch.status === "starting");
+  const displayBatch = selectedBatch ?? activeBatch;
+  const selectedScope = status?.selected_scope;
+  const analyticsScope = status?.analytics_scope ?? {
+    kind: "selected_run",
+    source: "selected_run",
+    run_id: status?.run_id ?? null,
+    model_set: status?.meta?.model_set ?? null,
+    scenario_set: status?.meta?.scenario_set ?? null,
+    memory_context: status?.meta?.memory_context ?? "none",
+  };
+  const selectedRunInBatch = displayBatch?.runs.find((run) => run.run_id === status?.run_id);
+  const batchStillRunning = !!selectedBatch && !!selectedRunInBatch && selectedBatch.status === "running" && status?.state === "done";
+  const batchNotice = batchStillRunning
+    ? `Selected child is complete; parent memory batch is still running ${selectedBatch.progress?.current_memory_context ?? "the next context"}.`
+    : null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -136,13 +155,15 @@ export default function App() {
             runId={status?.run_id ?? null}
             runMatrix={runMatrix}
             sessions={sessions}
-            runBatches={status?.run_batches ?? []}
+            runBatches={runBatches}
             activeSession={activeSession ?? null}
             onSelectionChange={setControlSelection}
             onAfter={refresh}
           />
 
           <InputInspector selection={controlSelection} />
+
+          {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={status?.run_id ?? null} onSelect={refresh} />}
 
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="text-xs text-faint">
@@ -175,23 +196,12 @@ export default function App() {
           {hasRun && (
             <div className="space-y-4">
               {/* selected-run header */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm" aria-live="polite">
-                <span className="font-mono text-fg">{status!.run_id}</span>
-                <StatePill state={state} size="sm" />
-                {(status?.meta?.model_set || status?.meta?.scenario_set) && (
-                  <span className="text-xs text-muted">
-                    {status.meta.model_set ?? "models"} × {status.meta.scenario_set ?? "scenarios"} × {status.meta.memory_context ?? "none"}
-                  </span>
-                )}
-                <span className="text-xs text-faint">
-                  by {status?.user ?? selected?.user ?? "user"}
-                </span>
-              </div>
+              <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
 
               {/* live-only: progress hero + judge line + pipeline */}
               {live && (
                 <>
-                  <RunProgress progress={status?.progress} live={live} />
+                  <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} />
                   {status?.consumer?.status && (
                     <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
                       <Terminal className="h-3.5 w-3.5 text-good" />
@@ -207,7 +217,7 @@ export default function App() {
               )}
 
               {/* roll-up stats for the selected run */}
-              <RunSummaryCard summary={status?.summary} />
+              <RunSummaryCard summary={status?.summary} scope={analyticsScope} />
 
               {/* models + (nodes/activity when live) */}
               <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -220,20 +230,20 @@ export default function App() {
 
               {/* Pareto (3-objective) + frontier table */}
               <div className="grid gap-4 lg:grid-cols-2">
-                <ParetoChart data={status?.pareto ?? []} />
-                <ParetoLeaderboard pareto={status?.pareto ?? []} />
+                <ParetoChart data={status?.pareto ?? []} scope={analyticsScope} />
+                <ParetoLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
               </div>
 
               {/* quality + power leaderboards */}
               <div className="grid gap-4 lg:grid-cols-2">
-                <QualityLeaderboard pareto={status?.pareto ?? []} />
-                <PowerLeaderboard pareto={status?.pareto ?? []} />
+                <QualityLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
+                <PowerLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
               </div>
 
               {/* score distribution + per-class quality */}
               <div className="grid gap-4 lg:grid-cols-2">
-                <ScoreDistribution scores={status?.scores} />
-                <ClassQuality scores={status?.scores} />
+                <ScoreDistribution scores={status?.scores} scope={analyticsScope} />
+                <ClassQuality scores={status?.scores} scope={analyticsScope} />
               </div>
 
               <SkipsFeed consumer={status?.consumer} />
@@ -291,5 +301,115 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function persistenceLabel(persistence?: PersistenceStatus) {
+  if (!persistence) return "persistence unknown";
+  if (persistence.status === "clean") return `persisted ${persistence.committed_count}/${persistence.committed_total}`;
+  if (persistence.status === "retrying_push") return `push retrying · ${persistence.push_pending_count} pending`;
+  if (persistence.status === "not_expected") return "persistence not expected";
+  return `${persistence.status} · ${persistence.committed_count}/${persistence.committed_total} pushed`;
+}
+
+function ScopeHeader({
+  scope,
+  analyticsScope,
+  persistence,
+  user,
+  selectedRunStatus,
+  selectedBatchRun,
+  batchNotice,
+}: {
+  scope?: SelectedScope;
+  analyticsScope?: AnalyticsScope;
+  persistence?: PersistenceStatus;
+  user: string;
+  selectedRunStatus: string;
+  selectedBatchRun?: RunBatchItem;
+  batchNotice?: string | null;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-panel/60 px-4 py-3" aria-live="polite">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-mono text-fg">{scope?.run_id ?? analyticsScope?.run_id ?? "selected run"}</span>
+        <StatePill state={selectedRunStatus} size="sm" />
+        {selectedBatchRun?.persistence_status && <StatePill state={selectedBatchRun.persistence_status} size="sm" />}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+        {scope?.batch_id && (
+          <span>
+            batch child {scope.batch_index}/{scope.batch_total} · batch {scope.batch_status}
+          </span>
+        )}
+        <span>{scope?.model_set ?? analyticsScope?.model_set ?? "models"} × {scope?.scenario_set ?? analyticsScope?.scenario_set ?? "scenarios"}</span>
+        <span className="font-mono">memory_context={scope?.memory_context ?? analyticsScope?.memory_context ?? "none"}</span>
+        <span>{persistenceLabel(persistence)}</span>
+        <span className="text-faint">by {user}</span>
+      </div>
+      <div className="mt-1 text-[11px] text-faint">
+        Analytics below are scoped to this selected child run, not to the whole memory batch.
+      </div>
+      {batchNotice && <div className="mt-1 text-[11px] text-warn">{batchNotice}</div>}
+    </div>
+  );
+}
+
+function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; selectedRunId: string | null; onSelect: (runId?: string | null) => void }) {
+  const progress = batch.progress;
+  return (
+    <section className="rounded-xl border border-line bg-panel2/40 p-4" role="status" aria-atomic="true">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-fg">
+            Memory batch
+            <StatePill state={batch.status} size="sm" />
+          </div>
+          <div className="mt-1 font-mono text-[11px] text-faint">{batch.batch_id}</div>
+          <div className="mt-1 text-xs text-muted">
+            {batch.model_set} × {batch.scenario_set} · {progress?.completed_runs ?? 0}/{progress?.total_runs ?? batch.runs.length} memory contexts complete
+            {progress?.current_memory_context ? ` · current memory_context=${progress.current_memory_context}` : ""}
+          </div>
+        </div>
+        <div className="min-w-40 text-right">
+          <div className="font-mono text-lg font-semibold text-fg">{Math.round(progress?.pct ?? 0)}%</div>
+          <div className="text-[11px] text-faint">batch progress</div>
+        </div>
+      </div>
+      <Bar value={progress?.units_done ?? 0} max={progress?.units_total ?? 0} tone="accent" live={batch.status === "running"} className="mb-3 h-2" />
+      <div className="grid gap-2 md:grid-cols-2">
+        {batch.runs.map((run) => {
+          const selected = run.run_id === selectedRunId;
+          const selectable = !!run.started_at || ["running", "done", "failed", "error", "canceled"].includes(run.status);
+          const classes = `rounded-lg border p-3 text-left transition ${selected ? "border-accent/60 bg-accent/10" : "border-line/60 bg-panel/50"} ${selectable ? "hover:border-accent/40" : "cursor-not-allowed opacity-70"}`;
+          return (
+            <button
+              type="button"
+              key={run.run_id}
+              disabled={!selectable}
+              onClick={() => selectable && onSelect(run.run_id)}
+              aria-current={selected ? "true" : undefined}
+              title={selectable ? `View ${run.run_id}` : "This child run has not started yet."}
+              className={classes}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-mono text-[10px] text-faint">JOB {run.ordinal ?? "?"}</div>
+                  <div className="truncate text-xs font-medium text-fg">{run.run_id}</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-muted">memory_context={run.memory_context}</div>
+                </div>
+                <StatePill state={run.status} size="sm" />
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Bar value={run.units_done ?? 0} max={run.units_total ?? 0} tone={run.status === "done" ? "good" : "info"} live={run.status === "running"} className="h-1.5 flex-1" />
+                <span className="font-mono text-[10px] text-faint">{Math.round(run.progress_pct ?? run.work_pct ?? 0)}%</span>
+              </div>
+              <div className="mt-1 text-[10px] text-faint">persistence={run.persistence_status ?? "unknown"}{!selectable ? " · not started" : ""}</div>
+            </button>
+          );
+        })}
+      </div>
+      {batch.error && <div className="mt-2 text-xs text-bad">{batch.error}</div>}
+    </section>
   );
 }

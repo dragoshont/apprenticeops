@@ -1,4 +1,4 @@
-import type { Progress } from "../types";
+import type { PersistenceStatus, Progress, AnalyticsScope } from "../types";
 import { Bar, Hint } from "./ui";
 import { Gauge, Cpu, Scale, Clock, Timer } from "lucide-react";
 
@@ -38,9 +38,30 @@ function Row({
   );
 }
 
-export function RunProgress({ progress, live }: { progress?: Progress; live: boolean }) {
+function persistenceCopy(persistence?: PersistenceStatus) {
+  if (!persistence) return null;
+  if (persistence.status === "clean") return "Persistence complete: all model evidence pushed.";
+  if (persistence.status === "retrying_push") return `Judged complete; retrying git push for ${persistence.push_pending_count} model(s).`;
+  if (persistence.status === "not_expected") return "Persistence not expected for this inference-only run.";
+  return `Persistence ${persistence.status}: ${persistence.committed_count}/${persistence.committed_total} models pushed.`;
+}
+
+export function RunProgress({
+  progress,
+  live,
+  scope,
+  persistence,
+  batchNotice,
+}: {
+  progress?: Progress;
+  live: boolean;
+  scope?: AnalyticsScope;
+  persistence?: PersistenceStatus;
+  batchNotice?: string | null;
+}) {
   const p = progress;
   const pct = p?.pct ?? 0;
+  const persistenceText = persistenceCopy(persistence);
   return (
     <div className="card card-pad">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -66,10 +87,10 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
           </div>
           <div className="space-y-1">
             <div className="label flex items-center gap-1.5">
-              <Gauge className="h-3.5 w-3.5" /> Run progress
+              <Gauge className="h-3.5 w-3.5" /> Selected run work progress
             </div>
             <div className="text-sm text-muted">
-              {p?.pct_remaining != null ? `${p.pct_remaining}% remaining` : "—"}
+              memory_context={scope?.memory_context ?? "none"} · inference + judge work only
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-faint">
               <span className="flex items-center gap-1">
@@ -81,6 +102,8 @@ export function RunProgress({ progress, live }: { progress?: Progress; live: boo
                 {p?.elapsed_s ? `${Math.floor(p.elapsed_s / 60)}m elapsed` : "—"}
               </span>
             </div>
+            {batchNotice && <div className="text-[11px] text-warn">{batchNotice}</div>}
+            {persistenceText && <div className={`text-[11px] ${persistence?.status === "retrying_push" ? "text-warn" : "text-faint"}`}>{persistenceText}</div>}
           </div>
         </div>
 

@@ -158,6 +158,7 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
                 "ended_at": None,
                 "progress_pct": 0.0,
                 "units_done": 0,
+                "units_total": 0,
                 "last_progress_at": None,
             }
             for index, memory in enumerate(memories)
@@ -382,6 +383,7 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
         run["progress_pct"] = progress.get("pct") or 0.0
         units_done = int(progress.get("units_done") or 0)
         run["units_done"] = units_done
+        run["units_total"] = int(progress.get("units_total") or 0)
         if units_done != last_units_done:
             last_units_done = units_done
             last_progress_at = time.time()

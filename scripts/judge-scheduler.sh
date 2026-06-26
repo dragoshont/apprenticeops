@@ -74,9 +74,24 @@ print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest())
 PY
 )"
 COMMITTED="$WORK/.committed"; touch "$COMMITTED"
+PUSH_PENDING="$WORK/.push-pending"; touch "$PUSH_PENDING"
 log "streaming consumer: judge ${JUDGE_WORKERS:-8}-wide, ${NJUDGES} judges/answer, commit per model"
 
 while true; do
+  if [ -s "$PUSH_PENDING" ]; then
+    if git push -q origin "$BRANCH" 2>/dev/null; then
+      while read -r pending_model; do
+        [ -z "$pending_model" ] && continue
+        grep -qxF "$pending_model" "$COMMITTED" || echo "$pending_model" >>"$COMMITTED"
+        ledger "$pending_model" persist 1 "$(git rev-parse --short HEAD)"
+        status "model $pending_model -> PUSHED after retry"
+      done <"$PUSH_PENDING"
+      : >"$PUSH_PENDING"
+    else
+      status "push pending for $(wc -l <"$PUSH_PENDING" | tr -d ' ') model(s); retrying"
+    fi
+  fi
+
   # ---- S5 collect: incremental mirror of the producer's artifacts ----------
   rsync -az -e "$SSH" "$AI:$AI_REPO/$RESULTS"      "$MIRROR/"          2>/dev/null || true
   rsync -az -e "$SSH" "$AI:$AI_REPO/$RESULTS.done" "$MIRROR/"          2>/dev/null || true
@@ -103,6 +118,10 @@ while true; do
     while read -r m units; do
       [ -z "$m" ] && continue
       grep -qxF "$m" "$COMMITTED" && continue
+      if grep -qxF "$m" "$PUSH_PENDING"; then
+        status "model $m: local commit made, push pending"
+        continue
+      fi
       want=$(( ${units:-0} * NJUDGES ))
       have=$(jq -r --arg m "$m" --arg sha "$SCENARIO_SHA" \
         'select(.model==$m and .scenarios_sha256==$sha) | [.scenario, (.rep|tostring), .judge_model] | @tsv' \
@@ -126,6 +145,7 @@ while true; do
           status "model $m -> COMMITTED (${have} judge rows)"
         else
           ledger "$m" persist 0 "push failed"
+          grep -qxF "$m" "$PUSH_PENDING" || echo "$m" >>"$PUSH_PENDING"
           status "model $m: push failed, not marking committed"
         fi
       else
