@@ -119,7 +119,9 @@ function MemoryPane({ details }: { details: InputDetails | null }) {
         </div>
         <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{memory.id}</span>
       </div>
-      <MarkdownView text={memory.markdown} />
+      <div className="max-h-96 overflow-auto pr-2">
+        <MarkdownView text={memory.markdown} />
+      </div>
     </div>
   );
 }

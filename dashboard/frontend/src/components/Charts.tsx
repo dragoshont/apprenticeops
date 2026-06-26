@@ -40,6 +40,13 @@ function ScopeRight({ scope }: { scope?: AnalyticsScope }) {
   return <span className="font-mono text-[10px] text-faint">selected run · memory_context={scope?.memory_context ?? "none"}</span>;
 }
 
+function conditionLabel(scope?: AnalyticsScope) {
+  const memory = scope?.memory_context ?? "none";
+  if (memory === "none") return "No-memory condition";
+  if (memory === "homelab-okf-v1") return "OKF-memory condition";
+  return `Memory condition: ${memory}`;
+}
+
 /** Tooltip that also shows the sample size n behind a mean (a mean from few
  * judgments is weaker evidence than one from many). */
 function TipN({ active, payload, unit }: any) {
@@ -330,16 +337,23 @@ function Metric({ icon, label, value, sub, hint }: { icon: React.ReactNode; labe
 /** Roll-up stats for the selected run: energy, power, compute, quality, security. */
 export function RunSummaryCard({ summary, scope }: { summary?: RunSummary; scope?: AnalyticsScope }) {
   const s = summary;
+  const condition = conditionLabel(scope);
   return (
-    <div className="space-y-2">
-      <div className="px-1 font-mono text-[10px] text-faint">Summary scope: selected run · memory_context={scope?.memory_context ?? "none"}</div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub="total this run" hint="Total electricity this run has drawn, in watt-hours — summed across every model's inference, measured from the CPU's Intel RAPL energy counter. Lower is better." />
-      <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" hint="Average power draw in watts while the CPU was inferring — the mean of the per-model RAPL package readings." />
-      <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" hint="Total processor time spent this run, in CPU-minutes — the sum of every model's wall-clock inference time." />
-      <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub={s?.n != null ? `mean judge / 5 · n=${s.n}` : "mean judge / 5"} hint="Mean judge score (1–5) across every answer in this run, averaged over both LLM judges. Higher is better." />
-      <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub={s?.n_security != null ? `safety scenarios / 5 · n=${s.n_security}` : "safety scenarios / 5"} hint="Mean judge score (1–5) on the safety scenarios only — the 'secure' and 'guard' classes that test whether a model refuses or safely handles risky operations." />
+    <section className="space-y-2 rounded-xl border border-line/70 bg-panel/40 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">{condition} summary</h2>
+          <p className="mt-0.5 text-[11px] text-faint">These numbers belong only to the selected child run. Compare against the other memory condition in Current experiment.</p>
+        </div>
+        <span className="rounded bg-panel2 px-2 py-1 font-mono text-[10px] text-faint">memory_context={scope?.memory_context ?? "none"}</span>
       </div>
-    </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Metric icon={<Zap className="h-3.5 w-3.5" />} label="Energy" value={s?.energy_wh != null ? `${s.energy_wh} Wh` : "—"} sub={`${condition} total`} hint="Total electricity this selected memory condition has drawn, in watt-hours — summed across every model's inference, measured from the CPU's Intel RAPL energy counter. Lower is better." />
+        <Metric icon={<BatteryLow className="h-3.5 w-3.5" />} label="Power" value={s?.mean_watts != null ? `${s.mean_watts} W` : "—"} sub="mean draw" hint="Average power draw in watts while the CPU was inferring for this selected memory condition." />
+        <Metric icon={<Clock className="h-3.5 w-3.5" />} label="Compute" value={s?.cpu_minutes != null ? `${s.cpu_minutes}m` : "—"} sub="CPU-minutes" hint="Total processor time spent for this selected memory condition, in CPU-minutes." />
+        <Metric icon={<Cpu className="h-3.5 w-3.5" />} label="Quality" value={s?.quality_overall ?? "—"} sub={s?.n != null ? `mean judge / 5 · n=${s.n}` : "mean judge / 5"} hint="Mean judge score (1–5) for this selected memory condition only, averaged over both LLM judges. Higher is better." />
+        <Metric icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Security" value={s?.security_overall ?? "—"} sub={s?.n_security != null ? `safety scenarios / 5 · n=${s.n_security}` : "safety scenarios / 5"} hint="Mean judge score (1–5) on safety scenarios for this selected memory condition only." />
+      </div>
+    </section>
   );
 }
