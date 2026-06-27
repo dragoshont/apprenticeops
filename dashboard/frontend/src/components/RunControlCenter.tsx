@@ -207,7 +207,7 @@ export function RunControlCenter({
       right={<span className="text-xs text-faint">run axes</span>}
     >
       <div className="space-y-4">
-          <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr_1fr]">
+          <div className="grid gap-3 lg:grid-cols-2">
             <RunShapePicker
               modelSets={modelSets}
               modelSet={modelSet}
@@ -216,12 +216,10 @@ export function RunControlCenter({
               scenarioSet={scenarioSet}
               onScenarioSet={setScenarioSet}
             />
-            <InferenceStrategyPicker
+            <StrategyMemoryPicker
               strategies={inferenceStrategies}
-              value={inferenceStrategy}
-              onChange={setInferenceStrategy}
-            />
-            <MemoryContextPicker
+              strategy={inferenceStrategy}
+              onStrategy={setInferenceStrategy}
               contexts={selectableMemoryContexts}
               selected={selectedMemoryContexts}
               onToggle={toggleMemoryContext}
@@ -258,6 +256,14 @@ export function RunControlCenter({
               </button>
             )}
             <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
+            <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[10px] font-semibold text-accent">
+              <Clock className="h-3 w-3" />
+              est {estimate.duration}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
+              <Scale className="h-3 w-3" />
+              {judgeTokenEstimate.total}
+            </span>
             <span className="hidden text-[11px] text-muted lg:inline-flex lg:items-center lg:gap-3">
               <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
               <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
@@ -267,7 +273,7 @@ export function RunControlCenter({
             </span>
             {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
           </div>
-          <div className="grid gap-2 rounded-xl border border-line bg-panel2/30 p-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 rounded-xl border border-line bg-panel2/30 p-3 sm:grid-cols-2 xl:grid-cols-5">
             <EstimateMetric
               icon={<Scale className="h-3.5 w-3.5" />}
               label="Answer rows"
@@ -365,9 +371,9 @@ function buildJudgeTokenEstimate(answerRows: number) {
 }
 
 function formatTokenEstimate(tokens: number) {
-  if (tokens >= 1_000_000) return `${formatOneDecimal(tokens / 1_000_000)}M in`;
-  if (tokens >= 1_000) return `${formatOneDecimal(tokens / 1_000)}k in`;
-  return `${tokens} in`;
+  if (tokens >= 1_000_000) return `${formatOneDecimal(tokens / 1_000_000)}M input tokens`;
+  if (tokens >= 1_000) return `${formatOneDecimal(tokens / 1_000)}k input tokens`;
+  return `${tokens} input tokens`;
 }
 
 function formatEstimateDuration(seconds: number) {
@@ -421,6 +427,35 @@ function RunShapePicker({
   );
 }
 
+function StrategyMemoryPicker({
+  strategies,
+  strategy,
+  onStrategy,
+  contexts,
+  selected,
+  onToggle,
+}: {
+  strategies: NonNullable<RunMatrix["inference_strategies"]>;
+  strategy: string;
+  onStrategy: (id: string) => void;
+  contexts: NonNullable<RunMatrix["memory_contexts"]>;
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-panel2/30 p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="label">Inference strategy / Memory context</div>
+        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">strategy + memory</span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        <InferenceStrategyPicker strategies={strategies} value={strategy} onChange={onStrategy} />
+        <MemoryContextPicker contexts={contexts} selected={selected} onToggle={onToggle} />
+      </div>
+    </div>
+  );
+}
+
 function InferenceStrategyPicker({
   strategies,
   value,
@@ -431,10 +466,10 @@ function InferenceStrategyPicker({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-panel2/30 p-3">
+    <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="label">Inference strategy</div>
-        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">strategy axis</span>
+        <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">Inference strategy</div>
+        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{strategies.length} options</span>
       </div>
       <div className="max-h-[10.5rem] space-y-1.5 overflow-auto pr-1">
         {strategies.map((strategy) => {
@@ -492,9 +527,9 @@ function MemoryContextPicker({
   const visibleContexts = contexts.filter((context) => context.kind !== "strategy").sort((left, right) => memorySortKey(left) - memorySortKey(right));
   const hasOverflow = visibleContexts.length > 3;
   return (
-    <div className="rounded-xl border border-line bg-panel2/30 p-3">
+    <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="label">Memory contexts</div>
+        <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">Memory context</div>
         <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">
           {selected.length} selected · {visibleContexts.length} options{hasOverflow ? " · scroll" : ""}
         </span>
