@@ -74,6 +74,18 @@ def compact_bucket(bucket: dict[str, dict]) -> list[dict]:
     ]
 
 
+def finalize_usage(entry: dict) -> dict:
+    tokens_in = int(entry.get("tokens_in") or 0)
+    cache_read = int(entry.get("cache_read") or 0)
+    cache_write = int(entry.get("cache_write") or 0)
+    tokens_out = int(entry.get("tokens_out") or 0)
+    entry["uncached_input_tokens"] = max(tokens_in - cache_read, 0)
+    entry["cache_read_pct"] = pct(cache_read, tokens_in)
+    entry["cache_write_pct"] = pct(cache_write, tokens_in)
+    entry["output_input_pct"] = pct(tokens_out, tokens_in)
+    return entry
+
+
 def summarize_run(run_dir: Path) -> dict:
     run_id = run_dir.name
     meta_path = run_dir / "run.meta"
@@ -173,7 +185,7 @@ def summarize_run(run_dir: Path) -> dict:
         "judge_empty": len(judge_empty),
         "judge_evidence_missing": len(judge_missing_evidence),
         "judge_criteria_missing": len(judge_missing_criteria),
-        "usage_by_judge": dict(usage_by_judge),
+        "usage_by_judge": {judge: finalize_usage(dict(usage)) for judge, usage in usage_by_judge.items()},
         "persistence": {
             "committed_models": count_lines(run_dir / ".committed"),
             "push_pending": count_lines(run_dir / ".push-pending"),
@@ -200,7 +212,14 @@ def print_text(reports: list[dict]) -> None:
             print(f"strategy DNF: {strat}")
         if report["usage_by_judge"]:
             for judge, usage in sorted(report["usage_by_judge"].items()):
-                print(f"judge usage {judge}: calls={usage['calls']} in={usage['tokens_in']} out={usage['tokens_out']} credits={round(usage['ai_credits'], 2)}")
+                print(
+                    f"judge usage {judge}: calls={usage['calls']} "
+                    f"in={usage['tokens_in']} out={usage['tokens_out']} "
+                    f"cache_read={usage['cache_read']} ({usage['cache_read_pct']}%) "
+                    f"cache_write={usage['cache_write']} ({usage['cache_write_pct']}%) "
+                    f"uncached_in={usage['uncached_input_tokens']} "
+                    f"credits={round(usage['ai_credits'], 2)}"
+                )
         print()
 
 

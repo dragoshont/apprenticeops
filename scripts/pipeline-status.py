@@ -545,6 +545,18 @@ def reliability_report(run_id):
         for key in ("tokens_in", "tokens_out", "cache_read", "cache_write"):
             entry[key] += int(usage.get(key) or 0)
         entry["ai_credits"] += float(usage.get("ai_credits") or 0)
+
+    def usage_with_rates(entry):
+        tokens_in = int(entry.get("tokens_in") or 0)
+        cache_read = int(entry.get("cache_read") or 0)
+        cache_write = int(entry.get("cache_write") or 0)
+        tokens_out = int(entry.get("tokens_out") or 0)
+        entry = dict(entry)
+        entry["uncached_input_tokens"] = max(tokens_in - cache_read, 0)
+        entry["cache_read_pct"] = round(100 * cache_read / tokens_in, 2) if tokens_in else 0.0
+        entry["cache_write_pct"] = round(100 * cache_write / tokens_in, 2) if tokens_in else 0.0
+        entry["output_input_pct"] = round(100 * tokens_out / tokens_in, 2) if tokens_in else 0.0
+        return entry
     def rate(n):
         return round(100 * n / total, 2) if total else 0.0
     def compact(bucket):
@@ -569,7 +581,7 @@ def reliability_report(run_id):
         "judge_empty": judge_empty,
         "judge_evidence_missing": evidence_missing,
         "judge_criteria_missing": criteria_missing,
-        "usage_by_judge": usage_by_judge,
+        "usage_by_judge": {judge: usage_with_rates(usage) for judge, usage in usage_by_judge.items()},
     }
 
 

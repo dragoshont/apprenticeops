@@ -135,12 +135,14 @@ export function RunProgress({
             </div>
           )}
           {reliability && (
-            <div className="grid gap-2 pt-1 sm:grid-cols-5">
+            <div className="grid gap-2 pt-1 sm:grid-cols-5 xl:grid-cols-7">
               <ReliabilityChip label="DNF" value={`${reliability.dnf}/${reliability.rows}`} sub={`${reliability.dnf_rate}%`} tone={reliability.dnf ? "text-warn" : "text-good"} />
               <ReliabilityChip label="Length" value={`${reliability.length}`} sub={`${reliability.length_rate}%`} tone={reliability.length ? "text-warn" : "text-good"} />
               <ReliabilityChip label="Zero stalls" value={`${reliability.zero_output_stalls}`} sub={`${reliability.zero_output_stall_rate}%`} tone={reliability.zero_output_stalls ? "text-bad" : "text-good"} />
               <ReliabilityChip label="Judge empty" value={`${reliability.judge_empty}`} sub={`${reliability.judge_evidence_missing} evidence gaps`} tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"} />
-              <ReliabilityChip label="Judge tokens" value={formatTokenCount(sumJudgeTokens(reliability))} sub={judgeUsageSub(reliability)} tone="text-muted" />
+              <ReliabilityChip label="Frontier input" value={formatTokenCount(sumJudgeTokens(reliability, "tokens_in"))} sub={judgeUsageSub(reliability)} tone="text-muted" />
+              <ReliabilityChip label="Frontier output" value={formatTokenCount(sumJudgeTokens(reliability, "tokens_out"))} sub={judgeOutputSub(reliability)} tone="text-muted" />
+              <ReliabilityChip label="Cache" value={formatPercent(weightedCachePct(reliability))} sub={judgeCacheSub(reliability)} tone="text-muted" />
             </div>
           )}
         </div>
@@ -149,8 +151,8 @@ export function RunProgress({
   );
 }
 
-function sumJudgeTokens(reliability: ReliabilityReport) {
-  return Object.values(reliability.usage_by_judge ?? {}).reduce((sum, usage) => sum + (usage.tokens_in || 0), 0);
+function sumJudgeTokens(reliability: ReliabilityReport, key: "tokens_in" | "tokens_out" | "cache_read" | "cache_write" | "uncached_input_tokens") {
+  return Object.values(reliability.usage_by_judge ?? {}).reduce((sum, usage) => sum + (usage[key] || 0), 0);
 }
 
 function judgeUsageSub(reliability: ReliabilityReport) {
@@ -159,11 +161,35 @@ function judgeUsageSub(reliability: ReliabilityReport) {
   return entries.map(([judge, usage]) => `${judge}: ${usage.calls} calls`).join(" · ");
 }
 
+function judgeOutputSub(reliability: ReliabilityReport) {
+  const entries = Object.entries(reliability.usage_by_judge ?? {});
+  if (!entries.length) return "usage not recorded yet";
+  return entries.map(([judge, usage]) => `${judge}: ${formatTokenCount(usage.tokens_out || 0)}`).join(" · ");
+}
+
+function judgeCacheSub(reliability: ReliabilityReport) {
+  const cached = sumJudgeTokens(reliability, "cache_read");
+  const uncached = sumJudgeTokens(reliability, "uncached_input_tokens");
+  if (!cached && !uncached) return "cache not reported yet";
+  return `${formatTokenCount(cached)} cached · ${formatTokenCount(uncached)} uncached`;
+}
+
+function weightedCachePct(reliability: ReliabilityReport) {
+  const input = sumJudgeTokens(reliability, "tokens_in");
+  if (!input) return null;
+  return (sumJudgeTokens(reliability, "cache_read") / input) * 100;
+}
+
+function formatPercent(value: number | null) {
+  if (value == null) return "—";
+  return `${value.toFixed(value >= 10 ? 1 : 2)}%`;
+}
+
 function formatTokenCount(tokens: number) {
   if (!tokens) return "—";
-  if (tokens >= 1_000_000) return `${trimOne(tokens / 1_000_000)}M in`;
-  if (tokens >= 1_000) return `${trimOne(tokens / 1_000)}k in`;
-  return `${tokens} in`;
+  if (tokens >= 1_000_000) return `${trimOne(tokens / 1_000_000)}M`;
+  if (tokens >= 1_000) return `${trimOne(tokens / 1_000)}k`;
+  return `${tokens}`;
 }
 
 function trimOne(value: number) {

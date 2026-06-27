@@ -381,6 +381,10 @@ export interface JudgeUsageRollup {
   tokens_out: number;
   cache_read: number;
   cache_write: number;
+  uncached_input_tokens?: number;
+  cache_read_pct?: number;
+  cache_write_pct?: number;
+  output_input_pct?: number;
   ai_credits: number;
 }
 

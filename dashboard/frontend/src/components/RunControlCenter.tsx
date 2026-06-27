@@ -262,7 +262,7 @@ export function RunControlCenter({
             </span>
             <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
               <Scale className="h-3 w-3" />
-              {judgeTokenEstimate.total}
+              {judgeTokenEstimate.input}
             </span>
             <span className="hidden text-[11px] text-muted lg:inline-flex lg:items-center lg:gap-3">
               <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
@@ -301,10 +301,10 @@ export function RunControlCenter({
             />
             <EstimateMetric
               icon={<Scale className="h-3.5 w-3.5" />}
-              label="Judge tokens"
-              value={judgeTokenEstimate.total}
+              label="Frontier judge tokens"
+              value={judgeTokenEstimate.input}
               sub={judgeTokenEstimate.detail}
-              hint="Estimated Copilot judge input tokens. Current measured Copilot CLI footer is about 27.6k input tokens per judge call, mostly cached tool/system context. Claude and GPT each judge every final answer."
+              hint="Estimated Copilot frontier judge token volume. The input estimate uses about 27.6k input tokens per judge call; output is estimated at about 200 output tokens per judge JSON. Cache percentages are measured after the run from the Copilot CLI footer."
             />
           </div>
           {chosenScenario?.description && <p className="text-xs leading-relaxed text-muted">{chosenScenario.description}</p>}
@@ -361,12 +361,15 @@ function buildRunEstimate(totalWorkUnits: number) {
 }
 
 function buildJudgeTokenEstimate(answerRows: number) {
-  if (answerRows <= 0) return { total: "—", detail: "select a run shape" };
+  if (answerRows <= 0) return { input: "—", output: "—", detail: "select a run shape" };
   const perJudgeInputTokens = 27_600;
+  const perJudgeOutputTokens = 200;
   const totalInput = answerRows * 2 * perJudgeInputTokens;
+  const totalOutput = answerRows * 2 * perJudgeOutputTokens;
   return {
-    total: formatTokenEstimate(totalInput),
-    detail: `Claude ${answerRows.toLocaleString()} calls + GPT ${answerRows.toLocaleString()} calls @ ~27.6k in/call`,
+    input: formatTokenEstimate(totalInput),
+    output: formatTokenEstimate(totalOutput),
+    detail: `in ${formatTokenEstimate(totalInput)} · out ~${formatTokenEstimate(totalOutput)} · Claude ${answerRows.toLocaleString()} + GPT ${answerRows.toLocaleString()} calls`,
   };
 }
 
