@@ -186,6 +186,31 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 > pre-registered **3–4B**, and three (RQ4–RQ6) were **not directly testable** with
 > this design — we say so rather than revise the predictions.
 
+### Current CEOps extension: memory and inference strategy
+
+The live harness now supports a follow-on experiment that is **not part of the
+locked H1–H7 result**. Its premise is a four-factor matrix:
+
+```text
+model_set × scenario_set × memory_context × inference_strategy
+```
+
+The factor boundary matters. `memory_context` tests whether stable, curated
+background improves a model's use of scenario evidence. `inference_strategy`
+tests whether extra local inference-time work improves the final answer:
+`baseline`, `single_call_tournament_brief`, `best_of_3_detcheck`,
+`self_consistency_3`, and `evaluator_optimizer_1`. The two must not be collapsed;
+otherwise we cannot tell whether a lift came from more knowledge, a different
+prompt discipline, more samples, or selection bias.
+
+> **Reliability gate.** Any memory or strategy comparison is read through
+> `scripts/report-run-quality.py` before quality means are interpreted. A condition
+> that raises DNF, zero-output stalls, length truncations, or judge-empty rows is
+> an operationally different result, not a clean quality win. This is why the new
+> rows stamp `env.inference_strategy`, `strategy.*`, `effective.*`, `prompt.*`,
+> and stall-forensics fields, and why the dashboard shows reliability beside
+> quality/safety/energy.
+
 ## 4. Methodology and Experimental Design
 
 - **Primary factor:** model (the 25, grouped by **parameter bracket**: 0-1B, 1-2B,

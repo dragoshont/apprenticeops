@@ -64,6 +64,11 @@ A run is reproducible because the node is **locked and proven**, not assumed:
 - **Self‑describing data:** every row carries `env.*` (host, kernel, ollama_version,
   harness_git, cpu_no_turbo, governor, rapl_domain, num_ctx, run_id, scenarios_sha)
   and `reset.*`, so the regime is auditable from the data alone.
+- **Factor identity stamped:** `run.meta` and every result row carry
+  `model_set`, `scenario_set`, `env.memory_context`, and
+  `env.inference_strategy`. Strategy runs also stamp `strategy.*` selection
+  metadata; timeout-policy and stall-forensics fields make reliability part of
+  the measured regime, not post-hoc guesswork.
 
 ## 4. The pipeline — seven named stages
 
@@ -101,7 +106,9 @@ appendix: it shows every model traversed the identical S1→S7 sequence.
 
 ### 4a. Producer — inference scheduler, stages S1–S4 (runs ON `ai`)
 `scripts/run-roster.sh` → `run.py`. Locks the node, preflight must pass, then runs
-`data/models.txt` one model at a time through all **24 scenarios × 5 reps**.
+the selected `model_set` one model at a time through the selected `scenario_set`
+and repetitions. The default canonical roster uses five reps; pilot sets can be
+smaller but still use the same row contract.
 
 - **Idempotent + resumable at MODEL level:** on start it scans the results file and
   **skips any model already complete** (has a row for every scenario×rep). A crash
@@ -111,13 +118,18 @@ appendix: it shows every model traversed the identical S1→S7 sequence.
 - **Handoff signal:** when a model finishes all its scenarios, run.py appends one
   line to **`results.<RUN_ID>.jsonl.done`** (`{model, bracket, ts, units}`). This is
   the only coupling to the consumer.
+- **Strategy axis:** `INFERENCE_STRATEGY` controls how each final answer is
+  produced. `baseline` is one call; `best_of_3_detcheck` and
+  `self_consistency_3` run three candidates; `evaluator_optimizer_1` generates,
+  critiques, and revises. The final row carries the selected answer and
+  `strategy.*`; candidate completions are written as sidecar JSONL artifacts.
 - **Outputs:** `results.<RUN_ID>.jsonl`, `outputs/<model>__<scenario>__rN.txt`
-  (+ `.think.txt`), `logs/<RUN_ID>/`.
+  (+ `.think.txt`, `.candidates.jsonl` when a multi-candidate strategy is used),
+  `logs/<RUN_ID>/`.
 - Runs **detached** (nohup/systemd) on `ai`. It knows nothing about the judge.
 
 ### 4b. Consumer — judge + commit scheduler (runs ON `home`)
-`scripts/judge-scheduler.sh` *(to build)*. A long‑running loop, **independent
-lifecycle**:
+`scripts/judge-scheduler.sh`. A long‑running loop, **independent lifecycle**:
 
 1. Pull new `.done` entries + the corresponding result rows + `outputs/` for newly
    complete models from `ai` (rsync over SSH).
@@ -134,6 +146,23 @@ lifecycle**:
   source of truth + judge.py itself skips done rows); safe to `kill -9` and restart.
 - It knows nothing about the producer's internals — only the `.done` marker + the
   pulled data.
+- **Candidate evidence:** when strategy sidecars exist, the commit includes a
+  per-model candidate archive next to the gzipped result slice so best-of-N
+  selection is auditable after the run.
+
+### 4b.1. Reliability gate
+
+Before comparing quality across memory or strategy conditions, run:
+
+```bash
+python3 scripts/report-run-quality.py data/runs/<RUN_ID>
+```
+
+The report summarizes row completeness, parse errors, DNF/timeout/stall/length,
+zero-output stalls, judge-empty/evidence gaps, persistence, and judge-token usage.
+Dashboard status exposes the same reliability rollups for the selected run. A
+condition that improves judged score while increasing DNF is reported as a
+trade-off, not a clean lift.
 
 ### 4c. Decoupling
 The `.done` marker (S4) is the entire contract. The producer never blocks on the

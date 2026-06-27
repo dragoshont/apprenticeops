@@ -1,15 +1,19 @@
-# Test Plan — Small-Model Reasoning Eval
+# Test Plan — CEOps Small-Model Reasoning Eval
 
-> Status: **design / not yet run.** Operator kicks off the run (§9).
-> Pairs with [`MODELS.md`](MODELS.md) (what to test) and [`MARKET.md`](MARKET.md)
-> (what to distrust).
+> Status: **live harness / evolving study plan.** The original model-selection
+> sweep has run; this plan now describes the current CEOps premise and the next
+> controlled axes. Pairs with [`MODELS.md`](MODELS.md) (what to test),
+> [`MARKET.md`](MARKET.md) (what to distrust), and
+> [`EXPERIMENT-PIPELINE.md`](EXPERIMENT-PIPELINE.md) (how a run executes).
 
 ## 1. Objective & success criteria
 
-**Question:** Of the downloadable small models that fit the breakglass node
-(≤ ~5 GB resident, CPU-only), **which reason best about homelab operations** —
-detecting issues, diagnosing root cause, prescribing a fix, and producing
-correct structured output — *without* relying on tool-calling?
+**Question:** Under a locally-sovereign CPU-only constraint, which small models
+and run regimes produce useful homelab-ops answers **without hiding reliability
+loss**? The original answer was a model-selection map. The current CEOps premise
+adds two controlled factors on top of that map: `memory_context` (what durable
+background is injected) and `inference_strategy` (how many local calls and what
+selection rule produce the final answer).
 
 **A model "passes" for production use on this node if it:**
 1. Scores ≥ 70 % of the frontier reference (Claude Opus 4.8) on the homelab
@@ -19,8 +23,40 @@ correct structured output — *without* relying on tool-calling?
 4. Fits with headroom: resident + 8 K-ctx KV ≤ 18 GB (leaves room for the OS +
    the OpenClaw gateway's 2 GB cgroup).
 
-A model can also pass as a **batch/scheduled-only** tier (drops criterion 2) if
-it's accurate but slow.
+A model or run regime can also pass as a **batch/scheduled-only** tier (drops
+criterion 2) if it is accurate but slow. A memory or strategy condition does not
+pass if it improves judged quality only by increasing DNF/stall/length or
+judge-empty rows; reliability is part of the result.
+
+## 1a. Current test premise: four factors plus a reliability gate
+
+The live CEOps matrix is:
+
+```text
+model_set × scenario_set × memory_context × inference_strategy
+```
+
+| Factor | Question it answers | Examples |
+|---|---|---|
+| `model_set` | Which models are being compared? | `dryrun`, `spread10`, `strategy-pilot-2`, `full` |
+| `scenario_set` | Which tasks are being measured? | `core-current`, `strategy-pilot-6`, `all` |
+| `memory_context` | What stable background is injected? | `none`, `homelab-okf-v1`, `homelab-okf-3kb-v1` |
+| `inference_strategy` | How is the final answer produced? | `baseline`, `single_call_tournament_brief`, `best_of_3_detcheck`, `self_consistency_3`, `evaluator_optimizer_1` |
+
+The premise is not that every factor should be multiplied immediately. The
+premise is that factor boundaries must stay visible so an observed lift can be
+interpreted. A clean claim changes **one factor at a time** unless the analysis
+explicitly names the interaction under test.
+
+Every comparison first runs:
+
+```bash
+python3 scripts/report-run-quality.py data/runs/<RUN_ID>
+```
+
+The report's DNF, length, zero-output stall, and judge-empty counts are read
+alongside quality. This prevents a biased result where a condition looks better
+because hard rows failed to produce answers.
 
 ## 2. The node under test (fixed variables)
 
@@ -37,7 +73,7 @@ pull — it halves throughput); same prompt templates; temp pinned per task;
 `think:false` unless the model is a designated reasoning/thinking model (then
 `think:true` is part of *that* model's profile and noted).
 
-## 3. Two-axis methodology (why both)
+## 3. Methodology: model selection first, controlled interventions second
 
 | Axis | Instrument | Measures | Repeatable? | Relevant? |
 |---|---|---|---|---|
@@ -46,7 +82,9 @@ pull — it halves throughput); same prompt templates; temp pinned per task;
 
 Axis A anchors each model against the public leaderboard (sanity + contamination
 check — §`MARKET.md`). Axis B is the decision-maker. A model only ships if it
-wins **B**; A explains *why*.
+wins **B**; A explains *why*. The newer `memory_context` and
+`inference_strategy` axes are **interventions** on Axis B, not replacements for
+the model-selection premise.
 
 ### Axis A — academic subset (lm-eval-harness)
 Run a **reasoning-weighted subset** (full leaderboard is overkill for ≤5 GB

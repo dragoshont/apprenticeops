@@ -217,12 +217,23 @@ This level of measurement depth is unusual for LLM evaluation. The reason: on CP
 
 ## Telemetry field reference
 
-The current CEOps runner emits **129 fields per inference row** and **14 fields per judge row**. This is the live `results.*.jsonl` / `judged.*.jsonl` schema observed on the `spread10` memory-axis run on 2026-06-27; complete inspected runs had every inference field present on every row.
+The CEOps runner schema is intentionally append-only. The `spread10` memory-axis
+audit on 2026-06-27 observed a structurally complete **129-field base inference
+row** and **14-field base judge row**; the current runner extends that contract
+with strategy, timeout-policy, prompt-size, stall-forensics, and reliability
+fields. Treat the field list below as the **current semantic contract**, not as a
+fixed column count.
 
-> **Scope honesty:** field presence does not mean every value is informative. For `DNF:stall` rows, Ollama may never return final token counters, so fields such as `gen_ai.usage.input_tokens` are present but can be `0`/`null`. That is a measured failure mode, not a missing column; [#1](https://github.com/dragoshont/apprenticeops/issues/1) tracks the next instrumentation needed to locate the exact stall phase.
+> **Scope honesty:** field presence does not mean every value is informative. For
+> `DNF:stall` rows, Ollama may never return final token counters, so fields such
+> as `gen_ai.usage.input_tokens` can be `0`/`null`. That is a measured failure
+> mode, not a missing column. The current schema records `stall_phase`, HTTP
+> timing, prompt diagnostics, effective timeout policy, and compact Ollama process
+> snapshots so the next run can distinguish prompt-eval/API stalls from ordinary
+> slow decode.
 
 <details>
-<summary><strong>Inference rows: 129 fields, grouped by source and meaning</strong></summary>
+<summary><strong>Inference rows: current semantic groups</strong></summary>
 
 ### Core scenario, scoring, and request identity
 
