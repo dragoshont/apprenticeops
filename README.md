@@ -71,15 +71,25 @@ This redraws the requirement stack for a small local ops model:
 
 This is why we measure two grounding modes per scenario: **closed-book** (in-weights knowledge only) and **grounded** (correct reference material supplied in-context, simulating perfect local retrieval). The gap between them is directly actionable — it answers "do I need a vector database next to my tiny model, and how much does it buy me?"
 
-The updated experiment adds a second, orthogonal comparison: **memory context**.
-The dashboard and runner can execute the same model/scenario set with
-`memory_context=none` or `memory_context=homelab-okf-v1`. The memory condition is
-stamped into every raw row as `env.memory_context`, carried into the flat dataset
-and report tables, and should be compared only against a run with the same models,
-scenario set, repeats, sampler settings, judge configuration, and node manifest.
-The first memory file is intentionally a small OKF/LLM-wiki bundle, not vector RAG;
-this tests whether a compact curated homelab briefing helps before we pay the
-complexity cost of retrieval infrastructure.
+The updated experiment adds two orthogonal comparison axes: **memory context**
+and **inference strategy**. The dashboard and runner can execute the same
+model/scenario set with `memory_context=none`, `homelab-okf-v1`, or
+`homelab-okf-3kb-v1`; the condition is stamped into every raw row as
+`env.memory_context`. Separately, `inference_strategy` records *how* the answer
+was produced: `baseline`, `single_call_tournament_brief`,
+`best_of_3_detcheck`, `self_consistency_3`, or `evaluator_optimizer_1`.
+
+The distinction is load-bearing. Memory tests whether curated homelab background
+helps. Strategy tests whether extra inference-time computation helps. Mixing the
+two would make any lift uninterpretable. Multi-candidate strategies write
+auditable candidate sidecars and stamp selection metadata (`strategy.*`) into the
+final row; reports group DNF/stall/length by both memory and strategy so quality
+cannot improve by silently dropping harder rows.
+
+Use the deliberately small pilot before multiplying the full `spread10` matrix:
+`model_set=strategy-pilot-2` (qwen3:4b plus granite4:micro),
+`scenario_set=strategy-pilot-6` (six structured/safety/multi-step scenarios),
+`memory_context=none` or `homelab-okf-3kb-v1`, and the strategy variants above.
 
 ---
 
@@ -151,7 +161,7 @@ for the decision summary,
 for the source-backed scan, and the earlier inventory audit in
 [`docs/SCENARIO_AUDIT_2026-06-24.md`](docs/SCENARIO_AUDIT_2026-06-24.md).
 
-The scenarios are drawn from a production homelab cluster (`home.hont.ro`,
+The scenarios are drawn from a production homelab cluster (`home.home.domain`,
 Kubernetes, Flux, Traefik, Plex, *arr stack) and synthetic-but-repo-grounded
 extensions that preserve the same operational shapes. They span these task
 classes:
@@ -170,7 +180,7 @@ classes:
 
 Scenarios are labelled `easy / medium / hard`. The **easy** tier is a passable floor — any useful model should clear it. The **hard** `foresee-*` scenarios are deliberate traps: the SMART health check is `PASSED` while reallocated sectors are climbing; the TLS cert is `Ready=True` while the DNS-01 auto-renewal has been 403-ing for days. Labels are validated empirically against the accuracy-by-difficulty table — if the ordering doesn't hold, the label is revised.
 
-The corpus marks grounding explicitly. The captured subset is real `home.hont.ro`
+The corpus marks grounding explicitly. The captured subset is real `home.home.domain`
 telemetry; the synthetic-but-repo-grounded subset is constructed from this
 homelab's actual conventions and failure surfaces. That distinction matters for
 claims about contamination and generalisation.
@@ -202,6 +212,296 @@ The harness captures far more than pass/fail. Per-request fields include:
 - CPU frequency logged at 1 Hz as throttle evidence
 
 This level of measurement depth is unusual for LLM evaluation. The reason: on CPU-only inference, the question "why is this model slower?" is non-trivial. A low IPC with high LLC-miss rate is the fingerprint of a memory-bandwidth-bound decode. A model that looks fast on token/s may be stalling on swap. These numbers tell you *why*, not just *what*.
+
+---
+
+## Telemetry field reference
+
+The current CEOps runner emits **129 fields per inference row** and **14 fields per judge row**. This is the live `results.*.jsonl` / `judged.*.jsonl` schema observed on the `spread10` memory-axis run on 2026-06-27; complete inspected runs had every inference field present on every row.
+
+> **Scope honesty:** field presence does not mean every value is informative. For `DNF:stall` rows, Ollama may never return final token counters, so fields such as `gen_ai.usage.input_tokens` are present but can be `0`/`null`. That is a measured failure mode, not a missing column; [#1](https://github.com/dragoshont/apprenticeops/issues/1) tracks the next instrumentation needed to locate the exact stall phase.
+
+<details>
+<summary><strong>Inference rows: 129 fields, grouped by source and meaning</strong></summary>
+
+### Core scenario, scoring, and request identity
+
+| Field | Meaning |
+|---|---|
+| `aiopslab_task` | Coarse AIOps task mapping used for comparison with AIOps-style taxonomies. |
+| `bracket` | Model footprint/size bracket from the model roster comment, such as `3-4B`. |
+| `class` | ApprenticeOps scenario class, such as `diagnose`, `secure`, `guard`, or `capacity`. |
+| `decode_tok_s` | Response decode throughput in output tokens per second, using Ollama's final eval counters when available. |
+| `det_detail` | Per-check deterministic evaluation results: description, check type, and pass/fail. |
+| `det_passed` | Number of deterministic checks passed for this scenario answer. |
+| `det_score` | Deterministic score as `det_passed / det_total`. |
+| `det_total` | Number of deterministic checks attached to the scenario. |
+| `difficulty` | Scenario difficulty label: `easy`, `medium`, or `hard`. |
+| `dnf` | Boolean: the request did not finish normally (`DNF:*` finish reason). |
+| `grounding` | Grounding regime label, such as `closed-book` or `grounded`. |
+| `min_mem_avail_mb` | Minimum host `MemAvailable` observed during the request. |
+| `model` | Ollama model tag used for the request. |
+| `pair_id` | Optional pairing identifier for paired scenario variants; `null` when unpaired. |
+| `peak_swap_mb` | Peak host swap usage during the request. |
+| `prefill_tok_s` | Prompt prefill throughput in input tokens per second, when Ollama returns prefill counters. |
+| `progress_trace` | Streaming progress curve: elapsed seconds and cumulative output characters. |
+| `rep` | Repetition index for this model/scenario pair. |
+| `samples` | Full host sampler time series captured during the request. |
+| `scenario` | Scenario identifier. |
+| `seed` | Sampling seed for this repetition. |
+| `temp` | Sampling temperature used for this request. |
+| `think` | Whether Ollama thinking mode was enabled for this run. |
+| `ts` | Unix timestamp when the row was emitted. |
+| `wall_s` | Request wall-clock duration in seconds. |
+| `warmup_err` | Cold-load/warmup error string, if warmup failed; otherwise `null`. |
+| `warmup_s` | Cold-load warmup duration for the model before scenario requests. |
+
+### Decode stream quality
+
+| Field | Meaning |
+|---|---|
+| `decode.dt_max_ms` | Maximum inter-token/chunk gap observed in the streamed response. |
+| `decode.dt_p50_ms` | Median inter-token/chunk gap for stream smoothness. |
+| `decode.dt_p95_ms` | 95th-percentile inter-token/chunk gap; high values indicate visible stutter. |
+
+### Disk and network activity
+
+| Field | Meaning |
+|---|---|
+| `disk.read_mb` | Approximate disk read volume during the request. |
+| `net.peak_kb_s` | Peak non-loopback network throughput during the request; expected to be near zero during local inference. |
+| `net.total_kb` | Total non-loopback network bytes observed during the request, in KiB. |
+
+### Run environment and reproducibility stamp
+
+| Field | Meaning |
+|---|---|
+| `env.cpu_governor` | Live CPU frequency governor at row time. |
+| `env.cpu_max_perf_pct` | Intel p-state max performance percentage. |
+| `env.cpu_min_perf_pct` | Intel p-state min performance percentage. |
+| `env.cpu_no_turbo` | Intel p-state turbo-disable flag (`1` means Turbo is disabled). |
+| `env.harness_git` | Short git commit of the harness used on the inference node. |
+| `env.harness_dirty` | Whether the inference-node working tree had uncommitted changes. Canonical paper runs should be `false`; dashboard/dev runs may be `true`. |
+| `env.host` | Hostname of the inference node. |
+| `env.kernel` | Linux kernel version on the inference node. |
+| `env.inference_strategy` | Inference strategy identifier, such as `baseline`, `best_of_3_detcheck`, or `evaluator_optimizer_1`. This is separate from memory. |
+| `env.memory_context` | Memory condition identifier, such as `none`, `homelab-okf-v1`, or `homelab-okf-3kb-v1`. |
+| `env.memory_context_file` | Memory-context file path injected into the prompt, or `null` for `none`. |
+| `env.memory_context_sha` | SHA-256 of the memory-context file, or `null` for `none`. |
+| `env.num_ctx` | Ollama context length requested by the harness. |
+| `env.ollama_version` | Ollama version string reported by the node. |
+| `env.perf_core` | Whether CPU-core `perf` counters were enabled. |
+| `env.perf_event_paranoid` | Linux perf access setting at row time. |
+| `env.perf_membw` | Whether memory-bandwidth `perf` counters were enabled. |
+| `env.rapl_domain` | Intel RAPL domain used for energy, normally `package-0`. |
+| `env.run_id` | Run identifier stamped into the row. |
+| `env.sample_interval_s` | Host sampler interval in seconds. |
+| `env.scenario_set` | Scenario-set identifier, such as `core-current`. |
+| `env.scenarios_path` | Scenario file used by the run. |
+| `env.scenarios_sha` | SHA-256 of the scenario file. |
+| `env.strategy_prompt_file` | Optional strategy prompt file path used by prompt-only inference strategies. |
+| `env.strategy_prompt_sha` | SHA-256 of the strategy prompt file, or `null` for strategies without a prompt file. |
+
+### Effective policy and prompt diagnostics
+
+| Field | Meaning |
+|---|---|
+| `effective.max_tokens` | Effective `num_predict` cap after scenario/model/memory/strategy policy resolution. |
+| `effective.policy_reasons` | Reasons that modified the base timeout policy, such as `memory_context` or `known_slow_model`. |
+| `effective.retry_attempts` | Compact summaries of retry attempts for zero-output stalls. |
+| `effective.retry_count` | Number of zero-output stall retries used by the selected answer. |
+| `effective.retry_reason` | Retry trigger; currently `zero_output_stall` when a retry was used. |
+| `effective.stall_s` | Effective no-token stall watchdog in seconds. |
+| `effective.timeout_policy_id` | Named timeout policy, so old/new regimes are not mixed in analysis. |
+| `effective.timeout_s` | Effective wall-clock timeout in seconds. |
+| `prompt.char_count` | Full final prompt character count before strategy wrapping. |
+| `prompt.estimated_tokens` | Token estimate from character count; useful when Ollama never returns prompt token counters. |
+| `prompt.memory_char_count` | Injected memory-context character count. |
+| `prompt.scenario_context_char_count` | Scenario context character count. |
+| `prompt.task_char_count` | Scenario task/question character count. |
+
+### Strategy selection metadata
+
+| Field | Meaning |
+|---|---|
+| `strategy.candidate_count` | Number of local model calls used to produce the selected answer. |
+| `strategy.candidates` | Candidate summaries, including selected flag, deterministic score, finish reason, retry count, and completion text. |
+| `strategy.extra_calls` | Additional local calls beyond baseline. |
+| `strategy.failure_mode` | Selected answer failure mode when the final answer is a DNF. |
+| `strategy.id` | Strategy id copied from `env.inference_strategy`. |
+| `strategy.prompt_sha256` | Strategy prompt SHA when a prompt file is used. |
+| `strategy.sample_index` | Reserved for future repeated strategy samples; currently `0`. |
+| `strategy.selected_candidate` | Candidate index selected as the final answer. |
+| `strategy.selection_method` | Selection rule, such as `max_det_score_then_non_dnf`. |
+| `strategy.total_input_tokens` | Sum of Ollama input tokens across all candidate calls that returned counters. |
+| `strategy.total_output_tokens` | Sum of Ollama output tokens across all candidate calls. |
+| `strategy.total_retry_count` | Sum of zero-output stall retries across candidate calls. |
+| `strategy.total_wall_s` | Total strategy wall time across candidate calls. |
+| `strategy.version` | Strategy implementation version. |
+
+### OpenTelemetry GenAI fields
+
+| Field | Meaning |
+|---|---|
+| `gen_ai.completion` | Raw assistant answer text used for checks and judging. |
+| `gen_ai.operation.name` | GenAI operation name; currently `chat`. |
+| `gen_ai.request.max_tokens` | `num_predict` cap sent to Ollama. |
+| `gen_ai.request.model` | Model name sent to the Ollama API. |
+| `gen_ai.request.seed` | Seed sent in Ollama options. |
+| `gen_ai.request.temperature` | Temperature sent in Ollama options. |
+| `gen_ai.response.finish_reasons` | Final reason list, e.g. `stop`, `length`, `DNF:timeout`, or `DNF:stall`. |
+| `gen_ai.server.time_to_first_token_s` | Seconds to first thinking/content chunk; `null` if no token arrived. |
+| `gen_ai.thinking` | Raw thinking text, when a thinking model emits it. |
+| `gen_ai.thinking.chars` | Character count of thinking text. |
+| `gen_ai.usage.input_tokens` | Ollama prompt token count from the final response; can be `0` when no final response arrives. |
+| `gen_ai.usage.output_chars` | Character count of the answer text. |
+| `gen_ai.usage.output_tokens` | Ollama output token count, or a best-effort estimate for partial output. |
+
+### GPU and CPU-only proof
+
+| Field | Meaning |
+|---|---|
+| `gpu.peak_freq_mhz` | Peak Intel iGPU frequency during the request; used as evidence that Ollama is not using the iGPU for inference. |
+
+### Host memory and process footprint
+
+| Field | Meaning |
+|---|---|
+| `mem.avail_start_mb` | Host `MemAvailable` at request start. |
+| `mem.peak_rss_mb` | Peak RSS of the Ollama runner process. |
+| `mem.rss_start_mb` | Runner RSS at request start. |
+| `swap.start_mb` | Host swap usage at request start. |
+
+### DRAM bandwidth
+
+| Field | Meaning |
+|---|---|
+| `membw.peak_mb_s` | Peak DRAM bandwidth observed by Intel uncore IMC counters. |
+| `membw.requests` | Aggregate IMC requestor split: CPU cores (`ia`), iGPU (`gt`), and IO. |
+| `membw.series` | Per-sample DRAM read/write bandwidth series. |
+
+### Ollama model identity and runtime metadata
+
+| Field | Meaning |
+|---|---|
+| `ollama.block_count` | Transformer block/layer count reported by Ollama model metadata. |
+| `ollama.capabilities` | Ollama-declared model capabilities. |
+| `ollama.context_length` | Native model context length from Ollama metadata. |
+| `ollama.cpu_pct` | Percent of loaded model bytes resident on CPU memory according to `/api/ps`. |
+| `ollama.digest` | Ollama model digest; detects tag drift. |
+| `ollama.embedding_length` | Model embedding width. |
+| `ollama.expert_count` | Total MoE expert count, when the architecture reports it. |
+| `ollama.expert_shared_count` | Shared expert count for MoE models, when present. |
+| `ollama.expert_used_count` | Experts used per token for MoE models, when present. |
+| `ollama.family` | Model family reported by Ollama, such as `llama` or `qwen2`. |
+| `ollama.feed_forward_length` | Feed-forward hidden width from model metadata. |
+| `ollama.gpu_pct` | Percent of loaded model bytes resident on GPU/VRAM according to `/api/ps`. |
+| `ollama.head_count` | Attention query-head count. |
+| `ollama.head_count_kv` | KV head count; useful for GQA/KV-cache compression. |
+| `ollama.load_duration_s` | Ollama load duration from the response payload. |
+| `ollama.parameter_count` | Exact parameter count from Ollama metadata. |
+| `ollama.parameter_size` | Human-readable model parameter-size label from Ollama. |
+| `ollama.parameters` | Model Modelfile parameter defaults captured for sampler audit. |
+| `ollama.quantization` | Quantization level, such as `Q4_K_M`. |
+| `ollama.quantization_version` | GGUF quantization version, when reported. |
+| `ollama.rope_dimension_count` | RoPE dimension count from metadata. |
+| `ollama.rope_freq_base` | RoPE frequency base from metadata. |
+| `ollama.size_bytes` | Loaded model size in bytes from `/api/ps`. |
+| `ollama.size_vram_bytes` | Loaded model bytes in VRAM; `0` is direct evidence of CPU-only inference. |
+| `ollama.tokenizer_model` | Tokenizer model name reported by GGUF metadata. |
+| `ollama.total_duration_s` | Ollama total request duration from the final response payload. |
+| `ollama.vocab_size` | Vocabulary size from model metadata. |
+
+### HTTP and stall forensics
+
+| Field | Meaning |
+|---|---|
+| `done_at` / `http.done_at_s` | Seconds until Ollama's final `done` event, if any. |
+| `first_byte_at` / `http.first_byte_at_s` | Seconds until the first streamed byte. |
+| `first_content_at` / `http.first_content_at_s` | Seconds until first thinking/content token. |
+| `first_json_at` / `http.first_json_at_s` | Seconds until first parseable streamed JSON event. |
+| `http.connected_at_s` / `http_connected_at` | Seconds until response headers were received. |
+| `http.exception` / `socket_exception` | Socket/URL exception class and short message for failed streams. |
+| `ollama.ps.after` | Compact `/api/ps` snapshot after a DNF. |
+| `ollama.ps.before` | Compact `/api/ps` snapshot before the request. |
+| `stall.phase` / `stall_phase` | Stall classification: before response headers, before first byte/JSON/token, during decode, or after missing done. |
+
+### Perf and request phases
+
+| Field | Meaning |
+|---|---|
+| `perf.core` | Derived CPU-core perf counters, such as IPC and cache-miss counts, when enabled. |
+| `phase.decode_s` | Ollama decode/eval duration in seconds. |
+| `phase.prefill_s` | Ollama prompt prefill duration in seconds. |
+| `phase.think_s` | Time until answer content begins after thinking output, for thinking models. |
+
+### Power and energy
+
+| Field | Meaning |
+|---|---|
+| `power.energy_wh` | Request energy in watt-hours. |
+| `power.idle_watts` | Idle baseline power measured before the run. |
+| `power.mean_watts` | Mean request power. |
+| `power.peak_dram_w` | Peak DRAM subdomain power, when RAPL exposes it. |
+| `power.peak_watts` | Peak package/plug power during the request. |
+| `power.source` | Energy source, e.g. `rapl:package-0` or smart-plug telemetry. |
+
+### Process counters
+
+| Field | Meaning |
+|---|---|
+| `proc.ctxt_switches` | Voluntary plus involuntary context-switch delta for the model runner. |
+| `proc.majflt` | Major page-fault delta for the model runner. |
+| `proc.minflt` | Minor page-fault delta for the model runner. |
+
+### Per-model reset-state evidence
+
+| Field | Meaning |
+|---|---|
+| `reset.cpu_freq_mhz` | Mean CPU frequency immediately before the model run. |
+| `reset.cpu_governor` | CPU governor immediately before the model run. |
+| `reset.cpu_no_turbo` | Turbo-disable flag immediately before the model run. |
+| `reset.cpu_temp_c` | Package temperature immediately before the model run. |
+| `reset.load1` | One-minute system load immediately before the model run. |
+| `reset.mem_avail_mb` | Available memory immediately before the model run. |
+| `reset.ok` | Boolean: reset-state guard found no start-state warnings. |
+| `reset.perf_event_paranoid` | Perf access setting at reset snapshot. |
+| `reset.running_procs` | Number of processes in running state at reset snapshot. |
+| `reset.swap_used_mb` | Swap used at reset snapshot. |
+| `reset.top_proc` | Top non-harness CPU process if one looked suspicious. |
+| `reset.warnings` | Semicolon-separated reset warnings, or `null`. |
+
+### Thermal telemetry
+
+| Field | Meaning |
+|---|---|
+| `thermal.peak_c` | Peak CPU package temperature during the request. |
+| `thermal.start_c` | CPU package temperature at request start. |
+
+</details>
+
+<details>
+<summary><strong>Judge rows: 15 fields</strong></summary>
+
+| Field | Meaning |
+|---|---|
+| `criteria_met` | Judge-reported rubric criteria satisfied by the answer. |
+| `criteria_missed` | Judge-reported rubric criteria missed by the answer. |
+| `evidence` | Judge rationale/evidence for the assigned score. |
+| `inference_strategy` | Strategy condition copied into the judge row for direct comparison. |
+| `judge_backend` | Judge execution backend; currently Copilot CLI for the live CEOps path. |
+| `judge_model` | Judge model identifier, such as `claude-opus-4.6` or `gpt-5.4`. |
+| `memory_context` | Memory condition copied into the judge row for direct comparison. |
+| `model` | Evaluated Ollama model tag. |
+| `rep` | Repetition index judged. |
+| `scenario` | Scenario identifier judged. |
+| `scenarios_path` | Scenario file used by the judge. |
+| `scenarios_sha256` | SHA-256 of the scenario file used by the judge. |
+| `score` | Judge score on the 1–5 rubric. |
+| `usage` | Judge-provider usage object when available; `null` for backends that do not return it. |
+| `verdict` | Short structured verdict from the judge; `empty` is used for empty/DNF answers. |
+
+</details>
 
 ---
 
@@ -294,7 +594,7 @@ apprenticeops/
 
 ## Honest limitations
 
-**1. Judge egress.** We use Claude 4.8 off-node to *score* answers. The system-under-test never calls it. But the judge sees the scenario text, which contains real cluster detail: namespace names, Azure Key Vault references, Cloudflare DNS, `*.hont.ro`. This is real ops data sent to a third party. Released scenarios are scrubbed and anonymised. This egress must be disclosed in any publication. See the public-service dependency map in [`docs/PAPER.md`](docs/PAPER.md).
+**1. Judge egress.** We use Claude 4.8 off-node to *score* answers. The system-under-test never calls it. But the judge sees the scenario text, which contains real cluster detail: namespace names, Azure Key Vault references, Cloudflare DNS, `*.home.domain`. This is real ops data sent to a third party. Released scenarios are scrubbed and anonymised. This egress must be disclosed in any publication. See the public-service dependency map in [`docs/PAPER.md`](docs/PAPER.md).
 
 **2. Grounded = oracle retrieval upper bound.** We inject the correct reference text directly into context. A real local-RAG pipeline adds retrieval error, chunking artifacts, and embedding drift. Our grounded numbers are the *ceiling* of what local retrieval can buy, not the expected value in a deployed system.
 

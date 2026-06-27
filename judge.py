@@ -226,6 +226,44 @@ JUDGE_SYS = (
 )
 
 
+def _as_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [str(value)]
+
+
+def normalize_judgement(judgement, *, fallback_score=None, fallback_verdict=None,
+                        fallback_evidence=None, fallback_criteria_missed=None):
+    """Return a schema-stable judge payload.
+
+    Some legitimate paths do not involve a model judge at all: a DNF/stall can
+    produce no answer text, so judge.py assigns score=1/verdict=empty locally.
+    Those rows still need the same detail fields as normal judge rows so the JSONL
+    artifact is complete and reportable.
+    """
+    if not isinstance(judgement, dict):
+        judgement = {}
+    out = dict(judgement)
+    if out.get("score") is None and fallback_score is not None:
+        out["score"] = fallback_score
+    out["verdict"] = str(out.get("verdict") or fallback_verdict or "missing verdict")
+    out["evidence"] = str(
+        out.get("evidence")
+        or out.get("reason")
+        or out.get("rationale")
+        or fallback_evidence
+        or "Judge did not return evidence."
+    )
+    out["criteria_met"] = _as_list(out.get("criteria_met"))
+    missed = _as_list(out.get("criteria_missed"))
+    if not missed and fallback_criteria_missed:
+        missed = _as_list(fallback_criteria_missed)
+    out["criteria_missed"] = missed
+    return out
+
+
 def judge_one(judge, scen, answer):
     user = (f"--- CONTEXT ---\n{scen['context']}\n\n--- TASK ---\n{scen['question']}\n\n"
             f"--- GOLD REFERENCE ---\n{scen['gold_answer']}\n\n"
@@ -234,15 +272,19 @@ def judge_one(judge, scen, answer):
             "Score now as the specified JSON.")
     raw = judge.complete(JUDGE_SYS, user, json_mode=True)
     try:
-        return json.loads(raw)
+        return normalize_judgement(json.loads(raw))
     except (json.JSONDecodeError, TypeError):
         m = re.search(r"\{.*\}", raw or "", re.S)  # tolerate prose-wrapped JSON (anthropic)
         if m:
             try:
-                return json.loads(m.group(0))
+                return normalize_judgement(json.loads(m.group(0)))
             except json.JSONDecodeError:
                 pass
-        return {"score": None, "evidence": "parse_error", "verdict": (raw or "")[:200]}
+        return normalize_judgement(
+            {"score": None, "verdict": (raw or "")[:200]},
+            fallback_evidence="parse_error",
+            fallback_criteria_missed=["judge response could not be parsed"],
+        )
 
 
 def reference_one(judge, scen):
@@ -358,7 +400,7 @@ def main():
         if not args.out:
             sys.exit("--judge needs --out")
         memory_context_by_unit = {}
-        # resume: skip (model, scenario, rep, memory_context, judge_model) already
+        # resume: skip (model, scenario, rep, memory_context, inference_strategy, judge_model) already
         # written to --out, so paired no-memory/memory runs can be judged together
         # without one condition suppressing the other.
         # so a long ensemble run that dies (sleep/network) continues instead of
@@ -371,7 +413,9 @@ def main():
                 except json.JSONDecodeError:
                     continue
                 done.add((d.get("model"), d.get("scenario"), str(d.get("rep")),
-                          d.get("memory_context") or "none", d.get("judge_model")))
+                          d.get("memory_context") or "none",
+                          d.get("inference_strategy") or "baseline",
+                          d.get("judge_model")))
             if done:
                 sys.stderr.write(f"resume: {len(done)} judged rows already in {args.out}; skipping them\n")
         cost = {"calls": 0, "ai_credits": 0.0, "tokens_in": 0, "tokens_out": 0,
@@ -399,8 +443,9 @@ def main():
                 continue
             rep = row.get("rep", 0)
             memory_context = row.get("env.memory_context") or "none"
-            memory_context_by_unit[(row["model"], sid, str(rep), memory_context)] = memory_context
-            if all((row["model"], sid, str(rep), memory_context, mo) in done for _, mo in specs):
+            inference_strategy = row.get("env.inference_strategy") or row.get("strategy.id") or "baseline"
+            memory_context_by_unit[(row["model"], sid, str(rep), memory_context, inference_strategy)] = memory_context
+            if all((row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done for _, mo in specs):
                 continue
             base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
             answer = row.get("gen_ai.completion") or ""
@@ -414,19 +459,25 @@ def main():
                         answer = open(fp).read()
                         break
             for be, mo in specs:
-                if (row["model"], sid, str(rep), memory_context, mo) in done:
+                if (row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done:
                     continue
-                tasks.append((row["model"], sid, rep, memory_context, answer, be, mo))
+                tasks.append((row["model"], sid, rep, memory_context, inference_strategy, answer, be, mo))
 
         def _judge_task(t):
-            model, sid, rep, memory_context, answer, be, mo = t
+            model, sid, rep, memory_context, inference_strategy, answer, be, mo = t
             if not answer:
-                return (model, sid, rep, memory_context, be, mo, {"score": 1, "verdict": "empty"}, None)
+                return (model, sid, rep, memory_context, inference_strategy, be, mo, normalize_judgement(
+                    {},
+                    fallback_score=1,
+                    fallback_verdict="empty",
+                    fallback_evidence="No answer text was available for judging; the inference row did not produce a completion.",
+                    fallback_criteria_missed=["answer was empty or unavailable"],
+                ), None)
             jg = Judge(backend=be, model=mo)   # fresh per task -> thread-safe usage
             for attempt in range(4):
                 try:
-                    j = judge_one(jg, scen[sid], answer)
-                    return (model, sid, rep, memory_context, be, mo, j, jg.last_usage)
+                    j = normalize_judgement(judge_one(jg, scen[sid], answer))
+                    return (model, sid, rep, memory_context, inference_strategy, be, mo, j, jg.last_usage)
                 except Exception as e:  # noqa: BLE001
                     if attempt == 3:
                         sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} "
@@ -443,14 +494,15 @@ def main():
                 res = fut.result()
                 if res is None:
                     continue
-                model, sid, rep, memory_context, be, mo, j, u = res
+                model, sid, rep, memory_context, inference_strategy, be, mo, j, u = res
                 if u:
                     cost["calls"] += 1
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
-                memory_context = memory_context_by_unit.get((model, sid, str(rep), memory_context), memory_context)
+                memory_context = memory_context_by_unit.get((model, sid, str(rep), memory_context, inference_strategy), memory_context)
                 f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
                                     "memory_context": memory_context,
+                                    "inference_strategy": inference_strategy,
                                     "scenarios_path": scen_path,
                                     "scenarios_sha256": scen_sha,
                                     "judge_backend": be, "judge_model": mo,

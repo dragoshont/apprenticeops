@@ -28,7 +28,7 @@ export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
   const { theme, toggle } = useTheme();
   const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
-  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[] });
+  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[], inferenceStrategy: "baseline" });
   const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
   const [sessionSearch, setSessionSearch] = useState("");
   const [sessionStatus, setSessionStatus] = useState("all");
@@ -56,6 +56,7 @@ export default function App() {
     (session) =>
       session.model_set === controlSelection.modelSet &&
       session.scenario_set === controlSelection.scenarioSet &&
+      (session.inference_strategy ?? "baseline") === (controlSelection.inferenceStrategy || "baseline") &&
       (controlSelection.memoryContexts.length
         ? controlSelection.memoryContexts.includes(session.memory_context ?? "none")
         : (session.memory_context ?? "none") === (controlSelection.memoryContext || "none")),
@@ -63,7 +64,7 @@ export default function App() {
   const scopedSessions = sessionScope === "matching" ? matchingSessions : sessions;
   const visibleSessions = scopedSessions.filter((session) => {
     const query = sessionSearch.trim().toLowerCase();
-    const text = [session.run_id, session.model_set, session.scenario_set, session.memory_context, session.state, session.user]
+    const text = [session.run_id, session.model_set, session.scenario_set, session.memory_context, session.inference_strategy, session.state, session.user]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -83,6 +84,7 @@ export default function App() {
     model_set: status?.meta?.model_set ?? null,
     scenario_set: status?.meta?.scenario_set ?? null,
     memory_context: status?.meta?.memory_context ?? "none",
+    inference_strategy: status?.meta?.inference_strategy ?? "baseline",
   };
   const selectedRunInBatch = displayBatch?.runs.find((run) => run.run_id === status?.run_id);
   const batchStillRunning = !!selectedBatch && !!selectedRunInBatch && selectedBatch.status === "running" && status?.state === "done";
@@ -93,6 +95,7 @@ export default function App() {
     modelSet: analyticsScope.model_set ?? controlSelection.modelSet,
     scenarioSet: analyticsScope.scenario_set ?? controlSelection.scenarioSet,
     memoryContext: analyticsScope.memory_context ?? controlSelection.memoryContext ?? "none",
+    inferenceStrategy: analyticsScope.inference_strategy ?? controlSelection.inferenceStrategy ?? "baseline",
   };
 
   return (
@@ -249,12 +252,13 @@ export default function App() {
               {/* selected-run header */}
               <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
 
+              <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} reliability={status?.reliability ?? null} />
+
               <InputInspector selection={selectedInputSelection} title="Current experiment inputs" />
 
               {/* live-only: progress hero + judge line + pipeline */}
               {live && (
                 <>
-                  <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} />
                   {status?.consumer?.status && (
                     <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
                       <Terminal className="h-3.5 w-3.5 text-good" />
@@ -416,6 +420,7 @@ function ScopeHeader({
         )}
         <span>{scope?.model_set ?? analyticsScope?.model_set ?? "models"} × {scope?.scenario_set ?? analyticsScope?.scenario_set ?? "scenarios"}</span>
         <span className="font-mono">memory_context={scope?.memory_context ?? analyticsScope?.memory_context ?? "none"}</span>
+        <span className="font-mono">inference_strategy={scope?.inference_strategy ?? analyticsScope?.inference_strategy ?? "baseline"}</span>
         <span>{persistenceLabel(persistence)}</span>
         <span className="text-faint">by {user}</span>
       </div>
@@ -439,7 +444,7 @@ function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; se
           </div>
           <div className="mt-1 font-mono text-[11px] text-faint">{batch.batch_id}</div>
           <div className="mt-1 text-xs text-muted">
-            {batch.model_set} × {batch.scenario_set} · {progress?.completed_runs ?? 0}/{progress?.total_runs ?? batch.runs.length} memory contexts complete
+            {batch.model_set} × {batch.scenario_set} × {batch.inference_strategy ?? "baseline"} · {progress?.completed_runs ?? 0}/{progress?.total_runs ?? batch.runs.length} memory contexts complete
             {progress?.current_memory_context ? ` · current memory_context=${progress.current_memory_context}` : ""}
           </div>
         </div>
@@ -469,6 +474,7 @@ function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; se
                   <div className="font-mono text-[10px] text-faint">JOB {run.ordinal ?? "?"}</div>
                   <div className="truncate text-xs font-medium text-fg">{run.run_id}</div>
                   <div className="mt-0.5 font-mono text-[10px] text-muted">memory_context={run.memory_context}</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-faint">inference_strategy={run.inference_strategy ?? batch.inference_strategy ?? "baseline"}</div>
                 </div>
                 <StatePill state={run.status} size="sm" />
               </div>

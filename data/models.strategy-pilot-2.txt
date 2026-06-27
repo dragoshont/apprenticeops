@@ -1,0 +1,8 @@
+# Strategy pilot roster - one strong option-search candidate plus one cheap small-model control.
+# Purpose: test baseline vs tournament-style strategy before multiplying the full matrix.
+
+# bracket: 2-3B
+granite4:micro
+
+# bracket: 3-4B
+qwen3:4b-instruct-2507-q4_K_M

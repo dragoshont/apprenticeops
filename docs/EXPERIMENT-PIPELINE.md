@@ -18,7 +18,7 @@ list, run once, resumable at model granularity.
 
 | Role | Node | Identity | Does | Has |
 |---|---|---|---|---|
-| **AI node** (producer) | `home-ai.hont.ro` (hostname `ai`) | i5‑8350U, 4C/8T, 24 GB, **ollama 0.30.8** | **inference only**, locked + offline | ollama, the locked power state |
+| **AI node** (producer) | `home-ai.home.domain` (hostname `ai`) | i5‑8350U, 4C/8T, 24 GB, **ollama 0.30.8** | **inference only**, locked + offline | ollama, the locked power state |
 | **Home node** (consumer/orchestrator) | hostname `home`, user `dragos` | x86_64 | **judge + git + orchestration** | git, gh (authed `dragoshont`, ssh), python 3.12, **GitHub Copilot CLI 1.0.36**, rsync, jq |
 
 `home → ai` is **passwordless SSH** (key authorized, host key trusted). The home

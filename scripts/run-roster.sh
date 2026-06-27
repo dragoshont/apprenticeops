@@ -23,6 +23,8 @@ SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 SCENARIO_SET="${SCENARIO_SET:-all}"
 MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
+INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
+STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
 mkdir -p "$LOGDIR" outputs
@@ -59,7 +61,28 @@ if [ "$MEMORY_CONTEXT" != "none" ] && [ -z "$MEMORY_CONTEXT_FILE" ]; then
   log "FATAL: MEMORY_CONTEXT=$MEMORY_CONTEXT requires MEMORY_CONTEXT_FILE (or data/run-matrix.json path)"
   exit 1
 fi
+if [ -z "$STRATEGY_PROMPT_FILE" ] && [ "$INFERENCE_STRATEGY" != "baseline" ]; then
+  STRATEGY_PROMPT_FILE="$(python3 - "$INFERENCE_STRATEGY" <<'PY'
+import json, sys
+strategy_id = sys.argv[1]
+with open("data/run-matrix.json", encoding="utf-8") as fh:
+    matrix = json.load(fh)
+for item in matrix.get("inference_strategies", []):
+    if item.get("id") == strategy_id:
+        print(item.get("prompt_path") or "")
+        break
+PY
+)"
+fi
+if [ -n "$STRATEGY_PROMPT_FILE" ]; then
+  [ -f "$STRATEGY_PROMPT_FILE" ] || { log "FATAL: $STRATEGY_PROMPT_FILE not found"; exit 1; }
+fi
+if [ "$INFERENCE_STRATEGY" = "single_call_tournament_brief" ] && [ -z "$STRATEGY_PROMPT_FILE" ]; then
+  log "FATAL: INFERENCE_STRATEGY=$INFERENCE_STRATEGY requires STRATEGY_PROMPT_FILE (or data/run-matrix.json prompt_path)"
+  exit 1
+fi
 log "memory: context=$MEMORY_CONTEXT file=${MEMORY_CONTEXT_FILE:-none}"
+log "strategy: inference_strategy=$INFERENCE_STRATEGY prompt=${STRATEGY_PROMPT_FILE:-none} timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -103,6 +126,8 @@ if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET"
   --scenarios "$SCENARIOS" \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
+  --inference-strategy "$INFERENCE_STRATEGY" \
+  ${STRATEGY_PROMPT_FILE:+--strategy-prompt-file "$STRATEGY_PROMPT_FILE"} \
   --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
   log "FATAL: preflight FAILED:"; sed 's/^/    /' "$LOGDIR/preflight.log" | tee -a "$LOGDIR/driver.log"
   exit 3
@@ -114,10 +139,12 @@ NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
 NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
 log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
+  --inference-strategy "$INFERENCE_STRATEGY" \
+  ${STRATEGY_PROMPT_FILE:+--strategy-prompt-file "$STRATEGY_PROMPT_FILE"} \
   --temp 0.7 --repeats 5 --seed-base 1 --rm-after ${LIMIT:+--limit "$LIMIT"} \
   --out "$OUT" >>"$LOGDIR/run.log" 2>&1
 rc=$?

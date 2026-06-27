@@ -2,7 +2,7 @@
 
 > **The blueprint we test against.** Every test class is grounded in an established
 > operations framework, so the benchmark covers *what operators actually do*, not
-> an ad-hoc list. Scenarios are then authored from **real `home.hont.ro` data** to
+> an ad-hoc list. Scenarios are then authored from **real `home.home.domain` data** to
 > fill each cell. Pairs with [`data/scenarios.json`](../data/scenarios.json) (the
 > cases) and [`PAPER.md`](PAPER.md) (the method).
 

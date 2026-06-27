@@ -175,16 +175,16 @@ Reward correct per-app status, catching ALL of: radarr timeout, plex GPU fallbac
 ### Context
 
 ```text
-GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.hont.ro cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO. [SYNTHETIC scenario, real repo conventions.]
+GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.home.domain cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO. [SYNTHETIC scenario, real repo conventions.]
 ```
 
 ### Task
 
-Give an ordered, minimal plan to add a new app 'immich' at immich.hont.ro to this cluster. List the concrete files/steps. Do not write the YAML.
+Give an ordered, minimal plan to add a new app 'immich' at immich.home.domain to this cluster. List the concrete files/steps. Do not write the YAML.
 
 ### Gold answer
 
-1) apps/media/immich/ (or apps/platform/): deployment.yaml + service.yaml. 2) Add immich.hont.ro to tls.hosts[] AND a routing rule on the shared Traefik Ingress (wildcard cert already covers it — no new cert). 3) Cloudflare DNS A record immich.hont.ro -> cluster IP (grey-cloud/LAN). 4) Add it to clusters/home/kustomization.yaml so Flux reconciles it. 5) SOPS/ESO secret if immich needs DB/credentials. 6) Homepage tile in apps/platform/homepage/configmap.yaml. 7) commit+push -> Flux reconcile -> verify pod Running + https://immich.hont.ro 200. The proxy+SSL+DNS trio must land together.
+1) apps/media/immich/ (or apps/platform/): deployment.yaml + service.yaml. 2) Add immich.home.domain to tls.hosts[] AND a routing rule on the shared Traefik Ingress (wildcard cert already covers it — no new cert). 3) Cloudflare DNS A record immich.home.domain -> cluster IP (grey-cloud/LAN). 4) Add it to clusters/home/kustomization.yaml so Flux reconciles it. 5) SOPS/ESO secret if immich needs DB/credentials. 6) Homepage tile in apps/platform/homepage/configmap.yaml. 7) commit+push -> Flux reconcile -> verify pod Running + https://immich.home.domain 200. The proxy+SSL+DNS trio must land together.
 
 ### Deterministic checks (judge-free)
 
@@ -398,7 +398,7 @@ metadata:
 spec:
   entryPoints: [websecure]
   routes:
-    - match: Host(`prometheus.hont.ro`)
+    - match: Host(`prometheus.home.domain`)
       kind: Rule
       services:
         - name: prometheus-server
@@ -412,7 +412,7 @@ Is there a security problem with exposing this route as-is? What is the fix?
 
 ### Gold answer
 
-YES — prometheus has no built-in auth, so this route publishes the cluster's full metrics + query UI to anyone who can resolve prometheus.hont.ro, with no login. Fix: attach the existing Authentik forward-auth middleware to the IngressRoute (middlewares: - name: authentik-forwardauth), or otherwise gate it (basic-auth middleware / keep it cluster-internal ClusterIP with no ingress). Do not expose an unauthenticated admin/metrics UI. Confirm the middleware is referenced before merging.
+YES — prometheus has no built-in auth, so this route publishes the cluster's full metrics + query UI to anyone who can resolve prometheus.home.domain, with no login. Fix: attach the existing Authentik forward-auth middleware to the IngressRoute (middlewares: - name: authentik-forwardauth), or otherwise gate it (basic-auth middleware / keep it cluster-internal ClusterIP with no ingress). Do not expose an unauthenticated admin/metrics UI. Confirm the middleware is referenced before merging.
 
 ### Deterministic checks (judge-free)
 
@@ -663,7 +663,7 @@ Reward overriding 'PASSED' based on the rising reallocated/pending sector trend,
 cert_manager_status:
   Certificate wildcard-hont-ro-tls (ns default): notAfter 2026-06-25T14:07Z, renewBefore 720h (30d), status Ready=True
   Current time: 2026-06-16. The cert-manager controller logs show repeated DNS-01 challenge errors: 'cloudflare API: 403 invalid token' over the last 5 days.
-The wildcard cert terminates TLS for all *.hont.ro services. [SYNTHETIC incident, real cert-manager + Cloudflare DNS-01 wildcard setup.]
+The wildcard cert terminates TLS for all *.home.domain services. [SYNTHETIC incident, real cert-manager + Cloudflare DNS-01 wildcard setup.]
 ```
 
 ### Task
@@ -672,7 +672,7 @@ Is there a problem brewing even though the certificate currently shows Ready=Tru
 
 ### Gold answer
 
-YES — a problem is brewing despite Ready=True. The cert expires 2026-06-25 (9 days out) and cert-manager should have auto-renewed it ~30 days before (renewBefore 720h), but the DNS-01 renewal is FAILING with a Cloudflare '403 invalid token' for 5 days running. So auto-renewal is broken; if not fixed, the wildcard expires on the 25th and TLS breaks for EVERY *.hont.ro service at once. Action NOW (don't wait for expiry): fix the Cloudflare API token (rotate/replace the cloudflare-api-token secret with a valid Zone:DNS:Edit token), then force/verify renewal succeeds and the new notAfter advances. This is preventive — a green status today hides an imminent cluster-wide outage.
+YES — a problem is brewing despite Ready=True. The cert expires 2026-06-25 (9 days out) and cert-manager should have auto-renewed it ~30 days before (renewBefore 720h), but the DNS-01 renewal is FAILING with a Cloudflare '403 invalid token' for 5 days running. So auto-renewal is broken; if not fixed, the wildcard expires on the 25th and TLS breaks for EVERY *.home.domain service at once. Action NOW (don't wait for expiry): fix the Cloudflare API token (rotate/replace the cloudflare-api-token secret with a valid Zone:DNS:Edit token), then force/verify renewal succeeds and the new notAfter advances. This is preventive — a green status today hides an imminent cluster-wide outage.
 
 ### Deterministic checks (judge-free)
 
@@ -730,16 +730,16 @@ Reward CALIBRATION: explicitly acknowledging the changelog is unavailable and mu
 ### Context
 
 ```text
-You're asked to add a new app 'immich' at immich.hont.ro to a GitOps Kubernetes homelab. You do NOT have this repo's conventions, directory layout, ingress, DNS, or secret-management docs in front of you. [SYNTHETIC, paired CLOSED-BOOK twin of expand-04 (which supplies the repo conventions); tests calibration when the reference is withheld.]
+You're asked to add a new app 'immich' at immich.home.domain to a GitOps Kubernetes homelab. You do NOT have this repo's conventions, directory layout, ingress, DNS, or secret-management docs in front of you. [SYNTHETIC, paired CLOSED-BOOK twin of expand-04 (which supplies the repo conventions); tests calibration when the reference is withheld.]
 ```
 
 ### Task
 
-Give an ordered, minimal plan to add a new app 'immich' at immich.hont.ro to this cluster. List the concrete files/steps. Do not write the YAML.
+Give an ordered, minimal plan to add a new app 'immich' at immich.home.domain to this cluster. List the concrete files/steps. Do not write the YAML.
 
 ### Gold answer
 
-Flag up front that you should RETRIEVE this repo's conventions first (README / an existing app's directory / runbook) rather than assume exact paths, ingress controller, DNS provider, or secret tooling. General GitOps process regardless: 1) create the app's workload manifests (Deployment + Service). 2) wire ingress/reverse-proxy with TLS for immich.hont.ro. 3) add a DNS record for the hostname. 4) register the app in the Flux kustomization so it reconciles. 5) handle any secrets via the repo's existing secret mechanism (not plaintext). 6) add a dashboard tile if the repo has one. 7) commit + push -> reconcile -> VERIFY pod Running + HTTPS 200 end-to-end. Explicitly note the exact paths / ingress class / cert setup / secret tooling must be CONFIRMED against the repo, not assumed.
+Flag up front that you should RETRIEVE this repo's conventions first (README / an existing app's directory / runbook) rather than assume exact paths, ingress controller, DNS provider, or secret tooling. General GitOps process regardless: 1) create the app's workload manifests (Deployment + Service). 2) wire ingress/reverse-proxy with TLS for immich.home.domain. 3) add a DNS record for the hostname. 4) register the app in the Flux kustomization so it reconciles. 5) handle any secrets via the repo's existing secret mechanism (not plaintext). 6) add a dashboard tile if the repo has one. 7) commit + push -> reconcile -> VERIFY pod Running + HTTPS 200 end-to-end. Explicitly note the exact paths / ingress class / cert setup / secret tooling must be CONFIRMED against the repo, not assumed.
 
 ### Deterministic checks (judge-free)
 
@@ -1160,13 +1160,13 @@ Reward treating backup success as insufficient, following restic integrity and e
 ### Context
 
 ```text
-Connectivity report for `photos.hont.ro` at 21:10:
+Connectivity report for `photos.home.domain` at 21:10:
 - From a LAN laptop: `curl http://192.168.1.201:8080/healthz` -> 200.
 - From the cluster: pod endpoints for photos are Ready; Traefik route exists; Traefik logs no 5xx for photos.
-- From LAN DNS: `dig @192.168.1.1 photos.hont.ro` -> 192.168.1.201.
-- From public DNS: `dig @1.1.1.1 photos.hont.ro` -> 198.51.100.42, TTL 1800. Current router WAN IP is 203.0.113.77.
+- From LAN DNS: `dig @192.168.1.1 photos.home.domain` -> 192.168.1.201.
+- From public DNS: `dig @1.1.1.1 photos.home.domain` -> 198.51.100.42, TTL 1800. Current router WAN IP is 203.0.113.77.
 - Cloudflare DNS dashboard shows `photos` A record = 198.51.100.42, proxied=false, modified 16 days ago.
-- `cloudflared tunnel list` shows the tunnel for `*.hont.ro` is healthy, but `photos.hont.ro` is not routed through the tunnel; it uses DNS A record mode.
+- `cloudflared tunnel list` shows the tunnel for `*.home.domain` is healthy, but `photos.home.domain` is not routed through the tunnel; it uses DNS A record mode.
 - ISP link is up; router can ping 1.1.1.1.
 User report: photos works at home but fails on mobile data.
 ```
@@ -1177,7 +1177,7 @@ Localize the fault: ISP/WAN, LAN DNS, Cloudflare public DNS, tunnel, ingress, or
 
 ### Gold answer
 
-The app, ingress, LAN DNS, and ISP link are healthy from the evidence. The fault is public DNS / Cloudflare A-record drift: public resolvers return 198.51.100.42 while the current WAN IP is 203.0.113.77, and the Cloudflare record still contains the old IP. The tunnel is healthy but irrelevant for this host because photos is not routed through it. Next safe fix: update the Cloudflare `photos.hont.ro` A record to the current WAN IP or move the hostname to the Cloudflare Tunnel route, then verify with `dig @1.1.1.1 photos.hont.ro` after propagation and test from outside the LAN. Do not restart pods, Traefik, or the app; they already respond locally and have ready endpoints.
+The app, ingress, LAN DNS, and ISP link are healthy from the evidence. The fault is public DNS / Cloudflare A-record drift: public resolvers return 198.51.100.42 while the current WAN IP is 203.0.113.77, and the Cloudflare record still contains the old IP. The tunnel is healthy but irrelevant for this host because photos is not routed through it. Next safe fix: update the Cloudflare `photos.home.domain` A record to the current WAN IP or move the hostname to the Cloudflare Tunnel route, then verify with `dig @1.1.1.1 photos.home.domain` after propagation and test from outside the LAN. Do not restart pods, Traefik, or the app; they already respond locally and have ready endpoints.
 
 ### Deterministic checks (judge-free)
 

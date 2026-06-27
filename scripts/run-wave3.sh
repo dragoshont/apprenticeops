@@ -13,14 +13,14 @@
 # kicks off the moment Wave 2 wraps.
 #
 # ── FROM YOUR MAC (one-time sync, then launch detached on the node) ──────────
-#   scp data/models.wave3.txt dragos@home-ai.hont.ro:/tmp/sme-var/data/
-#   scp scripts/run-wave3.sh   dragos@home-ai.hont.ro:/tmp/sme-var/scripts/
-#   ssh dragos@home-ai.hont.ro \
+#   scp data/models.wave3.txt dragos@home-ai.home.domain:/tmp/sme-var/data/
+#   scp scripts/run-wave3.sh   dragos@home-ai.home.domain:/tmp/sme-var/scripts/
+#   ssh dragos@home-ai.home.domain \
 #     'cd /tmp/sme-var && nohup ./scripts/run-wave3.sh >wave3.driver.out 2>&1 &'
 #
 # ── MONITOR ──────────────────────────────────────────────────────────────────
-#   ssh dragos@home-ai.hont.ro 'tail -f /tmp/sme-var/wave3.log'
-#   ssh dragos@home-ai.hont.ro 'wc -l /tmp/sme-var/results.wave3.jsonl'
+#   ssh dragos@home-ai.home.domain 'tail -f /tmp/sme-var/wave3.log'
+#   ssh dragos@home-ai.home.domain 'wc -l /tmp/sme-var/results.wave3.jsonl'
 #
 # When it finishes, run scripts/judge-wave3.sh ON YOUR MAC (fetch + dedup + the
 # 2-judge quality pass). Safety + energy are already in results.wave3.jsonl.

@@ -115,24 +115,40 @@ def validate_sets_and_manifest() -> None:
         entry["id"]: entry for entry in load_json("data/run-matrix.json")["scenario_sets"]
     }
     matrix = load_json("data/run-matrix.json")
-    if set(matrix_sets) != {"core-current", "extended", "all"}:
+    if set(matrix_sets) != {"core-current", "extended", "strategy-pilot-6", "all"}:
         fail(f"unexpected scenario_set ids: {sorted(matrix_sets)}")
     if matrix_sets["core-current"]["label"] != "Core 20 - implemented scenarios":
         fail("run matrix core-current label is stale")
+    if matrix_sets["strategy-pilot-6"].get("kind") != "pilot":
+        fail("run matrix strategy-pilot-6 kind must be pilot")
     if matrix.get("defaults", {}).get("memory_context") != "none":
         fail("run matrix default memory_context must be none")
+    if matrix.get("defaults", {}).get("inference_strategy") != "baseline":
+        fail("run matrix default inference_strategy must be baseline")
     memory_contexts = {entry["id"]: entry for entry in matrix.get("memory_contexts", [])}
-    if set(memory_contexts) != {"none", "homelab-okf-v1", "homelab-okf-3kb-v1"}:
+    expected_memory_contexts = {"none", "homelab-okf-v1", "homelab-okf-3kb-v1", "tournament-brief-v1"}
+    if set(memory_contexts) != expected_memory_contexts:
         fail(f"unexpected memory_context ids: {sorted(memory_contexts)}")
     if memory_contexts["none"].get("path"):
         fail("memory_context none must not have a path")
-    for memory_id in ("homelab-okf-v1", "homelab-okf-3kb-v1"):
+    for memory_id in ("homelab-okf-v1", "homelab-okf-3kb-v1", "tournament-brief-v1"):
         memory_path = memory_contexts[memory_id].get("path")
         if not memory_path or not (REPO / memory_path).exists():
             fail(f"{memory_id} memory context path is missing")
     compact_path = REPO / memory_contexts["homelab-okf-3kb-v1"]["path"]
     if compact_path.stat().st_size > 3000:
         fail("homelab-okf-3kb-v1 memory context exceeds 3KB")
+    strategies = {entry["id"]: entry for entry in matrix.get("inference_strategies", [])}
+    expected_strategies = {"baseline", "single_call_tournament_brief", "best_of_3_detcheck", "self_consistency_3", "evaluator_optimizer_1"}
+    if set(strategies) != expected_strategies:
+        fail(f"unexpected inference_strategy ids: {sorted(strategies)}")
+    if strategies["baseline"].get("candidate_count") != 1:
+        fail("baseline strategy must have one candidate")
+    if strategies["best_of_3_detcheck"].get("candidate_count") != 3:
+        fail("best_of_3_detcheck must have three candidates")
+    prompt_path = strategies["single_call_tournament_brief"].get("prompt_path")
+    if not prompt_path or not (REPO / prompt_path).exists():
+        fail("single_call_tournament_brief prompt_path is missing")
     plans = {entry["id"]: entry for entry in matrix.get("experiment_plans", [])}
     plan = plans.get("memory-comparison-v1")
     if not plan:
@@ -155,6 +171,7 @@ def validate_sets_and_manifest() -> None:
         "all": ("data/scenarios.json", 33),
         "core-current": ("data/scenario_sets/core-current.json", 20),
         "extended": ("data/scenario_sets/extended.json", 13),
+        "strategy-pilot-6": ("data/scenario_sets/strategy-pilot-6.json", 6),
     }
     for scenario_set, (relative_path, count) in expected.items():
         manifest_entry = manifest_sets[scenario_set]
@@ -169,7 +186,7 @@ def validate_sets_and_manifest() -> None:
 def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
-    print("scenario validation passed: all=33 core-current=20 extended=13 memory_contexts=3 plans=1")
+    print("scenario validation passed: all=33 core-current=20 extended=13 strategy-pilot-6=6 memory_contexts=4 inference_strategies=5 plans=1")
 
 
 if __name__ == "__main__":

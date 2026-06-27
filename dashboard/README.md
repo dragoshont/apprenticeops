@@ -63,7 +63,7 @@ cd dashboard
 # one-time: open the port to the LAN
 sudo ufw allow from 192.168.1.0/24 to any port 8770 proto tcp
 # values are also kept in dashboard/.env on the host
-HOME_SSH=dragos@home AI_SSH=home-ai.hont.ro REPO_DIR=/home/dragos/apprenticeops AUTH_ENABLED=false \
+HOME_SSH=dragos@home AI_SSH=home-ai.home.domain REPO_DIR=/home/dragos/apprenticeops AUTH_ENABLED=false \
   docker compose -f compose.yaml -f compose.host.yaml up -d --build
 ```
 
@@ -98,7 +98,7 @@ Two terminals. The backend SSHes to home via your `homelab` alias.
 cd dashboard/backend
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-HOME_SSH=homelab AI_SSH=home-ai.hont.ro REPO_DIR='~/apprenticeops' \
+HOME_SSH=homelab AI_SSH=home-ai.home.domain REPO_DIR='~/apprenticeops' \
   python -m uvicorn app:app --reload --port 8770
 
 # 2) frontend (proxies /api + /ws to :8770)

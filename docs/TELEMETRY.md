@@ -15,7 +15,7 @@ comes from. It is what makes the released dataset reusable (PAPER.md §4b).
 
 ```mermaid
 flowchart TD
-    subgraph node["home-ai.hont.ro — quiet CPU node (i5-8350U, 23 GiB)"]
+    subgraph node["home-ai.home.domain — quiet CPU node (i5-8350U, 23 GiB)"]
         sc[scenarios.json<br/>19 real-incident tasks] --> rc
         rc["run.py · run_chat()<br/>Ollama /api/chat (localhost)"]
         rc -- token stream --> gen["gen_ai.* telemetry<br/>TTFT · tok/s · jitter · think/answer split"]
@@ -56,6 +56,9 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 | `env.memory_context` | str | run.py env | Run-level memory/context condition (`none`, `homelab-okf-v1`, …). This is an experimental comparison axis, not a scenario label. |
 | `env.memory_context_file` | str\|null | run.py args | Markdown memory file injected into prompts for memory-conditioned runs; null for `none`. |
 | `env.memory_context_sha` | str\|null | run.py | SHA256 of the injected memory file, so reruns can prove the memory bytes did not drift. |
+| `env.inference_strategy` | str | run.py env | Run-level strategy condition (`baseline`, `best_of_3_detcheck`, …). This is an experimental comparison axis, not memory. |
+| `env.strategy_prompt_file` | str\|null | run.py args | Optional strategy prompt file for prompt-only strategy variants. |
+| `env.strategy_prompt_sha` | str\|null | run.py | SHA256 of the strategy prompt file. |
 | `scenario` | str | scenarios.json | Scenario id (e.g. `detect-01`) |
 | `class` | str | scenarios.json | Task taxonomy class (detect/diagnose/secure/…) |
 | `aiopslab_task` | str | scenarios.json | AIOpsLab task mapping (provenance) |
@@ -73,6 +76,17 @@ describes a run-wide briefing supplied before every scenario. A valid comparison
 holds model set, scenario set, repeats, sampler, judge family, and node manifest
 constant while changing only `env.memory_context`. In paper runs, "judge family"
 means the full judge configuration: backend, model id, ensemble, and worker policy.
+
+`env.inference_strategy` is separate again: it records *how* the local answer was
+produced. Multi-candidate strategies stamp `strategy.*` fields and preserve
+candidate sidecars so the selected answer is auditable. Reliability reports group
+DNF/stall/length by strategy; strategy rows must not be averaged into baseline
+rows unless the analysis explicitly facets by strategy.
+
+Timeout-policy and stall-forensics fields (`effective.*`, `prompt.*`,
+`stall_phase`, `http.*`, and compact `ollama.ps.*` snapshots) are evidence about
+completion reliability. They are not quality scores; they make zero-output stalls
+and timeout-policy changes visible instead of letting them hide inside averages.
 
 ### Quality
 | Field | Type | Source | Meaning |

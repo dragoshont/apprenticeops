@@ -23,7 +23,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
 EXPERIMENTS = os.path.join(REPO, "data", "experiments")
 RUN_BATCHES = os.path.join(REPO, "data", "run-batches")
-AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
+AI = os.environ.get("AI", "dragos@home-ai.home.domain")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 STAGES = ["lock", "reset", "infer", "emit", "collect", "judge", "persist"]
 
@@ -94,12 +94,14 @@ def child_work_totals(run):
     scen_count = scenario_context(meta)["count"]
     reps = int(meta.get("reps") or REPS)
     judges = int(meta.get("judges") or NJUDGES)
+    candidate_count = int(meta.get("strategy_candidate_count") or 1)
     expect = int(meta.get("expect") or 0)
-    inf_total = expect * scen_count * reps
-    judge_total = inf_total * judges if not inference_only(meta) else 0
+    answer_total = expect * scen_count * reps
+    inf_total = answer_total * candidate_count
+    judge_total = answer_total * judges if not inference_only(meta) else 0
     units_total = inf_total + judge_total
     wd = os.path.join(RUNS, run.get("run_id", ""))
-    inf_done = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "_mirror", "results.*.jsonl")))
+    inf_done = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "_mirror", "results.*.jsonl"))) * candidate_count
     judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(wd, "judged.*.jsonl")))
     return inf_done + judge_done, units_total
 
@@ -150,6 +152,7 @@ def enrich_batch(batch):
             status = "done"
         work_pct = round(100 * done / total, 1) if total else float(run.get("progress_pct") or 0)
         run["ordinal"] = index + 1
+        run["inference_strategy"] = run.get("inference_strategy") or batch.get("inference_strategy") or "baseline"
         run["units_done"] = done
         run["units_total"] = total
         run["work_pct"] = work_pct
@@ -494,6 +497,82 @@ def score_breakdown(run_id, scen_class):
     return {"hist": hist, "by_class": by_class}
 
 
+def reliability_report(run_id):
+    wd = os.path.join(RUNS, run_id)
+    res = _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl"))
+    judged = _read_jsonl(os.path.join(wd, f"judged.{run_id}.jsonl"))
+    total = len(res)
+    finish = {}
+    by_model = {}
+    by_scenario = {}
+    by_memory = {}
+    by_strategy = {}
+    dnf = length = zero_stall = 0
+    for row in res:
+        reason = ((row.get("gen_ai.response.finish_reasons") or [None])[0]) or "unknown"
+        finish[reason] = finish.get(reason, 0) + 1
+        is_dnf = bool(row.get("dnf")) or str(reason).startswith("DNF")
+        is_length = reason == "length" or "length" in str(reason).lower()
+        is_zero_stall = reason == "DNF:stall" and not row.get("gen_ai.usage.output_tokens") and not row.get("progress_trace")
+        dnf += int(is_dnf)
+        length += int(is_length)
+        zero_stall += int(is_zero_stall)
+        if is_dnf:
+            for bucket, key in (
+                (by_model, row.get("model") or "unknown"),
+                (by_scenario, row.get("scenario") or "unknown"),
+                (by_memory, row.get("env.memory_context") or "none"),
+                (by_strategy, row.get("env.inference_strategy") or "baseline"),
+            ):
+                item = bucket.setdefault(key, {"dnf": 0, "rows": 0})
+                item["dnf"] += 1
+        for bucket, key in ((by_memory, row.get("env.memory_context") or "none"),
+                            (by_strategy, row.get("env.inference_strategy") or "baseline")):
+            bucket.setdefault(key, {"dnf": 0, "rows": 0})["rows"] += 1
+    judge_empty = evidence_missing = criteria_missing = 0
+    usage_by_judge = {}
+    for row in judged:
+        if row.get("verdict") == "empty":
+            judge_empty += 1
+        if not row.get("evidence"):
+            evidence_missing += 1
+        if "criteria_met" not in row or "criteria_missed" not in row:
+            criteria_missing += 1
+        model = row.get("judge_model") or "unknown"
+        usage = row.get("usage") or {}
+        entry = usage_by_judge.setdefault(model, {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cache_read": 0, "cache_write": 0, "ai_credits": 0.0})
+        entry["calls"] += 1
+        for key in ("tokens_in", "tokens_out", "cache_read", "cache_write"):
+            entry[key] += int(usage.get(key) or 0)
+        entry["ai_credits"] += float(usage.get("ai_credits") or 0)
+    def rate(n):
+        return round(100 * n / total, 2) if total else 0.0
+    def compact(bucket):
+        return [
+            {"id": key, "dnf": value.get("dnf", 0), "rows": value.get("rows", 0),
+             "dnf_rate": round(100 * value.get("dnf", 0) / value.get("rows", 1), 2) if value.get("rows") else None}
+            for key, value in sorted(bucket.items(), key=lambda kv: (-kv[1].get("dnf", 0), kv[0]))
+        ]
+    return {
+        "rows": total,
+        "dnf": dnf,
+        "dnf_rate": rate(dnf),
+        "length": length,
+        "length_rate": rate(length),
+        "zero_output_stalls": zero_stall,
+        "zero_output_stall_rate": rate(zero_stall),
+        "finish_reasons": finish,
+        "dnf_by_model": compact(by_model)[:20],
+        "dnf_by_scenario": compact(by_scenario)[:20],
+        "dnf_by_memory_context": compact(by_memory),
+        "dnf_by_inference_strategy": compact(by_strategy),
+        "judge_empty": judge_empty,
+        "judge_evidence_missing": evidence_missing,
+        "judge_criteria_missing": criteria_missing,
+        "usage_by_judge": usage_by_judge,
+    }
+
+
 def _annotate_freq(lines):
     """Make the ai node's `freq=` line self-explanatory. When Turbo is OFF *and* the
     governor is `performance` the clock is pinned to the experiment's base regime
@@ -569,6 +648,17 @@ def run_matrix():
                 memory_contexts.append({**item, "byte_count": None, "sha256": None})
         else:
             memory_contexts.append({**item, "path": None, "byte_count": 0, "sha256": None})
+    inference_strategies = []
+    for item in matrix.get("inference_strategies", []):
+        path = item.get("prompt_path")
+        if path:
+            full = os.path.join(REPO, path)
+            try:
+                inference_strategies.append({**item, "prompt_byte_count": os.path.getsize(full), "prompt_sha256": sha(path)})
+            except OSError:
+                inference_strategies.append({**item, "prompt_byte_count": None, "prompt_sha256": None})
+        else:
+            inference_strategies.append({**item, "prompt_path": None, "prompt_byte_count": 0, "prompt_sha256": None})
     scenario_sets = []
     scenario_rows = {}
     for sset in matrix.get("scenario_sets", []):
@@ -595,6 +685,7 @@ def run_matrix():
                 row["sets"].append(sset.get("id"))
     return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
             "scenario_sets": scenario_sets, "memory_contexts": memory_contexts,
+            "inference_strategies": inference_strategies,
             "experiment_plans": matrix.get("experiment_plans", []),
             "scenarios": sorted((r for r in scenario_rows.values() if r.get("id")), key=lambda r: r["id"])}
 
@@ -607,7 +698,7 @@ def _counts(values):
     return out
 
 
-def model_progress(run_id, prod, cons, scen_count, reps=REPS, judges=NJUDGES):
+def model_progress(run_id, prod, cons, scen_count, reps=REPS, judges=NJUDGES, candidate_count=1):
     """Per-model inference + judge unit counts (for the horizontal progress bars).
     inf unit = (scenario, rep); judge unit = a judged row. Both fill to their total
     as the run advances; a model is complete when both bars hit 100%."""
@@ -624,9 +715,10 @@ def model_progress(run_id, prod, cons, scen_count, reps=REPS, judges=NJUDGES):
     committed = set(cons["committed_models"])
     done_emit = set(prod["done_models"])
     unit = scen_count * reps
+    inf_unit = unit * max(1, int(candidate_count or 1))
     out = []
     for m in sorted(set(inf) | set(jud) | done_emit | committed):
-        idone = len(inf.get(m, ()))
+        idone = len(inf.get(m, ())) * max(1, int(candidate_count or 1))
         jdone = jud.get(m, 0)
         if m in committed:
             stage = "persist"
@@ -640,7 +732,7 @@ def model_progress(run_id, prod, cons, scen_count, reps=REPS, judges=NJUDGES):
             stage = "infer"
         out.append({
             "model": m,
-            "inf_done": idone, "inf_total": unit,
+            "inf_done": idone, "inf_total": inf_unit,
             "judge_done": jdone, "judge_total": unit * judges,
             "committed": m in committed, "stage": stage,
         })
@@ -651,11 +743,12 @@ def inference_only(meta):
     return (meta or {}).get("runner") == "local-roster" or (meta or {}).get("judge_expected") is False
 
 
-def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count, judge_expected=True, reps=REPS, judges=NJUDGES):
+def compute_progress(expect, inf_done, judge_done, started_at, active, scen_count, judge_expected=True, reps=REPS, judges=NJUDGES, candidate_count=1):
     """Overall run progress + ETA. Work = inference units + judge units."""
     models_total = expect or 0
-    inf_total = models_total * scen_count * reps
-    judge_total = inf_total * judges if judge_expected else 0
+    answer_total = models_total * scen_count * reps
+    inf_total = answer_total * max(1, int(candidate_count or 1))
+    judge_total = answer_total * judges if judge_expected else 0
     done = inf_done + judge_done
     total = inf_total + judge_total
     pct = round(100 * done / total, 1) if total else 0.0
@@ -727,6 +820,7 @@ def analytics_scope(run_id, meta):
         "model_set": meta.get("model_set"),
         "scenario_set": meta.get("scenario_set"),
         "memory_context": meta.get("memory_context") or "none",
+        "inference_strategy": meta.get("inference_strategy") or "baseline",
     }
 
 
@@ -742,6 +836,7 @@ def selected_scope(run_id, state, meta, batches):
         "model_set": meta.get("model_set"),
         "scenario_set": meta.get("scenario_set"),
         "memory_context": meta.get("memory_context") or "none",
+        "inference_strategy": meta.get("inference_strategy") or "baseline",
         "analytics_scope": "selected_run",
         "state": state,
     }
@@ -758,6 +853,7 @@ def selected_scope(run_id, state, meta, batches):
                     "model_set": run.get("model_set") or batch.get("model_set"),
                     "scenario_set": run.get("scenario_set") or batch.get("scenario_set"),
                     "memory_context": run.get("memory_context") or meta.get("memory_context") or "none",
+                    "inference_strategy": run.get("inference_strategy") or batch.get("inference_strategy") or meta.get("inference_strategy") or "baseline",
                     "state": run.get("status") or state,
                 })
                 return scope
@@ -806,10 +902,11 @@ def sessions():
         scen_count = scen_ctx["count"]
         reps = int(meta.get("reps") or REPS)
         judges = int(meta.get("judges") or NJUDGES)
+        candidate_count = int(meta.get("strategy_candidate_count") or 1)
         expect = int(meta.get("expect") or 0)
         judge_expected = not inference_only(meta)
         inf_done = sum(_count_lines(p) for p in
-                       glob.glob(os.path.join(d, "_mirror", "results.*.jsonl")))
+                   glob.glob(os.path.join(d, "_mirror", "results.*.jsonl"))) * candidate_count
         judge_done = sum(_count_lines(p) for p in glob.glob(os.path.join(d, "judged.*.jsonl")))
         committed = _count_lines(os.path.join(d, ".committed"))
         emitted = sum(_count_lines(p) for p in
@@ -817,8 +914,9 @@ def sessions():
         if not expect:
             # historical runs predate run.meta — recover a total from the markers
             expect = max(committed, emitted)
-        inf_total = expect * scen_count * reps
-        judge_total = inf_total * judges if judge_expected else 0
+        answer_total = expect * scen_count * reps
+        inf_total = answer_total * candidate_count
+        judge_total = answer_total * judges if judge_expected else 0
         total = inf_total + judge_total
         pct = round(100 * (inf_done + judge_done) / total, 1) if total else 0.0
         started = meta.get("started_at")
@@ -854,6 +952,7 @@ def sessions():
             "model_set": meta.get("model_set") or "historical",
             "scenario_set": meta.get("scenario_set") or scen_ctx["set"],
             "memory_context": meta.get("memory_context") or "none",
+            "inference_strategy": meta.get("inference_strategy") or "baseline",
             "historical": scen_ctx["historical"],
             "user": meta.get("user") or "user",
             "state": state,
@@ -892,6 +991,7 @@ def main():
     judge_expected = not inference_only(meta)
     reps = int(meta.get("reps") or REPS)
     judges = int(meta.get("judges") or NJUDGES)
+    candidate_count = int(meta.get("strategy_candidate_count") or 1)
     markers = _markers(os.path.join(RUNS, run_id))
     state = resolve_state(markers, committed_n, expect, prod["run_py_alive"], cons["alive"],
                           emitted=prod["models_emitted"], judge_expected=judge_expected)
@@ -916,14 +1016,15 @@ def main():
             "rate_per_min": None,
         }
     else:
-        progress = compute_progress(expect, prod["rows"], cons["judged_rows"],
+        progress = compute_progress(expect, prod["rows"] * candidate_count, cons["judged_rows"],
                                     meta.get("started_at"), state == "running", scen_count,
-                                    judge_expected=judge_expected, reps=reps, judges=judges)
+                        judge_expected=judge_expected, reps=reps, judges=judges, candidate_count=candidate_count)
     persist = persistence_status(expect, cons, judge_expected=judge_expected)
     scope = selected_scope(run_id, state, meta, batches)
     chart_scope = analytics_scope(run_id, {**meta, "memory_context": scope.get("memory_context") or meta.get("memory_context") or "none",
                                            "model_set": scope.get("model_set") or meta.get("model_set"),
-                                           "scenario_set": scope.get("scenario_set") or meta.get("scenario_set")})
+                                           "scenario_set": scope.get("scenario_set") or meta.get("scenario_set"),
+                                           "inference_strategy": scope.get("inference_strategy") or meta.get("inference_strategy") or "baseline"})
     pareto_rows = pareto(run_id, cons, scen_class)
     for row in pareto_rows:
         row.update(chart_scope)
@@ -948,11 +1049,12 @@ def main():
         "persistence": persist,
         "progress": progress,
         "summary": run_summary(run_id, scen_class),
+        "reliability": reliability_report(run_id),
         "producer": prod,
         "consumer": cons,
         "stages": STAGES,
         "models": per_model_stage(run_id, prod, cons),
-        "model_progress": model_progress(run_id, prod, cons, scen_count, reps=reps, judges=judges),
+        "model_progress": model_progress(run_id, prod, cons, scen_count, reps=reps, judges=judges, candidate_count=candidate_count),
         "pareto": pareto_rows,
         "scores": score_breakdown(run_id, scen_class),
         "run_matrix": run_matrix(),

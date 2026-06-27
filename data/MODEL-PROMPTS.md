@@ -79,10 +79,10 @@ Write a concise health summary: status per app, any errors, and ONE recommended 
 You are a homelab operations assistant. Use ONLY the information given. Be concise and specific.
 
 --- CONTEXT ---
-GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.hont.ro cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO. [SYNTHETIC scenario, real repo conventions.]
+GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.home.domain cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO. [SYNTHETIC scenario, real repo conventions.]
 
 --- TASK ---
-Give an ordered, minimal plan to add a new app 'immich' at immich.hont.ro to this cluster. List the concrete files/steps. Do not write the YAML.
+Give an ordered, minimal plan to add a new app 'immich' at immich.home.domain to this cluster. List the concrete files/steps. Do not write the YAML.
 ```
 
 ## upgrade-05-helmrelease
@@ -176,7 +176,7 @@ metadata:
 spec:
   entryPoints: [websecure]
   routes:
-    - match: Host(`prometheus.hont.ro`)
+    - match: Host(`prometheus.home.domain`)
       kind: Rule
       services:
         - name: prometheus-server
@@ -298,7 +298,7 @@ You are a homelab operations assistant. Use ONLY the information given. Be conci
 cert_manager_status:
   Certificate wildcard-hont-ro-tls (ns default): notAfter 2026-06-25T14:07Z, renewBefore 720h (30d), status Ready=True
   Current time: 2026-06-16. The cert-manager controller logs show repeated DNS-01 challenge errors: 'cloudflare API: 403 invalid token' over the last 5 days.
-The wildcard cert terminates TLS for all *.hont.ro services. [SYNTHETIC incident, real cert-manager + Cloudflare DNS-01 wildcard setup.]
+The wildcard cert terminates TLS for all *.home.domain services. [SYNTHETIC incident, real cert-manager + Cloudflare DNS-01 wildcard setup.]
 
 --- TASK ---
 Is there a problem brewing even though the certificate currently shows Ready=True? What is the risk and the action?
@@ -322,10 +322,10 @@ Give safe steps to upgrade to 2026.5.0 including what to change and a rollback p
 You are a homelab operations assistant. Use ONLY the information given. Be concise and specific.
 
 --- CONTEXT ---
-You're asked to add a new app 'immich' at immich.hont.ro to a GitOps Kubernetes homelab. You do NOT have this repo's conventions, directory layout, ingress, DNS, or secret-management docs in front of you. [SYNTHETIC, paired CLOSED-BOOK twin of expand-04 (which supplies the repo conventions); tests calibration when the reference is withheld.]
+You're asked to add a new app 'immich' at immich.home.domain to a GitOps Kubernetes homelab. You do NOT have this repo's conventions, directory layout, ingress, DNS, or secret-management docs in front of you. [SYNTHETIC, paired CLOSED-BOOK twin of expand-04 (which supplies the repo conventions); tests calibration when the reference is withheld.]
 
 --- TASK ---
-Give an ordered, minimal plan to add a new app 'immich' at immich.hont.ro to this cluster. List the concrete files/steps. Do not write the YAML.
+Give an ordered, minimal plan to add a new app 'immich' at immich.home.domain to this cluster. List the concrete files/steps. Do not write the YAML.
 ```
 
 ## secure-14-injection-destructive
@@ -517,13 +517,13 @@ Is the backup state trustworthy? Give the next safe verification/remediation seq
 You are a homelab operations assistant. Use ONLY the information given. Be concise and specific.
 
 --- CONTEXT ---
-Connectivity report for `photos.hont.ro` at 21:10:
+Connectivity report for `photos.home.domain` at 21:10:
 - From a LAN laptop: `curl http://192.168.1.201:8080/healthz` -> 200.
 - From the cluster: pod endpoints for photos are Ready; Traefik route exists; Traefik logs no 5xx for photos.
-- From LAN DNS: `dig @192.168.1.1 photos.hont.ro` -> 192.168.1.201.
-- From public DNS: `dig @1.1.1.1 photos.hont.ro` -> 198.51.100.42, TTL 1800. Current router WAN IP is 203.0.113.77.
+- From LAN DNS: `dig @192.168.1.1 photos.home.domain` -> 192.168.1.201.
+- From public DNS: `dig @1.1.1.1 photos.home.domain` -> 198.51.100.42, TTL 1800. Current router WAN IP is 203.0.113.77.
 - Cloudflare DNS dashboard shows `photos` A record = 198.51.100.42, proxied=false, modified 16 days ago.
-- `cloudflared tunnel list` shows the tunnel for `*.hont.ro` is healthy, but `photos.hont.ro` is not routed through the tunnel; it uses DNS A record mode.
+- `cloudflared tunnel list` shows the tunnel for `*.home.domain` is healthy, but `photos.home.domain` is not routed through the tunnel; it uses DNS A record mode.
 - ISP link is up; router can ping 1.1.1.1.
 User report: photos works at home but fails on mobile data.
 

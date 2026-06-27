@@ -47,6 +47,19 @@ export interface MemoryContext {
   sha256?: string | null;
 }
 
+export interface InferenceStrategy {
+  id: string;
+  label: string;
+  kind?: string;
+  description?: string;
+  candidate_count?: number | null;
+  extra_calls?: number | null;
+  selection_method?: string | null;
+  prompt_path?: string | null;
+  prompt_byte_count?: number | null;
+  prompt_sha256?: string | null;
+}
+
 export interface ExperimentPhase {
   id: string;
   label: string;
@@ -88,6 +101,8 @@ export interface RunBatchItem {
   scenario_set: string;
   memory_context: string;
   memory_context_file?: string | null;
+  inference_strategy?: string | null;
+  strategy_prompt_file?: string | null;
   status: string;
   started_at?: number | null;
   ended_at?: number | null;
@@ -120,6 +135,7 @@ export interface RunBatch {
   batch_id: string;
   model_set: string;
   scenario_set: string;
+  inference_strategy?: string | null;
   memory_contexts: string[];
   status: string;
   user?: string;
@@ -142,10 +158,11 @@ export interface ScenarioInventoryRow {
 }
 
 export interface RunMatrix {
-  defaults?: { model_set?: string; scenario_set?: string; memory_context?: string };
+  defaults?: { model_set?: string; scenario_set?: string; memory_context?: string; inference_strategy?: string };
   model_sets: ModelSet[];
   scenario_sets: ScenarioSet[];
   memory_contexts?: MemoryContext[];
+  inference_strategies?: InferenceStrategy[];
   experiment_plans?: ExperimentPlan[];
   scenarios: ScenarioInventoryRow[];
 }
@@ -175,6 +192,7 @@ export interface InputDetails {
   model_set: ModelSet & { models: InputModelRow[] };
   scenario_set: ScenarioSet;
   memory_context: MemoryContext & { markdown: string; chars: number };
+  inference_strategy?: InferenceStrategy & { markdown?: string; chars?: number };
   scenarios: InputScenarioDetails[];
 }
 
@@ -295,6 +313,7 @@ export interface AnalyticsScope {
   model_set?: string | null;
   scenario_set?: string | null;
   memory_context?: string | null;
+  inference_strategy?: string | null;
 }
 
 export interface SelectedScope {
@@ -308,6 +327,7 @@ export interface SelectedScope {
   model_set?: string | null;
   scenario_set?: string | null;
   memory_context?: string | null;
+  inference_strategy?: string | null;
   analytics_scope?: string | null;
   state?: string | null;
 }
@@ -327,6 +347,7 @@ export interface Session {
   model_set: string;
   scenario_set: string;
   memory_context?: string;
+  inference_strategy?: string;
   historical?: boolean;
   user?: string;
   state: PipelineState | string;
@@ -347,6 +368,41 @@ export interface Session {
   eta_human?: string | null;
 }
 
+export interface ReliabilityBucket {
+  id: string;
+  rows: number;
+  dnf: number;
+  dnf_rate?: number | null;
+}
+
+export interface JudgeUsageRollup {
+  calls: number;
+  tokens_in: number;
+  tokens_out: number;
+  cache_read: number;
+  cache_write: number;
+  ai_credits: number;
+}
+
+export interface ReliabilityReport {
+  rows: number;
+  dnf: number;
+  dnf_rate: number;
+  length: number;
+  length_rate: number;
+  zero_output_stalls: number;
+  zero_output_stall_rate: number;
+  judge_empty: number;
+  judge_evidence_missing: number;
+  judge_criteria_missing: number;
+  finish_reasons?: Record<string, number>;
+  dnf_by_model?: ReliabilityBucket[];
+  dnf_by_scenario?: ReliabilityBucket[];
+  dnf_by_memory_context?: ReliabilityBucket[];
+  dnf_by_inference_strategy?: ReliabilityBucket[];
+  usage_by_judge?: Record<string, JudgeUsageRollup>;
+}
+
 export interface Status {
   run_id: string | null;
   ts: number;
@@ -355,11 +411,12 @@ export interface Status {
   error?: string;
   user?: string;
   markers?: { canceled: boolean; paused: boolean };
-  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; expect?: number; started_at?: number };
+  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; inference_strategy?: string; strategy_prompt_file?: string | null; expect?: number; started_at?: number };
   selected_scope?: SelectedScope;
   analytics_scope?: AnalyticsScope;
   persistence?: PersistenceStatus;
   progress?: Progress;
+  reliability?: ReliabilityReport;
   summary?: RunSummary;
   producer?: Producer;
   consumer?: Consumer;

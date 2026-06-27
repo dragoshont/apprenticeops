@@ -243,7 +243,7 @@ grading scaffolding. The deployed apprentice makes **zero** external calls.
 
 ## Scenario corpus and provenance {#sec-scenarios}
 
-The frozen snapshot is **19 scenarios** drawn from real `home.hont.ro`
+The frozen snapshot is **19 scenarios** drawn from real `home.home.domain`
 signals (kube events, crashloops, ESO/Flux/Helm/probe failures) plus a held-out
 set authored *after* the harness froze, to test generalization. Tasks span six
 operational pillars — **Observe → Diagnose → Respond → Change → Secure →

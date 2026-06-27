@@ -31,8 +31,8 @@ def load_status_module():
 
 def test_resolve_and_state():
     module = load_module()
-    model_set, scenario_set, memories = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"]
+    model_set, scenario_set, memories, strategy = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
     )
     assert model_set["_path"] == "data/models.dryrun.txt"
     assert scenario_set["_path"] == "data/scenario_sets/core-current.json"
@@ -41,11 +41,12 @@ def test_resolve_and_state():
         batch_id="batch-dryrun-core-test",
         model_set="dryrun",
         scenario_set="core-current",
+        inference_strategy="baseline",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy)
     assert state["runner"] == "local-roster"
     assert state["status"] == "running"
     assert [run["memory_context"] for run in state["runs"]] == ["none", "homelab-okf-v1"]
@@ -54,18 +55,19 @@ def test_resolve_and_state():
 
 def test_run_meta_creation_is_portable():
     module = load_module()
-    model_set, scenario_set, memories = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"]
+    model_set, scenario_set, memories, strategy = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
     )
     args = argparse.Namespace(
         batch_id="batch-dryrun-core-test",
         model_set="dryrun",
         scenario_set="core-current",
+        inference_strategy="baseline",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy)
     with tempfile.TemporaryDirectory() as tmp:
         old_runs = module.RUNS
         module.RUNS = Path(tmp) / "runs"
@@ -78,6 +80,8 @@ def test_run_meta_creation_is_portable():
             assert meta["scenario_set"] == "core-current"
             assert meta["memory_context"] == "homelab-okf-v1"
             assert meta["memory_context_file"] == "data/memory/homelab-okf-v1/context.md"
+            assert meta["inference_strategy"] == "baseline"
+            assert meta["strategy_candidate_count"] == 1
             assert meta["models_count"] == 2
             assert meta["scenario_count"] == 20
             assert meta["expect"] == 2
@@ -87,18 +91,19 @@ def test_run_meta_creation_is_portable():
 
 def test_existing_run_meta_must_match_selection():
     module = load_module()
-    model_set, scenario_set, memories = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"]
+    model_set, scenario_set, memories, strategy = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
     )
     args = argparse.Namespace(
         batch_id="batch-dryrun-core-test",
         model_set="dryrun",
         scenario_set="core-current",
+        inference_strategy="baseline",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy)
     with tempfile.TemporaryDirectory() as tmp:
         old_runs = module.RUNS
         module.RUNS = Path(tmp) / "runs"
@@ -188,6 +193,8 @@ def test_local_roster_done_requires_result_rows():
                 "scenarios_sha256": module.sha256(scenarios_path),
                 "memory_context": "none",
                 "memory_context_sha256": None,
+                "inference_strategy": "baseline",
+                "strategy_prompt_sha256": None,
                 "reps": 1,
                 "expect": 2,
             }))
@@ -239,12 +246,15 @@ def test_launch_run_local_roster_observes_running_then_done():
             "user": "test",
             "stall_timeout_s": 7200,
             "paths": {"models": "data/models.dryrun.txt", "scenarios": "data/scenario_sets/core-current.json"},
+            "inference_strategy": "baseline",
             "runs": [{
                 "run_id": "local-roster-test",
                 "model_set": "dryrun",
                 "scenario_set": "core-current",
                 "memory_context": "none",
                 "memory_context_file": None,
+                "inference_strategy": "baseline",
+                "strategy_prompt_file": None,
                 "status": "pending",
             }],
         }
@@ -292,12 +302,15 @@ def test_launch_run_local_roster_rejects_marker_only_done():
             "user": "test",
             "stall_timeout_s": 0,
             "paths": {"models": "data/models.dryrun.txt", "scenarios": "data/scenario_sets/core-current.json"},
+            "inference_strategy": "baseline",
             "runs": [{
                 "run_id": "local-roster-test",
                 "model_set": "dryrun",
                 "scenario_set": "core-current",
                 "memory_context": "none",
                 "memory_context_file": None,
+                "inference_strategy": "baseline",
+                "strategy_prompt_file": None,
                 "status": "pending",
             }],
         }

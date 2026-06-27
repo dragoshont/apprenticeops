@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Boxes, Database, FileSearch, Loader2, Search } from "lucide-react";
+import { BookOpen, Boxes, Database, FileSearch, Loader2, Search, Workflow } from "lucide-react";
 import { fetchInputs } from "../api";
 import type { InputDetails, InputScenarioDetails } from "../types";
 import { Card } from "./ui";
 
-type Tab = "memory" | "scenarios" | "models";
+type Tab = "memory" | "strategy" | "scenarios" | "models";
 
-export function InputInspector({ selection, title = "Experiment Inputs" }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string }; title?: string }) {
+export function InputInspector({ selection, title = "Experiment Inputs" }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string }; title?: string }) {
   const [tab, setTab] = useState<Tab>("memory");
   const [query, setQuery] = useState("");
   const [details, setDetails] = useState<InputDetails | null>(null);
@@ -18,7 +18,7 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchInputs(selection.modelSet, selection.scenarioSet, selection.memoryContext)
+    fetchInputs(selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy ?? "baseline")
       .then((data) => {
         if (!cancelled) setDetails(data);
       })
@@ -31,7 +31,7 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
     return () => {
       cancelled = true;
     };
-  }, [selection.modelSet, selection.scenarioSet, selection.memoryContext]);
+  }, [selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const scenarios = useMemo(() => {
@@ -62,6 +62,9 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
             <TabButton active={tab === "memory"} onClick={() => setTab("memory")} icon={<BookOpen className="h-3.5 w-3.5" />}>
               Memory
             </TabButton>
+            <TabButton active={tab === "strategy"} onClick={() => setTab("strategy")} icon={<Workflow className="h-3.5 w-3.5" />}>
+              Strategy
+            </TabButton>
             <TabButton active={tab === "scenarios"} onClick={() => setTab("scenarios")} icon={<Database className="h-3.5 w-3.5" />}>
               Scenarios · {details?.scenarios.length ?? 0}
             </TabButton>
@@ -84,6 +87,7 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
         {error && <div className="rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-xs text-bad">{error}</div>}
 
         {tab === "memory" && <MemoryPane details={details} />}
+        {tab === "strategy" && <StrategyPane details={details} />}
         {tab === "scenarios" && <ScenarioPane scenarios={scenarios} query={normalizedQuery} />}
         {tab === "models" && <ModelPane models={models} />}
       </div>
@@ -101,6 +105,32 @@ function TabButton({ active, onClick, icon, children }: { active: boolean; onCli
       {icon}
       {children}
     </button>
+  );
+}
+
+function StrategyPane({ details }: { details: InputDetails | null }) {
+  const strategy = details?.inference_strategy;
+  if (!details) return <p className="py-5 text-center text-sm text-faint">Loading selected inputs…</p>;
+  if (!strategy) return <p className="rounded-xl border border-line bg-panel2/30 p-4 text-sm text-muted">No inference strategy metadata is available.</p>;
+  return (
+    <div className="rounded-xl border border-line bg-panel2/30 p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium text-fg">{strategy.label}</div>
+          <div className="text-xs text-faint">
+            {strategy.id} · {strategy.candidate_count ?? 1} candidate{strategy.candidate_count === 1 ? "" : "s"} · {strategy.selection_method ?? "single_call"}
+          </div>
+        </div>
+        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_strategy={strategy.id}</span>
+      </div>
+      {strategy.markdown ? (
+        <div className="max-h-96 overflow-auto pr-2">
+          <MarkdownView text={strategy.markdown} />
+        </div>
+      ) : (
+        <p className="text-sm text-muted">No extra strategy prompt is injected. The runner uses the strategy implementation itself.</p>
+      )}
+    </div>
   );
 }
 

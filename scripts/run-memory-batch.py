@@ -79,17 +79,22 @@ def by_id(items: list[dict], key: str) -> dict[str, dict]:
     return out
 
 
-def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_ids: list[str]) -> tuple[dict, dict, list[dict]]:
+def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_ids: list[str], inference_strategy_id: str) -> tuple[dict, dict, list[dict], dict]:
     if not ID_RE.match(model_set_id) or not ID_RE.match(scenario_set_id):
         fail("invalid model or scenario set id")
+    if not ID_RE.match(inference_strategy_id):
+        fail("invalid inference_strategy id")
     matrix = load_matrix()
     model_sets = by_id(matrix.get("model_sets", []), "model_set")
     scenario_sets = by_id(matrix.get("scenario_sets", []), "scenario_set")
     memory_contexts = by_id(matrix.get("memory_contexts", []), "memory_context")
+    inference_strategies = by_id(matrix.get("inference_strategies", []), "inference_strategy")
     if model_set_id not in model_sets:
         fail(f"unknown model_set: {model_set_id}")
     if scenario_set_id not in scenario_sets:
         fail(f"unknown scenario_set: {scenario_set_id}")
+    if inference_strategy_id not in inference_strategies:
+        fail(f"unknown inference_strategy: {inference_strategy_id}")
     selected_memories = []
     seen = set()
     for memory_id in memory_context_ids:
@@ -112,7 +117,12 @@ def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_id
             memory["_path"] = str(safe_path(memory.get("path"), ".md").relative_to(REPO))
         else:
             memory["_path"] = ""
-    return model_set, scenario_set, selected_memories
+    strategy = dict(inference_strategies[inference_strategy_id])
+    if strategy.get("prompt_path"):
+        strategy["_prompt_path"] = str(safe_path(strategy.get("prompt_path"), ".md").relative_to(REPO))
+    else:
+        strategy["_prompt_path"] = ""
+    return model_set, scenario_set, selected_memories, strategy
 
 
 def write_json_atomic(path: Path, payload: dict) -> None:
@@ -130,13 +140,14 @@ def run_ids(batch_id: str, count: int) -> list[str]:
     return [f"{batch_id}-m{index}" for index in range(1, count + 1)]
 
 
-def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, memories: list[dict]) -> dict:
+def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, memories: list[dict], strategy: dict) -> dict:
     ids = run_ids(args.batch_id, len(memories))
     return {
         "schema_version": 1,
         "batch_id": args.batch_id,
         "model_set": args.model_set,
         "scenario_set": args.scenario_set,
+        "inference_strategy": args.inference_strategy,
         "memory_contexts": [memory["id"] for memory in memories],
         "status": "running",
         "runner": args.runner,
@@ -153,6 +164,8 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
                 "scenario_set": args.scenario_set,
                 "memory_context": memory["id"],
                 "memory_context_file": memory.get("_path") or None,
+                "inference_strategy": args.inference_strategy,
+                "strategy_prompt_file": strategy.get("_prompt_path") or None,
                 "status": "pending",
                 "started_at": None,
                 "ended_at": None,
@@ -166,6 +179,12 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
         "paths": {
             "models": model_set["_path"],
             "scenarios": scenario_set["_path"],
+            "strategy_prompt": strategy.get("_prompt_path") or "",
+        },
+        "strategy": {
+            "id": strategy.get("id"),
+            "candidate_count": int(strategy.get("candidate_count") or 1),
+            "selection_method": strategy.get("selection_method"),
         },
     }
 
@@ -201,6 +220,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
     models_path = REPO / state["paths"]["models"]
     scenarios_path = REPO / state["paths"]["scenarios"]
     memory_path = REPO / run["memory_context_file"] if run.get("memory_context_file") else None
+    strategy_path = REPO / run["strategy_prompt_file"] if run.get("strategy_prompt_file") else None
     scenarios = scenario_items(scenarios_path)
     payload = {
         "schema_version": 2,
@@ -215,6 +235,11 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         "memory_context": run["memory_context"],
         "memory_context_file": run.get("memory_context_file"),
         "memory_context_sha256": sha256(memory_path),
+        "inference_strategy": run.get("inference_strategy") or "baseline",
+        "strategy_candidate_count": int(state.get("strategy", {}).get("candidate_count") or 1),
+        "strategy_prompt_file": run.get("strategy_prompt_file"),
+        "strategy_prompt_sha256": sha256(strategy_path),
+        "timeout_policy_id": os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry"),
         "scenario_count": len(scenarios),
         "scenario_ids": [item.get("id") for item in scenarios if item.get("id")],
         "class_counts": {},
@@ -236,7 +261,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         payload[key] = counts
     if meta_path.exists():
         existing = json.loads(meta_path.read_text())
-        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256")
+        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "strategy_prompt_sha256")
         mismatches = [key for key in keys if existing.get(key) != payload.get(key)]
         if mismatches:
             raise RuntimeError(f"existing run.meta for {run['run_id']} does not match this batch: {', '.join(mismatches)}")
@@ -271,6 +296,8 @@ def local_roster_done(state: dict, run_id: str) -> bool:
         raise RuntimeError(f"run.meta hash mismatch for {run_id}")
     expected_memory = meta.get("memory_context")
     expected_memory_sha = meta.get("memory_context_sha256")
+    expected_strategy = meta.get("inference_strategy") or "baseline"
+    expected_strategy_sha = meta.get("strategy_prompt_sha256")
     expected_scenario_sha = meta.get("scenarios_sha256")
     expected_models = {
         line.strip().split()[0]
@@ -305,6 +332,10 @@ def local_roster_done(state: dict, run_id: str) -> bool:
                 raise RuntimeError(f"result memory_context mismatch for {run_id}")
             if row.get("env.memory_context_sha") != expected_memory_sha:
                 raise RuntimeError(f"result memory hash mismatch for {run_id}")
+            if (row.get("env.inference_strategy") or "baseline") != expected_strategy:
+                raise RuntimeError(f"result inference_strategy mismatch for {run_id}")
+            if row.get("env.strategy_prompt_sha") != expected_strategy_sha:
+                raise RuntimeError(f"result strategy prompt hash mismatch for {run_id}")
             if row.get("env.scenarios_sha") != expected_scenario_sha:
                 raise RuntimeError(f"result scenario hash mismatch for {run_id}")
             model = row.get("model")
@@ -343,6 +374,8 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
         "SCENARIO_SET": run["scenario_set"],
         "MEMORY_CONTEXT": run["memory_context"],
         "MEMORY_CONTEXT_FILE": run.get("memory_context_file") or "",
+        "INFERENCE_STRATEGY": run.get("inference_strategy") or state.get("inference_strategy") or "baseline",
+        "STRATEGY_PROMPT_FILE": run.get("strategy_prompt_file") or state.get("paths", {}).get("strategy_prompt") or "",
         "RUN_USER": state.get("user") or "user",
     })
     run["status"] = "starting"
@@ -350,7 +383,7 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
     state["current_index"] = run_index
     state["updated_at"] = utc_now()
     write_json_atomic(batch_dir / "batch-state.json", state)
-    append_log(batch_dir, f"launching {run['run_id']} memory_context={run['memory_context']}")
+    append_log(batch_dir, f"launching {run['run_id']} memory_context={run['memory_context']} inference_strategy={run.get('inference_strategy') or state.get('inference_strategy') or 'baseline'}")
     ensure_run_meta(state, run)
     command = ["./scripts/run-e2e.sh"] if state.get("runner") == "e2e" else ["./scripts/run-roster.sh"]
     with (batch_dir / f"{run['run_id']}.boot.log").open("a") as out:
@@ -440,7 +473,7 @@ def active(_: argparse.Namespace) -> None:
 def launch(args: argparse.Namespace) -> None:
     if not RUN_ID_RE.match(args.batch_id) or len(args.batch_id) > 70:
         fail("invalid batch_id")
-    model_set, scenario_set, memories = resolve_selection(args.model_set, args.scenario_set, args.memory_context)
+    model_set, scenario_set, memories, strategy = resolve_selection(args.model_set, args.scenario_set, args.memory_context, args.inference_strategy)
     ids = run_ids(args.batch_id, len(memories))
     if any(not RUN_ID_RE.match(run_id) or len(run_id) > 80 for run_id in ids):
         fail("generated run_id is invalid")
@@ -451,23 +484,57 @@ def launch(args: argparse.Namespace) -> None:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             fail("another memory batch is already active", code=3)
-        state = build_state(args, model_set, scenario_set, memories)
+        state = build_state(args, model_set, scenario_set, memories, strategy)
         write_json_atomic(batch_dir / "batch-state.json", state)
-        append_log(batch_dir, f"batch started model_set={args.model_set} scenario_set={args.scenario_set} memory_contexts={','.join(state['memory_contexts'])}")
+        append_log(batch_dir, f"batch started model_set={args.model_set} scenario_set={args.scenario_set} inference_strategy={args.inference_strategy} memory_contexts={','.join(state['memory_contexts'])}")
+        run_batch(state, batch_dir, args.poll_s)
+
+
+def run_batch(state: dict, batch_dir: Path, poll_s: int) -> None:
+    try:
+        state["status"] = "running"
+        state["updated_at"] = utc_now()
+        write_json_atomic(batch_dir / "batch-state.json", state)
+        start_index = int(state.get("current_index") or 0)
+        for index in range(start_index, len(state["runs"])):
+            if state["runs"][index].get("status") == "done":
+                continue
+            launch_run(state, index, batch_dir, poll_s)
+        state["status"] = "done"
+        state["updated_at"] = utc_now()
+        write_json_atomic(batch_dir / "batch-state.json", state)
+        append_log(batch_dir, "batch completed")
+    except Exception as exc:  # noqa: BLE001
+        state["status"] = "failed"
+        state["error"] = str(exc)
+        state["updated_at"] = utc_now()
+        write_json_atomic(batch_dir / "batch-state.json", state)
+        append_log(batch_dir, f"batch failed: {exc}")
+        raise
+
+
+def resume(args: argparse.Namespace) -> None:
+    if not RUN_ID_RE.match(args.batch_id):
+        fail("invalid batch_id")
+    batch_dir = RUN_BATCHES / args.batch_id
+    state_path = batch_dir / "batch-state.json"
+    if not state_path.exists():
+        fail(f"unknown batch_id: {args.batch_id}")
+    RUN_BATCHES.mkdir(parents=True, exist_ok=True)
+    with LOCK_PATH.open("a") as lock:
         try:
-            for index in range(len(state["runs"])):
-                launch_run(state, index, batch_dir, args.poll_s)
-            state["status"] = "done"
-            state["updated_at"] = utc_now()
-            write_json_atomic(batch_dir / "batch-state.json", state)
-            append_log(batch_dir, "batch completed")
-        except Exception as exc:  # noqa: BLE001
-            state["status"] = "failed"
-            state["error"] = str(exc)
-            state["updated_at"] = utc_now()
-            write_json_atomic(batch_dir / "batch-state.json", state)
-            append_log(batch_dir, f"batch failed: {exc}")
-            raise
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            fail("another memory batch is already active", code=3)
+        state = json.loads(state_path.read_text())
+        if state.get("status") != "paused":
+            fail(f"batch is not paused: status={state.get('status')!r}")
+        for run in state.get("runs", []):
+            if run.get("status") == "paused":
+                run["status"] = "pending"
+                run["ended_at"] = None
+        append_log(batch_dir, "batch resume requested")
+        run_batch(state, batch_dir, args.poll_s)
 
 
 def parse_args() -> argparse.Namespace:
@@ -479,6 +546,7 @@ def parse_args() -> argparse.Namespace:
     launch_p.add_argument("--batch-id", required=True)
     launch_p.add_argument("--model-set", required=True)
     launch_p.add_argument("--scenario-set", required=True)
+    launch_p.add_argument("--inference-strategy", default="baseline")
     launch_p.add_argument("--memory-context", action="append", required=True)
     launch_p.add_argument("--runner", choices=("e2e", "local-roster"), default="e2e",
                           help="e2e drives the full home+ai pipeline; local-roster runs scripts/run-roster.sh on this node")
@@ -487,6 +555,10 @@ def parse_args() -> argparse.Namespace:
     launch_p.add_argument("--stall-timeout-s", type=int, default=7200,
                           help="fail a running child run after this many seconds without progress; 0 disables")
     launch_p.set_defaults(func=launch)
+    resume_p = sub.add_parser("resume")
+    resume_p.add_argument("--batch-id", required=True)
+    resume_p.add_argument("--poll-s", type=int, default=60)
+    resume_p.set_defaults(func=resume)
     return parser.parse_args()
 
 

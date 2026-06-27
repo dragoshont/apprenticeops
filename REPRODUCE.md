@@ -177,7 +177,31 @@ prepended to every scenario prompt, and its id/path/hash are written to `run.met
 and every raw row as `env.memory_context`, `env.memory_context_file`, and
 `env.memory_context_sha`.
 
-Use `none` as the baseline and `homelab-okf-v1` as the memory condition:
+Use `none` as the baseline and `homelab-okf-v1` or `homelab-okf-3kb-v1` as memory
+conditions. Keep `inference_strategy` separate: it controls how the answer is
+produced, not what background facts are injected.
+
+For the first strategy pilot in CEOps, use:
+
+```text
+model_set=strategy-pilot-2
+scenario_set=strategy-pilot-6
+memory_contexts=none, homelab-okf-3kb-v1
+inference_strategy=baseline | single_call_tournament_brief | best_of_3_detcheck
+```
+
+`single_call_tournament_brief` is the cheap prompt-only ablation. `best_of_3_detcheck`
+runs three local samples and selects by deterministic-check score; candidate
+completions are preserved as sidecar artifacts. Before comparing quality, inspect
+reliability explicitly:
+
+```bash
+python3 scripts/report-run-quality.py data/runs/<RUN_ID>
+```
+
+The report prints DNF/stall/length, zero-output stalls, judge-empty rows, and
+judge-token usage by strategy. A memory or strategy lift that raises DNF is a
+different result, not a clean win.
 
 The recommended no-UI path is the file-backed experiment-plan controller. It uses
 `data/run-matrix.json` as the plan source and writes durable state to
@@ -367,7 +391,7 @@ that's why we report CIs, not point claims.)
   the judge prompts + a human-rated κ subset so others can re-judge.
 - **Judge egress / opsec**: the off-node judge (GitHub Models → a cloud frontier
   model) **receives the full scenario text**, which in this study contains real
-  cluster detail (namespaces, Azure Key Vault, Cloudflare, `*.hont.ro`,
+  cluster detail (namespaces, Azure Key Vault, Cloudflare, `*.home.domain`,
   restic/NAS). The *system-under-test* stays sovereign, but **grading sends real
   ops data to a third party**. Scrub/anonymize scenarios before public release,
   and disclose this egress in the paper. Self-hosting the judge removes it.
@@ -388,7 +412,7 @@ apprenticeops/                     # new public repo (Apache-2.0)
 ├── LICENSE                        # Apache-2.0 (add on extraction)
 └── results/                       # released run data + RESULTS.md + ENVIRONMENT.md
 ```
-Nothing in the harness hardwires `home.hont.ro` — the scenarios are **frozen
+Nothing in the harness hardwires `home.home.domain` — the scenarios are **frozen
 text** (anyone runs them as-is); `OLLAMA_URL` is the only host knob. The only
 homelab-specific content is the *incident text itself*, which is the point (real,
 uncontaminated tasks). Add a top-level `LICENSE` and a `results/` snapshot on

@@ -240,9 +240,9 @@ Class: `diagnose`; difficulty: hard; grounding: closed-book or grounded.
 
 Evidence shape:
 
-- LAN clients can reach `home.hont.ro` by IP, but public DNS resolves to Cloudflare
+- LAN clients can reach `home.home.domain` by IP, but public DNS resolves to Cloudflare
   or an old WAN IP.
-- `dig @1.1.1.1 service.hont.ro` differs from local CoreDNS/UniFi result.
+- `dig @1.1.1.1 service.home.domain` differs from local CoreDNS/UniFi result.
 - Cloudflared tunnel is healthy, Traefik is healthy, pod endpoints are healthy.
 - ISP WAN is up/down, DHCP lease changed, or port-forward/tunnel status differs.
 - Cloudflare DNS record list has unexpected records, proxy-mode mismatch, stale

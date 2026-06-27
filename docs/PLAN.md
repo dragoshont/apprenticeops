@@ -26,7 +26,7 @@ it's accurate but slow.
 
 | | |
 |---|---|
-| Host | `home-ai.hont.ro` (192.168.1.200), ThinkPad T480s |
+| Host | `home-ai.home.domain` (192.168.1.200), ThinkPad T480s |
 | CPU | i5-8350U, 4c/8t, AVX2+FMA+F16C (no AVX-512) |
 | RAM | 23 GiB usable + 19 GB swap (zram+disk) |
 | Bound by | **memory bandwidth**, not FLOPs |
@@ -232,11 +232,11 @@ implemented in [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipyn
 
 ```bash
 # 0. (once) pull the eval deps on the node
-ssh dragos@home-ai.hont.ro 'pipx install lm-eval || pip install --user lm-eval'
+ssh dragos@home-ai.home.domain 'pipx install lm-eval || pip install --user lm-eval'
 
 # 1. Pull a bracket's models (see MODELS.md — start with 0-1B, cheapest)
 #    The runner has a manifest; it pulls, runs, unloads, and frees disk per model.
-ssh dragos@home-ai.hont.ro 'python3 - < scripts/ai-node/small-model-eval/run.py --bracket 0-1B'
+ssh dragos@home-ai.home.domain 'python3 - < scripts/ai-node/small-model-eval/run.py --bracket 0-1B'
 
 # 2. Homelab scenario suite (Axis B) — the decision-maker
 python3 scripts/ai-node/small-model-eval/run.py --suite homelab --models <list>

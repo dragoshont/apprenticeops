@@ -1,4 +1,4 @@
-# ceops.hont.ro — Traefik IngressRoute for the ApprenticeOps Mission Control dashboard.
+# ceops.home.domain — Traefik IngressRoute for the ApprenticeOps Mission Control dashboard.
 #
 # STAGED / INERT: this file is NOT in any kustomization and is NOT applied by Flux.
 # Per homelab rule HL-11, an Authentik forward-auth gate is attached LAST, after the
@@ -48,7 +48,7 @@ metadata:
 spec:
   entryPoints: [websecure]
   routes:
-    - match: Host(`ceops.hont.ro`)
+    - match: Host(`ceops.home.domain`)
       kind: Rule
       middlewares:
         - name: authentik-forwardauth     # shared domain-level forward-auth (default ns)
@@ -58,7 +58,7 @@ spec:
   tls:
     secretName: wildcard-hont-ro-tls
 ---
-# ceops.hont.ro :80 -> 301 https (reuses the shared redirect middleware in default ns).
+# ceops.home.domain :80 -> 301 https (reuses the shared redirect middleware in default ns).
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -68,7 +68,7 @@ metadata:
 spec:
   entryPoints: [web]
   routes:
-    - match: Host(`ceops.hont.ro`)
+    - match: Host(`ceops.home.domain`)
       kind: Rule
       middlewares:
         - name: authentik-https-redirect

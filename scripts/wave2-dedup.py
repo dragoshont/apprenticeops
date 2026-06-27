@@ -15,7 +15,7 @@ see which models are usable before refreshing data/snapshots and re-judging the
 NEW models for the quality axis.
 
 Fetch first, then run:
-    scp dragos@home-ai.hont.ro:/tmp/sme-var/results.wave2.jsonl .tmp/
+    scp dragos@home-ai.home.domain:/tmp/sme-var/results.wave2.jsonl .tmp/
     python3 scripts/wave2-dedup.py .tmp/results.wave2.jsonl
 """
 import json

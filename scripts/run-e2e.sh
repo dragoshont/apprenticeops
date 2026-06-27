@@ -28,7 +28,9 @@ SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 SCENARIO_SET="${SCENARIO_SET:-all}"
 MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
-AI="${AI:-dragos@home-ai.hont.ro}"
+INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
+STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
+AI="${AI:-dragos@home-ai.home.domain}"
 AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"
 POLL_S="${POLL_S:-15}"
 WORK="data/runs/${RUN_ID}"
@@ -36,7 +38,7 @@ LOG="${WORK}/e2e.log"
 mkdir -p "$WORK"
 # consumer exits cleanly once EXPECT models are judged; default = model count in MODELS
 EXPECT="${EXPECT:-$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS" 2>/dev/null || echo 0)}"
-export RUN_ID MODELS MODEL_SET SCENARIOS SCENARIO_SET MEMORY_CONTEXT MEMORY_CONTEXT_FILE RUN_USER EXPECT
+export RUN_ID MODELS MODEL_SET SCENARIOS SCENARIO_SET MEMORY_CONTEXT MEMORY_CONTEXT_FILE INFERENCE_STRATEGY STRATEGY_PROMPT_FILE RUN_USER EXPECT
 if [ ! -f "$WORK/run.meta" ]; then
 python3 - "$WORK/run.meta" <<'PY'
 import json, os, sys, tempfile
@@ -47,6 +49,7 @@ path = Path(sys.argv[1])
 models_path = Path(os.environ.get("MODELS", "data/models.dryrun.txt"))
 scenarios_path = Path(os.environ.get("SCENARIOS", "data/scenarios.json"))
 memory_path = Path(os.environ["MEMORY_CONTEXT_FILE"]) if os.environ.get("MEMORY_CONTEXT_FILE") else None
+strategy_path = Path(os.environ["STRATEGY_PROMPT_FILE"]) if os.environ.get("STRATEGY_PROMPT_FILE") else None
 
 def sha256(p):
   import hashlib
@@ -64,7 +67,18 @@ def scenarios(p):
   except Exception:
     return []
 
+def strategy_candidate_count(strategy_id):
+  try:
+    matrix = json.loads(Path("data/run-matrix.json").read_text())
+    for item in matrix.get("inference_strategies", []):
+      if item.get("id") == strategy_id:
+        return int(item.get("candidate_count") or 1)
+  except Exception:
+    pass
+  return 1
+
 items = scenarios(scenarios_path)
+strategy_id = os.environ.get("INFERENCE_STRATEGY", "baseline")
 obj = {
   "schema_version": 2,
   "run_id": os.environ.get("RUN_ID"),
@@ -78,6 +92,11 @@ obj = {
   "memory_context": os.environ.get("MEMORY_CONTEXT", "none"),
   "memory_context_file": str(memory_path) if memory_path else None,
   "memory_context_sha256": sha256(memory_path) if memory_path else None,
+  "inference_strategy": strategy_id,
+  "strategy_candidate_count": strategy_candidate_count(strategy_id),
+  "strategy_prompt_file": str(strategy_path) if strategy_path else None,
+  "strategy_prompt_sha256": sha256(strategy_path) if strategy_path else None,
+  "timeout_policy_id": os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry"),
   "scenario_count": len(items),
   "scenario_ids": [s.get("id") for s in items if isinstance(s, dict) and s.get("id")],
   "class_counts": dict(Counter(s.get("class") or "unknown" for s in items if isinstance(s, dict))),
@@ -100,7 +119,7 @@ os.replace(tmp, path)
 json.loads(path.read_text())
 PY
 else
-python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" <<'PY'
+python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 meta = json.loads(Path(sys.argv[1]).read_text())
@@ -121,6 +140,8 @@ if scenario_path.exists():
     raise SystemExit("run.meta scenario hash mismatch; start a new run")
 memory_context = sys.argv[4]
 memory_file = sys.argv[5]
+inference_strategy = sys.argv[6]
+strategy_file = sys.argv[7]
 if meta.get("memory_context", "none") != memory_context:
   raise SystemExit(f"run.meta memory_context={meta.get('memory_context')!r} does not match launch {memory_context!r}")
 if (meta.get("memory_context_file") or "") != memory_file:
@@ -130,6 +151,15 @@ if memory_file:
   got = hashlib.sha256(memory_path.read_bytes()).hexdigest()
   if meta.get("memory_context_sha256") and meta["memory_context_sha256"] != got:
     raise SystemExit("run.meta memory context hash mismatch; start a new run")
+if (meta.get("inference_strategy") or "baseline") != inference_strategy:
+  raise SystemExit(f"run.meta inference_strategy={meta.get('inference_strategy')!r} does not match launch {inference_strategy!r}")
+if (meta.get("strategy_prompt_file") or "") != strategy_file:
+  raise SystemExit("run.meta strategy prompt file mismatch; start a new run")
+if strategy_file:
+  strategy_path = Path(strategy_file)
+  got = hashlib.sha256(strategy_path.read_bytes()).hexdigest()
+  if meta.get("strategy_prompt_sha256") and meta["strategy_prompt_sha256"] != got:
+    raise SystemExit("run.meta strategy prompt hash mismatch; start a new run")
 PY
 fi
 ts() { date -uIs; }
@@ -171,9 +201,9 @@ case "${1:-run}" in
   watch) while true; do clear; progress; sleep 20; done ;;
 esac
 
-elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  scenarios=$SCENARIOS  memory=$MEMORY_CONTEXT  expect=$EXPECT ==="
+elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  scenarios=$SCENARIOS  memory=$MEMORY_CONTEXT strategy=$INFERENCE_STRATEGY expect=$EXPECT ==="
 elog "launching PRODUCER on ai (detached) ..."
-PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
+PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "INFERENCE_STRATEGY=$INFERENCE_STRATEGY" "STRATEGY_PROMPT_FILE=$STRATEGY_PROMPT_FILE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
 setsid bash -c "$PROD_ENV ./scripts/run-from-homelab.sh >>$(shell_quote "$LOG") 2>&1" </dev/null &
 elog "launching CONSUMER on home (detached, flock-guarded) ..."
 RUN_ID="$RUN_ID" AI="$AI" AI_REPO="$AI_REPO" EXPECT="$EXPECT" POLL_S="$POLL_S" SCENARIOS="$SCENARIOS" SCENARIO_SET="$SCENARIO_SET" \

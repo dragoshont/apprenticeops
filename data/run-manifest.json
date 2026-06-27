@@ -34,23 +34,28 @@
     "seed_base": 1,
     "think": false,
     "scenarios_file": "data/scenarios.json",
-    "scenarios_sha256": "2aa8d7fce88837d1fb457e85b3a93ae3fd457da995a16ca1548a529ba982b7f5",
+    "scenarios_sha256": "324d13eb9e057876ddc10da2d5373873ee56a78790e66aab383bc1cc78729d96",
     "scenario_count": 33,
     "scenario_sets": {
       "all": {
         "path": "data/scenarios.json",
-        "sha256": "2aa8d7fce88837d1fb457e85b3a93ae3fd457da995a16ca1548a529ba982b7f5",
+        "sha256": "324d13eb9e057876ddc10da2d5373873ee56a78790e66aab383bc1cc78729d96",
         "scenario_count": 33
       },
       "core-current": {
         "path": "data/scenario_sets/core-current.json",
-        "sha256": "012539dbc8a02d622a25d7f147a4822d48f6225134c390d113e38f954573d61a",
+        "sha256": "6165ba5b7422125e05c1fc75bf692283ba45ec0091ad5c891151c9e5415e44d3",
         "scenario_count": 20
       },
       "extended": {
         "path": "data/scenario_sets/extended.json",
-        "sha256": "da89640b997edecb0997b54447c7101dad81d2a664a4bc347917d16d24ad8742",
+        "sha256": "d268f05f6beba09f4b4ac026504630e7e99a0bb2d84070db115f11f5837bb2db",
         "scenario_count": 13
+      },
+      "strategy-pilot-6": {
+        "path": "data/scenario_sets/strategy-pilot-6.json",
+        "sha256": "826612fea7cea9444f7f331f5c6ce33a3055aed0636a56d11ffceeb302a3f0ee",
+        "scenario_count": 6
       }
     }
   },

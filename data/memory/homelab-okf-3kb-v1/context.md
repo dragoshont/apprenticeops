@@ -3,8 +3,8 @@
 Use as stable background only when relevant. Scenario context is authoritative for incident-specific facts. Do not infer live state, secret values, or exact paths unless provided.
 
 ## Topology
-- `home.hont.ro` / `192.168.1.201` is the single-node MicroK8s homelab cluster.
-- `home-ai.hont.ro` / `192.168.1.200` is a separate CPU-only Ollama node.
+- `home.home.domain` / `192.168.1.201` is the single-node MicroK8s homelab cluster.
+- `home-ai.home.domain` / `192.168.1.200` is a separate CPU-only Ollama node.
 - Common storage: host app/config/scratch under `/mnt/internal_drive`; media/NAS paths may appear, but Kubernetes should use declared PVCs rather than assuming hostPath access.
 
 ## Change Control

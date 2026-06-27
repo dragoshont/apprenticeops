@@ -1,4 +1,4 @@
-import type { PersistenceStatus, Progress, AnalyticsScope } from "../types";
+import type { PersistenceStatus, Progress, AnalyticsScope, ReliabilityReport } from "../types";
 import { Bar, Hint } from "./ui";
 import { Gauge, Cpu, Scale, Clock, Timer } from "lucide-react";
 
@@ -52,12 +52,14 @@ export function RunProgress({
   scope,
   persistence,
   batchNotice,
+  reliability,
 }: {
   progress?: Progress;
   live: boolean;
   scope?: AnalyticsScope;
   persistence?: PersistenceStatus;
   batchNotice?: string | null;
+  reliability?: ReliabilityReport | null;
 }) {
   const p = progress;
   const pct = p?.pct ?? 0;
@@ -132,8 +134,48 @@ export function RunProgress({
               {p.rate_per_min} units/min
             </div>
           )}
+          {reliability && (
+            <div className="grid gap-2 pt-1 sm:grid-cols-5">
+              <ReliabilityChip label="DNF" value={`${reliability.dnf}/${reliability.rows}`} sub={`${reliability.dnf_rate}%`} tone={reliability.dnf ? "text-warn" : "text-good"} />
+              <ReliabilityChip label="Length" value={`${reliability.length}`} sub={`${reliability.length_rate}%`} tone={reliability.length ? "text-warn" : "text-good"} />
+              <ReliabilityChip label="Zero stalls" value={`${reliability.zero_output_stalls}`} sub={`${reliability.zero_output_stall_rate}%`} tone={reliability.zero_output_stalls ? "text-bad" : "text-good"} />
+              <ReliabilityChip label="Judge empty" value={`${reliability.judge_empty}`} sub={`${reliability.judge_evidence_missing} evidence gaps`} tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"} />
+              <ReliabilityChip label="Judge tokens" value={formatTokenCount(sumJudgeTokens(reliability))} sub={judgeUsageSub(reliability)} tone="text-muted" />
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function sumJudgeTokens(reliability: ReliabilityReport) {
+  return Object.values(reliability.usage_by_judge ?? {}).reduce((sum, usage) => sum + (usage.tokens_in || 0), 0);
+}
+
+function judgeUsageSub(reliability: ReliabilityReport) {
+  const entries = Object.entries(reliability.usage_by_judge ?? {});
+  if (!entries.length) return "usage not recorded yet";
+  return entries.map(([judge, usage]) => `${judge}: ${usage.calls} calls`).join(" · ");
+}
+
+function formatTokenCount(tokens: number) {
+  if (!tokens) return "—";
+  if (tokens >= 1_000_000) return `${trimOne(tokens / 1_000_000)}M in`;
+  if (tokens >= 1_000) return `${trimOne(tokens / 1_000)}k in`;
+  return `${tokens} in`;
+}
+
+function trimOne(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function ReliabilityChip({ label, value, sub, tone }: { label: string; value: string; sub: string; tone: string }) {
+  return (
+    <div className="rounded-lg border border-line/60 bg-panel/50 px-2.5 py-2">
+      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">{label}</div>
+      <div className={`mt-0.5 font-mono text-sm font-semibold ${tone}`}>{value}</div>
+      <div className="mt-0.5 truncate text-[10px] text-muted" title={sub}>{sub}</div>
     </div>
   );
 }

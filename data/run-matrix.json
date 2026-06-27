@@ -4,7 +4,8 @@
   "defaults": {
     "model_set": "dryrun",
     "scenario_set": "core-current",
-    "memory_context": "none"
+    "memory_context": "none",
+    "inference_strategy": "baseline"
   },
   "model_sets": [
     {
@@ -20,6 +21,13 @@
       "path": "data/models.spread10.txt",
       "kind": "experiment",
       "description": "Ten-model spread across the locked size/footprint brackets: two models each from 0-1B, 1-2B, 2-3B, 3-4B, and 4-5GB."
+    },
+    {
+      "id": "strategy-pilot-2",
+      "label": "Strategy pilot - 2 models",
+      "path": "data/models.strategy-pilot-2.txt",
+      "kind": "pilot",
+      "description": "Two-model pilot roster for inference-strategy experiments: qwen3:4b as the strong option-search candidate and granite4:micro as the cheap small-model control."
     },
     {
       "id": "full",
@@ -45,6 +53,13 @@
       "description": "Additional/rotation scenarios outside Core 20 for targeted claims and calibration."
     },
     {
+      "id": "strategy-pilot-6",
+      "label": "Strategy pilot - 6 scenarios",
+      "path": "data/scenario_sets/strategy-pilot-6.json",
+      "kind": "pilot",
+      "description": "Six hard/structured scenarios for testing baseline versus tournament-style strategy without multiplying the full matrix."
+    },
+    {
       "id": "all",
       "label": "All current scenarios",
       "path": "data/scenarios.json",
@@ -64,7 +79,7 @@
       "label": "Homelab OKF memory v1",
       "path": "data/memory/homelab-okf-v1/context.md",
       "kind": "generated",
-      "description": "Compact source-cited homelab memory briefing, injected before each scenario for the memory-conditioned comparison."
+      "description": "Compact secret-free homelab memory briefing, injected before each scenario for the memory-conditioned comparison."
     },
     {
       "id": "homelab-okf-3kb-v1",
@@ -72,6 +87,61 @@
       "path": "data/memory/homelab-okf-3kb-v1/context.md",
       "kind": "generated",
       "description": "Scenario-aware compact homelab memory briefing capped at 3KB; no citations section and no scenario-specific gold answers."
+    },
+    {
+      "id": "tournament-brief-v1",
+      "label": "Tournament brief v1",
+      "path": "data/memory/tournament-brief-v1/context.md",
+      "kind": "strategy",
+      "description": "Single-call option-tournament response strategy: consider alternatives, score them for safety/reversibility/evidence fit, then answer with the best choice. This is not a true external best-of-N workflow."
+    }
+  ],
+  "inference_strategies": [
+    {
+      "id": "baseline",
+      "label": "Baseline single call",
+      "kind": "baseline",
+      "candidate_count": 1,
+      "extra_calls": 0,
+      "selection_method": "single_call",
+      "description": "Current production shape: one local model call per answer row."
+    },
+    {
+      "id": "single_call_tournament_brief",
+      "label": "Prompt tournament brief",
+      "kind": "prompt_only",
+      "candidate_count": 1,
+      "extra_calls": 0,
+      "selection_method": "single_call_strategy_prompt",
+      "prompt_path": "data/inference_strategies/tournament-brief-v1.md",
+      "description": "One local model call with an explicit option-scoring response strategy. Tests instruction-following, not external best-of-N selection."
+    },
+    {
+      "id": "best_of_3_detcheck",
+      "label": "Best of 3 by deterministic checks",
+      "kind": "best_of_n",
+      "candidate_count": 3,
+      "extra_calls": 2,
+      "selection_method": "max_det_score_then_non_dnf",
+      "description": "Three independent local samples; keep the candidate with the highest deterministic-check score, preferring non-DNF/full answers on ties. Candidate completions are written as sidecar artifacts."
+    },
+    {
+      "id": "self_consistency_3",
+      "label": "Self-consistency 3",
+      "kind": "best_of_n",
+      "candidate_count": 3,
+      "extra_calls": 2,
+      "selection_method": "majority_det_score_bucket",
+      "description": "Three independent local samples; select from the most common deterministic-score bucket. This is a cheap consistency proxy for open-ended ops answers."
+    },
+    {
+      "id": "evaluator_optimizer_1",
+      "label": "Evaluator optimizer 1 pass",
+      "kind": "critique_revise",
+      "candidate_count": 3,
+      "extra_calls": 2,
+      "selection_method": "generate_critique_revise",
+      "description": "Generate once, ask the same local model for a critique, then revise once. The revised answer is judged; all intermediate calls are preserved as candidates."
     }
   ],
   "experiment_plans": [

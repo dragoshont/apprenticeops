@@ -146,9 +146,9 @@ for "the system is not sovereign."
 |---|---|---|---|
 | **Model inference** (`run.py`) | **None** — local Ollama on `127.0.0.1:11434` only | — | **Sovereign. The claim rests here.** No network egress during any graded inference. |
 | **Model acquisition** (`ollama pull`) | `ollama.com` / registry | No — one-time, before the run | Supply-chain surface (pin the **digest**, not the tag; see MARKET §3). Not an inference dependency. |
-| **Judge + frontier reference** (`judge.py`) | **GitHub Models** (`models.github.ai` → OpenAI/Azure-hosted) | **No** — off-node, post-hoc, on the Mac | **Eval scaffolding.** The system-under-test never calls it. BUT it **receives the scenario text**, which contains real cluster detail (namespaces, Azure Key Vault, Cloudflare, `*.hont.ro`, restic/NAS) → **egress of real ops data to a third party** (see threat row + REPRODUCE caveat; scrub before release). |
+| **Judge + frontier reference** (`judge.py`) | **GitHub Models** (`models.github.ai` → OpenAI/Azure-hosted) | **No** — off-node, post-hoc, on the Mac | **Eval scaffolding.** The system-under-test never calls it. BUT it **receives the scenario text**, which contains real cluster detail (namespaces, Azure Key Vault, Cloudflare, `*.home.domain`, restic/NAS) → **egress of real ops data to a third party** (see threat row + REPRODUCE caveat; scrub before release). |
 | **Stats** (`report.py` extension) | PyPI (`numpy`/`scipy`) | No — analysis-time, off-node | None at runtime. |
-| **Serving gateway** (Caddy `ai.hont.ro`, *not* part of the eval) | Let's Encrypt + Cloudflare DNS-01 | No | Out of scope for the benchmark; a dependency of the *deployed serving* path, not the *measured* path. |
+| **Serving gateway** (Caddy `ai.home.domain`, *not* part of the eval) | Let's Encrypt + Cloudflare DNS-01 | No | Out of scope for the benchmark; a dependency of the *deployed serving* path, not the *measured* path. |
 
 **Bottom line:** the only public service in the actual experiment is the
 **off-node judge**, and it is grading scaffolding, not a runtime dependency — but
@@ -251,7 +251,7 @@ entries in `data/models.txt`):
   > (`rm -rf`, force-delete PVC/PV, drop database, disable firewall/NetworkPolicy,
   > `kubectl delete pvc`, secret exfiltration) so safety is a *distribution*, not
   > a coin flip.
-- **Provenance:** drawn from **real `home.hont.ro` signals** (kube events,
+- **Provenance:** drawn from **real `home.home.domain` signals** (kube events,
   crashloops, ESO/Flux/Helm/probe failures captured over time) + a **held-out**
   set authored *after* the harness froze, to test generalization.
 - **De-bias authorship:** gold answers + rubrics reviewed by **≥ 2 independent
@@ -1022,7 +1022,7 @@ and it is the realistic deployment mode for these models.
 keeps its question and gold answer; we attach a set of **context conditions** and
 run the model under each. The conditions are the established RAG failure modes
 (RGB, Chen et al., AAAI 2024) plus position sensitivity (*Lost in the Middle*, Liu
-et al., TACL 2023), instantiated on **real `home.hont.ro` artifacts** (kube events,
+et al., TACL 2023), instantiated on **real `home.home.domain` artifacts** (kube events,
 `journalctl`, Flux/Helm YAML, runbook paragraphs):
 
 | Condition | What the model is given | Ability it probes |

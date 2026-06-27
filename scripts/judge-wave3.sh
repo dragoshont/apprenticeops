@@ -17,7 +17,7 @@
 # your Copilot subscription (no Anthropic/OpenAI key needed).
 set -euo pipefail
 cd "$(dirname "$0")/.."                       # repo root
-NODE="${NODE:-dragos@home-ai.hont.ro}"
+NODE="${NODE:-dragos@home-ai.home.domain}"
 SME="${SME:-/tmp/sme-var}"
 W3=".tmp/wave3"
 JUDGED="${JUDGED:-.tmp/judge/judged.wave3.jsonl}"

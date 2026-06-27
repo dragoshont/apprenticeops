@@ -21,7 +21,7 @@ environment values are server-resolved and quoted before being sent to ``home``.
 
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
-  AI_SSH      how home reaches the ai node           (default: "home-ai.hont.ro")
+  AI_SSH      how home reaches the ai node           (default: "home-ai.home.domain")
   REPO_DIR    repo path on home                      (default: "~/apprenticeops")
   POLL_S      websocket push cadence, seconds        (default: 5)
   HOST/PORT   bind                                   (default: 127.0.0.1:8770)
@@ -47,7 +47,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 HOME_SSH = os.environ.get("HOME_SSH", "homelab")
-AI_SSH = os.environ.get("AI_SSH", "home-ai.hont.ro")
+AI_SSH = os.environ.get("AI_SSH", "home-ai.home.domain")
 REPO_DIR = os.environ.get("REPO_DIR", "~/apprenticeops")
 POLL_S = float(os.environ.get("POLL_S", "5"))
 
@@ -102,12 +102,12 @@ def _home_cmd(inner: str) -> str:
     return f"cd {REPO_DIR} && {inner}"
 
 
-# Refresh the experiment scripts from origin/main before a (re)launch so the run
-# always uses current code (e.g. run-e2e.sh that writes run.meta), without
-# touching the current branch or the untracked run data. Best-effort.
-_SYNC = ("git fetch -q origin 2>/dev/null; "
-         "git checkout -q origin/main -- scripts data/run-matrix.json data/run-manifest.json "
-         "data/scenarios.json data/scenario_sets data/memory 2>/dev/null; ")
+# Best-effort fetch only. The launcher must use the deployed working tree: during
+# development the dashboard is updated by rsync before the code is committed, and
+# a destructive `git checkout origin/main -- ...` would silently run older code.
+# Canonical committed runs can still force origin sync at the AI hop with
+# SYNC_MODE=origin in scripts/run-from-homelab.sh.
+_SYNC = "git fetch -q origin 2>/dev/null; "
 
 
 def _q(value: object) -> str:
@@ -343,15 +343,34 @@ def resolve_memory_context(raw):
         item["sha256"] = None
     return item
 
+def resolve_inference_strategy(raw):
+    sid = raw.get("id") if isinstance(raw, dict) else None
+    if not ID_RE.match(str(sid or "")):
+        fail(f"invalid inference_strategy id: {sid!r}")
+    item = dict(raw)
+    path_raw = item.get("prompt_path")
+    if path_raw:
+        path = safe_path(path_raw, ".md")
+        item["prompt_byte_count"] = path.stat().st_size
+        item["prompt_sha256"] = sha(path)
+    else:
+        item["prompt_path"] = None
+        item["prompt_byte_count"] = 0
+        item["prompt_sha256"] = None
+    return item
+
 model_sets = [resolve_model_set(item) for item in matrix.get("model_sets", [])]
 scenario_sets = [resolve_scenario_set(item) for item in matrix.get("scenario_sets", [])]
 memory_contexts = [resolve_memory_context(item) for item in matrix.get("memory_contexts", [])]
+inference_strategies = [resolve_inference_strategy(item) for item in matrix.get("inference_strategies", [])]
 if len({m["id"] for m in model_sets}) != len(model_sets):
     fail("duplicate model_set id")
 if len({s["id"] for s in scenario_sets}) != len(scenario_sets):
     fail("duplicate scenario_set id")
 if len({m["id"] for m in memory_contexts}) != len(memory_contexts):
     fail("duplicate memory_context id")
+if len({s["id"] for s in inference_strategies}) != len(inference_strategies):
+    fail("duplicate inference_strategy id")
 
 scenario_rows = {}
 for scenario_set in scenario_sets:
@@ -373,6 +392,7 @@ print(json.dumps({
     "model_sets": model_sets,
     "scenario_sets": scenario_sets,
     "memory_contexts": memory_contexts,
+    "inference_strategies": inference_strategies,
     "experiment_plans": matrix.get("experiment_plans", []),
     "scenarios": sorted(scenario_rows.values(), key=lambda row: row["id"]),
 }))
@@ -404,6 +424,7 @@ root = Path.cwd().resolve()
 model_set_id = sys.argv[1]
 scenario_set_id = sys.argv[2]
 memory_context_id = sys.argv[3]
+inference_strategy_id = sys.argv[4] if len(sys.argv) > 4 else "baseline"
 
 def fail(message):
     print(json.dumps({"error": message}))
@@ -467,16 +488,21 @@ matrix = json.loads(safe_path("data/run-matrix.json", ".json").read_text())
 model_set = by_id(matrix.get("model_sets", []), model_set_id, "model_set")
 scenario_set = by_id(matrix.get("scenario_sets", []), scenario_set_id, "scenario_set")
 memory_context = by_id(matrix.get("memory_contexts", []), memory_context_id, "memory_context")
+inference_strategy = by_id(matrix.get("inference_strategies", []), inference_strategy_id, "inference_strategy")
 
 model_path = safe_path(model_set["path"], ".txt")
 scenario_path = safe_path(scenario_set["path"], ".json")
 memory_text = ""
 if memory_context.get("path"):
     memory_text = safe_path(memory_context["path"], ".md").read_text(encoding="utf-8").strip()
+strategy_text = ""
+if inference_strategy.get("prompt_path"):
+    strategy_text = safe_path(inference_strategy["prompt_path"], ".md").read_text(encoding="utf-8").strip()
 
 scenarios = []
 for item in load_scenarios(scenario_path):
     prompt = build_prompt(item, memory_text)
+    displayed_prompt = prompt if not strategy_text or inference_strategy_id != "single_call_tournament_brief" else f"--- RESPONSE STRATEGY ---\n{strategy_text}\n\n{prompt}"
     scenarios.append({
         "id": item.get("id"),
         "class": item.get("class"),
@@ -489,22 +515,23 @@ for item in load_scenarios(scenario_path):
         "deterministic_checks": item.get("deterministic_checks", []),
         "max_tokens": item.get("max_tokens"),
         "timeout_s": item.get("timeout_s"),
-        "prompt": prompt,
-        "prompt_chars": len(prompt),
+        "prompt": displayed_prompt,
+        "prompt_chars": len(displayed_prompt),
     })
 
 print(json.dumps({
     "model_set": {**model_set, "models": read_models(model_path)},
     "scenario_set": scenario_set,
     "memory_context": {**memory_context, "markdown": memory_text, "chars": len(memory_text)},
+    "inference_strategy": {**inference_strategy, "markdown": strategy_text, "chars": len(strategy_text)},
     "scenarios": scenarios,
 }))
 '''
 
 
-def _input_details(model_set: str, scenario_set: str, memory_context: str) -> dict:
-    _resolve_run_selection(model_set, scenario_set, memory_context)
-    cp = _ssh(_home_cmd("python3 - " + " ".join(_q(arg) for arg in (model_set, scenario_set, memory_context)) + " <<'PY'\n" + _INPUTS_SCRIPT + "\nPY"), timeout=30)
+def _input_details(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline") -> dict:
+    _resolve_run_selection(model_set, scenario_set, memory_context, inference_strategy)
+    cp = _ssh(_home_cmd("python3 - " + " ".join(_q(arg) for arg in (model_set, scenario_set, memory_context, inference_strategy)) + " <<'PY'\n" + _INPUTS_SCRIPT + "\nPY"), timeout=30)
     if cp.returncode != 0:
         detail = (cp.stderr or cp.stdout or "input details failed").strip()[:800]
         raise HTTPException(500, detail)
@@ -517,28 +544,33 @@ def _input_details(model_set: str, scenario_set: str, memory_context: str) -> di
     return data
 
 
-def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str) -> tuple[dict, dict, dict, dict]:
+def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline") -> tuple[dict, dict, dict, dict, dict]:
     if not _ID_RE.match(model_set or ""):
         raise HTTPException(400, "invalid model_set id")
     if not _ID_RE.match(scenario_set or ""):
         raise HTTPException(400, "invalid scenario_set id")
     if not _ID_RE.match(memory_context or ""):
         raise HTTPException(400, "invalid memory_context id")
+    if not _ID_RE.match(inference_strategy or ""):
+        raise HTTPException(400, "invalid inference_strategy id")
     matrix = _run_matrix()
     model = next((item for item in matrix.get("model_sets", []) if item.get("id") == model_set), None)
     scenarios = next((item for item in matrix.get("scenario_sets", []) if item.get("id") == scenario_set), None)
     memory = next((item for item in matrix.get("memory_contexts", []) if item.get("id") == memory_context), None)
+    strategy = next((item for item in matrix.get("inference_strategies", []) if item.get("id") == inference_strategy), None)
     if not model:
         raise HTTPException(404, f"unknown model_set '{model_set}'")
     if not scenarios:
         raise HTTPException(404, f"unknown scenario_set '{scenario_set}'")
     if not memory:
         raise HTTPException(404, f"unknown memory_context '{memory_context}'")
+    if not strategy:
+        raise HTTPException(404, f"unknown inference_strategy '{inference_strategy}'")
     if not model.get("model_count"):
         raise HTTPException(400, f"model_set '{model_set}' contains no models")
     if not scenarios.get("scenario_count"):
         raise HTTPException(400, f"scenario_set '{scenario_set}' contains no scenarios")
-    return matrix, model, scenarios, memory
+    return matrix, model, scenarios, memory, strategy
 
 
 def _read_run_meta(run_id: str) -> dict:
@@ -579,11 +611,13 @@ class StartReq(BaseModel):
     model_set: str
     scenario_set: str
     memory_context: str = "none"
+    inference_strategy: str = "baseline"
 
 
 class BatchStartReq(BaseModel):
     model_set: str
     scenario_set: str
+    inference_strategy: str = "baseline"
     memory_contexts: list[str]
 
 
@@ -613,18 +647,19 @@ def api_run_matrix():
 
 
 @app.get("/api/inputs")
-def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none"):
-    return JSONResponse(_input_details(model_set, scenario_set, memory_context))
+def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none", inference_strategy: str = "baseline"):
+    return JSONResponse(_input_details(model_set, scenario_set, memory_context, inference_strategy))
 
 
 @app.post("/api/control/start")
 def api_start(req: StartReq, request: Request):
-    _, model_set, scenario_set, memory_context = _resolve_run_selection(
-        req.model_set, req.scenario_set, req.memory_context
+    _, model_set, scenario_set, memory_context, inference_strategy = _resolve_run_selection(
+        req.model_set, req.scenario_set, req.memory_context, req.inference_strategy
     )
     models = model_set["path"]
     scenarios = scenario_set["path"]
     memory_path = memory_context.get("path") or ""
+    strategy_path = inference_strategy.get("prompt_path") or ""
     # one run at a time: refuse if a run is currently active (running or paused).
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
@@ -636,7 +671,7 @@ def api_start(req: StartReq, request: Request):
     # who started it: the Authentik user when gated, else a generic "user".
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    run_id = f"{req.model_set}-{req.scenario_set}-{req.memory_context}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    run_id = f"{req.model_set}-{req.scenario_set}-{req.memory_context}-{req.inference_strategy}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     env = _env_assign({
         "RUN_ID": run_id,
         "MODELS": models,
@@ -645,6 +680,8 @@ def api_start(req: StartReq, request: Request):
         "SCENARIO_SET": req.scenario_set,
         "MEMORY_CONTEXT": req.memory_context,
         "MEMORY_CONTEXT_FILE": memory_path,
+        "INFERENCE_STRATEGY": req.inference_strategy,
+        "STRATEGY_PROMPT_FILE": strategy_path,
         "RUN_USER": user,
     })
     inner = (_SYNC + env + " "
@@ -656,7 +693,8 @@ def api_start(req: StartReq, request: Request):
     return {"ok": ok, "run_id": run_id,
             "model_set": req.model_set, "scenario_set": req.scenario_set,
             "memory_context": req.memory_context,
-            "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "user": user,
+            "inference_strategy": req.inference_strategy,
+            "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "strategy_prompt_file": strategy_path, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 
@@ -670,7 +708,7 @@ def api_start_batch(req: BatchStartReq, request: Request):
             seen.append(memory_context)
     if len(seen) != len(req.memory_contexts):
         raise HTTPException(400, "memory contexts must be unique")
-    resolved = [_resolve_run_selection(req.model_set, req.scenario_set, memory_context) for memory_context in seen]
+    resolved = [_resolve_run_selection(req.model_set, req.scenario_set, memory_context, req.inference_strategy) for memory_context in seen]
     models = resolved[0][1]["path"]
     scenarios = resolved[0][2]["path"]
     cur = status(None, max_age=0.0, force=True)
@@ -690,12 +728,13 @@ def api_start_batch(req: BatchStartReq, request: Request):
             pass
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    batch_id = f"batch-{req.model_set}-{req.scenario_set}-memory-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    batch_id = f"batch-{req.model_set}-{req.scenario_set}-{req.inference_strategy}-memory-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     args = [
         "python3", "scripts/run-memory-batch.py", "launch",
         "--batch-id", batch_id,
         "--model-set", req.model_set,
         "--scenario-set", req.scenario_set,
+        "--inference-strategy", req.inference_strategy,
         "--user", user,
     ]
     for memory_context in seen:
@@ -711,6 +750,7 @@ def api_start_batch(req: BatchStartReq, request: Request):
         raise HTTPException(500, detail)
     _invalidate_status(None)
     return {"ok": True, "batch_id": batch_id, "model_set": req.model_set, "scenario_set": req.scenario_set,
+            "inference_strategy": req.inference_strategy,
             "memory_contexts": seen, "models": models, "scenarios": scenarios, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
@@ -775,15 +815,30 @@ def _signal_all(sig: str) -> dict:
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
 
+def _control_run(action: str, run_id: str) -> dict:
+    if action not in {"pause", "cancel", "resume"}:
+        raise HTTPException(400, "invalid control action")
+    if not _RUNID_RE.match(run_id or ""):
+        raise HTTPException(400, "invalid run_id")
+    cp = _ssh(_home_cmd(f"python3 scripts/control-run.py {action} --run-id {_q(run_id)}"), timeout=90)
+    if cp.returncode != 0:
+        detail = (cp.stderr or cp.stdout or f"{action} failed").strip()[:800]
+        raise HTTPException(409, detail)
+    try:
+        payload = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, f"{action} response was not JSON: {exc}") from exc
+    _invalidate_status(None, run_id)
+    return payload
+
+
 @app.post("/api/control/stop")
 def api_stop(req: RunReq):
     """Stop = cancel. Kill both process trees and write a .canceled marker so the
     run is terminal: it shows as 'canceled' in the table and cannot be resumed."""
-    if req.run_id:
-        _marker(req.run_id, ".canceled", create=True)
-        _marker(req.run_id, ".paused", create=False)
-        _invalidate_status(None, req.run_id)
-    return {**_signal_all("KILL"), "action": "cancel", "run_id": req.run_id}
+    if not req.run_id:
+        return {**_signal_all("KILL"), "action": "cancel", "run_id": None}
+    return _control_run("cancel", req.run_id)
 
 
 @app.post("/api/control/pause")
@@ -792,10 +847,9 @@ def api_pause(req: RunReq):
     all state intact) and write a .paused marker. Continue resumes it exactly. The
     ollama server is separate, so an in-flight token stream stalls rather than
     checkpointing — but no rows are lost."""
-    if req.run_id:
-        _marker(req.run_id, ".paused", create=True)
-        _invalidate_status(None, req.run_id)
-    return {**_signal_all("STOP"), "action": "pause", "run_id": req.run_id}
+    if not req.run_id:
+        raise HTTPException(400, "run_id required")
+    return _control_run("pause", req.run_id)
 
 
 @app.post("/api/control/resume")
@@ -811,6 +865,12 @@ def api_resume(req: RunReq):
     st = status(req.run_id, max_age=0.0, force=True)
     if st.get("markers", {}).get("canceled"):
         raise HTTPException(409, "run was canceled — start a new run instead")
+    if st.get("selected_scope", {}).get("kind") == "batch_child" or any(
+        req.run_id in [run.get("run_id") for run in (batch.get("runs") or [])]
+        for batch in st.get("run_batches", [])
+    ):
+        payload = _control_run("resume", req.run_id)
+        return {**payload, "action": payload.get("action", "resume"), "run_id": req.run_id}
     prod_alive = st.get("producer", {}).get("run_py_alive")
     cons_alive = st.get("consumer", {}).get("alive")
     if prod_alive or cons_alive:

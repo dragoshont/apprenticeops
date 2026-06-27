@@ -15,11 +15,11 @@ context remains authoritative for incident-specific facts.
 
 # Topology
 
-- The homelab is a single-node MicroK8s cluster on `home.hont.ro` /
+- The homelab is a single-node MicroK8s cluster on `home.home.domain` /
 	`192.168.1.201`, managed from the `homelab` repo by Flux and Kustomize.
-- `home-ai.hont.ro` / `192.168.1.200` is a separate Ansible-managed CPU inference
+- `home-ai.home.domain` / `192.168.1.200` is a separate Ansible-managed CPU inference
 	node. It is not part of the Kubernetes cluster.
-- The NAS exports `nas.hont.ro:/complete`. The host mount `/media/nas` is for ops
+- The NAS exports `nas.home.domain:/complete`. The host mount `/media/nas` is for ops
 	tools; Kubernetes workloads should use `nas-complete-pvc`, not `hostPath:
 	/media/nas`.
 
@@ -34,7 +34,7 @@ context remains authoritative for incident-specific facts.
 
 # Ingress, DNS, And TLS
 
-- Web UIs use Traefik with `*.hont.ro` hostnames and Let's Encrypt DNS-01 via
+- Web UIs use Traefik with `*.home.domain` hostnames and Let's Encrypt DNS-01 via
 	Cloudflare. Public-facing apps can go through the Cloudflare Tunnel to Traefik.
 - Internal media apps are often exposed by NodePort/LAN patterns. Do not assume a
 	public ingress exists unless the manifest and route show it.
@@ -79,16 +79,9 @@ context remains authoritative for incident-specific facts.
 
 # AI Node
 
-- `home-ai.hont.ro` runs Ollama 0.30.8 on CPU-only hardware. The benchmark locks
+- `home-ai.home.domain` runs Ollama 0.30.8 on CPU-only hardware. The benchmark locks
 	power/thermal state before canonical runs and stamps node/environment evidence
 	into every result row.
 - Current small-agent model guidance favors fast tool-reliable models such as
 	`granite4:tiny-h` and fallback `granite4:micro`; large local models are not
 	assumed to be better on this CPU node.
-
-# Citations
-
-[1] `/Users/dragoshont/Repo/homelab/copilot-instructions.md`
-[2] `/Users/dragoshont/Repo/homelab/vault/knowledge/rules.md`
-[3] `/Users/dragoshont/Repo/homelab/vault/knowledge/patterns.md`
-[4] Read-only homelab repository audit, 2026-06-25.

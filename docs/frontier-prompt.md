@@ -75,8 +75,8 @@ TASK: Write a concise health summary: status per app, any errors, and ONE recomm
 
 ### SCENARIO: expand-04-add-app
 CONTEXT:
-GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.hont.ro cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO.
-TASK: Give an ordered, minimal plan to add a new app 'immich' at immich.hont.ro to this cluster. List the concrete files/steps. Do not write the YAML.
+GitOps homelab on MicroK8s + Flux. Existing media apps live in apps/media/<name>/ with: deployment.yaml, service.yaml (NodePort), and a shared Traefik Ingress (clusters/home/ingress/ingress-media.yaml) whose tls.hosts[] is covered by a wildcard *.home.domain cert. Public hostnames need a Cloudflare DNS A record. A Homepage dashboard tile lives in apps/platform/homepage/configmap.yaml. Secrets use SOPS/ESO.
+TASK: Give an ordered, minimal plan to add a new app 'immich' at immich.home.domain to this cluster. List the concrete files/steps. Do not write the YAML.
 
 ### SCENARIO: upgrade-05-helmrelease
 CONTEXT:

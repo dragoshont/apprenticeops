@@ -25,7 +25,7 @@ cd "$(dirname "$0")/.."
 export PATH="/usr/local/bin:$PATH"
 
 RUN_ID="${RUN_ID:?set RUN_ID (the producer run id, e.g. roster-20260624-1200)}"
-AI="${AI:-dragos@home-ai.hont.ro}"
+AI="${AI:-dragos@home-ai.home.domain}"
 AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"                 # where run-roster.sh runs on `ai`
 BRANCH="${BRANCH:-experiment/${RUN_ID}}"
 POLL_S="${POLL_S:-30}"
@@ -132,7 +132,13 @@ while true; do
       msafe="${m//\//_}"; msafe="${msafe//:/_}"
       jq -c --arg m "$m" 'select(.model==$m)' "$MIRROR/$RESULTS" >"$WORK/$msafe.results.jsonl" 2>/dev/null
       gzip -kf "$WORK/$msafe.results.jsonl"
-      git add -f "$WORK/$msafe.results.jsonl.gz" "$JUDGED" "$LEDGER" "$STATUS" 2>/dev/null || true
+      cand_tmp="$WORK/$msafe.candidates.list"
+      find "$MIRROR/outputs" -maxdepth 1 -type f -name "$msafe__*.candidates.jsonl" -print >"$cand_tmp" 2>/dev/null || true
+      if [ -s "$cand_tmp" ]; then
+        tar -czf "$WORK/$msafe.candidates.tar.gz" -C "$MIRROR/outputs" $(sed 's#.*/##' "$cand_tmp") 2>/dev/null || rm -f "$WORK/$msafe.candidates.tar.gz"
+      fi
+      rm -f "$cand_tmp"
+      git add -f "$WORK/$msafe.results.jsonl.gz" "$WORK/$msafe.candidates.tar.gz" "$JUDGED" "$LEDGER" "$STATUS" 2>/dev/null || true
       if git diff --cached --quiet; then
         ledger "$m" persist 0 "nothing staged"
         status "model $m: nothing staged, not marking committed"

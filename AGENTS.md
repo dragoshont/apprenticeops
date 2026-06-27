@@ -11,7 +11,7 @@ one command launches it and it keeps running after you disconnect. Full design:
 | Node | Role | Notes |
 |---|---|---|
 | **home** (hostname `home`) | orchestrator + judge + git | runs the schedulers, judges via the Copilot CLI, commits to GitHub |
-| **ai** (`home-ai.hont.ro`, hostname `ai`) | **locked inference only** | i5-8350U, ollama **0.30.8**, Turbo off, governor performance |
+| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, ollama **0.30.8**, Turbo off, governor performance |
 
 `home → ai` is **passwordless SSH**. `home` holds the repo clone at
 `~/apprenticeops`, has `gh` SSH auth, and the Copilot CLI. **After launch the pipeline
@@ -40,6 +40,12 @@ RUN_ID=roster-$(date -u +%Y%m%d-%H%M) MODELS=data/models.txt \
 The `setsid nohup … </dev/null &` wrapper is what makes it **detach from your SSH
 session** — verified: the launch returns the same second it starts, and a fresh
 connection shows it still running.
+
+Code sync mode: dashboard/dev launches default to `SYNC_MODE=working-tree`, which
+mirrors the deployed home checkout to `ai` so a validated local change is not
+silently replaced by `origin/main`. For canonical paper runs, commit and push
+first, then launch with `SYNC_MODE=origin`; rows stamp `env.harness_git` and
+`env.harness_dirty` so the regime is auditable.
 
 ## Run the memory axis autonomously
 
@@ -81,6 +87,31 @@ the locked preflight, model download, per-model reset/quiesce, telemetry, and
 `--rm-after` behavior. It does **not** run the home-side Copilot judge/commit
 scheduler; use `--runner e2e` when judged results and commits are required.
 
+## Run the inference-strategy axis
+
+Strategy is separate from memory. Use it when the question is whether extra
+inference-time work helps the same model and scenario set. Available strategies:
+`baseline`, `single_call_tournament_brief`, `best_of_3_detcheck`,
+`self_consistency_3`, and `evaluator_optimizer_1`.
+
+```bash
+RUN_ID=strategy-pilot-$(date -u +%Y%m%d-%H%M%S) \
+  MODEL_SET=strategy-pilot-2 MODELS=data/models.strategy-pilot-2.txt \
+  SCENARIO_SET=strategy-pilot-6 SCENARIOS=data/scenario_sets/strategy-pilot-6.json \
+  MEMORY_CONTEXT=none INFERENCE_STRATEGY=best_of_3_detcheck \
+  setsid nohup ./scripts/run-e2e.sh >/tmp/strategy-pilot.boot 2>&1 </dev/null &
+```
+
+After a run, check reliability before interpreting quality:
+
+```bash
+python3 scripts/report-run-quality.py data/runs/<RUN_ID>
+```
+
+The report shows DNF/stall/length, zero-output stalls, judge-empty rows, and
+judge token usage. Multi-candidate strategies preserve candidate completions as
+sidecar artifacts committed with the model evidence.
+
 ## Watch progress (read-only, any time, any session)
 
 ```bash
@@ -98,7 +129,7 @@ Producer logs on **ai**: `logs/<RUN_ID>/`.
 ```bash
 # stop (use the bracket trick — see gotchas):
 pkill -9 -f '[j]udge-scheduler'; pkill -9 -f '[j]udge.py'
-ssh home-ai.hont.ro "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
+ssh home-ai.home.domain "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
 # restart: just run the ONE command again. The producer is MODEL-LEVEL RESUMABLE
 # (skips already-complete models) and the consumer skips already-judged models —
 # re-launching the same RUN_ID continues where it stopped.
@@ -117,7 +148,7 @@ When verifying the dashboard in a browser — screenshots or the Playwright MCP 
 **Microsoft Edge** (`--browser msedge`), **not Chrome** (Chrome isn't installed on this
 Mac). The Playwright MCP is pinned to Edge in `sideport/.vscode/mcp.json`. The dev
 backend serves the built UI at `http://127.0.0.1:8770` (`uvicorn app:app` from
-`dashboard/backend`); the durable copy is `https://ceops.hont.ro`.
+`dashboard/backend`); the durable copy is `https://ceops.home.domain`.
 
 ## Gotchas (learned the hard way — do not relearn them)
 

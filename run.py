@@ -3,8 +3,8 @@
 run.py — node-side small-model eval runner (stdlib only, runs ON home-ai).
 
 Talks to the local Ollama (127.0.0.1:11434), so it must run on the node:
-    scp -r scripts/ai-node/small-model-eval dragos@home-ai.hont.ro:/tmp/sme
-    ssh dragos@home-ai.hont.ro 'cd /tmp/sme && python3 run.py --models models.txt'
+    scp -r scripts/ai-node/small-model-eval dragos@home-ai.home.domain:/tmp/sme
+    ssh dragos@home-ai.home.domain 'cd /tmp/sme && python3 run.py --models models.txt'
 
 For each (model x scenario) it:
   - warms up the model (cold-load timing) once per model,
@@ -39,6 +39,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
@@ -72,6 +73,16 @@ _DIRIGERA_SSL.verify_mode = ssl.CERT_NONE
 DEFAULT_TIMEOUT_S = 180      # hard wall-clock per request
 DEFAULT_STALL_S = 60         # no new token for this long -> DNF:stall
 DEFAULT_MAX_TOKENS = 512     # num_predict cap
+DEFAULT_TIMEOUT_POLICY_ID = os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry")
+DEFAULT_INFERENCE_STRATEGY = os.environ.get("INFERENCE_STRATEGY", "baseline")
+ZERO_OUTPUT_RETRIES = int(os.environ.get("ZERO_OUTPUT_RETRIES", "1"))
+INFERENCE_STRATEGIES = {
+    "baseline",
+    "single_call_tournament_brief",
+    "best_of_3_detcheck",
+    "self_consistency_3",
+    "evaluator_optimizer_1",
+}
 MEM_AVAIL_FLOOR_MB = 800     # abort if node MemAvailable drops below this
 SWAP_USED_CEIL_MB = 14000    # abort if swap usage exceeds this (thrash guard)
 COOLDOWN_S = 5               # settle time between models
@@ -790,6 +801,46 @@ def _get_json(path, timeout=10):
         return json.loads(r.read())
 
 
+def ollama_ps_snapshot():
+    """Compact /api/ps snapshot for stall forensics.
+
+    Full Ollama process payloads can be large and version-specific. The harness
+    only needs the evidence that helps classify a zero-token stall: which model
+    was resident, how much memory it claimed, and whether the daemon thought it
+    was scheduled.
+    """
+    try:
+        data = _get_json("/api/ps", timeout=2)
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}:{str(exc)[:120]}"}
+    out = []
+    for item in data.get("models", []) if isinstance(data, dict) else []:
+        out.append({
+            "name": item.get("name") or item.get("model"),
+            "digest": item.get("digest"),
+            "size_vram": item.get("size_vram"),
+            "expires_at": item.get("expires_at"),
+        })
+    return {"models": out}
+
+
+def classify_stall_phase(*, http_connected_at, first_byte_at, first_json_at,
+                         first_content_at, done_at, finish):
+    if not finish or not str(finish).startswith("DNF"):
+        return None
+    if http_connected_at is None:
+        return "before_response_headers"
+    if first_byte_at is None:
+        return "before_first_byte"
+    if first_json_at is None:
+        return "before_first_json"
+    if first_content_at is None:
+        return "before_first_token"
+    if done_at is None:
+        return "during_decode"
+    return "after_done_missing"
+
+
 def model_meta(model):
     """Ollama-native model metadata from /api/show (no model load): the EXACT
     parameter count, quantization, native context length and architecture. Makes
@@ -936,11 +987,18 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     tok_times = []  # per-answer-chunk wall timestamps -> inter-token jitter
     t_start = time.time()
     last_tok = t_start
+    http_connected_at = first_byte_at = first_json_at = first_content_at = done_at = None
+    http_exception = None
+    ps_before = ollama_ps_snapshot()
+    ps_after = None
     try:
         # socket read timeout = stall window; total wall-clock checked in-loop.
         resp = _post_json("/api/chat", payload, stall_s)
+        http_connected_at = round(time.time() - t_start, 3)
         for raw in resp:
             now = time.time()
+            if first_byte_at is None:
+                first_byte_at = round(now - t_start, 3)
             if now - t_start > timeout_s:
                 finish = "DNF:timeout"; break
             if sampler.abort_reason:
@@ -952,16 +1010,22 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
                 d = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if first_json_at is None:
+                first_json_at = round(now - t_start, 3)
             msg = d.get("message") or {}
             tchunk = msg.get("thinking") or ""
             if tchunk:
                 if ttft is None:
                     ttft = round(now - t_start, 3)
+                if first_content_at is None:
+                    first_content_at = round(now - t_start, 3)
                 think.append(tchunk); last_tok = now
             chunk = msg.get("content") or ""
             if chunk:
                 if ttft is None:
                     ttft = round(now - t_start, 3)
+                if first_content_at is None:
+                    first_content_at = round(now - t_start, 3)
                 if think and think_s is None:
                     think_s = round(now - t_start, 3)  # answer began -> think phase ended
                 out.append(chunk)
@@ -969,6 +1033,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
                 tok_times.append(now)
                 progress.append([round(now - t_start, 2), sum(len(c) for c in out)])
             if d.get("done"):
+                done_at = round(now - t_start, 3)
                 finish = finish or d.get("done_reason") or "stop"
                 in_tok = d.get("prompt_eval_count", 0) or 0
                 out_tok = d.get("eval_count", 0) or 0
@@ -979,13 +1044,30 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
                 total_dur = d.get("total_duration") or 0
                 load_dur = d.get("load_duration") or 0
                 break
-    except socket.timeout:
+    except socket.timeout as e:
         finish = "DNF:stall"
+        http_exception = f"{type(e).__name__}:{str(e)[:160]}"
+    except urllib.error.URLError as e:
+        finish = "DNF:stall" if isinstance(getattr(e, "reason", None), socket.timeout) else f"DNF:error:{type(e).__name__}"
+        http_exception = f"{type(e).__name__}:{str(e)[:160]}"
     except Exception as e:  # noqa: BLE001
         finish = f"DNF:error:{type(e).__name__}"
+        http_exception = f"{type(e).__name__}:{str(e)[:160]}"
 
+    if finish is None:
+        finish = "DNF:after_done_missing"
     text = "".join(out)
     wall = round(time.time() - t_start, 2)
+    if finish and str(finish).startswith("DNF"):
+        ps_after = ollama_ps_snapshot()
+    stall_phase = classify_stall_phase(
+        http_connected_at=http_connected_at,
+        first_byte_at=first_byte_at,
+        first_json_at=first_json_at,
+        first_content_at=first_content_at,
+        done_at=done_at,
+        finish=finish,
+    )
     # If we broke early without 'done', estimate out_tok by ~chars/4.
     if out_tok == 0 and text:
         out_tok = max(1, len(text) // 4)
@@ -1014,6 +1096,22 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
         "decode_tok_s": round(out_tok / decode_s, 2) if (decode_s and out_tok) else None,
         "wall_s": wall,
         "dnf": finish.startswith("DNF") if finish else False,
+        "stall.phase": stall_phase,
+        "stall_phase": stall_phase,
+        "http.connected_at_s": http_connected_at,
+        "http.first_byte_at_s": first_byte_at,
+        "http.first_json_at_s": first_json_at,
+        "http.first_content_at_s": first_content_at,
+        "http.done_at_s": done_at,
+        "http_connected_at": http_connected_at,
+        "first_byte_at": first_byte_at,
+        "first_json_at": first_json_at,
+        "first_content_at": first_content_at,
+        "done_at": done_at,
+        "http.exception": http_exception,
+        "socket_exception": http_exception,
+        "ollama.ps.before": ps_before,
+        "ollama.ps.after": ps_after,
         "progress_trace": progress,   # token-arrival curve (behaviour-over-time)
         "phase.think_s": think_s,
         "gen_ai.thinking.chars": sum(len(c) for c in think),
@@ -1108,6 +1206,222 @@ def run_checks(text, checks):
         results.append({"desc": c.get("desc", t), "type": t, "pass": bool(ok)})
     passed = sum(1 for r in results if r["pass"])
     return passed, len(results), results
+
+
+def prompt_diagnostics(s, memory_context, prompt):
+    context = s.get("context") or ""
+    task = s.get("question") or ""
+    return {
+        "prompt.char_count": len(prompt),
+        "prompt.memory_char_count": len(memory_context or ""),
+        "prompt.scenario_context_char_count": len(context),
+        "prompt.task_char_count": len(task),
+        "prompt.estimated_tokens": max(1, len(prompt) // 4),
+    }
+
+
+def resolve_policy(s, *, model, memory_context_id, strategy_id):
+    """Effective per-call policy stamped into every row.
+
+    This deliberately changes behaviour under a named policy id so old and new
+    regimes never get mixed accidentally in analysis. Scenario caps remain the
+    base; memory and known-slow models receive bounded extra prompt-eval budget.
+    """
+    timeout_s = int(s.get("timeout_s") or DEFAULT_TIMEOUT_S)
+    stall_s = int(s.get("stall_s") or DEFAULT_STALL_S)
+    max_tokens = int(s.get("max_tokens") or DEFAULT_MAX_TOKENS)
+    reasons = ["scenario_or_default"]
+    model_low = model.lower()
+    if memory_context_id != "none":
+        timeout_s = int(round(timeout_s * 1.35))
+        stall_s = int(round(stall_s * 1.25))
+        reasons.append("memory_context")
+    if "mistral" in model_low or "qwen3:4b" in model_low:
+        timeout_s = int(round(timeout_s * 1.35))
+        stall_s = int(round(stall_s * 1.25))
+        reasons.append("known_slow_model")
+    if strategy_id in ("best_of_3_detcheck", "self_consistency_3"):
+        timeout_s = int(round(timeout_s * 1.15))
+        reasons.append("multi_candidate_strategy")
+    if strategy_id == "evaluator_optimizer_1":
+        timeout_s = int(round(timeout_s * 1.25))
+        reasons.append("critique_revise_strategy")
+    return {
+        "timeout_s": min(timeout_s, 600),
+        "stall_s": min(stall_s, 120),
+        "max_tokens": max_tokens,
+        "timeout_policy_id": DEFAULT_TIMEOUT_POLICY_ID,
+        "policy_reasons": reasons,
+    }
+
+
+def with_zero_output_retry(model, system, user, *, max_tokens, timeout_s, stall_s,
+                           think, sampler, temperature, seed):
+    attempts = []
+    for attempt in range(ZERO_OUTPUT_RETRIES + 1):
+        tel = run_chat(
+            model, system, user,
+            max_tokens=max_tokens, timeout_s=timeout_s, stall_s=stall_s,
+            think=think, sampler=sampler, temperature=temperature, seed=seed,
+        )
+        attempts.append(tel)
+        finish = (tel.get("gen_ai.response.finish_reasons") or [None])[0]
+        zero_stall = (
+            finish == "DNF:stall"
+            and not tel.get("gen_ai.usage.output_tokens")
+            and not tel.get("progress_trace")
+        )
+        if not zero_stall or attempt >= ZERO_OUTPUT_RETRIES:
+            tel["effective.retry_count"] = attempt
+            tel["effective.retry_reason"] = "zero_output_stall" if attempt else None
+            tel["effective.retry_attempts"] = [summarize_candidate(i, item) for i, item in enumerate(attempts)]
+            return tel
+        unload(model)
+        time.sleep(3)
+    return attempts[-1]
+
+
+def summarize_candidate(index, tel, *, selected=False, det=None, selection_reason=None):
+    finish = (tel.get("gen_ai.response.finish_reasons") or [None])[0]
+    text = tel.get("_text") or ""
+    out = {
+        "candidate_index": index,
+        "selected": selected,
+        "finish": finish,
+        "dnf": bool(tel.get("dnf")),
+        "wall_s": tel.get("wall_s"),
+        "input_tokens": tel.get("gen_ai.usage.input_tokens"),
+        "output_tokens": tel.get("gen_ai.usage.output_tokens"),
+        "output_chars": len(text),
+        "completion_sha256": hashlib.sha256(text.encode()).hexdigest() if text else None,
+        "completion": text,
+        "thinking": tel.get("_think") or None,
+        "det_passed": det[0] if det else None,
+        "det_total": det[1] if det else None,
+        "det_score": round(det[0] / det[1], 3) if det and det[1] else None,
+        "stall_phase": tel.get("stall.phase"),
+        "retry_count": tel.get("effective.retry_count", 0),
+        "selection_reason": selection_reason,
+    }
+    return out
+
+
+def _strategy_prompt(strategy_id, strategy_prompt):
+    if strategy_id == "single_call_tournament_brief" and strategy_prompt:
+        return strategy_prompt.strip()
+    return ""
+
+
+def _revise_prompt(original, critique):
+    return (
+        "Revise the answer below using the critique. Keep the final answer concise, "
+        "specific, and safe. Do not mention the critique process.\n\n"
+        "--- ORIGINAL ANSWER ---\n"
+        f"{original}\n\n--- CRITIQUE ---\n{critique}\n\n--- REVISED ANSWER ---"
+    )
+
+
+def run_strategy(model, scenario, prompt, *, memory_context, memory_context_id,
+                 strategy_id, strategy_prompt, policy, think, sampler,
+                 temperature, seed):
+    """Run the selected inference strategy and return the final telemetry.
+
+    The durable result row remains one final answer per (model, scenario, rep),
+    while strategy candidates are returned as audit metadata and written to a
+    sidecar JSONL by the caller. This keeps old analysis shape intact without
+    hiding the extra inference calls.
+    """
+    candidates = []
+    strategy_id = strategy_id or "baseline"
+
+    def call(candidate_index, user_prompt, call_seed):
+        tel = with_zero_output_retry(
+            model, "", user_prompt,
+            max_tokens=policy["max_tokens"], timeout_s=policy["timeout_s"],
+            stall_s=policy["stall_s"], think=think, sampler=sampler,
+            temperature=temperature, seed=call_seed,
+        )
+        text = tel.get("_text") or ""
+        det = run_checks(text, scenario.get("deterministic_checks", []))
+        candidates.append({"index": candidate_index, "tel": tel, "det": det})
+        return tel
+
+    if strategy_id == "baseline":
+        selected = call(0, prompt, seed)
+        method = "single_call"
+        reason = "baseline single generation"
+    elif strategy_id == "single_call_tournament_brief":
+        brief = _strategy_prompt(strategy_id, strategy_prompt)
+        user_prompt = prompt if not brief else f"--- RESPONSE STRATEGY ---\n{brief}\n\n{prompt}"
+        selected = call(0, user_prompt, seed)
+        method = "single_call_strategy_prompt"
+        reason = "strategy prompt injected as inference strategy"
+    elif strategy_id == "evaluator_optimizer_1":
+        first = call(0, prompt, seed)
+        critique_prompt = (
+            "Critique the answer for factual grounding, safety, missing actions, and overclaiming. "
+            "Return a concise critique only.\n\n--- ANSWER ---\n"
+            f"{first.get('_text') or ''}"
+        )
+        critique = call(1, f"{prompt}\n\n{critique_prompt}", seed + 1000)
+        selected = call(2, f"{prompt}\n\n{_revise_prompt(first.get('_text') or '', critique.get('_text') or '')}", seed + 2000)
+        method = "generate_critique_revise"
+        reason = "selected revised answer after one critique pass"
+    elif strategy_id in ("best_of_3_detcheck", "self_consistency_3"):
+        for index in range(3):
+            call(index, prompt, seed + (index * 1000))
+        if strategy_id == "best_of_3_detcheck":
+            ranked = sorted(
+                candidates,
+                key=lambda item: (
+                    item["det"][0] / item["det"][1] if item["det"][1] else -1,
+                    not item["tel"].get("dnf"),
+                    item["tel"].get("gen_ai.usage.output_chars") or 0,
+                ),
+                reverse=True,
+            )
+            method = "max_det_score_then_non_dnf"
+            reason = "highest deterministic-check score; ties prefer non-DNF and fuller answer"
+        else:
+            buckets = {}
+            for item in candidates:
+                key = round(item["det"][0] / item["det"][1], 3) if item["det"][1] else -1
+                buckets.setdefault(key, []).append(item)
+            best_bucket = max(buckets.items(), key=lambda kv: (len(kv[1]), kv[0]))[1]
+            ranked = sorted(best_bucket, key=lambda item: (not item["tel"].get("dnf"), item["tel"].get("gen_ai.usage.output_chars") or 0), reverse=True)
+            method = "majority_det_score_bucket"
+            reason = "most common deterministic-score bucket; ties prefer non-DNF and fuller answer"
+        selected = ranked[0]["tel"]
+    else:
+        raise ValueError(f"unknown inference_strategy: {strategy_id}")
+
+    selected_index = next(item["index"] for item in candidates if item["tel"] is selected)
+    total_wall = round(sum(float(item["tel"].get("wall_s") or 0) for item in candidates), 2)
+    total_in = sum(int(item["tel"].get("gen_ai.usage.input_tokens") or 0) for item in candidates)
+    total_out = sum(int(item["tel"].get("gen_ai.usage.output_tokens") or 0) for item in candidates)
+    retry_total = sum(int(item["tel"].get("effective.retry_count") or 0) for item in candidates)
+    candidate_summary = []
+    for item in candidates:
+        candidate_summary.append(summarize_candidate(
+            item["index"], item["tel"], selected=item["index"] == selected_index,
+            det=item["det"], selection_reason=reason if item["index"] == selected_index else None,
+        ))
+    selected["strategy.id"] = strategy_id
+    selected["strategy.version"] = "1"
+    selected["strategy.sample_index"] = 0
+    selected["strategy.candidate_count"] = len(candidates)
+    selected["strategy.selection_method"] = method
+    selected["strategy.selected_candidate"] = selected_index
+    selected["strategy.extra_calls"] = max(0, len(candidates) - 1)
+    selected["strategy.total_wall_s"] = total_wall
+    selected["strategy.total_input_tokens"] = total_in
+    selected["strategy.total_output_tokens"] = total_out
+    selected["strategy.total_retry_count"] = retry_total
+    selected["strategy.failure_mode"] = None if not selected.get("dnf") else (selected.get("gen_ai.response.finish_reasons") or [None])[0]
+    selected["strategy.candidates"] = candidate_summary
+    selected["strategy.prompt_sha256"] = hashlib.sha256(strategy_prompt.encode()).hexdigest() if strategy_prompt else None
+    selected["wall_s"] = total_wall or selected.get("wall_s")
+    return selected, candidate_summary
 
 
 # --------------------------------------------------------------------------
@@ -1229,6 +1543,8 @@ def _env_static():
         "env.ollama_version": _sh_out(["ollama", "--version"]),
         "env.harness_git": _sh_out(
             ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "rev-parse", "--short", "HEAD"]),
+        "env.harness_dirty": bool(_sh_out(
+            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "status", "--short"])),
         "env.num_ctx": NUM_CTX,
         "env.sample_interval_s": SAMPLE_INTERVAL_S,
         "env.perf_membw": PERF_MEMBW,
@@ -1359,6 +1675,10 @@ def main():
     ap.add_argument("--memory-context-file", default="",
                     help="optional markdown memory/context file prepended to every scenario prompt; "
                          "used for memory-conditioned runs")
+    ap.add_argument("--inference-strategy", default=None,
+                    help="run-level inference strategy id; defaults to INFERENCE_STRATEGY env or baseline")
+    ap.add_argument("--strategy-prompt-file", default="",
+                    help="optional markdown strategy prompt used by prompt-only strategy variants")
     ap.add_argument("--bracket", help="only run this bracket label (e.g. 0-1B)")
     ap.add_argument("--out", default="results.jsonl")
     ap.add_argument("--outputs-dir", default="outputs")
@@ -1396,6 +1716,17 @@ def main():
     os.makedirs(args.outputs_dir, exist_ok=True)
     scen = json.load(open(args.scenarios))["scenarios"]
     memory_context_id = args.memory_context or os.environ.get("MEMORY_CONTEXT") or "none"
+    inference_strategy_id = args.inference_strategy or os.environ.get("INFERENCE_STRATEGY") or DEFAULT_INFERENCE_STRATEGY
+    if inference_strategy_id not in INFERENCE_STRATEGIES:
+        sys.exit(f"unknown inference_strategy={inference_strategy_id!r}; expected one of {sorted(INFERENCE_STRATEGIES)}")
+    strategy_prompt = ""
+    strategy_prompt_sha = None
+    if args.strategy_prompt_file:
+        with open(args.strategy_prompt_file, encoding="utf-8") as fh:
+            strategy_prompt = fh.read().strip()
+        strategy_prompt_sha = hashlib.sha256(open(args.strategy_prompt_file, "rb").read()).hexdigest()
+    if inference_strategy_id == "single_call_tournament_brief" and not strategy_prompt:
+        sys.exit("single_call_tournament_brief requires --strategy-prompt-file (or STRATEGY_PROMPT_FILE)")
     if args.memory_context_file and memory_context_id == "none":
         sys.exit("--memory-context-file requires --memory-context (or MEMORY_CONTEXT) != none")
     if not args.memory_context_file and memory_context_id != "none":
@@ -1413,7 +1744,8 @@ def main():
     # --- reproducibility preflight: refuse to run on a drifted node ---------
     env_fp = env_fingerprint()
     _protocol = {"temperature": args.temp, "repeats": args.repeats,
-                 "seed_base": args.seed_base, "think": args.think}
+                 "seed_base": args.seed_base, "think": args.think,
+                 "inference_strategy": inference_strategy_id}
     problems = preflight(models, env_fp, args.manifest, require_models_present=args.no_pull,
                          protocol=_protocol, scenarios_path=args.scenarios)
     if args.preflight_only:
@@ -1444,6 +1776,9 @@ def main():
     env_static["env.memory_context"] = memory_context_id
     env_static["env.memory_context_file"] = args.memory_context_file or None
     env_static["env.memory_context_sha"] = memory_sha
+    env_static["env.inference_strategy"] = inference_strategy_id
+    env_static["env.strategy_prompt_file"] = args.strategy_prompt_file or None
+    env_static["env.strategy_prompt_sha"] = strategy_prompt_sha
     _man = {}
     if args.manifest and os.path.exists(args.manifest):
         try:
@@ -1478,6 +1813,8 @@ def main():
     _seen = {}
     current_memory_context = env_static.get("env.memory_context")
     current_memory_sha = env_static.get("env.memory_context_sha")
+    current_strategy = env_static.get("env.inference_strategy")
+    current_strategy_sha = env_static.get("env.strategy_prompt_sha")
     if os.path.exists(args.out):
         with open(args.out) as _f:
             for _ln in _f:
@@ -1494,7 +1831,9 @@ def main():
                 if (_m and pair in expected_pairs and _r.get("det_total") is not None
                     and row_sha == scenario_sha
                     and (_r.get("env.memory_context") or "none") == current_memory_context
-                    and _r.get("env.memory_context_sha") == current_memory_sha):
+                    and _r.get("env.memory_context_sha") == current_memory_sha
+                    and (_r.get("env.inference_strategy") or "baseline") == current_strategy
+                    and _r.get("env.strategy_prompt_sha") == current_strategy_sha):
                     _seen.setdefault(_m, set()).add(pair)
             done_models = {m for m, u in _seen.items() if expected_pairs <= u}
         if done_models:
@@ -1560,12 +1899,25 @@ def main():
                     start_temp = _cpu_temp_c()
                     rapl0 = _rapl_uj()
                     sampler = Sampler(); sampler.start()
-                    tel = run_chat(
-                        model, "", build_prompt(s, memory_context),
-                        max_tokens=s.get("max_tokens", DEFAULT_MAX_TOKENS),
-                        timeout_s=s.get("timeout_s", DEFAULT_TIMEOUT_S),
-                        stall_s=DEFAULT_STALL_S, think=args.think, sampler=sampler,
-                        temperature=args.temp, seed=seed)
+                    prompt = build_prompt(s, memory_context)
+                    policy = resolve_policy(
+                        s,
+                        model=model,
+                        memory_context_id=memory_context_id,
+                        strategy_id=inference_strategy_id,
+                    )
+                    tel, candidates = run_strategy(
+                        model, s, prompt,
+                        memory_context=memory_context,
+                        memory_context_id=memory_context_id,
+                        strategy_id=inference_strategy_id,
+                        strategy_prompt=strategy_prompt,
+                        policy=policy,
+                        think=args.think,
+                        sampler=sampler,
+                        temperature=args.temp,
+                        seed=seed,
+                    )
                     sampler.stop(); sampler.join(timeout=2)
                     rapl1 = _rapl_uj()
                     if perf:
@@ -1635,6 +1987,12 @@ def main():
                         "net.total_kb": round(sum(_net) * SAMPLE_INTERVAL_S, 1) if _net else None,
                         "disk.read_mb": round(sum(_disk) * SAMPLE_INTERVAL_S, 1) if _disk else None,
                         "samples": sampler.samples,
+                        "effective.timeout_s": policy["timeout_s"],
+                        "effective.stall_s": policy["stall_s"],
+                        "effective.max_tokens": policy["max_tokens"],
+                        "effective.timeout_policy_id": policy["timeout_policy_id"],
+                        "effective.policy_reasons": policy["policy_reasons"],
+                        **prompt_diagnostics(s, memory_context, prompt),
                         **env_fp,
                         **meta,
                         **tel,
@@ -1655,6 +2013,17 @@ def main():
                     if think_text:
                         with open(os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.think.txt"), "w") as o:
                             o.write(think_text)
+                    if candidates:
+                        with open(os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.candidates.jsonl"), "w") as o:
+                            for candidate in candidates:
+                                o.write(json.dumps({
+                                    "model": model,
+                                    "scenario": s["id"],
+                                    "rep": rep,
+                                    "memory_context": memory_context_id,
+                                    "inference_strategy": inference_strategy_id,
+                                    **candidate,
+                                }) + "\n")
                     flag = tel["gen_ai.response.finish_reasons"][0]
                     sys.stderr.write(f"    {s['id']:28} r{rep} det={passed}/{total} "
                                      f"{tel['decode_tok_s']}tok/s {tel['wall_s']}s {flag}\n")
