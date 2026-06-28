@@ -20,6 +20,14 @@ import { control } from "../api";
 import type { RunBatch, RunMatrix, Session } from "../types";
 import { Card, Hint } from "./ui";
 
+type ControlResult = {
+  run_id?: string | null;
+  batch_id?: string | null;
+  memory_context?: string | null;
+  memory_contexts?: string[];
+  inference_strategy?: string | null;
+};
+
 export function RunControlCenter({
   runMatrix,
   runBatches,
@@ -38,7 +46,7 @@ export function RunControlCenter({
   const [inferenceStrategy, setInferenceStrategy] = useState("baseline");
   const [selectedMemoryContexts, setSelectedMemoryContexts] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ tone: "good" | "bad" | "info"; text: string } | null>(null);
   const [confirmAction, setConfirmAction] = useState<null | { action: "pause" | "cancel"; title: string; body: string }>(null);
 
   const modelSets = runMatrix?.model_sets ?? [];
@@ -101,20 +109,25 @@ export function RunControlCenter({
   const activeBatch = runBatches.find((batch) => ["running", "starting", "paused"].includes(batch.status));
   const activeRunId = activeBatch?.progress?.current_run_id ?? activeSession?.run_id ?? null;
   const activeState = activeBatch?.status === "paused" || activeSession?.state === "paused" ? "paused" : activeBatch || activeSession ? "running" : "idle";
+  const launchMode = orderedMemoryContexts.length > 1 ? "Queued memory batch" : "Single run";
+  const launchEndpoint = orderedMemoryContexts.length > 1 ? "/api/control/start-batch" : "/api/control/start";
+  const launchPlanNote = orderedMemoryContexts.length > 1
+    ? "These memory contexts will run sequentially on the single AI node."
+    : "Only this memory context will run. Select another checkbox to queue a memory-axis comparison.";
 
   useEffect(() => {
     onSelectionChange?.({ modelSet, scenarioSet, memoryContext: primaryMemoryContext, memoryContexts: orderedMemoryContextIds, inferenceStrategy });
   }, [modelSet, scenarioSet, primaryMemoryContext, memorySelectionKey, inferenceStrategy, onSelectionChange]);
 
-  async function run(action: string, fn: () => Promise<{ run_id?: string | null; batch_id?: string | null }>) {
+  async function run(action: string, fn: () => Promise<ControlResult>) {
     setBusy(action);
     setMsg(null);
     try {
       const result = await fn();
-      setMsg(null);
+      setMsg({ tone: "good", text: launchReceipt(action, result) });
       onAfter(result?.run_id ?? activeRunId ?? undefined);
     } catch (error) {
-      setMsg(error instanceof Error ? error.message : String(error));
+      setMsg({ tone: "bad", text: error instanceof Error ? error.message : String(error) });
     } finally {
       setBusy(null);
     }
@@ -261,6 +274,27 @@ export function RunControlCenter({
           />
         </div>
 
+        <div className="rounded-xl border border-accent/25 bg-accent/5 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-accent">Launch plan</div>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-lg border border-accent/30 bg-panel px-2 py-1 text-xs font-semibold text-fg">{launchMode}</span>
+                <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{launchEndpoint}</span>
+                <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_strategy={inferenceStrategy}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {orderedMemoryContexts.map((context) => (
+                  <span key={context.id} className="rounded-full border border-line bg-panel px-2 py-1 font-mono text-[10px] text-muted">
+                    memory_context={context.id}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <p className="max-w-md text-xs leading-relaxed text-muted">{launchPlanNote}</p>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-panel2/30 p-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
@@ -279,7 +313,14 @@ export function RunControlCenter({
               <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
               <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
             </span>
-            {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
+            {msg && (
+              <span
+                className={`max-w-xl truncate text-xs ${msg.tone === "bad" ? "text-bad" : msg.tone === "good" ? "text-good" : "text-info"}`}
+                title={msg.text}
+              >
+                {msg.text}
+              </span>
+            )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
             {activeState === "running" && activeRunId && (
@@ -393,6 +434,17 @@ function formatEstimateDuration(seconds: number) {
 
 function formatOneDecimal(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function launchReceipt(action: string, result: ControlResult) {
+  if (action === "batch" || result.batch_id) {
+    const contexts = result.memory_contexts?.join(" + ") || "selected contexts";
+    return `Launched memory batch ${result.batch_id ?? ""} · ${contexts} · ${result.inference_strategy ?? "baseline"}`;
+  }
+  if (action === "start" || result.run_id) {
+    return `Launched single run ${result.run_id ?? ""} · memory_context=${result.memory_context ?? "selected"} · ${result.inference_strategy ?? "baseline"}`;
+  }
+  return "Control action accepted.";
 }
 
 function RunShapePicker({
