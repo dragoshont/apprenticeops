@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
-  AlertTriangle,
   CheckCircle2,
   Clock,
   Database,
   Loader2,
-  Pause,
-  RotateCw,
   Rocket,
   Scale,
   ShieldCheck,
-  Square,
   Timer,
   Zap,
   Workflow,
@@ -47,7 +43,6 @@ export function RunControlCenter({
   const [selectedMemoryContexts, setSelectedMemoryContexts] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ tone: "good" | "bad" | "info"; text: string } | null>(null);
-  const [confirmAction, setConfirmAction] = useState<null | { action: "pause" | "cancel"; title: string; body: string }>(null);
 
   const modelSets = runMatrix?.model_sets ?? [];
   const scenarioSets = runMatrix?.scenario_sets ?? [];
@@ -107,8 +102,7 @@ export function RunControlCenter({
   const judgeTokenEstimate = buildJudgeTokenEstimate(answerRows);
   const activeLocked = !!activeSession;
   const activeBatch = runBatches.find((batch) => ["running", "starting", "paused"].includes(batch.status));
-  const activeRunId = activeBatch?.progress?.current_run_id ?? activeSession?.run_id ?? null;
-  const activeState = activeBatch?.status === "paused" || activeSession?.state === "paused" ? "paused" : activeBatch || activeSession ? "running" : "idle";
+  const runLocked = activeLocked || !!activeBatch;
   const launchMode = orderedMemoryContexts.length > 1 ? "Queued memory batch" : "Single run";
   const launchEndpoint = orderedMemoryContexts.length > 1 ? "/api/control/start-batch" : "/api/control/start";
   const launchPlanNote = orderedMemoryContexts.length > 1
@@ -125,7 +119,7 @@ export function RunControlCenter({
     try {
       const result = await fn();
       setMsg({ tone: "good", text: launchReceipt(action, result) });
-      onAfter(result?.run_id ?? activeRunId ?? undefined);
+      onAfter(result?.run_id ?? null);
     } catch (error) {
       setMsg({ tone: "bad", text: error instanceof Error ? error.message : String(error) });
     } finally {
@@ -160,40 +154,6 @@ export function RunControlCenter({
     void run("batch", () => control.startBatch(chosenModel.id, chosenScenario.id, orderedMemoryContextIds, inferenceStrategy));
   }
 
-  function requestPause() {
-    if (!activeRunId) return;
-    setConfirmAction({
-      action: "pause",
-      title: "Pause this experiment?",
-      body: "Pause stops the active producer and judge, discards the current incomplete model, and leaves completed models intact. Resume will restart that model from its first scenario.",
-    });
-  }
-
-  function requestCancel() {
-    if (!activeRunId) return;
-    setConfirmAction({
-      action: "cancel",
-      title: "Cancel this experiment?",
-      body: "Cancel is terminal. The active child and queued memory contexts will be marked canceled; completed pushed evidence is left untouched.",
-    });
-  }
-
-  function confirmLifecycleAction() {
-    if (!confirmAction || !activeRunId) return;
-    const action = confirmAction.action;
-    setConfirmAction(null);
-    if (action === "pause") {
-      void run("pause", () => control.pause(activeRunId));
-    } else {
-      void run("cancel", () => control.stop(activeRunId));
-    }
-  }
-
-  function resumeActive() {
-    if (!activeRunId) return;
-    void run("resume", () => control.resume(activeRunId));
-  }
-
   const spin = (key: string, icon: React.ReactNode) =>
     busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon;
 
@@ -207,7 +167,7 @@ export function RunControlCenter({
   }
 
   const startDisabled = !chosenModel || !chosenScenario || !chosenStrategy || !orderedMemoryContexts.length || busy != null || activeLocked || !!activeBatch;
-  const startTitle = activeLocked || activeBatch
+  const startTitle = runLocked
     ? "A run or memory batch is already active. Only one job can own the ai node."
     : undefined;
   const startLabel = orderedMemoryContexts.length > 1 ? `Start queued memory runs (${orderedMemoryContexts.length})` : "Start selected run";
@@ -217,9 +177,15 @@ export function RunControlCenter({
     <Card
       title="Start New Experiment"
       icon={<Activity className="h-4 w-4 text-muted" />}
-      right={<span className="text-xs text-faint">configure run axes</span>}
+      right={<span className="text-xs text-faint">prepare next launch</span>}
     >
       <div className="space-y-4">
+        {runLocked && (
+          <div className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+            A run is already active. This panel only prepares the next launch; use the Current Run controls below to pause or cancel the active job.
+          </div>
+        )}
+
         <div className="grid gap-3 lg:grid-cols-2">
           <RunShapePicker
             modelSets={modelSets}
@@ -277,7 +243,7 @@ export function RunControlCenter({
         <div className="rounded-xl border border-accent/25 bg-accent/5 p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-accent">Launch plan</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-accent">Next launch plan</div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <span className="rounded-lg border border-accent/30 bg-panel px-2 py-1 text-xs font-semibold text-fg">{launchMode}</span>
                 <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{launchEndpoint}</span>
@@ -323,23 +289,10 @@ export function RunControlCenter({
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
-            {activeState === "running" && activeRunId && (
-              <button type="button" disabled={busy != null} onClick={requestPause} className="btn rounded-lg border-warn/50 bg-warn/10 px-3 py-1.5 text-xs text-warn disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("pause", <Pause className="h-3.5 w-3.5" />)}
-                Pause
-              </button>
-            )}
-            {activeState === "paused" && activeRunId && (
-              <button type="button" disabled={busy != null} onClick={resumeActive} className="btn rounded-lg border-accent/50 bg-accent/15 px-3 py-1.5 text-xs text-accent disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("resume", <RotateCw className="h-3.5 w-3.5" />)}
-                Resume
-              </button>
-            )}
-            {activeRunId && activeState !== "idle" && (
-              <button type="button" disabled={busy != null} onClick={requestCancel} className="btn btn-danger rounded-lg px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("cancel", <Square className="h-3.5 w-3.5" />)}
-                Cancel
-              </button>
+            {runLocked && (
+              <span className="rounded bg-panel px-2 py-1 text-[11px] text-muted">
+                Run already active - use Current Run controls below.
+              </span>
             )}
             <button
               type="button"
@@ -354,17 +307,6 @@ export function RunControlCenter({
           </div>
         </div>
       </div>
-      {confirmAction && (
-        <ConfirmDialog
-          title={confirmAction.title}
-          body={confirmAction.body}
-          tone={confirmAction.action === "pause" ? "warn" : "bad"}
-          confirmLabel={confirmAction.action === "pause" ? "Pause and discard current model" : "Cancel experiment"}
-          busy={busy === confirmAction.action}
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={confirmLifecycleAction}
-        />
-      )}
     </Card>
   );
 }
@@ -631,45 +573,4 @@ function memorySortKey(context: NonNullable<RunMatrix["memory_contexts"]>[number
   if (context.kind === "strategy") return 1;
   if (context.id.includes("3kb")) return 2;
   return 3;
-}
-
-function ConfirmDialog({
-  title,
-  body,
-  tone,
-  confirmLabel,
-  busy,
-  onCancel,
-  onConfirm,
-}: {
-  title: string;
-  body: string;
-  tone: "warn" | "bad";
-  confirmLabel: string;
-  busy: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-bg/70 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-5 shadow-2xl">
-        <div className="flex items-start gap-3">
-          <div className={`rounded-xl p-2 ${tone === "warn" ? "bg-warn/15 text-warn" : "bg-bad/15 text-bad"}`}>
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-base font-semibold text-fg">{title}</div>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn" onClick={onCancel} disabled={busy}>Keep running</button>
-          <button type="button" className={`btn ${tone === "warn" ? "border-warn/50 bg-warn/10 text-warn" : "btn-danger border-bad/50 bg-bad/10 text-bad"}`} onClick={onConfirm} disabled={busy}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }

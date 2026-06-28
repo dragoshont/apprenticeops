@@ -4,6 +4,7 @@ import { History, Home, ListChecks, Radio, Rocket, Search, X } from "lucide-reac
 export function DashboardMenu({
   hasRun,
   hasRunMatrix,
+  runDetailLabel = "Run Detail",
   search,
   searchOpen,
   onToggleSearch,
@@ -12,6 +13,7 @@ export function DashboardMenu({
 }: {
   hasRun: boolean;
   hasRunMatrix: boolean;
+  runDetailLabel?: string;
   search: string;
   searchOpen: boolean;
   onToggleSearch: () => void;
@@ -25,7 +27,7 @@ export function DashboardMenu({
         <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs">
           <MenuLink href="#home" icon={<Home className="h-3.5 w-3.5" />}>Home</MenuLink>
           <MenuLink href="#start" icon={<Rocket className="h-3.5 w-3.5" />}>Start</MenuLink>
-          <MenuLink href="#current-run" disabled={!hasRun} icon={<Radio className="h-3.5 w-3.5" />}>Current Run</MenuLink>
+          <MenuLink href="#current-run" disabled={!hasRun} icon={<Radio className="h-3.5 w-3.5" />}>{runDetailLabel}</MenuLink>
           <MenuLink href="#library" icon={<History className="h-3.5 w-3.5" />}>Run History</MenuLink>
           <MenuLink href="#scenarios" disabled={!hasRunMatrix} icon={<ListChecks className="h-3.5 w-3.5" />}>Scenarios</MenuLink>
         </div>

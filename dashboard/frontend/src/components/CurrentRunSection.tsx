@@ -1,4 +1,6 @@
-import { Terminal } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Loader2, Pause, RotateCw, Square, Terminal } from "lucide-react";
+import { control } from "../api";
 import type { AnalyticsScope, Consumer, ModelProgress, ModelStage, PersistenceStatus, Progress, ReliabilityReport, RunBatch, RunBatchItem, RunSummary, Scores, SelectedScope, NodeInfo, ParetoPoint } from "../types";
 import { ActivityFeed, SkipsFeed } from "./Feed";
 import { ClassQuality, ParetoLeaderboard, PowerLeaderboard, QualityLeaderboard, RunSummaryCard, ScoreDistribution } from "./Charts";
@@ -65,6 +67,43 @@ export function CurrentRunSection({
   onBackToLatest: (runId?: string | null) => void;
   onSelectRun: (runId?: string | null) => void;
 }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | { action: "pause" | "cancel"; title: string; body: string }>(null);
+  const canPause = state === "running" && !!selectedRunId;
+  const canResume = state === "paused" && !!selectedRunId;
+  const canCancel = (state === "running" || state === "paused") && !!selectedRunId;
+
+  async function runControl(action: "pause" | "resume" | "cancel") {
+    if (!selectedRunId) return;
+    setBusy(action);
+    setMessage(null);
+    try {
+      if (action === "pause") {
+        await control.pause(selectedRunId);
+      } else if (action === "resume") {
+        await control.resume(selectedRunId);
+      } else {
+        await control.stop(selectedRunId);
+      }
+      setMessage({ tone: "good", text: `${action} accepted for ${selectedRunId}` });
+      onSelectRun(selectedRunId);
+    } catch (error) {
+      setMessage({ tone: "bad", text: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function confirmLifecycleAction() {
+    if (!confirmAction) return;
+    const action = confirmAction.action;
+    setConfirmAction(null);
+    void runControl(action);
+  }
+
+  const spin = (key: string, icon: React.ReactNode) => (busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon);
+
   return (
     <section id="current-run" className="scroll-mt-24 space-y-4 rounded-xl border border-line bg-panel2/20 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
@@ -83,8 +122,55 @@ export function CurrentRunSection({
             </button>
           )}
           <StatePill state={state} size="sm" />
+          {canPause && (
+            <button
+              type="button"
+              disabled={busy != null}
+              onClick={() => setConfirmAction({
+                action: "pause",
+                title: "Pause this experiment?",
+                body: "Pause stops the active producer and judge for this run. Resume continues the same selected run.",
+              })}
+              className="btn rounded-lg border-warn/50 bg-warn/10 px-3 py-1.5 text-xs text-warn disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {spin("pause", <Pause className="h-3.5 w-3.5" />)}
+              Pause
+            </button>
+          )}
+          {canResume && (
+            <button
+              type="button"
+              disabled={busy != null}
+              onClick={() => void runControl("resume")}
+              className="btn rounded-lg border-accent/50 bg-accent/15 px-3 py-1.5 text-xs text-accent disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {spin("resume", <RotateCw className="h-3.5 w-3.5" />)}
+              Resume
+            </button>
+          )}
+          {canCancel && (
+            <button
+              type="button"
+              disabled={busy != null}
+              onClick={() => setConfirmAction({
+                action: "cancel",
+                title: "Cancel this experiment?",
+                body: "Cancel is terminal. The active child and queued memory contexts are marked canceled; completed pushed evidence remains untouched.",
+              })}
+              className="btn btn-danger rounded-lg px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {spin("cancel", <Square className="h-3.5 w-3.5" />)}
+              Cancel
+            </button>
+          )}
         </div>
       </div>
+
+      {message && (
+        <div className={`rounded-lg border px-3 py-2 text-xs ${message.tone === "bad" ? "border-bad/40 bg-bad/10 text-bad" : "border-good/40 bg-good/10 text-good"}`}>
+          {message.text}
+        </div>
+      )}
 
       {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={selectedRunId} onSelect={onSelectRun} />}
 
@@ -132,7 +218,59 @@ export function CurrentRunSection({
       </div>
 
       <SkipsFeed consumer={consumer} />
+      {confirmAction && (
+        <ConfirmDialog
+          title={confirmAction.title}
+          body={confirmAction.body}
+          tone={confirmAction.action === "pause" ? "warn" : "bad"}
+          confirmLabel={confirmAction.action === "pause" ? "Pause experiment" : "Cancel experiment"}
+          busy={busy === confirmAction.action}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={confirmLifecycleAction}
+        />
+      )}
     </section>
+  );
+}
+
+function ConfirmDialog({
+  title,
+  body,
+  tone,
+  confirmLabel,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  body: string;
+  tone: "warn" | "bad";
+  confirmLabel: string;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-bg/70 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-5 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className={`rounded-xl p-2 ${tone === "warn" ? "bg-warn/15 text-warn" : "bg-bad/15 text-bad"}`}>
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-base font-semibold text-fg">{title}</div>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button type="button" className="btn" onClick={onCancel} disabled={busy}>Keep running</button>
+          <button type="button" className={`btn ${tone === "warn" ? "border-warn/50 bg-warn/10 text-warn" : "btn-danger border-bad/50 bg-bad/10 text-bad"}`} onClick={onConfirm} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

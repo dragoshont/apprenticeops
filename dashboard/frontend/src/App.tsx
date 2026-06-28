@@ -91,10 +91,11 @@ export default function App() {
   const viewingActive = !!selectedRunId && !!activeRunId && selectedRunId === activeRunId;
   const runViewTitle = viewingActive ? "Current Run" : viewingLatest ? "Latest Run" : "Selected Past Run";
   const runViewDescription = viewingActive
-    ? "The active experiment that owns the AI node right now."
+    ? "The active experiment that owns the AI node right now. Pause and cancel controls apply here only."
     : viewingLatest
       ? "The newest completed, stopped, or canceled run."
       : "A historical run selected from Run History below.";
+  const runDetailLabel = viewingActive ? "Current Run" : "Run Detail";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
@@ -159,6 +160,7 @@ export default function App() {
       <DashboardMenu
         hasRun={hasRun}
         hasRunMatrix={!!runMatrix}
+        runDetailLabel={runDetailLabel}
         search={sessionSearch}
         searchOpen={sessionSearchOpen}
         onToggleSearch={() => setSessionSearchOpen((open) => !open)}
