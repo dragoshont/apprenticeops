@@ -22,6 +22,7 @@ environment values are server-resolved and quoted before being sent to ``home``.
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
   AI_SSH      how home reaches the ai node           (default: "home-ai.home.domain")
+    AI_REPO     repo path on the ai node               (default: "/home/dragos/apprenticeops")
   REPO_DIR    repo path on home                      (default: "~/apprenticeops")
   POLL_S      websocket push cadence, seconds        (default: 5)
   HOST/PORT   bind                                   (default: 127.0.0.1:8770)
@@ -48,6 +49,7 @@ from pydantic import BaseModel
 
 HOME_SSH = os.environ.get("HOME_SSH", "homelab")
 AI_SSH = os.environ.get("AI_SSH", "home-ai.home.domain")
+AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 REPO_DIR = os.environ.get("REPO_DIR", "~/apprenticeops")
 POLL_S = float(os.environ.get("POLL_S", "5"))
 
@@ -182,7 +184,8 @@ def _status_ttl(data: dict) -> float:
 def _gather(run_id: str | None) -> dict:
     """Invoke pipeline-status.py on home and return its parsed JSON."""
     arg = run_id if run_id and _RUNID_RE.match(run_id) else ""
-    cp = _ssh(_home_cmd(f"python3 scripts/pipeline-status.py {arg}".rstrip()), timeout=40)
+    status_env = _env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO})
+    cp = _ssh(_home_cmd(f"{status_env} python3 scripts/pipeline-status.py {arg}".rstrip()), timeout=40)
     if cp.returncode != 0:
         return {"state": "error", "error": (cp.stderr or cp.stdout or "ssh failed").strip()[:800],
                 "run_id": run_id, "ts": time.time()}
@@ -682,6 +685,8 @@ def api_start(req: StartReq, request: Request):
         "MEMORY_CONTEXT_FILE": memory_path,
         "INFERENCE_STRATEGY": req.inference_strategy,
         "STRATEGY_PROMPT_FILE": strategy_path,
+        "AI": AI_SSH,
+        "AI_REPO": AI_REPO,
         "RUN_USER": user,
     })
     inner = (_SYNC + env + " "
@@ -741,6 +746,7 @@ def api_start_batch(req: BatchStartReq, request: Request):
         args.extend(["--memory-context", memory_context])
     boot = f"/tmp/ao-batch.{batch_id}.boot"
     inner = (_SYNC + " "
+             + _env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO}) + " "
              f"setsid nohup {' '.join(_q(arg) for arg in args)} >{_q(boot)} 2>&1 </dev/null & "
              f"echo launched {_q(batch_id)}")
     cp = _ssh(_home_cmd(inner), timeout=40)
@@ -820,7 +826,7 @@ def _control_run(action: str, run_id: str) -> dict:
         raise HTTPException(400, "invalid control action")
     if not _RUNID_RE.match(run_id or ""):
         raise HTTPException(400, "invalid run_id")
-    cp = _ssh(_home_cmd(f"python3 scripts/control-run.py {action} --run-id {_q(run_id)}"), timeout=90)
+    cp = _ssh(_home_cmd(_env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO}) + f" python3 scripts/control-run.py {action} --run-id {_q(run_id)}"), timeout=90)
     if cp.returncode != 0:
         detail = (cp.stderr or cp.stdout or f"{action} failed").strip()[:800]
         raise HTTPException(409, detail)
@@ -892,6 +898,10 @@ def api_resume(req: RunReq):
         "SCENARIO_SET": meta["scenario_set"],
         "MEMORY_CONTEXT": meta.get("memory_context") or "none",
         "MEMORY_CONTEXT_FILE": meta.get("memory_context_file") or "",
+        "INFERENCE_STRATEGY": meta.get("inference_strategy") or "baseline",
+        "STRATEGY_PROMPT_FILE": meta.get("strategy_prompt_file") or "",
+        "AI": AI_SSH,
+        "AI_REPO": AI_REPO,
         "RUN_USER": meta.get("user") or "user",
     })
     inner = (_SYNC + env + " "

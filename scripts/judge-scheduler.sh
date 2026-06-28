@@ -161,7 +161,7 @@ while true; do
     done < <(jq -r '"\(.model) \(.units)"' "$MIRROR/$RESULTS.done" 2>/dev/null)
   fi
 
-  ncommitted=$(grep -c . "$COMMITTED" 2>/dev/null || echo 0)
+  ncommitted=$(grep -c . "$COMMITTED" 2>/dev/null); ncommitted=${ncommitted:-0}
   if [ "${EXPECT:-0}" -gt 0 ] && [ "${ncommitted:-0}" -ge "$EXPECT" ]; then
     status "EXPECT=$EXPECT models committed — consumer exiting cleanly"
     break
