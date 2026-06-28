@@ -202,9 +202,9 @@ export function RunControlCenter({
 
   return (
     <Card
-      title="Experiment Control"
+      title="Start New Experiment"
       icon={<Activity className="h-4 w-4 text-muted" />}
-      right={<span className="text-xs text-faint">run axes</span>}
+      right={<span className="text-xs text-faint">configure run axes</span>}
     >
       <div className="space-y-4">
           <div className="grid gap-3 lg:grid-cols-2">

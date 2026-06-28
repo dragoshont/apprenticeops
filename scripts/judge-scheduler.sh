@@ -133,7 +133,7 @@ while true; do
       jq -c --arg m "$m" 'select(.model==$m)' "$MIRROR/$RESULTS" >"$WORK/$msafe.results.jsonl" 2>/dev/null
       gzip -kf "$WORK/$msafe.results.jsonl"
       cand_tmp="$WORK/$msafe.candidates.list"
-      find "$MIRROR/outputs" -maxdepth 1 -type f -name "$msafe__*.candidates.jsonl" -print >"$cand_tmp" 2>/dev/null || true
+      find "$MIRROR/outputs" -maxdepth 1 -type f -name "${msafe}__*.candidates.jsonl" -print >"$cand_tmp" 2>/dev/null || true
       if [ -s "$cand_tmp" ]; then
         tar -czf "$WORK/$msafe.candidates.tar.gz" -C "$MIRROR/outputs" $(sed 's#.*/##' "$cand_tmp") 2>/dev/null || rm -f "$WORK/$msafe.candidates.tar.gz"
       fi

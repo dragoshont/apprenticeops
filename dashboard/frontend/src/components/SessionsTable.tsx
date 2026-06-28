@@ -7,15 +7,17 @@ export function SessionsTable({
   activeRunId,
   onSelect,
   emptyText = "No runs yet.",
+  title = "Sessions",
 }: {
   sessions: Session[];
   activeRunId: string | null;
   onSelect: (runId: string) => void;
   emptyText?: string;
+  title?: string;
 }) {
   return (
     <Card
-      title="Sessions"
+      title={title}
       icon={<History className="h-4 w-4 text-muted" />}
       right={<span className="text-xs text-faint">{sessions.length} runs</span>}
     >

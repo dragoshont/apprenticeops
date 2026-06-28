@@ -180,11 +180,82 @@ export default function App() {
             onAfter={refresh}
           />
 
-          {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={status?.run_id ?? null} onSelect={refresh} />}
+          {hasRun && (
+            <section className="space-y-4 rounded-xl border border-line bg-panel2/20 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <div>
+                  <h2 className="text-sm font-semibold text-fg">Current Run</h2>
+                  <p className="mt-0.5 text-[11px] text-faint">The selected live or most recent run, with its progress, reliability, inputs, and results.</p>
+                </div>
+                <StatePill state={state} size="sm" />
+              </div>
+
+              {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={status?.run_id ?? null} onSelect={refresh} />}
+
+              {/* selected-run header */}
+              <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
+
+              <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} reliability={status?.reliability ?? null} />
+
+              <InputInspector selection={selectedInputSelection} title="Current run inputs" />
+
+              {/* live-only: progress hero + judge line + pipeline */}
+              {live && (
+                <>
+                  {status?.consumer?.status && (
+                    <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
+                      <Terminal className="h-3.5 w-3.5 text-good" />
+                      <span className="truncate">{status.consumer.status}</span>
+                    </div>
+                  )}
+                  <PipelineFlow
+                    models={models}
+                    producerAlive={status?.producer?.run_py_alive ?? false}
+                    consumerAlive={status?.consumer?.alive ?? false}
+                  />
+                </>
+              )}
+
+              {/* roll-up stats for the selected run */}
+              <RunSummaryCard summary={status?.summary} scope={analyticsScope} />
+
+              {/* models + (nodes/activity when live) */}
+              <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+                <ModelBars models={modelProgress} />
+                <div className="space-y-4">
+                  <NodeCards nodes={status?.nodes} />
+                  {live && <ActivityFeed consumer={status?.consumer} />}
+                </div>
+              </div>
+
+              {/* Pareto (3-objective) + frontier table */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <ParetoChart data={status?.pareto ?? []} scope={analyticsScope} />
+                <ParetoLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
+              </div>
+
+              {/* quality + power leaderboards */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <QualityLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
+                <PowerLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
+              </div>
+
+              {/* score distribution + per-class quality */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <ScoreDistribution scores={status?.scores} scope={analyticsScope} />
+                <ClassQuality scores={status?.scores} scope={analyticsScope} />
+              </div>
+
+              <SkipsFeed consumer={status?.consumer} />
+            </section>
+          )}
 
           <section className="rounded-xl border border-line bg-panel2/30 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-medium text-fg">Sessions</div>
+              <div>
+                <div className="text-sm font-medium text-fg">Past Sessions</div>
+                <div className="mt-0.5 text-[11px] text-faint">Completed, canceled, stopped, and historical runs. Selecting one changes the Current Run section above.</div>
+              </div>
               <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
                 <button
                   type="button"
@@ -244,68 +315,9 @@ export default function App() {
             sessions={visibleSessions}
             activeRunId={status?.run_id ?? null}
             onSelect={refresh}
+            title="Past Sessions"
             emptyText={sessionScope === "matching" ? "No runs match the selected model, scenario, and memory context yet." : "No runs yet."}
           />
-
-          {hasRun && (
-            <div className="space-y-4">
-              {/* selected-run header */}
-              <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
-
-              <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} reliability={status?.reliability ?? null} />
-
-              <InputInspector selection={selectedInputSelection} title="Current experiment inputs" />
-
-              {/* live-only: progress hero + judge line + pipeline */}
-              {live && (
-                <>
-                  {status?.consumer?.status && (
-                    <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
-                      <Terminal className="h-3.5 w-3.5 text-good" />
-                      <span className="truncate">{status.consumer.status}</span>
-                    </div>
-                  )}
-                  <PipelineFlow
-                    models={models}
-                    producerAlive={status?.producer?.run_py_alive ?? false}
-                    consumerAlive={status?.consumer?.alive ?? false}
-                  />
-                </>
-              )}
-
-              {/* roll-up stats for the selected run */}
-              <RunSummaryCard summary={status?.summary} scope={analyticsScope} />
-
-              {/* models + (nodes/activity when live) */}
-              <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-                <ModelBars models={modelProgress} />
-                <div className="space-y-4">
-                  <NodeCards nodes={status?.nodes} />
-                  {live && <ActivityFeed consumer={status?.consumer} />}
-                </div>
-              </div>
-
-              {/* Pareto (3-objective) + frontier table */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <ParetoChart data={status?.pareto ?? []} scope={analyticsScope} />
-                <ParetoLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-              </div>
-
-              {/* quality + power leaderboards */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <QualityLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-                <PowerLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-              </div>
-
-              {/* score distribution + per-class quality */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <ScoreDistribution scores={status?.scores} scope={analyticsScope} />
-                <ClassQuality scores={status?.scores} scope={analyticsScope} />
-              </div>
-
-              <SkipsFeed consumer={status?.consumer} />
-            </div>
-          )}
 
           {!hasRun && <NodeCards nodes={status?.nodes} />}
 
