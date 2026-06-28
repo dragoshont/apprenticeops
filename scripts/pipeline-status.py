@@ -267,6 +267,30 @@ def _pgrepc(pattern):
         return 0
 
 
+def _run_owned_process_count(pattern, run_id):
+    """Count local processes whose argv or environment references this run_id."""
+    if not run_id:
+        return 0
+    pids = [pid for pid in _sh(f"pgrep -f {shlex.quote(pattern)}").splitlines() if pid.strip().isdigit()]
+    count = 0
+    for pid in pids:
+        cmdline = ""
+        environ = ""
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as handle:
+                cmdline = handle.read().replace(b"\0", b" ").decode(errors="ignore")
+        except OSError:
+            pass
+        try:
+            with open(f"/proc/{pid}/environ", "rb") as handle:
+                environ = handle.read().replace(b"\0", b"\n").decode(errors="ignore")
+        except OSError:
+            pass
+        if run_id in cmdline or f"RUN_ID={run_id}" in environ:
+            count += 1
+    return count
+
+
 def _tail(path, n=40):
     try:
         with open(path, errors="ignore") as f:
@@ -324,8 +348,9 @@ def producer_state(run_id):
                    _read_jsonl(os.path.join(wd, "_mirror", f"results.{run_id}.jsonl.done"))]
     done_models = [m for m in done_models if m]
     alive = False
+    remote_run_id = shlex.quote(run_id)
     try:
-        alive = int(_ai("pgrep -fc '[r]un.py --models' 2>/dev/null || echo 0") or 0) > 0
+        alive = int(_ai(f"pgrep -af '[r]un.py --models' 2>/dev/null | grep -F -- {remote_run_id} | wc -l") or 0) > 0
     except ValueError:
         pass
     except Exception:  # noqa: BLE001
@@ -333,8 +358,7 @@ def producer_state(run_id):
     local_driver = os.path.join(REPO, "logs", run_id, "driver.log")
     if not alive and os.path.exists(local_driver):
         try:
-            local_alive = subprocess.check_output("pgrep -fc '[r]un.py --models' 2>/dev/null || echo 0", shell=True, text=True).strip()
-            alive = int(local_alive or 0) > 0
+            alive = _run_owned_process_count("[r]un.py --models", run_id) > 0
         except Exception:  # noqa: BLE001
             alive = False
     try:
@@ -374,8 +398,9 @@ def consumer_state(run_id):
     # errors / skips from the judge log
     skips = [l.strip() for l in _tail(os.path.join(wd, "judge.log"), 400) if "SKIP after" in l]
     judged_models = sorted({r.get("model") for r in judged if r.get("model")})
+    alive = _run_owned_process_count("[j]udge-scheduler", run_id) > 0
     return {
-        "alive": bool(_pgrepc("[j]udge-scheduler")),
+        "alive": alive,
         "status": status,
         "judged_rows": len(judged),
         "judged_models": judged_models,
