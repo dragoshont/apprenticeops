@@ -263,52 +263,56 @@ export function RunControlCenter({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-panel2/30 p-3">
-          <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
-          <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[10px] font-semibold text-accent">
-            <Clock className="h-3 w-3" />
-            est {estimate.duration}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
-            <Scale className="h-3 w-3" />
-            {judgeTokenEstimate.input}
-          </span>
-          <span className="hidden text-[11px] text-muted lg:inline-flex lg:items-center lg:gap-3">
-            <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
-            <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
-            <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-accent" />Energy</span>
-            <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
-            <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
-          </span>
-          {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
-          {activeState === "running" && activeRunId && (
-            <button type="button" disabled={busy != null} onClick={requestPause} className="btn border-warn/50 bg-warn/10 text-warn disabled:cursor-not-allowed disabled:opacity-40">
-              {spin("pause", <Pause className="h-4 w-4" />)}
-              Pause
+        <div className="flex flex-col gap-2 rounded-xl border border-line bg-panel2/30 p-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
+            <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[10px] font-semibold text-accent">
+              <Clock className="h-3 w-3" />
+              est {estimate.duration}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
+              <Scale className="h-3 w-3" />
+              {judgeTokenEstimate.input}
+            </span>
+            <span className="hidden text-[11px] text-muted xl:inline-flex xl:items-center xl:gap-3">
+              <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
+              <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
+              <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-accent" />Energy</span>
+              <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
+              <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
+            </span>
+            {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+            {activeState === "running" && activeRunId && (
+              <button type="button" disabled={busy != null} onClick={requestPause} className="btn rounded-lg border-warn/50 bg-warn/10 px-3 py-1.5 text-xs text-warn disabled:cursor-not-allowed disabled:opacity-40">
+                {spin("pause", <Pause className="h-3.5 w-3.5" />)}
+                Pause
+              </button>
+            )}
+            {activeState === "paused" && activeRunId && (
+              <button type="button" disabled={busy != null} onClick={resumeActive} className="btn rounded-lg border-accent/50 bg-accent/15 px-3 py-1.5 text-xs text-accent disabled:cursor-not-allowed disabled:opacity-40">
+                {spin("resume", <RotateCw className="h-3.5 w-3.5" />)}
+                Resume
+              </button>
+            )}
+            {activeRunId && activeState !== "idle" && (
+              <button type="button" disabled={busy != null} onClick={requestCancel} className="btn btn-danger rounded-lg px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40">
+                {spin("cancel", <Square className="h-3.5 w-3.5" />)}
+                Cancel
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={startDisabled}
+              title={startTitle}
+              onClick={startSingleRun}
+              className="btn btn-primary rounded-lg px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {spin("start", <Rocket className="h-3.5 w-3.5" />)}
+              {startLabel}
             </button>
-          )}
-          {activeState === "paused" && activeRunId && (
-            <button type="button" disabled={busy != null} onClick={resumeActive} className="btn border-accent/50 bg-accent/15 text-accent disabled:cursor-not-allowed disabled:opacity-40">
-              {spin("resume", <RotateCw className="h-4 w-4" />)}
-              Resume
-            </button>
-          )}
-          {activeRunId && activeState !== "idle" && (
-            <button type="button" disabled={busy != null} onClick={requestCancel} className="btn btn-danger disabled:cursor-not-allowed disabled:opacity-40">
-              {spin("cancel", <Square className="h-4 w-4" />)}
-              Cancel
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={startDisabled}
-            title={startTitle}
-            onClick={startSingleRun}
-            className="btn btn-primary ml-auto disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {spin("start", <Rocket className="h-4 w-4" />)}
-            {startLabel}
-          </button>
+          </div>
         </div>
       </div>
       {confirmAction && (
