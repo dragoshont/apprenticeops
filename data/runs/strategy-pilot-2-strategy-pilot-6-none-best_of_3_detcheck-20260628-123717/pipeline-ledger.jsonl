@@ -27,3 +27,4 @@
 {"model":"*","stage":"judge","ts":1782654452,"ok":1,"detail":"judged 58->60"}
 {"model":"*","stage":"judge","ts":1782658873,"ok":1,"detail":"judged 60->120"}
 {"model": "qwen3:4b-instruct-2507-q4_K_M", "stage": "persist", "ts": 1782659132, "ok": 1, "detail": "manual recovery persist qwen3:4b-instruct-2507-q4_K_M (30 result rows)"}
+{"model": "granite4:micro", "stage": "persist", "ts": 1782659135, "ok": 1, "detail": "manual recovery persist granite4:micro (30 result rows)"}
