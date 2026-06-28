@@ -120,6 +120,12 @@ def _env_assign(values: dict[str, object]) -> str:
     return " ".join(f"{key}={_q(value)}" for key, value in values.items())
 
 
+def _compact_batch_id(model_set: str, scenario_set: str, inference_strategy: str) -> str:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    digest = hashlib.sha1(f"{model_set}|{scenario_set}|{inference_strategy}|{stamp}".encode()).hexdigest()[:8]
+    return f"batch-{model_set}-{scenario_set}-{stamp}-{digest}"
+
+
 def _marker(run_id: str, name: str, create: bool) -> None:
     """Create or remove a run marker file (.canceled/.paused) on home."""
     if not _RUNID_RE.match(run_id) or name not in (".canceled", ".paused"):
@@ -733,7 +739,7 @@ def api_start_batch(req: BatchStartReq, request: Request):
             pass
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    batch_id = f"batch-{req.model_set}-{req.scenario_set}-{req.inference_strategy}-memory-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    batch_id = _compact_batch_id(req.model_set, req.scenario_set, req.inference_strategy)
     args = [
         "python3", "scripts/run-memory-batch.py", "launch",
         "--batch-id", batch_id,
@@ -754,6 +760,10 @@ def api_start_batch(req: BatchStartReq, request: Request):
     if not ok:
         detail = (cp.stderr or cp.stdout or "batch launch failed").strip()[:800]
         raise HTTPException(500, detail)
+    boot_check = _ssh(_home_cmd(f"sleep 1; test -s {_q(boot)} && cat {_q(boot)} || true"), timeout=10)
+    boot_detail = (boot_check.stdout or boot_check.stderr or "").strip()
+    if '"ok": false' in boot_detail:
+        raise HTTPException(500, boot_detail[:800])
     _invalidate_status(None)
     return {"ok": True, "batch_id": batch_id, "model_set": req.model_set, "scenario_set": req.scenario_set,
             "inference_strategy": req.inference_strategy,
