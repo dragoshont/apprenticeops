@@ -94,7 +94,7 @@ export default function App() {
     ? "The active experiment that owns the AI node right now."
     : viewingLatest
       ? "The newest completed, stopped, or canceled run."
-      : "A historical run selected from the library below.";
+      : "A historical run selected from Run History below.";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">

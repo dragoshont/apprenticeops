@@ -126,7 +126,7 @@ export const HomeNoRun: Story = {
     <div className="space-y-4">
       <DashboardMenu hasRun={false} hasRunMatrix search="" searchOpen={false} onToggleSearch={() => undefined} onSearch={() => undefined} onClearSearch={() => undefined} />
       <Card title="Home" right={<span className="text-xs text-faint">services from home</span>}>
-        <p className="text-sm text-muted">The dashboard opens to operational context first: launch controls, the run library, and the home/ai service cards stay visible even before a run is selected.</p>
+        <p className="text-sm text-muted">The dashboard opens to operational context first: launch controls, run history, and the home/ai service cards stay visible even before a run is selected.</p>
       </Card>
       <NodeCards nodes={nodes} />
     </div>

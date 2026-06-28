@@ -26,16 +26,16 @@ export function DashboardMenu({
           <MenuLink href="#home" icon={<Home className="h-3.5 w-3.5" />}>Home</MenuLink>
           <MenuLink href="#start" icon={<Rocket className="h-3.5 w-3.5" />}>Start</MenuLink>
           <MenuLink href="#current-run" disabled={!hasRun} icon={<Radio className="h-3.5 w-3.5" />}>Current Run</MenuLink>
-          <MenuLink href="#library" icon={<History className="h-3.5 w-3.5" />}>Library</MenuLink>
+          <MenuLink href="#library" icon={<History className="h-3.5 w-3.5" />}>Run History</MenuLink>
           <MenuLink href="#scenarios" disabled={!hasRunMatrix} icon={<ListChecks className="h-3.5 w-3.5" />}>Scenarios</MenuLink>
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs lg:justify-end">
           <button
             type="button"
             onClick={onToggleSearch}
-            aria-label="Search the run library"
+            aria-label="Search run history"
             className={`inline-grid h-8 w-8 place-items-center rounded-lg border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${expanded ? "border-accent/50 bg-accent/15 text-accent" : "border-line bg-panel2/50 text-muted hover:border-accent/50 hover:text-accent"}`}
-            title="Search the run library"
+            title="Search run history"
           >
             <Search className="h-3.5 w-3.5" />
           </button>

@@ -38,8 +38,8 @@ export function RunLibrary({
       <div className="rounded-xl border border-line bg-panel2/30 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-medium text-fg">Library</div>
-            <div className="mt-0.5 text-[11px] text-faint">Completed, canceled, stopped, and historical runs. Selecting one changes the Current Run section above.</div>
+            <div className="text-sm font-medium text-fg">Run History</div>
+            <div className="mt-0.5 text-[11px] text-faint">Past sessions: completed, canceled, stopped, and historical runs. Selecting one opens it above as Selected Past Run.</div>
           </div>
           <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
             <button
@@ -102,7 +102,7 @@ export function RunLibrary({
         sessions={sessions}
         activeRunId={activeRunId}
         onSelect={onSelect}
-        title="Run Library"
+        title="Session History"
         emptyText={scope === "matching" ? "No runs match the selected model, scenario, and memory context yet." : "No runs yet."}
       />
     </section>
