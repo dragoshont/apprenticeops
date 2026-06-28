@@ -226,8 +226,6 @@ export function RunControlCenter({
           />
         </div>
 
-        {chosenScenario?.description && <p className="text-xs leading-relaxed text-muted">{chosenScenario.description}</p>}
-
         <div className="grid gap-1.5 rounded-xl border border-line bg-panel2/30 p-2 sm:grid-cols-2 md:grid-cols-5">
           <EstimateMetric
             icon={<Scale className="h-3.5 w-3.5" />}
@@ -412,6 +410,7 @@ function RunShapePicker({
   scenarioSet: string;
   onScenarioSet: (id: string) => void;
 }) {
+  const activeScenario = scenarioSets.find((item) => item.id === scenarioSet);
   return (
     <div className="rounded-xl border border-line bg-panel2/30 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -432,6 +431,7 @@ function RunShapePicker({
           options={scenarioSets.map((item) => ({ id: item.id, label: item.label, meta: item.scenario_count != null ? `${item.scenario_count} scenarios` : item.kind }))}
         />
       </div>
+      {activeScenario?.description && <p className="mt-2 text-xs leading-relaxed text-muted">{activeScenario.description}</p>}
     </div>
   );
 }

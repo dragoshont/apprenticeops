@@ -47,6 +47,7 @@ env/
 *~
 
 .vscode/
+dashboard/frontend/storybook-static/
 
 # analysis site render artifacts (the notebook outputs + data/site/ exports ARE tracked)
 docs/analysis/_site/

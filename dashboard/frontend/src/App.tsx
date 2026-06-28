@@ -4,25 +4,12 @@ import { useTheme } from "./useTheme";
 import { fetchConfig } from "./api";
 import { RunControlCenter } from "./components/RunControlCenter";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { RunProgress } from "./components/RunProgress";
-import { SessionsTable } from "./components/SessionsTable";
-import { PipelineFlow } from "./components/PipelineFlow";
-import { InputInspector } from "./components/InputInspector";
 import { NodeCards } from "./components/NodeCards";
-import { ModelBars } from "./components/ModelBars";
-import { ParetoChart } from "./components/ParetoChart";
-import {
-  QualityLeaderboard,
-  ScoreDistribution,
-  ClassQuality,
-  ParetoLeaderboard,
-  PowerLeaderboard,
-  RunSummaryCard,
-} from "./components/Charts";
-import { ActivityFeed, SkipsFeed } from "./components/Feed";
-import { Bar, StatePill, fmtAgo, Hint } from "./components/ui";
-import { Radio, AlertTriangle, Terminal, Lock, LockOpen, ListChecks } from "lucide-react";
-import type { AnalyticsScope, PersistenceStatus, RunBatch, RunBatchItem, SelectedScope } from "./types";
+import { DashboardMenu } from "./components/DashboardMenu";
+import { RunLibrary } from "./components/RunLibrary";
+import { CurrentRunSection } from "./components/CurrentRunSection";
+import { StatePill, fmtAgo, Hint } from "./components/ui";
+import { Radio, AlertTriangle, Lock, LockOpen, ListChecks } from "lucide-react";
 
 export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
@@ -31,6 +18,7 @@ export default function App() {
   const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[], inferenceStrategy: "baseline" });
   const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
   const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
   const [sessionStatus, setSessionStatus] = useState("all");
   const [sessionDate, setSessionDate] = useState<"today" | "week" | "month" | "all">("today");
 
@@ -74,8 +62,7 @@ export default function App() {
     return matchesText && matchesStatus && matchesDate;
   });
   const selectedBatch = runBatches.find((batch) => batch.runs.some((run) => run.run_id === status?.run_id));
-  const activeBatch = runBatches.find((batch) => batch.status === "running" || batch.status === "starting");
-  const displayBatch = selectedBatch ?? activeBatch;
+  const displayBatch = selectedBatch ?? null;
   const selectedScope = status?.selected_scope;
   const analyticsScope = status?.analytics_scope ?? {
     kind: "selected_run",
@@ -97,11 +84,22 @@ export default function App() {
     memoryContext: analyticsScope.memory_context ?? controlSelection.memoryContext ?? "none",
     inferenceStrategy: analyticsScope.inference_strategy ?? controlSelection.inferenceStrategy ?? "baseline",
   };
+  const latestSession = sessions[0] ?? null;
+  const activeRunId = activeSession?.run_id ?? null;
+  const selectedRunId = status?.run_id ?? null;
+  const viewingLatest = !!selectedRunId && !!latestSession?.run_id && selectedRunId === latestSession.run_id;
+  const viewingActive = !!selectedRunId && !!activeRunId && selectedRunId === activeRunId;
+  const runViewTitle = viewingActive ? "Current Run" : viewingLatest ? "Latest Run" : "Selected Past Run";
+  const runViewDescription = viewingActive
+    ? "The active experiment that owns the AI node right now."
+    : viewingLatest
+      ? "The newest completed, stopped, or canceled run."
+      : "A historical run selected from the library below.";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
       {/* Header */}
-      <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <header id="home" className="mb-5 scroll-mt-24 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-accent/15 p-2 text-accent ring-1 ring-accent/30">
             <Radio className="h-5 w-5" />
@@ -158,6 +156,16 @@ export default function App() {
         </div>
       </header>
 
+      <DashboardMenu
+        hasRun={hasRun}
+        hasRunMatrix={!!runMatrix}
+        search={sessionSearch}
+        searchOpen={sessionSearchOpen}
+        onToggleSearch={() => setSessionSearchOpen((open) => !open)}
+        onSearch={setSessionSearch}
+        onClearSearch={() => setSessionSearch("")}
+      />
+
       {error && (
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-bad/40 bg-bad/10 px-4 py-3 text-sm text-bad">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -172,157 +180,68 @@ export default function App() {
         <div className="py-24 text-center text-sm text-faint">Connecting to home…</div>
       ) : (
         <div className="space-y-4">
-          <RunControlCenter
-            runMatrix={runMatrix}
-            runBatches={runBatches}
-            activeSession={activeSession ?? null}
-            onSelectionChange={setControlSelection}
-            onAfter={refresh}
-          />
+          <section id="start" className="scroll-mt-24">
+            <RunControlCenter
+              runMatrix={runMatrix}
+              runBatches={runBatches}
+              activeSession={activeSession ?? null}
+              onSelectionChange={setControlSelection}
+              onAfter={refresh}
+            />
+          </section>
 
           {hasRun && (
-            <section className="space-y-4 rounded-xl border border-line bg-panel2/20 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                <div>
-                  <h2 className="text-sm font-semibold text-fg">Current Run</h2>
-                  <p className="mt-0.5 text-[11px] text-faint">The selected live or most recent run, with its progress, reliability, inputs, and results.</p>
-                </div>
-                <StatePill state={state} size="sm" />
-              </div>
-
-              {displayBatch && <BatchOverview batch={displayBatch} selectedRunId={status?.run_id ?? null} onSelect={refresh} />}
-
-              {/* selected-run header */}
-              <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={status?.persistence} user={status?.user ?? selected?.user ?? "user"} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
-
-              <RunProgress progress={status?.progress} live={live} scope={analyticsScope} persistence={status?.persistence} batchNotice={batchNotice} reliability={status?.reliability ?? null} />
-
-              <InputInspector selection={selectedInputSelection} title="Current run inputs" />
-
-              {/* live-only: progress hero + judge line + pipeline */}
-              {live && (
-                <>
-                  {status?.consumer?.status && (
-                    <div className="flex items-center gap-2 rounded-xl border border-line bg-panel/50 px-4 py-2 font-mono text-xs text-muted">
-                      <Terminal className="h-3.5 w-3.5 text-good" />
-                      <span className="truncate">{status.consumer.status}</span>
-                    </div>
-                  )}
-                  <PipelineFlow
-                    models={models}
-                    producerAlive={status?.producer?.run_py_alive ?? false}
-                    consumerAlive={status?.consumer?.alive ?? false}
-                  />
-                </>
-              )}
-
-              {/* roll-up stats for the selected run */}
-              <RunSummaryCard summary={status?.summary} scope={analyticsScope} />
-
-              {/* models + (nodes/activity when live) */}
-              <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-                <ModelBars models={modelProgress} />
-                <div className="space-y-4">
-                  <NodeCards nodes={status?.nodes} />
-                  {live && <ActivityFeed consumer={status?.consumer} />}
-                </div>
-              </div>
-
-              {/* Pareto (3-objective) + frontier table */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <ParetoChart data={status?.pareto ?? []} scope={analyticsScope} />
-                <ParetoLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-              </div>
-
-              {/* quality + power leaderboards */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <QualityLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-                <PowerLeaderboard pareto={status?.pareto ?? []} scope={analyticsScope} />
-              </div>
-
-              {/* score distribution + per-class quality */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <ScoreDistribution scores={status?.scores} scope={analyticsScope} />
-                <ClassQuality scores={status?.scores} scope={analyticsScope} />
-              </div>
-
-              <SkipsFeed consumer={status?.consumer} />
-            </section>
+            <CurrentRunSection
+              title={runViewTitle}
+              description={runViewDescription}
+              state={state}
+              live={live}
+              displayBatch={displayBatch}
+              selectedRunId={status?.run_id ?? null}
+              selectedRunInBatch={selectedRunInBatch}
+              batchNotice={batchNotice}
+              selectedScope={selectedScope}
+              analyticsScope={analyticsScope}
+              persistence={status?.persistence}
+              user={status?.user ?? selected?.user ?? "user"}
+              progress={status?.progress}
+              reliability={status?.reliability ?? null}
+              inputSelection={selectedInputSelection}
+              consumer={status?.consumer}
+              producerAlive={status?.producer?.run_py_alive ?? false}
+              models={models}
+              modelProgress={modelProgress}
+              nodes={status?.nodes}
+              summary={status?.summary}
+              pareto={status?.pareto ?? []}
+              scores={status?.scores}
+              backToLatestRunId={!viewingLatest ? latestSession?.run_id ?? null : null}
+              onBackToLatest={refresh}
+              onSelectRun={refresh}
+            />
           )}
 
-          <section className="rounded-xl border border-line bg-panel2/30 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="text-sm font-medium text-fg">Past Sessions</div>
-                <div className="mt-0.5 text-[11px] text-faint">Completed, canceled, stopped, and historical runs. Selecting one changes the Current Run section above.</div>
-              </div>
-              <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSessionScope("matching")}
-                  className={`px-2.5 py-1.5 transition ${sessionScope === "matching" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
-                >
-                  Matching selection · {matchingSessions.length}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSessionScope("all")}
-                  className={`border-l border-line px-2.5 py-1.5 transition ${sessionScope === "all" ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
-                >
-                  All sessions · {sessions.length}
-                </button>
-              </div>
-            </div>
-            <div className="mt-3 grid gap-2 lg:grid-cols-[1fr_auto_auto]">
-              <label>
-                <span className="sr-only">Search sessions</span>
-                <input
-                  value={sessionSearch}
-                  onChange={(event) => setSessionSearch(event.target.value)}
-                  placeholder="Search by run, status, model, scenario, memory…"
-                  className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-xs text-fg outline-none transition placeholder:text-faint focus:border-accent/60"
-                />
-              </label>
-              <select
-                value={sessionStatus}
-                onChange={(event) => setSessionStatus(event.target.value)}
-                className="rounded-lg border border-line bg-panel px-3 py-2 text-xs text-fg outline-none transition focus:border-accent/60"
-                aria-label="Filter sessions by status"
-              >
-                <option value="all">Any status</option>
-                <option value="running">Running</option>
-                <option value="done">Done</option>
-                <option value="canceled">Canceled</option>
-                <option value="failed">Failed</option>
-                <option value="stopped">Stopped</option>
-              </select>
-              <div className="inline-flex overflow-hidden rounded-lg border border-line bg-panel text-xs">
-                {(["today", "week", "month", "all"] as const).map((dateScope) => (
-                  <button
-                    key={dateScope}
-                    type="button"
-                    onClick={() => setSessionDate(dateScope)}
-                    className={`px-2.5 py-2 capitalize transition ${sessionDate === dateScope ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"}`}
-                  >
-                    {dateScope === "week" ? "This week" : dateScope === "month" ? "This month" : dateScope}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-2 text-[11px] text-faint">Showing {visibleSessions.length} of {scopedSessions.length} sessions in this scope.</div>
-          </section>
-          <SessionsTable
+          <RunLibrary
             sessions={visibleSessions}
+            scopedCount={scopedSessions.length}
+            matchingCount={matchingSessions.length}
+            totalCount={sessions.length}
             activeRunId={status?.run_id ?? null}
+            scope={sessionScope}
+            search={sessionSearch}
+            status={sessionStatus}
+            date={sessionDate}
+            onScope={setSessionScope}
+            onSearch={setSessionSearch}
+            onStatus={setSessionStatus}
+            onDate={setSessionDate}
             onSelect={refresh}
-            title="Past Sessions"
-            emptyText={sessionScope === "matching" ? "No runs match the selected model, scenario, and memory context yet." : "No runs yet."}
           />
 
           {!hasRun && <NodeCards nodes={status?.nodes} />}
 
           {runMatrix && (
-            <section className="card card-pad">
+            <section id="scenarios" className="card card-pad scroll-mt-24">
               <header className="mb-3 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
                   <ListChecks className="h-4 w-4 text-muted" />
@@ -390,116 +309,4 @@ function inDateScope(ts: number | null, scope: "today" | "week" | "month" | "all
     start.setHours(0, 0, 0, 0);
   }
   return date >= start;
-}
-
-function persistenceLabel(persistence?: PersistenceStatus) {
-  if (!persistence) return "persistence unknown";
-  if (persistence.status === "clean") return `persisted ${persistence.committed_count}/${persistence.committed_total}`;
-  if (persistence.status === "retrying_push") return `push retrying · ${persistence.push_pending_count} pending`;
-  if (persistence.status === "not_expected") return "persistence not expected";
-  return `${persistence.status} · ${persistence.committed_count}/${persistence.committed_total} pushed`;
-}
-
-function ScopeHeader({
-  scope,
-  analyticsScope,
-  persistence,
-  user,
-  selectedRunStatus,
-  selectedBatchRun,
-  batchNotice,
-}: {
-  scope?: SelectedScope;
-  analyticsScope?: AnalyticsScope;
-  persistence?: PersistenceStatus;
-  user: string;
-  selectedRunStatus: string;
-  selectedBatchRun?: RunBatchItem;
-  batchNotice?: string | null;
-}) {
-  return (
-    <div className="rounded-xl border border-line bg-panel/60 px-4 py-3" aria-live="polite">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="font-mono text-fg">{scope?.run_id ?? analyticsScope?.run_id ?? "selected run"}</span>
-        <StatePill state={selectedRunStatus} size="sm" />
-        {selectedBatchRun?.persistence_status && <StatePill state={selectedBatchRun.persistence_status} size="sm" />}
-      </div>
-      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
-        {scope?.batch_id && (
-          <span>
-            batch child {scope.batch_index}/{scope.batch_total} · batch {scope.batch_status}
-          </span>
-        )}
-        <span>{scope?.model_set ?? analyticsScope?.model_set ?? "models"} × {scope?.scenario_set ?? analyticsScope?.scenario_set ?? "scenarios"}</span>
-        <span className="font-mono">memory_context={scope?.memory_context ?? analyticsScope?.memory_context ?? "none"}</span>
-        <span className="font-mono">inference_strategy={scope?.inference_strategy ?? analyticsScope?.inference_strategy ?? "baseline"}</span>
-        <span>{persistenceLabel(persistence)}</span>
-        <span className="text-faint">by {user}</span>
-      </div>
-      <div className="mt-1 text-[11px] text-faint">
-        Analytics below are scoped to this selected child run, not to the whole memory batch.
-      </div>
-      {batchNotice && <div className="mt-1 text-[11px] text-warn">{batchNotice}</div>}
-    </div>
-  );
-}
-
-function BatchOverview({ batch, selectedRunId, onSelect }: { batch: RunBatch; selectedRunId: string | null; onSelect: (runId?: string | null) => void }) {
-  const progress = batch.progress;
-  return (
-    <section className="rounded-xl border border-line bg-panel2/40 p-4" role="status" aria-atomic="true">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-fg">
-            Current experiment
-            <StatePill state={batch.status} size="sm" />
-          </div>
-          <div className="mt-1 font-mono text-[11px] text-faint">{batch.batch_id}</div>
-          <div className="mt-1 text-xs text-muted">
-            {batch.model_set} × {batch.scenario_set} × {batch.inference_strategy ?? "baseline"} · {progress?.completed_runs ?? 0}/{progress?.total_runs ?? batch.runs.length} memory contexts complete
-            {progress?.current_memory_context ? ` · current memory_context=${progress.current_memory_context}` : ""}
-          </div>
-        </div>
-        <div className="min-w-40 text-right">
-          <div className="font-mono text-lg font-semibold text-fg">{Math.round(progress?.pct ?? 0)}%</div>
-          <div className="text-[11px] text-faint">experiment progress</div>
-        </div>
-      </div>
-      <Bar value={progress?.units_done ?? 0} max={progress?.units_total ?? 0} tone="accent" live={batch.status === "running"} className="mb-3 h-2" />
-      <div className="grid gap-2 md:grid-cols-2">
-        {batch.runs.map((run) => {
-          const selected = run.run_id === selectedRunId;
-          const selectable = !!run.started_at || ["running", "done", "failed", "error", "canceled"].includes(run.status);
-          const classes = `rounded-lg border p-3 text-left transition ${selected ? "border-accent/60 bg-accent/10" : "border-line/60 bg-panel/50"} ${selectable ? "hover:border-accent/40" : "cursor-not-allowed opacity-70"}`;
-          return (
-            <button
-              type="button"
-              key={run.run_id}
-              disabled={!selectable}
-              onClick={() => selectable && onSelect(run.run_id)}
-              aria-current={selected ? "true" : undefined}
-              title={selectable ? `View ${run.run_id}` : "This child run has not started yet."}
-              className={classes}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="font-mono text-[10px] text-faint">JOB {run.ordinal ?? "?"}</div>
-                  <div className="truncate text-xs font-medium text-fg">{run.run_id}</div>
-                  <div className="mt-0.5 font-mono text-[10px] text-muted">memory_context={run.memory_context}</div>
-                  <div className="mt-0.5 font-mono text-[10px] text-faint">inference_strategy={run.inference_strategy ?? batch.inference_strategy ?? "baseline"}</div>
-                </div>
-                <StatePill state={run.status} size="sm" />
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <Bar value={run.units_done ?? 0} max={run.units_total ?? 0} tone={run.status === "done" ? "good" : "info"} live={run.status === "running"} className="h-1.5 flex-1" />
-                <span className="font-mono text-[10px] text-faint">{Math.round(run.progress_pct ?? run.work_pct ?? 0)}%</span>
-              </div>
-              <div className="mt-1 text-[10px] text-faint">persistence={run.persistence_status ?? "unknown"}{!selectable ? " · not started" : ""}</div>
-            </button>
-          );
-        })}
-      </div>
-      {batch.error && <div className="mt-2 text-xs text-bad">{batch.error}</div>}
-    </section>
-  );
 }
