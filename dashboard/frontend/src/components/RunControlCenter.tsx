@@ -207,107 +207,109 @@ export function RunControlCenter({
       right={<span className="text-xs text-faint">configure run axes</span>}
     >
       <div className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-2">
-            <RunShapePicker
-              modelSets={modelSets}
-              modelSet={modelSet}
-              onModelSet={setModelSet}
-              scenarioSets={scenarioSets}
-              scenarioSet={scenarioSet}
-              onScenarioSet={setScenarioSet}
-            />
-            <StrategyMemoryPicker
-              strategies={inferenceStrategies}
-              strategy={inferenceStrategy}
-              onStrategy={setInferenceStrategy}
-              contexts={selectableMemoryContexts}
-              selected={selectedMemoryContexts}
-              onToggle={toggleMemoryContext}
-            />
-          </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <RunShapePicker
+            modelSets={modelSets}
+            modelSet={modelSet}
+            onModelSet={setModelSet}
+            scenarioSets={scenarioSets}
+            scenarioSet={scenarioSet}
+            onScenarioSet={setScenarioSet}
+          />
+          <StrategyMemoryPicker
+            strategies={inferenceStrategies}
+            strategy={inferenceStrategy}
+            onStrategy={setInferenceStrategy}
+            contexts={selectableMemoryContexts}
+            selected={selectedMemoryContexts}
+            onToggle={toggleMemoryContext}
+          />
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-panel2/30 p-3">
-            <button
-              type="button"
-              disabled={startDisabled}
-              title={startTitle}
-              onClick={startSingleRun}
-              className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {spin("start", <Rocket className="h-4 w-4" />)}
-              {startLabel}
+        {chosenScenario?.description && <p className="text-xs leading-relaxed text-muted">{chosenScenario.description}</p>}
+
+        <div className="grid gap-1.5 rounded-xl border border-line bg-panel2/30 p-2 sm:grid-cols-2 md:grid-cols-5">
+          <EstimateMetric
+            icon={<Scale className="h-3.5 w-3.5" />}
+            label="Answer rows"
+            value={answerRows.toLocaleString()}
+            sub={`${modelCount} models × ${scenarioCount} scenarios × 5 reps × ${memoryCount} memory`}
+          />
+          <EstimateMetric
+            icon={<Timer className="h-3.5 w-3.5" />}
+            label="Judge rows"
+            value={judgeUnits.toLocaleString()}
+            sub="2 judges for every answer row"
+          />
+          <EstimateMetric
+            icon={<Workflow className="h-3.5 w-3.5" />}
+            label="Inference calls"
+            value={inferenceUnits.toLocaleString()}
+            sub={`${candidateCount} candidate call${candidateCount === 1 ? "" : "s"} per answer`}
+          />
+          <EstimateMetric
+            icon={<Clock className="h-3.5 w-3.5" />}
+            label="Rough duration"
+            value={estimate.duration}
+            sub={estimate.assumption}
+            hint="This is a launch estimate, not a live ETA. It uses the selected matrix size and the recent CEOps observed range of about 5-7 combined answer/judge units per minute."
+          />
+          <EstimateMetric
+            icon={<Scale className="h-3.5 w-3.5" />}
+            label="Frontier judge tokens"
+            value={judgeTokenEstimate.input}
+            sub={judgeTokenEstimate.detail}
+            hint="Estimated Copilot frontier judge token volume. The input estimate uses about 27.6k input tokens per judge call; output is estimated at about 200 output tokens per judge JSON. Cache percentages are measured after the run from the Copilot CLI footer."
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-panel2/30 p-3">
+          <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
+          <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[10px] font-semibold text-accent">
+            <Clock className="h-3 w-3" />
+            est {estimate.duration}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
+            <Scale className="h-3 w-3" />
+            {judgeTokenEstimate.input}
+          </span>
+          <span className="hidden text-[11px] text-muted lg:inline-flex lg:items-center lg:gap-3">
+            <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
+            <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
+            <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-accent" />Energy</span>
+            <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
+            <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
+          </span>
+          {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
+          {activeState === "running" && activeRunId && (
+            <button type="button" disabled={busy != null} onClick={requestPause} className="btn border-warn/50 bg-warn/10 text-warn disabled:cursor-not-allowed disabled:opacity-40">
+              {spin("pause", <Pause className="h-4 w-4" />)}
+              Pause
             </button>
-            {activeState === "running" && activeRunId && (
-              <button type="button" disabled={busy != null} onClick={requestPause} className="btn border-warn/50 bg-warn/10 text-warn disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("pause", <Pause className="h-4 w-4" />)}
-                Pause
-              </button>
-            )}
-            {activeState === "paused" && activeRunId && (
-              <button type="button" disabled={busy != null} onClick={resumeActive} className="btn border-accent/50 bg-accent/15 text-accent disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("resume", <RotateCw className="h-4 w-4" />)}
-                Resume
-              </button>
-            )}
-            {activeRunId && activeState !== "idle" && (
-              <button type="button" disabled={busy != null} onClick={requestCancel} className="btn btn-danger disabled:cursor-not-allowed disabled:opacity-40">
-                {spin("cancel", <Square className="h-4 w-4" />)}
-                Cancel
-              </button>
-            )}
-            <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{compactSummary}</span>
-            <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[10px] font-semibold text-accent">
-              <Clock className="h-3 w-3" />
-              est {estimate.duration}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded border border-info/30 bg-info/10 px-2 py-1 font-mono text-[10px] font-semibold text-info">
-              <Scale className="h-3 w-3" />
-              {judgeTokenEstimate.input}
-            </span>
-            <span className="hidden text-[11px] text-muted lg:inline-flex lg:items-center lg:gap-3">
-              <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-accent" />Quality</span>
-              <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
-              <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-accent" />Energy</span>
-              <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
-              <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
-            </span>
-            {msg && <span className="max-w-xl truncate text-xs text-bad" title={msg}>{msg}</span>}
-          </div>
-          <div className="grid gap-2 rounded-xl border border-line bg-panel2/30 p-3 sm:grid-cols-2 xl:grid-cols-5">
-            <EstimateMetric
-              icon={<Scale className="h-3.5 w-3.5" />}
-              label="Answer rows"
-              value={answerRows.toLocaleString()}
-              sub={`${modelCount} models × ${scenarioCount} scenarios × 5 reps × ${memoryCount} memory`}
-            />
-            <EstimateMetric
-              icon={<Timer className="h-3.5 w-3.5" />}
-              label="Judge rows"
-              value={judgeUnits.toLocaleString()}
-              sub="2 judges for every answer row"
-            />
-            <EstimateMetric
-              icon={<Workflow className="h-3.5 w-3.5" />}
-              label="Inference calls"
-              value={inferenceUnits.toLocaleString()}
-              sub={`${candidateCount} candidate call${candidateCount === 1 ? "" : "s"} per answer`}
-            />
-            <EstimateMetric
-              icon={<Clock className="h-3.5 w-3.5" />}
-              label="Rough duration"
-              value={estimate.duration}
-              sub={estimate.assumption}
-              hint="This is a launch estimate, not a live ETA. It uses the selected matrix size and the recent CEOps observed range of about 5-7 combined answer/judge units per minute."
-            />
-            <EstimateMetric
-              icon={<Scale className="h-3.5 w-3.5" />}
-              label="Frontier judge tokens"
-              value={judgeTokenEstimate.input}
-              sub={judgeTokenEstimate.detail}
-              hint="Estimated Copilot frontier judge token volume. The input estimate uses about 27.6k input tokens per judge call; output is estimated at about 200 output tokens per judge JSON. Cache percentages are measured after the run from the Copilot CLI footer."
-            />
-          </div>
-          {chosenScenario?.description && <p className="text-xs leading-relaxed text-muted">{chosenScenario.description}</p>}
+          )}
+          {activeState === "paused" && activeRunId && (
+            <button type="button" disabled={busy != null} onClick={resumeActive} className="btn border-accent/50 bg-accent/15 text-accent disabled:cursor-not-allowed disabled:opacity-40">
+              {spin("resume", <RotateCw className="h-4 w-4" />)}
+              Resume
+            </button>
+          )}
+          {activeRunId && activeState !== "idle" && (
+            <button type="button" disabled={busy != null} onClick={requestCancel} className="btn btn-danger disabled:cursor-not-allowed disabled:opacity-40">
+              {spin("cancel", <Square className="h-4 w-4" />)}
+              Cancel
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={startDisabled}
+            title={startTitle}
+            onClick={startSingleRun}
+            className="btn btn-primary ml-auto disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {spin("start", <Rocket className="h-4 w-4" />)}
+            {startLabel}
+          </button>
+        </div>
       </div>
       {confirmAction && (
         <ConfirmDialog
@@ -338,14 +340,14 @@ function EstimateMetric({
   hint?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-line/60 bg-panel/50 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
+    <div className="min-w-0 rounded-lg border border-line/60 bg-panel/50 px-2.5 py-2">
+      <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.1em] text-faint">
         {icon}
         {label}
         {hint && <Hint text={hint} align="end" />}
       </div>
-      <div className="mt-1 font-mono text-base font-semibold tabular-nums text-fg">{value}</div>
-      <div className="mt-0.5 truncate text-[11px] text-muted" title={sub}>{sub}</div>
+      <div className="mt-0.5 truncate font-mono text-sm font-semibold tabular-nums text-fg" title={value}>{value}</div>
+      <div className="mt-0.5 truncate text-[10px] text-muted" title={sub}>{sub}</div>
     </div>
   );
 }
