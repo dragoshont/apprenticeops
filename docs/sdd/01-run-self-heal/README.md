@@ -22,14 +22,19 @@ m1 (`batch-strategy-pilot-2 × strategy-pilot-6 × none × evaluator_optimizer_1
   heal that found **0 `score=None` rows**.
 
 ## Root cause
-1. **Zero-output stall (the real gap).** The socket read timeout passed to `/api/chat`
-   **is** `stall_s`. `resolve_policy` gives qwen3:4b `stall_s≈75s` (60×1.25). On a hard
-   scenario (`new-backup-restore-drill`), prefill of the long prompt on a 4B CPU model
-   exceeds 75s **before the first token**, so the socket times out → `DNF:stall` — the
-   scenario's own ~234s `timeout_s` never applies (no byte arrived to enter the in-loop
-   wall-clock check). `with_zero_output_retry` re-runs with the **same** 75s budget, so
-   a reliably-slow-prefill case re-stalls (3/5). Not flaky — the prefill budget is too
-   short for hard×slow.
+1. **Zero-output stall (the real gap) — measured, not assumed.** The socket read
+   timeout passed to `/api/chat` **is** `stall_s` (≈75s for qwen3:4b). The 3 DNF rows
+   show `stall.phase=before_response_headers`, `first_byte=None`, `http.exception=
+   TimeoutError`, `wall_s≈330s`, `strategy.candidate_count=3` — i.e. on one of
+   evaluator_optimizer_1's three sequential calls the **ollama server did not return
+   response headers within 75s** and the socket timed out. A direct warm probe of the
+   same scenario returns the first token in **11.5s**, so this is **not** prefill compute
+   — it is **cold model-load / server-header latency** (the model is evicted/reloaded
+   between strategy sub-calls under memory pressure), and it is **intermittent (3/5)**.
+   `with_zero_output_retry` re-ran at the **same** 75s, and `unload()`s before the retry,
+   so it cold-loaded again and re-stalled. The fix is the same either way: the retry
+   needs a first-byte budget long enough to absorb a slow cold-load.
+   (Earlier draft said "slow prefill" — falsified by the 11.5s warm probe; corrected.)
 2. **Empty judge text (a *separate*, latent bug — not what m1 hit).** `judge_one`
    swallowed an empty backend completion into a `score=None` verdict on the first try
    (the 4-attempt loop only caught exceptions), and resume treated it as done.
