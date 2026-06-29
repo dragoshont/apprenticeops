@@ -22,7 +22,7 @@
 services:
   mission-control:
     build: .
-    image: apprenticeops/mission-control:0.5.0
+    image: apprenticeops/mission-control:0.5.1
     container_name: apprenticeops-mc
     restart: unless-stopped
     environment:

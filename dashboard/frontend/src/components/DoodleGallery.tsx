@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, FileText, Images, ShieldCheck, Sparkles, X } from "lucide-react";
 
 export type GroupBy = "scenario" | "model";
@@ -209,7 +210,7 @@ function DoodleModal({ output, onClose }: { output: DoodleOutput; onClose: () =>
 
   const placeholder = isPlaceholder(output.svg);
   const reviews = output.reviews ?? [];
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70 p-4 backdrop-blur-sm"
       role="dialog"
@@ -301,7 +302,8 @@ function DoodleModal({ output, onClose }: { output: DoodleOutput; onClose: () =>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
