@@ -1,2 +1,6 @@
 {"model":"*","stage":"judge","ts":1782758131,"ok":1,"detail":"judged 0->160"}
 {"model":"qwen2.5-coder:1.5b","stage":"persist","ts":1782758134,"ok":1,"detail":"c73afa8"}
+{"model":"smollm2:1.7b","stage":"persist","ts":1782758137,"ok":1,"detail":"6001704"}
+{"model":"*","stage":"judge","ts":1782758215,"ok":1,"detail":"judged 160->176"}
+{"model":"*","stage":"judge","ts":1782758263,"ok":1,"detail":"judged 176->178"}
+{"model":"*","stage":"judge","ts":1782758310,"ok":1,"detail":"judged 178->184"}
