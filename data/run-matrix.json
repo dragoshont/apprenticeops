@@ -89,10 +89,10 @@
     },
     {
       "id": "journal-ro-6",
-      "label": "Journal keepsakes (RO) - 3 scenarios",
+      "label": "Journal keepsakes (RO) - 6 scenarios",
       "path": "data/scenario_sets/journal-ro-6.json",
       "kind": "app",
-      "description": "Romanian grief-journal entry-to-keepsake scenarios for the Aletheia keepsake feature. Currently three keepsake scenarios despite the -6 filename."
+      "description": "Romanian grief-journal entry-to-keepsake scenarios for the Aletheia keepsake feature: six entries spanning a one-line moment to a long reflective entry, distilled to a single warm sentence."
     }
   ],
   "memory_contexts": [

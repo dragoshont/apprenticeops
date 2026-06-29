@@ -26,6 +26,39 @@
       "question": "Intrare: „Am scris doar două rânduri azi, dar le-am scris.” Propoziție de păstrat.",
       "gold_answer": "Două rânduri sunt tot scris — ai venit, asta e destul.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["destul|ai venit|două"], "desc": "validează prezența"}]
+    },
+    {
+      "id": "journal-keepsake-04", "difficulty": "hard", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Distilare dintr-o intrare lungă: alege UN singur fir de păstrat, nu rezuma toată ziua. Cald, fără sfaturi, fără clișee.",
+      "question": "Intrare: „Azi am fost la casa bunicilor să strâng din lucruri. Am stat câteva ore în bucătărie, printre cutii. Am găsit ochelarii lui bunicu cu o lentilă crăpată, un teanc de bilete de tren din anii '80 și agenda în care nota meciurile. Mirosea a mere și a lemn ars, exact ca acolo. La un moment dat am râs singur că păstrase toate borcanele goale, spălate și aranjate pe raft. Pe urmă m-am așezat pe scaunul lui de la masă și n-am mai putut să mă ridic o vreme. Nu știu ce să fac cu toate astea, dar nu pot să le arunc.” Dă o singură propoziție de păstrat.",
+      "gold_answer": "Agenda cu meciurile lui bunicu și borcanele spălate pe care nu le-a aruncat niciodată — astea rămân, chiar dacă încă nu știi unde.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["agend|borcan|bunicu|ochelari|bilete|mere"], "desc": "ancorat într-un detaliu real din intrare"},
+        {"type": "max_len", "patterns": ["200"], "desc": "un singur fir, nu tot rezumatul"}
+      ]
+    },
+    {
+      "id": "journal-keepsake-05", "difficulty": "medium", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Moment tandru, obișnuit — păstrează gestul, nu îl explica.",
+      "question": "Intrare: „Bunica a adormit în fotoliu cu andrelele în poală. N-am trezit-o.” Propoziție de păstrat.",
+      "gold_answer": "Ai lăsat-o pe bunica să doarmă cu andrelele în poală — grija ta a fost tăcută.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["bunica|andrele|adormit|doarm"], "desc": "ancorat în gestul real"},
+        {"type": "max_len", "patterns": ["160"], "desc": "o propoziție scurtă"}
+      ]
+    },
+    {
+      "id": "journal-keepsake-06", "difficulty": "medium", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Zi amestecată: ține și bucuria, și dorul, în aceeași propoziție — fără să alegi una.",
+      "question": "Intrare: „Sofia a spus azi primul cuvânt. Mi-aș fi dorit ca bunicu să mai fi apucat s-o audă.” Propoziție de păstrat.",
+      "gold_answer": "Primul cuvânt al Sofiei și dorul de bunicu în aceeași zi — le poți ține pe amândouă.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["Sofia|cuvânt|cuvant|bunicu|dor"], "desc": "ține și bucuria și dorul"},
+        {"type": "max_len", "patterns": ["170"], "desc": "o propoziție scurtă"}
+      ]
     }
   ]
 }
