@@ -1,1 +1,2 @@
 {"model":"*","stage":"judge","ts":1782758131,"ok":1,"detail":"judged 0->160"}
+{"model":"qwen2.5-coder:1.5b","stage":"persist","ts":1782758134,"ok":1,"detail":"c73afa8"}
