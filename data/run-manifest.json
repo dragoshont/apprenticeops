@@ -56,6 +56,16 @@
         "path": "data/scenario_sets/strategy-pilot-6.json",
         "sha256": "826612fea7cea9444f7f331f5c6ce33a3055aed0636a56d11ffceeb302a3f0ee",
         "scenario_count": 6
+      },
+      "doodle-6": {
+        "path": "data/scenario_sets/doodle-6.json",
+        "sha256": "579781c48a9da71be9f80d0bcbde6d2130cddaaa809caf312c92687c68a9d9bd",
+        "scenario_count": 6
+      },
+      "journal-ro-6": {
+        "path": "data/scenario_sets/journal-ro-6.json",
+        "sha256": "5e76951d0c113c0f26d27fc8c5811f2e6b6eead08114483ba9137e02ab814780",
+        "scenario_count": 6
       }
     }
   },
