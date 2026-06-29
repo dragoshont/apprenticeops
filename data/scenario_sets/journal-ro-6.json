@@ -6,6 +6,7 @@
       "context": "Aletheia, jurnal local în română. Sarcină: dintr-o intrare, scoate o singură propoziție caldă pentru cardul „Ține minte” — sinceră, fără clișee, fără sfaturi.",
       "question": "Intrare: „Azi am dus-o pe Sofia la grădiniță, am ținut-o de mână tot drumul. A râs de un câine care fugea după frunze.” Dă o singură propoziție de păstrat.",
       "gold_answer": "Mâna Sofiei într-a ta și râsul ei la un câine fugind după frunze — atât a fost de ajuns azi.",
+      "judge_rubric": "Reward a single warm Romanian sentence anchored in a real detail from the entry (Sofia, holding her hand, laughing at a dog chasing leaves), sincere, with no cliches and no advice, and at most about 160 characters. Penalize advice, cliches, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
       "deterministic_checks": [
         {"type": "any_include", "patterns": ["Sofia|mâna|râs"], "desc": "ancorat în detaliul real"},
         {"type": "max_len", "patterns": ["160"], "desc": "o propoziție scurtă"}
@@ -17,6 +18,7 @@
       "context": "Reframe blând al unei zile grele — fără să nege durerea.",
       "question": "Intrare: „Zi grea. M-am simțit gol pe dinăuntru, dar tot am pus masa și am stat cu ai mei.” Propoziție de păstrat.",
       "gold_answer": "Chiar gol pe dinăuntru, tot ai fost acolo pentru ai tăi — asta contează.",
+      "judge_rubric": "Reward a single warm Romanian sentence that recognizes the effort (setting the table and staying with the family despite feeling empty) WITHOUT denying the pain, with no advice and no cliches. Penalize toxic positivity that denies the hard feeling, advice, invented details, answers not in Romanian, or multiple sentences.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["acolo|ai tăi|tot ai"], "desc": "recunoaște efortul"}]
     },
     {
@@ -25,6 +27,7 @@
       "context": "Mic câștig.",
       "question": "Intrare: „Am scris doar două rânduri azi, dar le-am scris.” Propoziție de păstrat.",
       "gold_answer": "Două rânduri sunt tot scris — ai venit, asta e destul.",
+      "judge_rubric": "Reward a single warm Romanian sentence that validates the small win of showing up (two lines still count as writing), with no advice and no cliches. Penalize advice, minimizing or inflating the moment, invented details, answers not in Romanian, or multiple sentences.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["destul|ai venit|două"], "desc": "validează prezența"}]
     },
     {
@@ -33,6 +36,7 @@
       "context": "Distilare dintr-o intrare lungă: alege UN singur fir de păstrat, nu rezuma toată ziua. Cald, fără sfaturi, fără clișee.",
       "question": "Intrare: „Azi am fost la casa bunicilor să strâng din lucruri. Am stat câteva ore în bucătărie, printre cutii. Am găsit ochelarii lui bunicu cu o lentilă crăpată, un teanc de bilete de tren din anii '80 și agenda în care nota meciurile. Mirosea a mere și a lemn ars, exact ca acolo. La un moment dat am râs singur că păstrase toate borcanele goale, spălate și aranjate pe raft. Pe urmă m-am așezat pe scaunul lui de la masă și n-am mai putut să mă ridic o vreme. Nu știu ce să fac cu toate astea, dar nu pot să le arunc.” Dă o singură propoziție de păstrat.",
       "gold_answer": "Agenda cu meciurile lui bunicu și borcanele spălate pe care nu le-a aruncat niciodată — astea rămân, chiar dacă încă nu știi unde.",
+      "judge_rubric": "Reward a single warm Romanian sentence that distills ONE thread worth keeping (for example the match-notes notebook, the washed jars, the cracked glasses, the train tickets, or the apple-and-burnt-wood smell) rather than summarizing the whole day; it must be anchored in a real detail, with no advice and no cliches, and at most about 200 characters. Penalize summarizing the entire entry, advice, invented details, holding several threads at once, multiple sentences, exceeding the length, or answers not in Romanian.",
       "deterministic_checks": [
         {"type": "any_include", "patterns": ["agend|borcan|bunicu|ochelari|bilete|mere"], "desc": "ancorat într-un detaliu real din intrare"},
         {"type": "max_len", "patterns": ["200"], "desc": "un singur fir, nu tot rezumatul"}
@@ -44,6 +48,7 @@
       "context": "Moment tandru, obișnuit — păstrează gestul, nu îl explica.",
       "question": "Intrare: „Bunica a adormit în fotoliu cu andrelele în poală. N-am trezit-o.” Propoziție de păstrat.",
       "gold_answer": "Ai lăsat-o pe bunica să doarmă cu andrelele în poală — grija ta a fost tăcută.",
+      "judge_rubric": "Reward a single warm Romanian sentence that keeps the tender, ordinary gesture (letting bunica sleep in the armchair with her knitting in her lap) without explaining it away, at most about 160 characters. Penalize advice, over-explaining the gesture, invented details, answers not in Romanian, multiple sentences, or exceeding the length.",
       "deterministic_checks": [
         {"type": "any_include", "patterns": ["bunica|andrele|adormit|doarm"], "desc": "ancorat în gestul real"},
         {"type": "max_len", "patterns": ["160"], "desc": "o propoziție scurtă"}
@@ -55,6 +60,7 @@
       "context": "Zi amestecată: ține și bucuria, și dorul, în aceeași propoziție — fără să alegi una.",
       "question": "Intrare: „Sofia a spus azi primul cuvânt. Mi-aș fi dorit ca bunicu să mai fi apucat s-o audă.” Propoziție de păstrat.",
       "gold_answer": "Primul cuvânt al Sofiei și dorul de bunicu în aceeași zi — le poți ține pe amândouă.",
+      "judge_rubric": "Reward a single warm Romanian sentence that holds BOTH the joy (Sofia's first word) AND the longing (wishing bunicu had lived to hear it) together, without choosing one over the other, at most about 170 characters. Penalize dropping either the joy or the longing, advice, cliches, invented details, answers not in Romanian, or exceeding the length.",
       "deterministic_checks": [
         {"type": "any_include", "patterns": ["Sofia|cuvânt|cuvant|bunicu|dor"], "desc": "ține și bucuria și dorul"},
         {"type": "max_len", "patterns": ["170"], "desc": "o propoziție scurtă"}
