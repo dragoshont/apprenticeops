@@ -264,6 +264,10 @@ def normalize_judgement(judgement, *, fallback_score=None, fallback_verdict=None
     return out
 
 
+class EmptyJudgeResponse(Exception):
+    """The judge backend returned no text — transient (retryable), unlike a parse error."""
+
+
 def judge_one(judge, scen, answer):
     user = (f"--- CONTEXT ---\n{scen['context']}\n\n--- TASK ---\n{scen['question']}\n\n"
             f"--- GOLD REFERENCE ---\n{scen['gold_answer']}\n\n"
@@ -271,6 +275,11 @@ def judge_one(judge, scen, answer):
             f"--- ANSWER (author hidden) ---\n{answer}\n\n"
             "Score now as the specified JSON.")
     raw = judge.complete(JUDGE_SYS, user, json_mode=True)
+    if not (raw or "").strip():
+        # An EMPTY completion (Copilot-CLI hiccup) is transient, not a parse
+        # error: signal a retry so _judge_task's attempt loop re-issues it,
+        # instead of recording a score=None "empty" verdict that resume can't heal.
+        raise EmptyJudgeResponse("judge backend returned no text")
     try:
         return normalize_judgement(json.loads(raw))
     except (json.JSONDecodeError, TypeError):
@@ -411,6 +420,11 @@ def main():
                 try:
                     d = json.loads(line)
                 except json.JSONDecodeError:
+                    continue
+                # A score=None row is a judge-hiccup empty (the backend returned
+                # no text); it is NOT done -> leave it out of `done` so resume
+                # re-judges it. DNF-legit empties keep score=1 and stay done.
+                if d.get("score") is None:
                     continue
                 done.add((d.get("model"), d.get("scenario"), str(d.get("rep")),
                           d.get("memory_context") or "none",
