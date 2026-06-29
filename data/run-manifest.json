@@ -66,6 +66,11 @@
         "path": "data/scenario_sets/journal-ro-6.json",
         "sha256": "0b441680b946922cc5a3b6fae5ef4f5e68bc7ecad25585c9dee4f659ba1bab86",
         "scenario_count": 6
+      },
+      "doodle-simple": {
+        "path": "data/scenario_sets/doodle-simple.json",
+        "sha256": "76991a20791accaab02feccf8a93f557c4c9af9af5fca9c536cabacd639e71a4",
+        "scenario_count": 6
       }
     }
   },

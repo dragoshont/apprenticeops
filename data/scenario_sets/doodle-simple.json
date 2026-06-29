@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "doodle-simple-circle", "tier": 0, "difficulty": "easy", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 SVG line drawing, one color (stroke #2b3a67, no fill). No animation needed.",
+      "question": "Draw: a single circle.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><circle cx='100' cy='100' r='70' stroke='#2b3a67' fill='none' stroke-width='3'/></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (stroke #2b3a67, no fill) that recognizably shows a single round circle. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions (GIMP, HTML5 Canvas, SVG.js) instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing or non-circular shape, filled shapes, or multiple colors. Do NOT require any animation.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"}
+      ]
+    },
+    {
+      "id": "doodle-simple-face", "tier": 0, "difficulty": "easy", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 SVG drawing in one color (#2b3a67). No animation needed.",
+      "question": "Draw: a smiling face - a round face, two dot eyes, and a curved smile.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><circle cx='100' cy='100' r='75' stroke='#2b3a67' fill='none' stroke-width='3'/><circle cx='75' cy='85' r='7' fill='#2b3a67'/><circle cx='125' cy='85' r='7' fill='#2b3a67'/><path d='M65 120 Q100 150 135 120' stroke='#2b3a67' fill='none' stroke-width='3'/></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (#2b3a67) that recognizably shows a smiling face: a round face outline, two eyes, and an upturned (smiling) mouth. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing face, missing eyes or mouth, a non-smiling mouth, or multiple colors. Do NOT require any animation.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"}
+      ]
+    },
+    {
+      "id": "doodle-simple-house", "tier": 1, "difficulty": "easy", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 SVG line drawing, one color (stroke #2b3a67, no fill). No animation needed.",
+      "question": "Draw: a house - a square with a triangle roof.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><rect x='55' y='95' width='90' height='80' stroke='#2b3a67' fill='none' stroke-width='3'/><path d='M45 95 L100 45 L155 95' stroke='#2b3a67' fill='none' stroke-width='3'/></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (stroke #2b3a67, no fill) that recognizably shows a house: a square or rectangular body with a triangular roof on top. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing body or roof, a roof that is not triangular, filled shapes, or multiple colors. Do NOT require any animation.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"}
+      ]
+    },
+    {
+      "id": "doodle-simple-star", "tier": 1, "difficulty": "medium", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 SVG line drawing, one color (stroke #2b3a67, no fill). No animation needed.",
+      "question": "Draw: a five-pointed star.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><polygon points='100,30 118,75 168,75 128,105 143,153 100,123 57,153 72,105 32,75 82,75' stroke='#2b3a67' fill='none' stroke-width='3'/></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (stroke #2b3a67, no fill) that recognizably shows a single five-pointed star. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a shape that is not a five-pointed star (wrong point count, a blob, a circle), filled shapes, or multiple colors. Do NOT require any animation.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"}
+      ]
+    },
+    {
+      "id": "doodle-simple-sun", "tier": 1, "difficulty": "easy", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 SVG line drawing, one color (stroke #2b3a67, no fill). No animation needed.",
+      "question": "Draw: a sun - a circle with straight rays around it.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><circle cx='100' cy='100' r='40' stroke='#2b3a67' fill='none' stroke-width='3'/><g stroke='#2b3a67' stroke-width='3'><line x1='100' y1='20' x2='100' y2='50'/><line x1='100' y1='150' x2='100' y2='180'/><line x1='20' y1='100' x2='50' y2='100'/><line x1='150' y1='100' x2='180' y2='100'/><line x1='45' y1='45' x2='65' y2='65'/><line x1='135' y1='135' x2='155' y2='155'/><line x1='155' y1='45' x2='135' y2='65'/><line x1='65' y1='135' x2='45' y2='155'/></g></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (stroke #2b3a67, no fill) that recognizably shows a sun: a central circle with several straight rays radiating outward. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing circle, missing rays, filled shapes, or multiple colors. Do NOT require any animation.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"}
+      ]
+    },
+    {
+      "id": "doodle-simple-ball", "tier": 2, "difficulty": "medium", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle-simple",
+      "context": "Output a single 200x200 animated SVG drawing, one color (stroke #2b3a67, no fill), with a gentle looping SMIL <animate>.",
+      "question": "Draw: a ball bouncing up and down.",
+      "gold_answer": "<svg viewBox='0 0 200 200'><circle cx='100' cy='60' r='25' stroke='#2b3a67' fill='none' stroke-width='3'><animate attributeName='cy' values='60;150;60' dur='1.5s' repeatCount='indefinite'/></circle></svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn in one color (stroke #2b3a67, no fill) that recognizably shows a ball (a circle) bouncing up and down via a looping SMIL <animate> or animateTransform on its vertical position. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing ball, no vertical bounce animation, a non-looping animation, filled shapes, or multiple colors.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"},
+        {"type": "any_include", "patterns": ["<animate|animateTransform"], "desc": "is animated"}
+      ]
+    }
+  ]
+}

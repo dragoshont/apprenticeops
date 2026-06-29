@@ -93,6 +93,13 @@
       "path": "data/scenario_sets/journal-ro-6.json",
       "kind": "app",
       "description": "Romanian grief-journal entry-to-keepsake scenarios for the Aletheia keepsake feature: six entries spanning a one-line moment to a long reflective entry, distilled to a single warm sentence."
+    },
+    {
+      "id": "doodle-simple",
+      "label": "Doodle simple - 6 ladder scenarios",
+      "path": "data/scenario_sets/doodle-simple.json",
+      "kind": "app",
+      "description": "A simpler doodle difficulty ladder: tier 0 pure shapes (circle, smiley), tier 1 simple figures (house, star, sun), tier 2 a simple animated figure (bouncing ball). One color, animation only at tier 2 - the A/B control for whether smaller subjects raise recognizability and spread the judge scores."
     }
   ],
   "memory_contexts": [
