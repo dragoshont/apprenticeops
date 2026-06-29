@@ -140,8 +140,8 @@
       "kind": "critique_revise",
       "candidate_count": 3,
       "extra_calls": 2,
-      "selection_method": "generate_critique_revise",
-      "description": "Generate once, ask the same local model for a critique, then revise once. The revised answer is judged; all intermediate calls are preserved as candidates."
+      "selection_method": "generate_critique_revise_with_draft_fallback",
+      "description": "Generate once, ask the same local model for a critique, then revise once. The revised answer is judged unless the revision DNF/stalls, in which case a successful original draft is kept; all intermediate calls are preserved as candidates."
     }
   ],
   "experiment_plans": [

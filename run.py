@@ -1333,6 +1333,7 @@ def run_strategy(model, scenario, prompt, *, memory_context, memory_context_id,
     """
     candidates = []
     strategy_id = strategy_id or "baseline"
+    strategy_version = "1"
 
     def call(candidate_index, user_prompt, call_seed):
         tel = with_zero_output_retry(
@@ -1357,6 +1358,7 @@ def run_strategy(model, scenario, prompt, *, memory_context, memory_context_id,
         method = "single_call_strategy_prompt"
         reason = "strategy prompt injected as inference strategy"
     elif strategy_id == "evaluator_optimizer_1":
+        strategy_version = "2"
         first = call(0, prompt, seed)
         critique_prompt = (
             "Critique the answer for factual grounding, safety, missing actions, and overclaiming. "
@@ -1364,9 +1366,14 @@ def run_strategy(model, scenario, prompt, *, memory_context, memory_context_id,
             f"{first.get('_text') or ''}"
         )
         critique = call(1, f"{prompt}\n\n{critique_prompt}", seed + 1000)
-        selected = call(2, f"{prompt}\n\n{_revise_prompt(first.get('_text') or '', critique.get('_text') or '')}", seed + 2000)
-        method = "generate_critique_revise"
-        reason = "selected revised answer after one critique pass"
+        revised = call(2, f"{prompt}\n\n{_revise_prompt(first.get('_text') or '', critique.get('_text') or '')}", seed + 2000)
+        method = "generate_critique_revise_with_draft_fallback"
+        if revised.get("dnf") and not first.get("dnf"):
+            selected = first
+            reason = "revision DNF; selected original draft fallback"
+        else:
+            selected = revised
+            reason = "selected revised answer after one critique pass"
     elif strategy_id in ("best_of_3_detcheck", "self_consistency_3"):
         for index in range(3):
             call(index, prompt, seed + (index * 1000))
@@ -1407,7 +1414,7 @@ def run_strategy(model, scenario, prompt, *, memory_context, memory_context_id,
             det=item["det"], selection_reason=reason if item["index"] == selected_index else None,
         ))
     selected["strategy.id"] = strategy_id
-    selected["strategy.version"] = "1"
+    selected["strategy.version"] = strategy_version
     selected["strategy.sample_index"] = 0
     selected["strategy.candidate_count"] = len(candidates)
     selected["strategy.selection_method"] = method
