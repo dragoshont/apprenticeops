@@ -26,6 +26,30 @@
       "question": "Draw: a fish swimming with bubbles.",
       "gold_answer": "<svg>...fish + rising bubbles...</svg>",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
+    },
+    {
+      "id": "doodle-rabbit", "difficulty": "easy", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle",
+      "context": "Single 200x200 animated SVG, stroke #2b3a67, no fill, SMIL, loops, calm.",
+      "question": "Draw: a rabbit hopping across grass.",
+      "gold_answer": "<svg>...rabbit with vertical hop animate...</svg>",
+      "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
+    },
+    {
+      "id": "doodle-butterfly", "difficulty": "medium", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle",
+      "context": "Single 200x200 animated SVG, single color, SMIL wing flap, loops.",
+      "question": "Draw: a butterfly drifting over a flower.",
+      "gold_answer": "<svg>...butterfly, wings flap via animateTransform, drifts...</svg>",
+      "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
+    },
+    {
+      "id": "doodle-cat", "difficulty": "medium", "class": "doodle", "aiopslab_task": "generate",
+      "grounding": "grounded", "pair_id": "pair-doodle",
+      "context": "Single 200x200 animated SVG, single color, loops, calm.",
+      "question": "Draw: a sitting cat with a flicking tail.",
+      "gold_answer": "<svg>...cat body + ears, tail flick via animate...</svg>",
+      "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     }
   ]
 }
