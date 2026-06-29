@@ -45,13 +45,23 @@ function judgeTone(score: number): string {
   return "bg-line/50 text-faint";
 }
 
-/** A single quiet at-rest dot encoding output health without adding chrome. */
-function statusDot(output: DoodleOutput, placeholder: boolean): string {
-  if (placeholder) return "bg-faint/50";
-  const judge = output.judgeScore ?? 0;
-  if (judge >= 3 || output.detScore >= 1) return "bg-accent";
-  if (output.detScore > 0 || judge >= 2) return "bg-info/80";
-  return "bg-faint/60";
+/**
+ * Always-visible judge-score badge color. Honest gradient on the 1–5 scale: a
+ * judge-approved doodle (≥4) pops bold emerald; weak ones recede in soft red.
+ */
+function judgeBadge(score: number): string {
+  if (score >= 4) return "bg-good text-slate-900";
+  if (score >= 3) return "bg-info text-slate-900";
+  if (score >= 2) return "bg-warn text-slate-900";
+  return "bg-bad/20 text-bad";
+}
+
+/** Tile ring that makes a judge-approved doodle pop out of its prompt group. */
+function tileRing(score: number | undefined): string {
+  if (score == null) return "border-line/60";
+  if (score >= 4) return "border-good/70 ring-2 ring-good/40";
+  if (score >= 3) return "border-info/60 ring-1 ring-info/30";
+  return "border-line/60";
 }
 
 function GroupToggle({ value, onChange }: { value: GroupBy; onChange: (next: GroupBy) => void }) {
@@ -119,7 +129,7 @@ function DoodleTile({ output, crossLabel }: { output: DoodleOutput; crossLabel: 
     <div
       tabIndex={0}
       aria-label={label}
-      className="group relative aspect-square overflow-hidden rounded-lg border border-line/60 bg-panel2/40 outline-none transition focus-visible:ring-2 focus-visible:ring-accent"
+      className={`group relative aspect-square overflow-hidden rounded-lg border bg-panel2/40 outline-none transition focus-visible:ring-2 focus-visible:ring-accent ${tileRing(output.judgeScore)}`}
     >
       {placeholder ? (
         <div className="flex h-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line/60 px-2 text-center">
@@ -130,11 +140,21 @@ function DoodleTile({ output, crossLabel }: { output: DoodleOutput; crossLabel: 
         <SandboxedSvg svg={output.svg} title={label} />
       )}
 
-      {/* at-rest health dot — the only chrome on a resting tile */}
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-1 ring-bg/40 ${statusDot(output, placeholder)}`}
-      />
+      {/* always-visible judge-score badge — the per-image headline signal */}
+      {output.judgeScore != null ? (
+        <span
+          className={`pointer-events-none absolute right-1 top-1 inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-md px-1 text-[11px] font-bold leading-none tabular-nums shadow-sm ring-1 ring-bg/40 ${judgeBadge(output.judgeScore)}`}
+          title={`LLM-judge mean quality ${output.judgeScore.toFixed(1)} of 5`}
+        >
+          {output.judgeScore.toFixed(1)}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-faint/50 ring-1 ring-bg/40"
+          title="not yet judged"
+        />
+      )}
 
       {/* hover / keyboard-focus reveal */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-bg/95 via-bg/70 to-transparent p-2 opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
@@ -202,6 +222,15 @@ export function DoodleGallery({ outputs, runId, loading, defaultGroupBy = "scena
         </h2>
         <div className="flex flex-wrap items-center gap-3">
           {outputs.length > 0 && <GroupToggle value={groupBy} onChange={setGroupBy} />}
+          {outputs.length > 0 && (
+            <div className="flex items-center gap-1 text-[10px] text-faint" aria-label="judge score legend" title="LLM-judge mean quality (1–5)">
+              <span className="mr-0.5">judge</span>
+              <span className="rounded bg-bad/20 px-1 font-semibold text-bad">1</span>
+              <span className="rounded bg-warn px-1 font-semibold text-slate-900">2</span>
+              <span className="rounded bg-info px-1 font-semibold text-slate-900">3</span>
+              <span className="rounded bg-good px-1 font-semibold text-slate-900">4–5</span>
+            </div>
+          )}
           <span className="text-xs text-faint">
             {runId ? <span className="font-mono">{runId}</span> : "no run selected"}
             {outputs.length > 0 && (
