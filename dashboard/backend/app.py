@@ -685,7 +685,16 @@ def judged_lines():
     return cp.stdout.splitlines() if cp.returncode == 0 else []
 
 
+def _aslist(v):
+    if isinstance(v, list):
+        return [str(x) for x in v if str(x).strip()]
+    if v in (None, ""):
+        return []
+    return [str(v)]
+
+
 jscore = defaultdict(list)
+jreviews = defaultdict(list)
 for line in judged_lines():
     line = line.strip()
     if not line:
@@ -695,8 +704,16 @@ for line in judged_lines():
     except Exception:
         continue
     s = r.get("score")
+    key = (r.get("scenario"), r.get("model"), r.get("rep"))
     if isinstance(s, (int, float)):
-        jscore[(r.get("scenario"), r.get("model"), r.get("rep"))].append(s)
+        jscore[key].append(s)
+    jreviews[key].append({
+        "judge": r.get("judge_model") or "judge",
+        "score": s if isinstance(s, (int, float)) else None,
+        "verdict": str(r.get("verdict") or "")[:1200],
+        "met": _aslist(r.get("criteria_met"))[:12],
+        "missed": _aslist(r.get("criteria_missed"))[:12],
+    })
 jmean = {k: round(sum(v) / len(v), 2) for k, v in jscore.items()}
 
 out = []
@@ -723,6 +740,8 @@ if results.exists():
         jk = (scen, model, rep)
         if jk in jmean:
             item["judgeScore"] = jmean[jk]
+        if jk in jreviews:
+            item["reviews"] = jreviews[jk]
         out.append(item)
 
 out.sort(key=lambda x: (x["scenario"], x["model"], x["rep"]))

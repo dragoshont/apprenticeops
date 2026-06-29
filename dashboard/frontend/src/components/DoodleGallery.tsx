@@ -1,7 +1,16 @@
-import { useMemo, useState } from "react";
-import { FileText, Images, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, FileText, Images, ShieldCheck, Sparkles, X } from "lucide-react";
 
 export type GroupBy = "scenario" | "model";
+
+/** One judge's written review of a single doodle. */
+export type DoodleReview = {
+  judge: string;
+  score: number | null;
+  verdict?: string;
+  met?: string[];
+  missed?: string[];
+};
 
 export type DoodleOutput = {
   scenario: string;
@@ -10,6 +19,8 @@ export type DoodleOutput = {
   detScore: number;
   /** Mean LLM-judge quality on the judge's 1–5 scale (optional until judged). */
   judgeScore?: number;
+  /** Per-judge written verdicts (optional until judged). */
+  reviews?: DoodleReview[];
   svg: string;
 };
 
@@ -122,14 +133,22 @@ function SandboxedSvg({ svg, title }: { svg: string; title: string }) {
   );
 }
 
-function DoodleTile({ output, crossLabel }: { output: DoodleOutput; crossLabel: string }) {
+function DoodleTile({ output, crossLabel, onOpen }: { output: DoodleOutput; crossLabel: string; onOpen: () => void }) {
   const placeholder = isPlaceholder(output.svg);
   const label = `${prettyScenario(output.scenario)} by ${output.model}, rep ${output.rep}`;
   return (
     <div
+      role="button"
       tabIndex={0}
-      aria-label={label}
-      className={`group relative aspect-square overflow-hidden rounded-lg border bg-panel2/40 outline-none transition focus-visible:ring-2 focus-visible:ring-accent ${tileRing(output.judgeScore)}`}
+      aria-label={`${label} — open judge reviews`}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-panel2/40 outline-none transition focus-visible:ring-2 focus-visible:ring-accent ${tileRing(output.judgeScore)}`}
     >
       {placeholder ? (
         <div className="flex h-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line/60 px-2 text-center">
@@ -179,8 +198,116 @@ function DoodleTile({ output, crossLabel }: { output: DoodleOutput; crossLabel: 
   );
 }
 
+function DoodleModal({ output, onClose }: { output: DoodleOutput; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const placeholder = isPlaceholder(output.svg);
+  const reviews = output.reviews ?? [];
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Judge reviews for ${prettyScenario(output.scenario)} by ${output.model}`}
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[88vh] w-full max-w-2xl overflow-auto rounded-2xl border border-line bg-panel shadow-glow"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-line p-4">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold capitalize text-fg">{prettyScenario(output.scenario)}</div>
+            <div className="mt-0.5 font-mono text-[11px] text-faint">
+              {output.model} · rep {output.rep} · {output.scenario}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-md p-1 text-muted outline-none transition hover:bg-panel2 hover:text-fg focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="grid gap-4 p-4 sm:grid-cols-[180px_1fr]">
+          <div className="space-y-2">
+            <div className="aspect-square overflow-hidden rounded-xl border border-line bg-panel2/40">
+              {placeholder ? (
+                <div className="flex h-full items-center justify-center px-2 text-center text-[11px] text-faint">
+                  prose · no SVG
+                </div>
+              ) : (
+                <SandboxedSvg svg={output.svg} title={`${output.scenario} by ${output.model}`} />
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className={`pill px-1.5 py-0 text-[10px] ${detTone(output.detScore)}`} title="deterministic SVG-validity (0–1)">
+                <ShieldCheck className="h-2.5 w-2.5" />
+                det {output.detScore.toFixed(1)}
+              </span>
+              {output.judgeScore != null && (
+                <span className={`pill px-1.5 py-0 text-[10px] font-semibold ${judgeBadge(output.judgeScore)}`} title="mean judge score (1–5)">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  judge {output.judgeScore.toFixed(1)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {reviews.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-line bg-panel2/20 p-3 text-center text-xs text-faint">
+                No judge reviews recorded for this output.
+              </div>
+            ) : (
+              reviews.map((rv, i) => (
+                <div key={i} className="rounded-xl border border-line bg-panel2/30 p-3">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] text-muted">{rv.judge}</span>
+                    {rv.score != null && (
+                      <span className={`inline-flex h-5 min-w-[22px] items-center justify-center rounded-md px-1 text-[11px] font-bold tabular-nums ${judgeBadge(rv.score)}`}>
+                        {rv.score.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                  {rv.verdict && <p className="text-[12px] leading-snug text-fg">{rv.verdict}</p>}
+                  {(rv.met?.length || rv.missed?.length) ? (
+                    <div className="mt-2 space-y-1">
+                      {rv.met?.map((m, j) => (
+                        <div key={`m${j}`} className="flex items-start gap-1.5 text-[11px]">
+                          <Check className="mt-0.5 h-3 w-3 shrink-0 text-good" />
+                          <span className="text-muted">{m}</span>
+                        </div>
+                      ))}
+                      {rv.missed?.map((m, j) => (
+                        <div key={`x${j}`} className="flex items-start gap-1.5 text-[11px]">
+                          <X className="mt-0.5 h-3 w-3 shrink-0 text-bad" />
+                          <span className="text-muted">{m}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DoodleGallery({ outputs, runId, loading, defaultGroupBy = "scenario" }: DoodleGalleryProps) {
   const [groupBy, setGroupBy] = useState<GroupBy>(defaultGroupBy);
+  const [selected, setSelected] = useState<DoodleOutput | null>(null);
 
   const { groups, scenarioCount, modelCount } = useMemo(() => {
     const scenarios = new Set<string>();
@@ -268,6 +395,7 @@ export function DoodleGallery({ outputs, runId, loading, defaultGroupBy = "scena
                       key={`${output.scenario}-${output.model}-${output.rep}-${index}`}
                       output={output}
                       crossLabel={groupBy === "scenario" ? output.model : prettyScenario(output.scenario)}
+                      onOpen={() => setSelected(output)}
                     />
                   ))}
                 </div>
@@ -276,6 +404,8 @@ export function DoodleGallery({ outputs, runId, loading, defaultGroupBy = "scena
           })}
         </div>
       )}
+
+      {selected && <DoodleModal output={selected} onClose={() => setSelected(null)} />}
     </section>
   );
 }
