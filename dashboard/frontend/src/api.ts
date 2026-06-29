@@ -1,4 +1,5 @@
 import type { InputDetails, Status } from "./types";
+import type { DoodleOutput } from "./components/DoodleGallery";
 
 async function jpost(path: string, body?: unknown) {
   const res = await fetch(path, {
@@ -27,6 +28,12 @@ export async function fetchInputs(modelSet: string, scenarioSet: string, memoryC
   const q = new URLSearchParams({ model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext, inference_strategy: inferenceStrategy });
   const res = await fetch(`/api/inputs?${q.toString()}`);
   if (!res.ok) throw new Error(`inputs → ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDoodles(runId: string): Promise<{ run_id: string; outputs: DoodleOutput[]; count: number }> {
+  const res = await fetch(`/api/run/${encodeURIComponent(runId)}/doodles`);
+  if (!res.ok) throw new Error(`doodles → ${res.status}`);
   return res.json();
 }
 

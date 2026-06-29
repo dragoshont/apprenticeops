@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { History, Home, ListChecks, Radio, Rocket, Search, X } from "lucide-react";
+import { History, Home, Images, ListChecks, Radio, Rocket, Search, X } from "lucide-react";
 
 export function DashboardMenu({
   hasRun,
   hasRunMatrix,
+  hasDoodles = false,
   runDetailLabel = "Run Detail",
   search,
   searchOpen,
@@ -13,6 +14,7 @@ export function DashboardMenu({
 }: {
   hasRun: boolean;
   hasRunMatrix: boolean;
+  hasDoodles?: boolean;
   runDetailLabel?: string;
   search: string;
   searchOpen: boolean;
@@ -30,6 +32,7 @@ export function DashboardMenu({
           <MenuLink href="#current-run" disabled={!hasRun} icon={<Radio className="h-3.5 w-3.5" />}>{runDetailLabel}</MenuLink>
           <MenuLink href="#library" icon={<History className="h-3.5 w-3.5" />}>Run History</MenuLink>
           <MenuLink href="#scenarios" disabled={!hasRunMatrix} icon={<ListChecks className="h-3.5 w-3.5" />}>Scenarios</MenuLink>
+          <MenuLink href="#doodles" disabled={!hasDoodles} icon={<Images className="h-3.5 w-3.5" />}>Results</MenuLink>
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs lg:justify-end">
           <button

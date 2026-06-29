@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { usePipeline } from "./usePipeline";
 import { useTheme } from "./useTheme";
-import { fetchConfig } from "./api";
+import { fetchConfig, fetchDoodles } from "./api";
 import { RunControlCenter } from "./components/RunControlCenter";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { NodeCards } from "./components/NodeCards";
 import { DashboardMenu } from "./components/DashboardMenu";
 import { RunLibrary } from "./components/RunLibrary";
 import { CurrentRunSection } from "./components/CurrentRunSection";
+import { DoodleGallery, type DoodleOutput } from "./components/DoodleGallery";
 import { StatePill, fmtAgo, Hint } from "./components/ui";
 import { Radio, AlertTriangle, Lock, LockOpen, ListChecks } from "lucide-react";
 
@@ -21,6 +22,8 @@ export default function App() {
   const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
   const [sessionStatus, setSessionStatus] = useState("all");
   const [sessionDate, setSessionDate] = useState<"today" | "week" | "month" | "all">("today");
+  const [doodles, setDoodles] = useState<DoodleOutput[]>([]);
+  const [doodlesLoading, setDoodlesLoading] = useState(false);
 
   useEffect(() => {
     fetchConfig().then(setAuth).catch(() => setAuth(null));
@@ -97,6 +100,27 @@ export default function App() {
       : "A historical run selected from Run History below.";
   const runDetailLabel = viewingActive ? "Current Run" : "Run Detail";
 
+  useEffect(() => {
+    if (!selectedRunId) {
+      setDoodles([]);
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      setDoodlesLoading(true);
+      fetchDoodles(selectedRunId)
+        .then((data) => { if (!cancelled) setDoodles(data.outputs ?? []); })
+        .catch(() => { if (!cancelled) setDoodles([]); })
+        .finally(() => { if (!cancelled) setDoodlesLoading(false); });
+    };
+    load();
+    const interval = live ? window.setInterval(load, 15000) : undefined;
+    return () => {
+      cancelled = true;
+      if (interval) window.clearInterval(interval);
+    };
+  }, [selectedRunId, live]);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
       {/* Header */}
@@ -160,6 +184,7 @@ export default function App() {
       <DashboardMenu
         hasRun={hasRun}
         hasRunMatrix={!!runMatrix}
+        hasDoodles={doodles.length > 0}
         runDetailLabel={runDetailLabel}
         search={sessionSearch}
         searchOpen={sessionSearchOpen}
@@ -283,6 +308,14 @@ export default function App() {
                 })}
               </div>
             </section>
+          )}
+
+          {(doodles.length > 0 || doodlesLoading) && (
+            <DoodleGallery
+              outputs={doodles}
+              runId={status?.run_id ?? undefined}
+              loading={doodlesLoading && doodles.length === 0}
+            />
           )}
 
           <footer className="pt-2 text-center text-[11px] text-faint">
