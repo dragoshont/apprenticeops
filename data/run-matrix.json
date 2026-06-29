@@ -35,6 +35,20 @@
       "path": "data/models.txt",
       "kind": "experiment",
       "description": "The complete locked roster. Use with care; this can run for days."
+    },
+    {
+      "id": "doodle",
+      "label": "Doodling - 5 small SVG models",
+      "path": "data/models.doodle.txt",
+      "kind": "app",
+      "description": "Small Apache-2.0 models for the Aletheia doodle task: emit animated SVG line-doodles from an English prompt. Coder variants tend to produce cleaner SVG."
+    },
+    {
+      "id": "journal",
+      "label": "Journalling - 5 small text models",
+      "path": "data/models.journal.txt",
+      "kind": "app",
+      "description": "Small text models for the Aletheia keepsake task: turn a Romanian journal entry into a warm short snippet. Apache-2.0 preferred for redistribution with the app."
     }
   ],
   "scenario_sets": [
@@ -65,6 +79,20 @@
       "path": "data/scenarios.json",
       "kind": "canonical",
       "description": "The full current scenario corpus."
+    },
+    {
+      "id": "doodle-6",
+      "label": "Doodle - 6 animated-SVG scenarios",
+      "path": "data/scenario_sets/doodle-6.json",
+      "kind": "app",
+      "description": "Six prompt-to-animated-SVG doodle scenarios (wolf-moon, monkey-trees, fish, rabbit, butterfly, cat) with deterministic SVG/animate checks, for the Aletheia doodle companion."
+    },
+    {
+      "id": "journal-ro-6",
+      "label": "Journal keepsakes (RO) - 3 scenarios",
+      "path": "data/scenario_sets/journal-ro-6.json",
+      "kind": "app",
+      "description": "Romanian grief-journal entry-to-keepsake scenarios for the Aletheia keepsake feature. Currently three keepsake scenarios despite the -6 filename."
     }
   ],
   "memory_contexts": [
