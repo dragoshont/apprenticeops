@@ -33,3 +33,7 @@
 {"model":"*","stage":"judge","ts":1782764697,"ok":1,"detail":"judged 110->112"}
 {"model":"*","stage":"judge","ts":1782764751,"ok":1,"detail":"judged 112->118"}
 {"model":"*","stage":"judge","ts":1782764819,"ok":1,"detail":"judged 118->132"}
+{"model":"qwen2.5-coder:3b","stage":"persist","ts":1782764821,"ok":1,"detail":"fede202"}
+{"model":"*","stage":"judge","ts":1782764903,"ok":1,"detail":"judged 132->152"}
+{"model":"*","stage":"judge","ts":1782764997,"ok":1,"detail":"judged 152->178"}
+{"model":"*","stage":"judge","ts":1782765042,"ok":1,"detail":"judged 178->182"}
