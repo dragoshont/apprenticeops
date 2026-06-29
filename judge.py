@@ -268,10 +268,19 @@ class EmptyJudgeResponse(Exception):
     """The judge backend returned no text — transient (retryable), unlike a parse error."""
 
 
+# A scenario set without a per-scenario `judge_rubric` must NOT make every judge call
+# KeyError -> retry -> SKIP (which yields 0 judged rows); fall back to a generic rubric.
+_DEFAULT_RUBRIC = (
+    "Grade the ANSWER against the GOLD REFERENCE: reward correctness, completeness, "
+    "and following the task's requested output format; penalize hallucination, missing "
+    "required elements, and ignoring the requested format."
+)
+
+
 def judge_one(judge, scen, answer):
     user = (f"--- CONTEXT ---\n{scen['context']}\n\n--- TASK ---\n{scen['question']}\n\n"
             f"--- GOLD REFERENCE ---\n{scen['gold_answer']}\n\n"
-            f"--- RUBRIC ---\n{scen['judge_rubric']}\n\n"
+            f"--- RUBRIC ---\n{scen.get('judge_rubric') or _DEFAULT_RUBRIC}\n\n"
             f"--- ANSWER (author hidden) ---\n{answer}\n\n"
             "Score now as the specified JSON.")
     raw = judge.complete(JUDGE_SYS, user, json_mode=True)
@@ -322,7 +331,7 @@ def gold_review_one(judge, scen):
         for c in scen.get("deterministic_checks", []))
     user = (f"--- CONTEXT ---\n{scen['context']}\n\n--- TASK ---\n{scen['question']}\n\n"
             f"--- PROPOSED GOLD ---\n{scen['gold_answer']}\n\n"
-            f"--- RUBRIC ---\n{scen['judge_rubric']}\n\n"
+            f"--- RUBRIC ---\n{scen.get('judge_rubric') or _DEFAULT_RUBRIC}\n\n"
             f"--- DETERMINISTIC CHECKS ---\n{checks}\n\nReview now as the specified JSON.")
     raw = judge.complete(GOLD_REVIEW_SYS, user, json_mode=True)
     try:

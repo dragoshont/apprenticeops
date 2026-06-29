@@ -6,6 +6,7 @@
       "context": "Output a single 200x200 animated SVG line doodle, stroke #2b3a67, no fill, SMIL <animate>, loops, calm.",
       "question": "Draw: a wolf looking up at a round moon.",
       "gold_answer": "<svg viewBox='0 0 200 200'>...wolf+moon, gentle sway via <animate>...</svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose, markdown, or instructions, drawn as a calm minimal line doodle (stroke #2b3a67, no fill) that recognizably shows a wolf looking up at a round moon, with a gentle looping SMIL <animate> or animateTransform. Penalize heavily any answer that returns prose, step-by-step instructions, or tool suggestions (GIMP, HTML5 Canvas, SVG.js) instead of the SVG, or an empty/placeholder/comment-only SVG. Penalize a missing wolf or moon, filled shapes, multiple colors, or no animation.",
       "deterministic_checks": [
         {"type": "any_include", "patterns": ["<svg"], "desc": "valid SVG"},
         {"type": "any_include", "patterns": ["<animate|animateTransform"], "desc": "is animated"}
@@ -17,6 +18,7 @@
       "context": "Single animated SVG, single color, loops.",
       "question": "Draw: a monkey swinging between two trees.",
       "gold_answer": "<svg>...two trees, swinging monkey animateTransform...</svg>",
+      "judge_rubric": "Reward a single, well-formed animated <svg> returned with NO surrounding prose or instructions, a calm single-color line doodle that recognizably shows a monkey swinging between two trees, with a looping SMIL <animate> or animateTransform. Penalize heavily prose, step-by-step instructions, or tool suggestions (GIMP, HTML5 Canvas, SVG.js) instead of the SVG, and empty/placeholder/comment-only SVGs. Penalize a missing monkey or trees, multiple colors, or no animation.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     },
     {
@@ -25,6 +27,7 @@
       "context": "Single animated SVG, single color, loops.",
       "question": "Draw: a fish swimming with bubbles.",
       "gold_answer": "<svg>...fish + rising bubbles...</svg>",
+      "judge_rubric": "Reward a single, well-formed animated <svg> returned with NO surrounding prose or instructions, a calm single-color line doodle that recognizably shows a fish swimming with rising bubbles, with a looping SMIL <animate>. Penalize heavily prose, step-by-step instructions, or tool suggestions instead of the SVG, and empty/placeholder/comment-only SVGs. Penalize a missing fish or bubbles, multiple colors, or no animation.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     },
     {
@@ -33,6 +36,7 @@
       "context": "Single 200x200 animated SVG, stroke #2b3a67, no fill, SMIL, loops, calm.",
       "question": "Draw: a rabbit hopping across grass.",
       "gold_answer": "<svg>...rabbit with vertical hop animate...</svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose or instructions, a calm line doodle (stroke #2b3a67, no fill) that recognizably shows a rabbit hopping across grass, with a looping vertical-hop SMIL <animate>. Penalize heavily prose, step-by-step instructions, or tool suggestions instead of the SVG, and empty/placeholder/comment-only SVGs. Penalize a missing rabbit or hop motion, filled shapes, multiple colors, or no animation.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     },
     {
@@ -41,6 +45,7 @@
       "context": "Single 200x200 animated SVG, single color, SMIL wing flap, loops.",
       "question": "Draw: a butterfly drifting over a flower.",
       "gold_answer": "<svg>...butterfly, wings flap via animateTransform, drifts...</svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose or instructions, a calm single-color line doodle that recognizably shows a butterfly drifting over a flower, with looping SMIL wing-flap animateTransform. Penalize heavily prose, step-by-step instructions, or tool suggestions instead of the SVG, and empty/placeholder/comment-only SVGs. Penalize a missing butterfly or flower, no wing-flap or drift animation, or multiple colors.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     },
     {
@@ -49,6 +54,7 @@
       "context": "Single 200x200 animated SVG, single color, loops, calm.",
       "question": "Draw: a sitting cat with a flicking tail.",
       "gold_answer": "<svg>...cat body + ears, tail flick via animate...</svg>",
+      "judge_rubric": "Reward a single, well-formed 200x200 <svg> returned with NO surrounding prose or instructions, a calm single-color line doodle that recognizably shows a sitting cat with a flicking tail, with a looping SMIL <animate> tail flick. Penalize heavily prose, step-by-step instructions, or tool suggestions instead of the SVG, and empty/placeholder/comment-only SVGs. Penalize a missing cat or tail-flick animation, or multiple colors.",
       "deterministic_checks": [{"type": "any_include", "patterns": ["<svg"]}, {"type": "any_include", "patterns": ["<animate"]}]
     }
   ]
