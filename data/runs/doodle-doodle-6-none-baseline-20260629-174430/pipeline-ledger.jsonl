@@ -4,3 +4,10 @@
 {"model":"*","stage":"judge","ts":1782758215,"ok":1,"detail":"judged 160->176"}
 {"model":"*","stage":"judge","ts":1782758263,"ok":1,"detail":"judged 176->178"}
 {"model":"*","stage":"judge","ts":1782758310,"ok":1,"detail":"judged 178->184"}
+{"model":"granite4:micro","stage":"persist","ts":1782758313,"ok":1,"detail":"7cd702c"}
+{"model":"*","stage":"judge","ts":1782758358,"ok":1,"detail":"judged 184->192"}
+{"model":"*","stage":"judge","ts":1782758420,"ok":1,"detail":"judged 192->206"}
+{"model":"*","stage":"judge","ts":1782758472,"ok":1,"detail":"judged 206->218"}
+{"model":"*","stage":"judge","ts":1782758512,"ok":1,"detail":"judged 218->224"}
+{"model":"*","stage":"judge","ts":1782758557,"ok":1,"detail":"judged 224->232"}
+{"model":"*","stage":"judge","ts":1782758597,"ok":1,"detail":"judged 232->240"}
