@@ -54,11 +54,12 @@ m1 (`batch-strategy-pilot-2 × strategy-pilot-6 × none × evaluator_optimizer_1
    text now raises `EmptyJudgeResponse` (retried 4×, left unwritten if still empty) and
    resume re-judges `score=None` rows. This hardens a real latent path; it does **not**
    change m1 (whose 6 empties are correct DNF records).
-2. **Prefill budget (the real m1 fix).** Give the **first byte** its own budget,
-   separate from the decode stall: socket timeout = a prefill window ∝ prompt size
-   (≈ `timeout_s`), and `with_zero_output_retry` **escalates** the first-byte budget per
-   attempt (75 → 150 → `timeout_s`). Decode-stall stays `stall_s`. Then re-infer
-   `new-backup-restore-drill`×qwen3:4b reps 0/3/4.
+2. **Prefill budget (the real m1 fix) — DONE (`run.py with_zero_output_retry`).**
+   A zero-output stall is usually slow prefill, not a hang. The first try keeps the
+   tight `stall_s` (fast-fail a genuine hang); each **retry now grants the first-byte
+   budget the scenario's full `timeout_s`** before recording DNF. `ZERO_OUTPUT_RETRIES=1`
+   so a slow-prefill scenario gets one full-budget retry. Validated by re-running the
+   axis with the fix (experiment was cancelled to re-run cleanly).
 3. `report-run-quality.py --heal` to automate (drop `verdict==empty` only when the
    underlying answer is non-empty; re-infer DNF-zero; re-judge).
 

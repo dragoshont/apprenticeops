@@ -1259,9 +1259,15 @@ def with_zero_output_retry(model, system, user, *, max_tokens, timeout_s, stall_
                            think, sampler, temperature, seed):
     attempts = []
     for attempt in range(ZERO_OUTPUT_RETRIES + 1):
+        # A zero-output stall is usually slow PREFILL, not a hang: a hard scenario on
+        # a slow CPU model can need longer than stall_s just to emit the FIRST token.
+        # Keep the tight stall_s on the first try (fast-fail a genuine hang), but grant
+        # each retry the scenario's full timeout_s as the first-byte budget before
+        # recording DNF. Decode-stall protection is unchanged on the first try.
+        attempt_stall_s = stall_s if attempt == 0 else timeout_s
         tel = run_chat(
             model, system, user,
-            max_tokens=max_tokens, timeout_s=timeout_s, stall_s=stall_s,
+            max_tokens=max_tokens, timeout_s=timeout_s, stall_s=attempt_stall_s,
             think=think, sampler=sampler, temperature=temperature, seed=seed,
         )
         attempts.append(tel)
