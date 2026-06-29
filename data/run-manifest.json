@@ -64,7 +64,7 @@
       },
       "journal-ro-6": {
         "path": "data/scenario_sets/journal-ro-6.json",
-        "sha256": "0b441680b946922cc5a3b6fae5ef4f5e68bc7ecad25585c9dee4f659ba1bab86",
+        "sha256": "3b74e95e79a3bfa83132ba9990575153c7758f3ec4497313d9bddaa8a92ed861",
         "scenario_count": 6
       },
       "doodle-simple": {
