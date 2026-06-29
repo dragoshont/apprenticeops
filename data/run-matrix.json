@@ -49,6 +49,13 @@
       "path": "data/models.journal.txt",
       "kind": "app",
       "description": "Small text models for the Aletheia keepsake task: turn a Romanian journal entry into a warm short snippet. Apache-2.0 preferred for redistribution with the app."
+    },
+    {
+      "id": "doodle-coders",
+      "label": "Doodle coders - 3 small coder probes",
+      "path": "data/models.doodle-coders.txt",
+      "kind": "app",
+      "description": "Small code models probed for text-to-SVG drawing on the doodle task: qwen2.5-coder 0.5b and 3b (Apache-2.0) bracketing the 1.5b already in the doodle roster, plus deepseek-coder 1.3b as a different lineage. All sub-3B, CPU/Ollama-shippable."
     }
   ],
   "scenario_sets": [

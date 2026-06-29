@@ -1,0 +1,8 @@
+# Doodle coder probe — small code models tested for text->SVG drawing quality on
+# the doodle task. Bare model tags, one per line, NO inline comments (the roster
+# runner reads the whole line as the model name). qwen2.5-coder 0.5b/3b are
+# Apache-2.0 and bracket the 1.5b already in the doodle roster; deepseek-coder
+# 1.3b is a different lineage. All sub-3B, CPU/Ollama-shippable.
+qwen2.5-coder:0.5b
+deepseek-coder:1.3b
+qwen2.5-coder:3b
