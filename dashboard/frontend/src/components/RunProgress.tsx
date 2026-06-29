@@ -135,14 +135,61 @@ export function RunProgress({
             </div>
           )}
           {reliability && (
-            <div className="grid gap-2 pt-1 sm:grid-cols-5 xl:grid-cols-7">
-              <ReliabilityChip label="DNF" value={`${reliability.dnf}/${reliability.rows}`} sub={`${reliability.dnf_rate}%`} tone={reliability.dnf ? "text-warn" : "text-good"} />
-              <ReliabilityChip label="Length" value={`${reliability.length}`} sub={`${reliability.length_rate}%`} tone={reliability.length ? "text-warn" : "text-good"} />
-              <ReliabilityChip label="Zero stalls" value={`${reliability.zero_output_stalls}`} sub={`${reliability.zero_output_stall_rate}%`} tone={reliability.zero_output_stalls ? "text-bad" : "text-good"} />
-              <ReliabilityChip label="Judge empty" value={`${reliability.judge_empty}`} sub={`${reliability.judge_evidence_missing} evidence gaps`} tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"} />
-              <ReliabilityChip label="Frontier input" value={formatTokenCount(sumJudgeTokens(reliability, "tokens_in"))} sub={judgeUsageSub(reliability)} tone="text-muted" />
-              <ReliabilityChip label="Frontier output" value={formatTokenCount(sumJudgeTokens(reliability, "tokens_out"))} sub={judgeOutputSub(reliability)} tone="text-muted" />
-              <ReliabilityChip label="Cache" value={formatPercent(weightedCachePct(reliability))} sub={judgeCacheSub(reliability)} tone="text-muted" />
+            <div className="space-y-2 pt-1">
+              <div className="rounded-lg border border-line/60 bg-panel/50 px-3 py-2 text-[11px] leading-relaxed text-muted">
+                Reliability checks are about answer rows. Here, <span className="font-mono text-fg">60</span> means 2 models x 6 scenarios x 5 repeats. A value like <span className="font-mono text-fg">22/60</span> means 22 of those 60 answers failed that check.
+              </div>
+              <div className="grid gap-2 sm:grid-cols-5 xl:grid-cols-7">
+                <ReliabilityChip
+                  label="DNF"
+                  value={`${reliability.dnf}/${reliability.rows}`}
+                  sub={`${reliability.dnf_rate}% failed answers`}
+                  tone={reliability.dnf ? "text-warn" : "text-good"}
+                  help="Did Not Finish. The model call did not produce a usable final answer before the harness gave up. Example: 22/60 means 22 answer attempts failed out of 60 total answer attempts."
+                />
+                <ReliabilityChip
+                  label="Length"
+                  value={`${reliability.length}`}
+                  sub={`${reliability.length_rate}% hit token cap`}
+                  tone={reliability.length ? "text-warn" : "text-good"}
+                  help="Answers that stopped because they reached the maximum token limit. These are not empty, but may be cut off before completing the task."
+                />
+                <ReliabilityChip
+                  label="Zero stalls"
+                  value={`${reliability.zero_output_stalls}`}
+                  sub={`${reliability.zero_output_stall_rate}% no text returned`}
+                  tone={reliability.zero_output_stalls ? "text-bad" : "text-good"}
+                  help="The worst DNF subtype: Ollama accepted the request path but the model returned no answer text before the stall timeout. In plain terms: nothing useful came back."
+                />
+                <ReliabilityChip
+                  label="Judge empty"
+                  value={`${reliability.judge_empty}`}
+                  sub={`${reliability.judge_evidence_missing} evidence gaps`}
+                  tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"}
+                  help="Judge calls that could not score a meaningful answer. This often follows DNF/zero-stall rows because there is no model answer for the judge to evaluate."
+                />
+                <ReliabilityChip
+                  label="Frontier input"
+                  value={formatTokenCount(sumJudgeTokens(reliability, "tokens_in"))}
+                  sub={judgeUsageSub(reliability)}
+                  tone="text-muted"
+                  help="Input tokens sent to the frontier judge models. If this is blank, the Copilot CLI did not report token usage for this run, even though judge calls completed."
+                />
+                <ReliabilityChip
+                  label="Frontier output"
+                  value={formatTokenCount(sumJudgeTokens(reliability, "tokens_out"))}
+                  sub={judgeOutputSub(reliability)}
+                  tone="text-muted"
+                  help="Output tokens returned by the frontier judge models. Blank means usage accounting was not reported by the judge backend."
+                />
+                <ReliabilityChip
+                  label="Cache"
+                  value={formatPercent(weightedCachePct(reliability))}
+                  sub={judgeCacheSub(reliability)}
+                  tone="text-muted"
+                  help="How much judge input was served from cache. Blank means cache accounting was not reported by the judge backend."
+                />
+              </div>
             </div>
           )}
         </div>
@@ -196,10 +243,13 @@ function trimOne(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function ReliabilityChip({ label, value, sub, tone }: { label: string; value: string; sub: string; tone: string }) {
+function ReliabilityChip({ label, value, sub, tone, help }: { label: string; value: string; sub: string; tone: string; help: string }) {
   return (
     <div className="rounded-lg border border-line/60 bg-panel/50 px-2.5 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">{label}</div>
+      <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
+        {label}
+        <Hint text={help} align="start" />
+      </div>
       <div className={`mt-0.5 font-mono text-sm font-semibold ${tone}`}>{value}</div>
       <div className="mt-0.5 truncate text-[10px] text-muted" title={sub}>{sub}</div>
     </div>
