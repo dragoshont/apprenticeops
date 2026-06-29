@@ -36,3 +36,7 @@
 {"model":"granite4:micro","stage":"persist","ts":1782762889,"ok":1,"detail":"d9398f6"}
 {"model":"*","stage":"judge","ts":1782762982,"ok":1,"detail":"judged 192->222"}
 {"model":"*","stage":"judge","ts":1782763083,"ok":1,"detail":"judged 222->252"}
+{"model":"qwen2.5:0.5b","stage":"persist","ts":1782763086,"ok":1,"detail":"ee51051"}
+{"model":"*","stage":"judge","ts":1782763176,"ok":1,"detail":"judged 252->276"}
+{"model":"*","stage":"judge","ts":1782763267,"ok":1,"detail":"judged 276->296"}
+{"model":"*","stage":"judge","ts":1782763312,"ok":1,"detail":"judged 296->300"}
