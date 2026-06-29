@@ -1,0 +1,7 @@
+# Journalling set — small text models for "Ține minte" keepsakes (entry -> warm RO snippet)
+# License tag = redistribution with app. Apache-2.0 preferred.
+granite4:tiny-h      # Apache-2.0
+granite4:micro       # Apache-2.0
+qwen2.5:1.5b         # Apache-2.0
+llama3.2:3b          # Llama 3.2 Community
+gemma2:2b            # Gemma Terms

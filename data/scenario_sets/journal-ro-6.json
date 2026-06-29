@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "journal-keepsake-01", "difficulty": "easy", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Aletheia, jurnal local în română. Sarcină: dintr-o intrare, scoate o singură propoziție caldă pentru cardul „Ține minte” — sinceră, fără clișee, fără sfaturi.",
+      "question": "Intrare: „Azi am dus-o pe Sofia la grădiniță, am ținut-o de mână tot drumul. A râs de un câine care fugea după frunze.” Dă o singură propoziție de păstrat.",
+      "gold_answer": "Mâna Sofiei într-a ta și râsul ei la un câine fugind după frunze — atât a fost de ajuns azi.",
+      "deterministic_checks": [
+        {"type": "any_include", "patterns": ["Sofia|mâna|râs"], "desc": "ancorat în detaliul real"},
+        {"type": "max_len", "patterns": ["160"], "desc": "o propoziție scurtă"}
+      ]
+    },
+    {
+      "id": "journal-keepsake-02", "difficulty": "medium", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Reframe blând al unei zile grele — fără să nege durerea.",
+      "question": "Intrare: „Zi grea. M-am simțit gol pe dinăuntru, dar tot am pus masa și am stat cu ai mei.” Propoziție de păstrat.",
+      "gold_answer": "Chiar gol pe dinăuntru, tot ai fost acolo pentru ai tăi — asta contează.",
+      "deterministic_checks": [{"type": "any_include", "patterns": ["acolo|ai tăi|tot ai"], "desc": "recunoaște efortul"}]
+    },
+    {
+      "id": "journal-keepsake-03", "difficulty": "easy", "class": "keepsake", "aiopslab_task": "summarize",
+      "grounding": "grounded", "pair_id": "pair-journal",
+      "context": "Mic câștig.",
+      "question": "Intrare: „Am scris doar două rânduri azi, dar le-am scris.” Propoziție de păstrat.",
+      "gold_answer": "Două rânduri sunt tot scris — ai venit, asta e destul.",
+      "deterministic_checks": [{"type": "any_include", "patterns": ["destul|ai venit|două"], "desc": "validează prezența"}]
+    }
+  ]
+}

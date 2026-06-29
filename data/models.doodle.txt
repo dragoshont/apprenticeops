@@ -1,0 +1,7 @@
+# Doodling set — small models that emit animated SVG line-doodles from English.
+# Apache-2.0 = shippable with the app; coder variants tend to emit cleaner SVG.
+qwen2.5:0.5b         # Apache-2.0
+qwen2.5:1.5b         # Apache-2.0
+qwen2.5-coder:1.5b   # Apache-2.0
+smollm2:1.7b         # Apache-2.0
+granite4:micro       # Apache-2.0
