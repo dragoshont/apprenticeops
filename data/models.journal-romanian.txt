@@ -1,0 +1,4 @@
+jobautomation/OpenEuroLLM-Romanian
+gemma3:4b
+gemma2:2b
+gemma2:9b

@@ -77,6 +77,13 @@
       "path": "data/models.journal-newest-small.txt",
       "kind": "app",
       "description": "Ten newest small (3B or smaller) multilingual instruct models for the Aletheia warm-card task: gemma4:e2b-it-qat, qwen3.5:2b, granite4.1:3b, ministral-3:3b, gemma3:1b, qwen3:1.7b, granite4:micro, falcon3:3b, llama3.2:3b, plus gemma2:2b as the prior champion anchor."
+    },
+    {
+      "id": "journal-romanian",
+      "label": "Journal Romanian - Romanian-tuned vs generic Gemma",
+      "path": "data/models.journal-romanian.txt",
+      "kind": "app",
+      "description": "Romanian-language ablation for the Aletheia warm-card task: jobautomation/OpenEuroLLM-Romanian (a Romanian-finetuned Gemma3) against generic gemma3:4b (same base), gemma2:2b (small champion, prior mean 2.10), and gemma2:9b (best generic, prior mean 2.42). Tests whether Romanian-specialized weights beat generic models at matched base/size."
     }
   ],
   "scenario_sets": [
