@@ -45,3 +45,9 @@
 {"model":"*","stage":"judge","ts":1782821101,"ok":1,"detail":"judged 137->139"}
 {"model":"*","stage":"judge","ts":1782821146,"ok":1,"detail":"judged 139->141"}
 {"model":"*","stage":"judge","ts":1782821209,"ok":1,"detail":"judged 141->143"}
+{"model":"jobautomation/OpenEuroLLM-Romanian","stage":"persist","ts":1782821212,"ok":1,"detail":"45a95c9"}
+{"model":"*","stage":"judge","ts":1782821274,"ok":1,"detail":"judged 143->157"}
+{"model":"*","stage":"judge","ts":1782821350,"ok":1,"detail":"judged 157->173"}
+{"model":"*","stage":"judge","ts":1782821440,"ok":1,"detail":"judged 173->193"}
+{"model":"*","stage":"judge","ts":1782821520,"ok":1,"detail":"judged 193->211"}
+{"model":"*","stage":"judge","ts":1782821579,"ok":1,"detail":"judged 211->221"}
