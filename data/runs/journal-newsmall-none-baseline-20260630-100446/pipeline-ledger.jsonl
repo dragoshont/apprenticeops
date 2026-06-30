@@ -40,3 +40,7 @@
 {"model":"*","stage":"judge","ts":1782815969,"ok":1,"detail":"judged 276->280"}
 {"model":"*","stage":"judge","ts":1782816007,"ok":1,"detail":"judged 280->282"}
 {"model":"*","stage":"judge","ts":1782816053,"ok":1,"detail":"judged 282->288"}
+{"model":"falcon3:3b","stage":"persist","ts":1782816055,"ok":1,"detail":"b92c9c9"}
+{"model":"*","stage":"judge","ts":1782816133,"ok":1,"detail":"judged 288->304"}
+{"model":"*","stage":"judge","ts":1782816235,"ok":1,"detail":"judged 304->334"}
+{"model":"*","stage":"judge","ts":1782816342,"ok":1,"detail":"judged 334->361"}
