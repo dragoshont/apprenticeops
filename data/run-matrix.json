@@ -63,6 +63,13 @@
       "path": "data/models.journal-aletheia.txt",
       "kind": "app",
       "description": "Three small multilingual instruct models for the Aletheia warm-card task (Romanian): qwen2.5:3b, gemma2:2b, llama3.2:3b. Chosen for Romanian short-form tone over English-centric tiny models."
+    },
+    {
+      "id": "journal-strong",
+      "label": "Journal strong - 3 mid instruct models (7-9B)",
+      "path": "data/models.journal-strong.txt",
+      "kind": "app",
+      "description": "Stronger multilingual instruct models for the Aletheia warm-card task: qwen2.5:7b, gemma2:9b, llama3.1:8b. The model-size quality lever vs the small journal-aletheia set; slower on CPU."
     }
   ],
   "scenario_sets": [

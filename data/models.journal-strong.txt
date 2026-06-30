@@ -1,0 +1,3 @@
+qwen2.5:7b
+gemma2:9b
+llama3.1:8b
