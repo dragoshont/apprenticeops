@@ -14,3 +14,11 @@
 {"model":"*","stage":"judge","ts":1782811229,"ok":1,"detail":"judged 48->52"}
 {"model":"*","stage":"judge","ts":1782811275,"ok":1,"detail":"judged 52->58"}
 {"model":"*","stage":"judge","ts":1782811320,"ok":1,"detail":"judged 58->60"}
+{"model":"gemma2:9b","stage":"persist","ts":1782811322,"ok":1,"detail":"1485c54"}
+{"model":"*","stage":"judge","ts":1782811387,"ok":1,"detail":"judged 60->70"}
+{"model":"*","stage":"judge","ts":1782811445,"ok":1,"detail":"judged 70->80"}
+{"model":"*","stage":"judge","ts":1782811489,"ok":1,"detail":"judged 80->86"}
+{"model":"*","stage":"judge","ts":1782811533,"ok":1,"detail":"judged 86->94"}
+{"model":"*","stage":"judge","ts":1782811580,"ok":1,"detail":"judged 94->102"}
+{"model":"*","stage":"judge","ts":1782811635,"ok":1,"detail":"judged 102->110"}
+{"model":"*","stage":"judge","ts":1782811690,"ok":1,"detail":"judged 110->120"}
