@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePipeline } from "./usePipeline";
 import { useTheme } from "./useTheme";
-import { fetchConfig, fetchDoodles } from "./api";
+import { fetchConfig, fetchDoodles, fetchTexts } from "./api";
 import { RunControlCenter } from "./components/RunControlCenter";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { NodeCards } from "./components/NodeCards";
@@ -9,6 +9,7 @@ import { DashboardMenu } from "./components/DashboardMenu";
 import { RunLibrary } from "./components/RunLibrary";
 import { CurrentRunSection } from "./components/CurrentRunSection";
 import { DoodleGallery, type DoodleOutput } from "./components/DoodleGallery";
+import { TextGallery, type TextOutput } from "./components/TextGallery";
 import { StatePill, fmtAgo, Hint } from "./components/ui";
 import { Radio, AlertTriangle, Lock, LockOpen, ListChecks } from "lucide-react";
 
@@ -24,6 +25,7 @@ export default function App() {
   const [sessionDate, setSessionDate] = useState<"today" | "week" | "month" | "all">("today");
   const [doodles, setDoodles] = useState<DoodleOutput[]>([]);
   const [doodlesLoading, setDoodlesLoading] = useState(false);
+  const [texts, setTexts] = useState<TextOutput[]>([]);
 
   useEffect(() => {
     fetchConfig().then(setAuth).catch(() => setAuth(null));
@@ -103,14 +105,27 @@ export default function App() {
   useEffect(() => {
     if (!selectedRunId) {
       setDoodles([]);
+      setTexts([]);
       return;
     }
     let cancelled = false;
     const load = () => {
       setDoodlesLoading(true);
       fetchDoodles(selectedRunId)
-        .then((data) => { if (!cancelled) setDoodles(data.outputs ?? []); })
-        .catch(() => { if (!cancelled) setDoodles([]); })
+        .then((data) => {
+          if (cancelled) return;
+          const svg = data.outputs ?? [];
+          setDoodles(svg);
+          // Text runs (e.g. journalling) have no SVG — fall back to the text view.
+          if (svg.length === 0) {
+            fetchTexts(selectedRunId)
+              .then((t) => { if (!cancelled) setTexts(t.outputs ?? []); })
+              .catch(() => { if (!cancelled) setTexts([]); });
+          } else {
+            setTexts([]);
+          }
+        })
+        .catch(() => { if (!cancelled) { setDoodles([]); setTexts([]); } })
         .finally(() => { if (!cancelled) setDoodlesLoading(false); });
     };
     load();
@@ -184,7 +199,7 @@ export default function App() {
       <DashboardMenu
         hasRun={hasRun}
         hasRunMatrix={!!runMatrix}
-        hasDoodles={doodles.length > 0}
+        hasDoodles={doodles.length > 0 || texts.length > 0}
         runDetailLabel={runDetailLabel}
         search={sessionSearch}
         searchOpen={sessionSearchOpen}
@@ -315,6 +330,13 @@ export default function App() {
               outputs={doodles}
               runId={status?.run_id ?? undefined}
               loading={doodlesLoading && doodles.length === 0}
+            />
+          )}
+
+          {doodles.length === 0 && !doodlesLoading && texts.length > 0 && (
+            <TextGallery
+              outputs={texts}
+              runId={status?.run_id ?? undefined}
             />
           )}
 

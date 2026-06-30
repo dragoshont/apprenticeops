@@ -56,6 +56,13 @@
       "path": "data/models.doodle-coders.txt",
       "kind": "app",
       "description": "Small code models probed for text-to-SVG drawing on the doodle task: qwen2.5-coder 0.5b and 3b (Apache-2.0) bracketing the 1.5b already in the doodle roster, plus deepseek-coder 1.3b as a different lineage. All sub-3B, CPU/Ollama-shippable."
+    },
+    {
+      "id": "journal-aletheia",
+      "label": "Journal Aletheia - 3 small instruct models",
+      "path": "data/models.journal-aletheia.txt",
+      "kind": "app",
+      "description": "Three small multilingual instruct models for the Aletheia warm-card task (Romanian): qwen2.5:3b, gemma2:2b, llama3.2:3b. Chosen for Romanian short-form tone over English-centric tiny models."
     }
   ],
   "scenario_sets": [
@@ -107,6 +114,13 @@
       "path": "data/scenario_sets/doodle-simple.json",
       "kind": "app",
       "description": "A simpler doodle difficulty ladder: tier 0 pure shapes (circle, smiley), tier 1 simple figures (house, star, sun), tier 2 a simple animated figure (bouncing ball). One color, animation only at tier 2 - the A/B control for whether smaller subjects raise recognizability and spread the judge scores."
+    },
+    {
+      "id": "journal-aletheia-6",
+      "label": "Journal Aletheia (RO) - 6 warm-card modes",
+      "path": "data/scenario_sets/journal-aletheia-6.json",
+      "kind": "app",
+      "description": "Six Romanian Aletheia warm-card modes - positive note, original uplifting one-liner, encouragement, gratitude, gentle reframe, grounded affirmation - each turning a short journal entry into a different kind of warm, sincere snippet (no advice, no cliches, no fabricated quotes)."
     }
   ],
   "memory_contexts": [

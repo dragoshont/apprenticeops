@@ -61,7 +61,7 @@ function judgeTone(score: number): string {
  * Always-visible judge-score badge color. Honest gradient on the 1–5 scale: a
  * judge-approved doodle (≥4) pops bold emerald; weak ones recede in soft red.
  */
-function judgeBadge(score: number): string {
+export function judgeBadge(score: number): string {
   if (score >= 4) return "bg-good text-slate-900";
   if (score >= 3) return "bg-info text-slate-900";
   if (score >= 2) return "bg-warn text-slate-900";
@@ -69,7 +69,7 @@ function judgeBadge(score: number): string {
 }
 
 /** Tile ring that makes a judge-approved doodle pop out of its prompt group. */
-function tileRing(score: number | undefined): string {
+export function tileRing(score: number | undefined): string {
   if (score == null) return "border-line/60";
   if (score >= 4) return "border-good/70 ring-2 ring-good/40";
   if (score >= 3) return "border-info/60 ring-1 ring-info/30";

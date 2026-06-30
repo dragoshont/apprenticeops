@@ -67,6 +67,11 @@
         "sha256": "3b74e95e79a3bfa83132ba9990575153c7758f3ec4497313d9bddaa8a92ed861",
         "scenario_count": 6
       },
+      "journal-aletheia-6": {
+        "path": "data/scenario_sets/journal-aletheia-6.json",
+        "sha256": "0bd8bd1f3cf70407ca3006b278c6ea5e5c070fcf3550a7f4906fa8297da98a07",
+        "scenario_count": 6
+      },
       "doodle-simple": {
         "path": "data/scenario_sets/doodle-simple.json",
         "sha256": "76991a20791accaab02feccf8a93f557c4c9af9af5fca9c536cabacd639e71a4",

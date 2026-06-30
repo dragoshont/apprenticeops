@@ -749,6 +749,133 @@ print(json.dumps({"run_id": RID, "outputs": out, "count": len(out)}))
 '''
 
 
+_TEXTS_SCRIPT = r'''
+import json
+import re
+import subprocess
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+RID = sys.argv[1] if len(sys.argv) > 1 else ""
+if not re.match(r"^[A-Za-z0-9._-]{1,80}$", RID):
+    print(json.dumps({"error": "invalid run id"}))
+    sys.exit(1)
+
+root = Path.cwd()
+run_dir = root / "data" / "runs" / RID
+results = run_dir / "_mirror" / f"results.{RID}.jsonl"
+
+
+def completion(row):
+    if "gen_ai.completion" in row:
+        return row["gen_ai.completion"] or ""
+    g = row.get("gen_ai")
+    return (g.get("completion") if isinstance(g, dict) else "") or ""
+
+
+def judged_lines():
+    wt = run_dir / f"judged.{RID}.jsonl"
+    if wt.exists():
+        return wt.read_text().splitlines()
+    cp = subprocess.run(
+        ["git", "show", f"experiment/{RID}:data/runs/{RID}/judged.{RID}.jsonl"],
+        capture_output=True, text=True,
+    )
+    return cp.stdout.splitlines() if cp.returncode == 0 else []
+
+
+def _aslist(v):
+    if isinstance(v, list):
+        return [str(x) for x in v if str(x).strip()]
+    if v in (None, ""):
+        return []
+    return [str(v)]
+
+
+jscore = defaultdict(list)
+jreviews = defaultdict(list)
+for line in judged_lines():
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        r = json.loads(line)
+    except Exception:
+        continue
+    s = r.get("score")
+    key = (r.get("scenario"), r.get("model"), r.get("rep"))
+    if isinstance(s, (int, float)):
+        jscore[key].append(s)
+    jreviews[key].append({
+        "judge": r.get("judge_model") or "judge",
+        "score": s if isinstance(s, (int, float)) else None,
+        "verdict": str(r.get("verdict") or "")[:1200],
+        "met": _aslist(r.get("criteria_met"))[:12],
+        "missed": _aslist(r.get("criteria_missed"))[:12],
+    })
+jmean = {k: round(sum(v) / len(v), 2) for k, v in jscore.items()}
+
+prompts = {}
+out = []
+if results.exists():
+    rows = results.read_text().splitlines()
+    scen_path = None
+    for line in rows:
+        try:
+            r0 = json.loads(line)
+        except Exception:
+            continue
+        scen_path = r0.get("env.scenarios_path")
+        break
+    if scen_path:
+        p = Path(scen_path)
+        if not p.is_absolute():
+            p = root / scen_path
+        try:
+            sdata = json.loads(p.read_text())
+            for sc in sdata.get("scenarios", []):
+                prompts[sc.get("id")] = {
+                    "question": (sc.get("question") or sc.get("context") or "")[:800],
+                    "gold": (sc.get("gold_answer") or "")[:400],
+                }
+        except Exception:
+            pass
+    for line in rows:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except Exception:
+            continue
+        scen, model, rep = row.get("scenario"), row.get("model"), row.get("rep")
+        if not scen or model is None or rep is None:
+            continue
+        text = completion(row).strip()
+        if not text:
+            continue
+        item = {
+            "scenario": scen, "model": model, "rep": rep,
+            "detScore": round(float(row.get("det_score") or 0), 2),
+            "text": text[:2000],
+        }
+        pr = prompts.get(scen)
+        if pr:
+            item["prompt"] = pr["question"]
+            item["gold"] = pr["gold"]
+        jk = (scen, model, rep)
+        if jk in jmean:
+            item["judgeScore"] = jmean[jk]
+        if jk in jreviews:
+            item["reviews"] = jreviews[jk]
+        out.append(item)
+
+out.sort(key=lambda x: (x["scenario"], x["model"], x["rep"]))
+print(json.dumps({"run_id": RID, "outputs": out, "count": len(out)}))
+'''
+
+
 def _run_doodles(run_id: str) -> dict:
     if not _RUNID_RE.match(run_id or ""):
         raise HTTPException(400, "invalid run_id")
@@ -759,6 +886,21 @@ def _run_doodles(run_id: str) -> dict:
         data = json.loads(cp.stdout)
     except json.JSONDecodeError as exc:
         raise HTTPException(500, f"doodles was not JSON: {exc}") from exc
+    if data.get("error"):
+        raise HTTPException(400, data["error"])
+    return data
+
+
+def _run_texts(run_id: str) -> dict:
+    if not _RUNID_RE.match(run_id or ""):
+        raise HTTPException(400, "invalid run_id")
+    cp = _ssh(_home_cmd("python3 - " + _q(run_id) + " <<'PY'\n" + _TEXTS_SCRIPT + "\nPY"), timeout=30)
+    if cp.returncode != 0:
+        raise HTTPException(500, (cp.stderr or cp.stdout or "texts read failed").strip()[:800])
+    try:
+        data = json.loads(cp.stdout)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, f"texts was not JSON: {exc}") from exc
     if data.get("error"):
         raise HTTPException(400, data["error"])
     return data
@@ -785,6 +927,11 @@ def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none", 
 @app.get("/api/run/{run_id}/doodles")
 def api_run_doodles(run_id: str):
     return JSONResponse(_run_doodles(run_id))
+
+
+@app.get("/api/run/{run_id}/texts")
+def api_run_texts(run_id: str):
+    return JSONResponse(_run_texts(run_id))
 
 
 @app.post("/api/control/start")
