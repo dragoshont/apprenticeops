@@ -2,3 +2,7 @@
 {"model":"*","stage":"judge","ts":1782802141,"ok":1,"detail":"judged 2->16"}
 {"model":"*","stage":"judge","ts":1782802231,"ok":1,"detail":"judged 16->38"}
 {"model":"*","stage":"judge","ts":1782802318,"ok":1,"detail":"judged 38->60"}
+{"model":"gemma2:2b","stage":"persist","ts":1782802321,"ok":1,"detail":"03a62e2"}
+{"model":"*","stage":"judge","ts":1782802410,"ok":1,"detail":"judged 60->80"}
+{"model":"*","stage":"judge","ts":1782802508,"ok":1,"detail":"judged 80->106"}
+{"model":"*","stage":"judge","ts":1782802606,"ok":1,"detail":"judged 106->130"}
