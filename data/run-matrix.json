@@ -70,6 +70,13 @@
       "path": "data/models.journal-strong.txt",
       "kind": "app",
       "description": "Stronger multilingual instruct models for the Aletheia warm-card task: qwen2.5:7b, gemma2:9b, llama3.1:8b. The model-size quality lever vs the small journal-aletheia set; slower on CPU."
+    },
+    {
+      "id": "journal-newest-small",
+      "label": "Journal newest small - 10 newest 3B-or-smaller models",
+      "path": "data/models.journal-newest-small.txt",
+      "kind": "app",
+      "description": "Ten newest small (3B or smaller) multilingual instruct models for the Aletheia warm-card task: gemma4:e2b-it-qat, qwen3.5:2b, granite4.1:3b, ministral-3:3b, gemma3:1b, qwen3:1.7b, granite4:micro, falcon3:3b, llama3.2:3b, plus gemma2:2b as the prior champion anchor."
     }
   ],
   "scenario_sets": [
@@ -128,6 +135,13 @@
       "path": "data/scenario_sets/journal-aletheia-6.json",
       "kind": "app",
       "description": "Six Romanian Aletheia warm-card modes - positive note, original uplifting one-liner, encouragement, gratitude, gentle reframe, grounded affirmation - each turning a short journal entry into a different kind of warm, sincere snippet (no advice, no cliches, no fabricated quotes)."
+    },
+    {
+      "id": "journal-aletheia-7",
+      "label": "Journal Aletheia (RO) - 7 warm-card modes (+change)",
+      "path": "data/scenario_sets/journal-aletheia-7.json",
+      "kind": "app",
+      "description": "The six Aletheia warm-card modes plus a seventh encourage-change mode: a self-critical entry met with a single warm Romanian note that holds the writer's honest self-criticism as growth and gently encourages the change they named, without piling on, advice, or toxic positivity."
     }
   ],
   "memory_contexts": [

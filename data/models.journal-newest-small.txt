@@ -1,0 +1,10 @@
+gemma4:e2b-it-qat
+qwen3.5:2b
+granite4.1:3b
+ministral-3:3b
+gemma3:1b
+qwen3:1.7b
+granite4:micro
+falcon3:3b
+llama3.2:3b
+gemma2:2b

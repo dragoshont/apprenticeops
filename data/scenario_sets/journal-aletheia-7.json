@@ -1,0 +1,200 @@
+{
+  "scenarios": [
+    {
+      "id": "journal-aletheia-positive-note",
+      "difficulty": "easy",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Aletheia, jurnal local în română. Sarcină: dintr-o intrare, scrie o singură notă scurtă și caldă pentru cardul „Ține minte” — sinceră, fără clișee, fără sfaturi.",
+      "question": "Intrare: „Azi a fost o zi obișnuită. Am băut cafeaua pe balcon și am ascultat ploaia.” Scrie o singură notă caldă de păstrat.",
+      "gold_answer": "O cafea pe balcon și sunetul ploii — azi a avut liniștea ei mică.",
+      "judge_rubric": "Reward a single warm Romanian note anchored in a real detail from the entry (coffee on the balcony, listening to the rain), sincere, with no cliches and no advice, and at most about 160 characters. Penalize advice, cliches, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "cafea|ploa|balcon"
+          ],
+          "desc": "ancorat în detaliul real"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "160"
+          ],
+          "desc": "o notă scurtă"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-uplifting-line",
+      "difficulty": "easy",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Un gând luminos, în cuvinte proprii — FĂRĂ citate și fără autori inventați.",
+      "question": "Intrare: „Mă simt cam pierdut în ultima vreme, parcă bat pasul pe loc.” Dă un gând luminos, în cuvintele tale.",
+      "gold_answer": "Chiar și când bați pasul pe loc, tot stai în picioare — și asta cere putere.",
+      "judge_rubric": "Reward an ORIGINAL uplifting Romanian one-liner in the writer's own words, gentle and grounded in the entry (feeling lost / stuck in place), with no advice and no cliches. PENALIZE any fabricated quotation or author attribution (quotation marks naming a person, or a '— <author>' signature), cliches, advice, answers not in Romanian, or more than one sentence.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "pas|picioare|putere|loc"
+          ],
+          "desc": "ancorat în intrare"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "160"
+          ],
+          "desc": "o singură propoziție"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-encouragement",
+      "difficulty": "medium",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Încurajare blândă pentru ziua de mâine — fără sfaturi, fără „totul va fi bine”.",
+      "question": "Intrare: „Mâine am o prezentare importantă la muncă și sunt destul de emoționat.” Spune-mi ceva încurajator pentru mâine.",
+      "gold_answer": "Emoția arată cât de mult îți pasă — ia-o cu tine mâine, nu împotriva ta.",
+      "judge_rubric": "Reward a warm encouraging Romanian line for tomorrow that acknowledges the nervousness about the presentation, WITHOUT giving advice and without empty reassurance like 'everything will be fine', with no cliches, and at most about 170 characters. Penalize advice, toxic positivity, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "mâine|maine|emoți|emoti|prezentar"
+          ],
+          "desc": "ancorat în intrare"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "170"
+          ],
+          "desc": "o propoziție scurtă"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-gratitude",
+      "difficulty": "easy",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Numește UN singur lucru real din intrare pentru care merită recunoștință — nu o listă.",
+      "question": "Intrare: „Sofia m-a desenat azi cu un soare deasupra capului. Am lipit desenul pe frigider.” Numește un lucru de recunoștință.",
+      "gold_answer": "Desenul Sofiei cu soare deasupra ta, lipit pe frigider — un motiv mic și real.",
+      "judge_rubric": "Reward naming ONE concrete thing from the entry to be grateful for (Sofia's drawing with a sun, put on the fridge), warm and specific, with no advice and no cliches, and at most about 160 characters. Penalize listing several things, advice, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "Sofia|desen|soare|frigider"
+          ],
+          "desc": "ancorat în detaliul real"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "160"
+          ],
+          "desc": "o notă scurtă"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-reframe",
+      "difficulty": "hard",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Reformulare blândă a unui moment greu — fără să negi durerea, fără sfaturi, fără toxic positivity.",
+      "question": "Intrare: „Am certat-o pe Sofia că a vărsat laptele și pe urmă m-am simțit groaznic. Parcă nu sunt un părinte bun.” Reformulează blând momentul.",
+      "gold_answer": "Faptul că te doare că ai ridicat tonul arată tocmai grija ta de părinte — nu opusul ei.",
+      "judge_rubric": "Reward a gentle Romanian reframe that holds the regret (snapping at Sofia over spilled milk, feeling like a bad parent) WITHOUT denying the painful feeling and without toxic positivity, with no advice, anchored in the entry, and at most about 180 characters. Penalize denying the feeling, advice, generic reassurance, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "Sofia|grij|părinte|parinte|ton"
+          ],
+          "desc": "ține durerea fără să o nege"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "180"
+          ],
+          "desc": "o reformulare scurtă"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-affirmation",
+      "difficulty": "medium",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "O afirmație scurtă, ancorată în ce a scris — nu o afirmație generică.",
+      "question": "Intrare: „Am terminat azi de plătit ultima rată la mașină. Mi-a luat trei ani.” Dă o afirmație scurtă, ancorată în intrare.",
+      "gold_answer": "Trei ani de răbdare s-au adunat azi într-un lucru dus până la capăt.",
+      "judge_rubric": "Reward a short grounded Romanian affirmation anchored in the entry (finishing the last car payment after three years), specific rather than a generic affirmation, with no advice and no cliches, and at most about 150 characters. Penalize generic or templated affirmations, advice, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "trei ani|răbdare|rabdare|capăt|capat|rată|rata|mașin|masin"
+          ],
+          "desc": "ancorat în intrare"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "150"
+          ],
+          "desc": "o afirmație scurtă"
+        }
+      ]
+    },
+    {
+      "id": "journal-aletheia-change-encouragement",
+      "difficulty": "hard",
+      "class": "warm-card",
+      "aiopslab_task": "summarize",
+      "grounding": "grounded",
+      "pair_id": "pair-journal",
+      "context": "Răspuns cald la o autocritică dură: ține adevărul pe care scriitorul l-a observat despre sine, dar încurajează schimbarea cu blândețe — fără să mai torni sare pe rană, fără sfaturi-listă, fără „totul va fi bine”.",
+      "question": "Intrare: „Încep zece proiecte și nu închei niciunul — închiderea mă doare. Mi-am pus în cap că tot ce fac trebuie să fie 10+, altfel nu valorez nimic. Ieri am certat un coleg și pe urmă m-am simțit golită. Știu că fug de asumare și nu dau follow-up. Vreau să schimb tiparul ăsta.” Scrie o singură notă caldă care îi recunoaște efortul de a se schimba și o încurajează blând, fără s-o critici în plus.",
+      "gold_answer": "Faptul că vezi tiparul și vrei să-l schimbi e deja primul lucru dus până la capăt — restul crește din pasul ăsta.",
+      "judge_rubric": "Reward a SINGLE warm Romanian note that acknowledges the writer's honest self-criticism as a sign of growth and gently encourages the change they already named (finishing what they start, following up, owning their part), WITHOUT adding any new criticism, WITHOUT step-by-step advice, without toxic positivity ('everything will be fine'), anchored in the entry, and at most about 200 characters. Penalize piling on more criticism, advice, generic reassurance, details invented beyond the entry, answers not in Romanian, multiple sentences, or exceeding the length.",
+      "deterministic_checks": [
+        {
+          "type": "any_include",
+          "patterns": [
+            "schimb|tipar|asum|urmă|urma|capăt|capat|pas"
+          ],
+          "desc": "ancorat în dorința de schimbare"
+        },
+        {
+          "type": "max_len",
+          "patterns": [
+            "200"
+          ],
+          "desc": "o singură notă scurtă"
+        }
+      ]
+    }
+  ]
+}
