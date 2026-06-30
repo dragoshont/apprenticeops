@@ -44,3 +44,18 @@
 {"model":"*","stage":"judge","ts":1782816133,"ok":1,"detail":"judged 288->304"}
 {"model":"*","stage":"judge","ts":1782816235,"ok":1,"detail":"judged 304->334"}
 {"model":"*","stage":"judge","ts":1782816342,"ok":1,"detail":"judged 334->361"}
+{"model":"qwen3:1.7b","stage":"persist","ts":1782816345,"ok":1,"detail":"8f403b7"}
+{"model":"*","stage":"judge","ts":1782816398,"ok":1,"detail":"judged 361->370"}
+{"model":"*","stage":"judge","ts":1782816458,"ok":1,"detail":"judged 370->381"}
+{"model":"*","stage":"judge","ts":1782816501,"ok":1,"detail":"judged 381->388"}
+{"model":"*","stage":"judge","ts":1782816541,"ok":1,"detail":"judged 388->390"}
+{"model":"*","stage":"judge","ts":1782816587,"ok":1,"detail":"judged 390->394"}
+{"model":"*","stage":"judge","ts":1782816629,"ok":1,"detail":"judged 394->400"}
+{"model":"*","stage":"judge","ts":1782816676,"ok":1,"detail":"judged 400->408"}
+{"model":"*","stage":"judge","ts":1782816728,"ok":1,"detail":"judged 408->416"}
+{"model":"*","stage":"judge","ts":1782816777,"ok":1,"detail":"judged 416->424"}
+{"model":"*","stage":"judge","ts":1782816822,"ok":1,"detail":"judged 424->428"}
+{"model":"*","stage":"judge","ts":1782816868,"ok":1,"detail":"judged 428->432"}
+{"model":"*","stage":"judge","ts":1782816912,"ok":1,"detail":"judged 432->434"}
+{"model":"*","stage":"judge","ts":1782816957,"ok":1,"detail":"judged 434->436"}
+{"model":"*","stage":"judge","ts":1782817003,"ok":1,"detail":"judged 436->438"}
