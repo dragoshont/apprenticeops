@@ -18,3 +18,9 @@
 {"model":"*","stage":"judge","ts":1782814798,"ok":1,"detail":"judged 64->66"}
 {"model":"*","stage":"judge","ts":1782814860,"ok":1,"detail":"judged 66->68"}
 {"model":"*","stage":"judge","ts":1782814905,"ok":1,"detail":"judged 68->70"}
+{"model":"granite4:micro","stage":"persist","ts":1782814908,"ok":1,"detail":"09fb77b"}
+{"model":"*","stage":"judge","ts":1782814958,"ok":1,"detail":"judged 70->78"}
+{"model":"*","stage":"judge","ts":1782815026,"ok":1,"detail":"judged 78->92"}
+{"model":"*","stage":"judge","ts":1782815122,"ok":1,"detail":"judged 92->114"}
+{"model":"*","stage":"judge","ts":1782815211,"ok":1,"detail":"judged 114->134"}
+{"model":"*","stage":"judge","ts":1782815281,"ok":1,"detail":"judged 134->148"}
