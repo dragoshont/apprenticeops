@@ -70,3 +70,9 @@
 {"model":"*","stage":"judge","ts":1782817477,"ok":1,"detail":"judged 512->540"}
 {"model":"*","stage":"judge","ts":1782817616,"ok":1,"detail":"judged 540->577"}
 {"model":"*","stage":"judge","ts":1782817705,"ok":1,"detail":"judged 577->597"}
+{"model":"gemma3:1b","stage":"persist","ts":1782817708,"ok":1,"detail":"4586d3b"}
+{"model":"*","stage":"judge","ts":1782817783,"ok":1,"detail":"judged 597->614"}
+{"model":"*","stage":"judge","ts":1782817844,"ok":1,"detail":"judged 614->626"}
+{"model":"*","stage":"judge","ts":1782817912,"ok":1,"detail":"judged 626->640"}
+{"model":"*","stage":"judge","ts":1782817961,"ok":1,"detail":"judged 640->646"}
+{"model":"*","stage":"judge","ts":1782818012,"ok":1,"detail":"judged 646->653"}
