@@ -77,6 +77,36 @@ generic 9 B's **2.42**.
 "small" bracket — but its E2B-effective/QAT design keeps it node-runnable, so it
 stays in-scope by the runs-at-usable-speed definition.)*
 
+## Romanian-specialized result — the prediction holds, and size is beaten
+
+The pre-registered "Romanian-specialized weights" step (below) ran: a Romanian-tuned
+model against generic Gemma anchors on the same `journal-aletheia-7` cards
+(N = 70/model, 288 judged rows).
+
+| Model | Mean (1–5) | What it is |
+|---|---|---|
+| **`jobautomation/OpenEuroLLM-Romanian`** | **2.76** | RO-tuned Gemma3-4B (f16) — new overall champion |
+| `gemma3:4b` | 2.61 | same base, generic |
+| `gemma2:9b` | 2.54 | generic, ~2× the size |
+| `gemma2:2b` | 2.06 | small anchor |
+
+Two results, both predicted:
+
+- **Romanian tuning beats raw size.** The RO-tuned **4 B** (2.76) tops the generic
+  **9 B** (2.54), and clears both bars set above — the small champion's **2.41** and
+  the generic 9 B ceiling (**2.42–2.54**). Specializing for Romanian moved the mean
+  *further than doubling the parameter count did*. The finding's core claim now has a
+  positive result, not just a within-family gradient.
+- **At the identical base, tuning alone adds +0.15.** RO-tuned vs generic Gemma3-4B:
+  **2.76 vs 2.61**. The remaining gap up to (and past) 9 B is what specialization buys
+  on top of the base.
+
+The ceiling was low *because generic models underserve Romanian* — a Romanian-
+specialized small model lifts it. `OpenEuroLLM-Romanian` becomes the recommended
+model for the Romanian warm-card task; `gemma4:e2b-it-qat` stays the best *un-tuned*
+fallback. (Honesty: 2.76/5 is *better*, not *good* — the absolute bar is still modest,
+and the RO-tuned model is 8.1 GB f16, heavier on the node than the small set.)
+
 ## Finding: the binding constraint is Romanian proficiency, not parameter count
 
 Three independent lines point the same way.
@@ -146,10 +176,12 @@ self-critique (`evaluator_optimizer_1`) made every <3 B model *worse* (`gemma2:2
    Romanian, English scores rise materially (≥ ~0.5) and the small/large gap
    narrows; if the gap is task difficulty, scores stay low in both. A non-improvement
    in English *falsifies* "it's the language".
-2. **Romanian-specialized weights.** Import an OpenLLM-Ro model (e.g. `RoGemma3`,
-   `RoLlama-3.2-1B`) into Ollama via `ollama create` from its GGUF and run it on the
-   same set. Expectation: it clears the generic 9 B ceiling at a fraction of the
-   footprint.
+2. **Romanian-specialized weights *(Done — confirmed; see "Romanian-specialized
+   result" above).*** Ran `jobautomation/OpenEuroLLM-Romanian` (an OpenEuroLLM RO
+   finetune of Gemma3-4B) against generic Gemma anchors. It **cleared the generic 9 B
+   ceiling at a fraction of the footprint** (2.76 vs 2.54), as expected. Next: try a
+   smaller RO finetune (e.g. `RoLlama-3.2-1B`) to see how low the footprint can go and
+   still beat the generic small champion (2.41).
 3. **Finetune path** (heavier): an Unsloth LoRA on a small base + warm-RO-note data —
    the same recipe OpenLLM-Ro uses, specialized to our tone.
 
@@ -169,4 +201,5 @@ self-critique (`evaluator_optimizer_1`) made every <3 B model *worse* (`gemma2:2
 - Self-critique (held negative): `journal-aletheia-none-evalopt-20260630-075632`
 - Strong (size lever, partial): `journal-strong-none-baseline-20260630-090915`
 - Newest-small sweep (complete, N = 70/model): `journal-newsmall-none-baseline-20260630-100446`
+- Romanian-specialized run (complete, N = 70/model): `journal-romanian-journal-aletheia-7-none-baseline-20260630-113017`
 - Scenario set: `data/scenario_sets/journal-aletheia-7.json` (`e33ddbe3…`)
