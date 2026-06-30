@@ -59,3 +59,10 @@
 {"model":"*","stage":"judge","ts":1782816912,"ok":1,"detail":"judged 432->434"}
 {"model":"*","stage":"judge","ts":1782816957,"ok":1,"detail":"judged 434->436"}
 {"model":"*","stage":"judge","ts":1782817003,"ok":1,"detail":"judged 436->438"}
+{"model":"ministral-3:3b","stage":"persist","ts":1782817005,"ok":1,"detail":"80c0fed"}
+{"model":"*","stage":"judge","ts":1782817050,"ok":1,"detail":"judged 438->446"}
+{"model":"*","stage":"judge","ts":1782817094,"ok":1,"detail":"judged 446->454"}
+{"model":"*","stage":"judge","ts":1782817159,"ok":1,"detail":"judged 454->468"}
+{"model":"*","stage":"judge","ts":1782817239,"ok":1,"detail":"judged 468->486"}
+{"model":"*","stage":"judge","ts":1782817312,"ok":1,"detail":"judged 486->502"}
+{"model":"*","stage":"judge","ts":1782817374,"ok":1,"detail":"judged 502->512"}
