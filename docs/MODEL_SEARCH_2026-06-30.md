@@ -29,10 +29,53 @@ coverage, anchored by `gemma2:2b` (the prior best small model):
 `gemma4:e2b-it-qat`, `qwen3.5:2b`, `granite4.1:3b`, `ministral-3:3b`, `gemma3:1b`,
 `qwen3:1.7b`, `granite4:micro`, `falcon3:3b`, `llama3.2:3b`, `gemma2:2b`.
 
-That sweep is in flight as `journal-newsmall-none-baseline-20260630-100446`
-(set `journal-newest-small` × `journal-aletheia-7`). This note records the *prior*
-runs' conclusion that motivated it; the sweep tests whether a newer small base
-changes it.
+That sweep ran as `journal-newsmall-none-baseline-20260630-100446`
+(set `journal-newest-small` × `journal-aletheia-7`) and is now complete. This note
+records both the *prior* runs' conclusion that motivated it and the sweep's own
+result below; the sweep tests whether a newer small base changes the conclusion.
+
+## Sweep result — a newer small base *does* help, but the winner is still a Gemma
+
+The 10-model sweep finished: 10 models × 7 `journal-aletheia-7` cards × 5 reps × 2
+judges = **N = 70 per model** (734 judged rows).
+
+| Rank | Model | Mean (1–5) | What it is (from `ollama show`) |
+|---|---|---|---|
+| 1 | **`gemma4:e2b-it-qat`** | **2.41** | arch `gemma4`, 4.6 B total / **E2B-effective**, QAT `Q4_0`, 128 K ctx, multimodal — new small champion |
+| 2 | `gemma2:2b` | 2.04 | prior champion / anchor |
+| 3 | `qwen3:1.7b` | 1.83 | |
+| 4 | `llama3.2:3b` | 1.81 | |
+| 5 | `gemma3:1b` | 1.76 | |
+| 6 | `granite4.1:3b` | 1.59 | arch `granite`, 3.4 B |
+| 7 | `ministral-3:3b` | 1.54 | |
+| 8 | `qwen3.5:2b` | 1.36 | rambles / asks questions |
+| 9 | `granite4:micro` | 1.20 | |
+| 10 | `falcon3:3b` | 1.01 | arch `llama`, 3.2 B — near-floor, barely on task (max 2.0) |
+
+Three things, all consistent with the Romanian-constraint finding:
+
+- **A newer small base helps — by +0.37.** `gemma4:e2b-it-qat` (the newest small
+  Gemma, quantization-aware-trained) reaches **2.41**, above `gemma2:2b`'s **2.04**
+  and within **0.01** of the generic `gemma2:9b` ceiling (**2.42**) at a fraction of
+  the footprint. The best *small* generic is now level with the best *strong*
+  generic.
+- **Newer ≠ better; the lineage that helps is Gemma.** Three of the top five are
+  Gemma (`gemma4 e2b`, `gemma2:2b`, `gemma3:1b`). Several *newer* non-Gemma releases
+  land **below** the old `gemma2:2b`: `granite4.1:3b` 1.59, `qwen3.5:2b` 1.36,
+  `granite4:micro` 1.20, `falcon3:3b` 1.01. Recency is not the lever; Romanian
+  coverage is — and Gemma keeps winning it, exactly as the family-ranking argument
+  predicts.
+- **The ceiling is still low.** Even the new small champion sits at **2.41 / 5**. A
+  better generic small base raised the floor but did not break the Romanian ceiling
+  — which is precisely why the next run tests Romanian-*specialized* weights.
+
+**Decision.** Promote the small default `gemma2:2b` → **`gemma4:e2b-it-qat`**, and
+set the bar the Romanian-specialized run must clear: **> 2.41**, ideally above the
+generic 9 B's **2.42**.
+
+*(Caveat: `gemma4:e2b-it-qat` is 4.6 B total — it sits at the top edge of the
+"small" bracket — but its E2B-effective/QAT design keeps it node-runnable, so it
+stays in-scope by the runs-at-usable-speed definition.)*
 
 ## Finding: the binding constraint is Romanian proficiency, not parameter count
 
@@ -115,7 +158,7 @@ self-critique (`evaluator_optimizer_1`) made every <3 B model *worse* (`gemma2:2
 | Threat | Type | Mitigation |
 |---|---|---|
 | Language vs task confound | Internal validity | The RO-vs-EN control above isolates it. |
-| Small per-model N (60) | Statistical | Bracket-level claims only; the live sweep adds the 10-model spread. |
+| Small per-model N (60–70) | Statistical | Bracket-level claims only; the 10-model sweep added the spread (N = 70/model). |
 | Judge is English-native on Romanian text | Measurement | Two judges; rubric rewards anchoring and penalizes non-Romanian; cross-check a Ro-native judge later. |
 | Single node / single task | External validity | Stated as a case study; no generalization claimed. |
 | `gemma2:9b` ceiling from a *partial* (killed) run | Provenance | N = 60 is complete for the three judged models; the run was stopped after them, not mid-model. |
@@ -125,5 +168,5 @@ self-critique (`evaluator_optimizer_1`) made every <3 B model *worse* (`gemma2:2
 - Small baseline: `journal-aletheia-none-baseline-20260630-064651`
 - Self-critique (held negative): `journal-aletheia-none-evalopt-20260630-075632`
 - Strong (size lever, partial): `journal-strong-none-baseline-20260630-090915`
-- Newest-small sweep (in flight): `journal-newsmall-none-baseline-20260630-100446`
+- Newest-small sweep (complete, N = 70/model): `journal-newsmall-none-baseline-20260630-100446`
 - Scenario set: `data/scenario_sets/journal-aletheia-7.json` (`e33ddbe3…`)
