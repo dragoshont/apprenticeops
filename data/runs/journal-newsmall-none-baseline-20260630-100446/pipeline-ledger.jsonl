@@ -29,3 +29,14 @@
 {"model":"*","stage":"judge","ts":1782815461,"ok":1,"detail":"judged 168->192"}
 {"model":"*","stage":"judge","ts":1782815529,"ok":1,"detail":"judged 192->208"}
 {"model":"*","stage":"judge","ts":1782815591,"ok":1,"detail":"judged 208->220"}
+{"model":"gemma2:2b","stage":"persist","ts":1782815594,"ok":1,"detail":"3e02c70"}
+{"model":"*","stage":"judge","ts":1782815633,"ok":1,"detail":"judged 220->223"}
+{"model":"*","stage":"judge","ts":1782815686,"ok":1,"detail":"judged 223->234"}
+{"model":"*","stage":"judge","ts":1782815730,"ok":1,"detail":"judged 234->241"}
+{"model":"*","stage":"judge","ts":1782815768,"ok":1,"detail":"judged 241->244"}
+{"model":"*","stage":"judge","ts":1782815822,"ok":1,"detail":"judged 244->255"}
+{"model":"*","stage":"judge","ts":1782815873,"ok":1,"detail":"judged 255->264"}
+{"model":"*","stage":"judge","ts":1782815930,"ok":1,"detail":"judged 264->276"}
+{"model":"*","stage":"judge","ts":1782815969,"ok":1,"detail":"judged 276->280"}
+{"model":"*","stage":"judge","ts":1782816007,"ok":1,"detail":"judged 280->282"}
+{"model":"*","stage":"judge","ts":1782816053,"ok":1,"detail":"judged 282->288"}
