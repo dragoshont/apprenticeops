@@ -1,0 +1,4 @@
+{"model":"*","stage":"judge","ts":1782802063,"ok":1,"detail":"judged 0->2"}
+{"model":"*","stage":"judge","ts":1782802141,"ok":1,"detail":"judged 2->16"}
+{"model":"*","stage":"judge","ts":1782802231,"ok":1,"detail":"judged 16->38"}
+{"model":"*","stage":"judge","ts":1782802318,"ok":1,"detail":"judged 38->60"}
