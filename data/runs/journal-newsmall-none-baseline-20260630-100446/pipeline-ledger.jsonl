@@ -24,3 +24,8 @@
 {"model":"*","stage":"judge","ts":1782815122,"ok":1,"detail":"judged 92->114"}
 {"model":"*","stage":"judge","ts":1782815211,"ok":1,"detail":"judged 114->134"}
 {"model":"*","stage":"judge","ts":1782815281,"ok":1,"detail":"judged 134->148"}
+{"model":"llama3.2:3b","stage":"persist","ts":1782815284,"ok":1,"detail":"c1fec2c"}
+{"model":"*","stage":"judge","ts":1782815371,"ok":1,"detail":"judged 148->168"}
+{"model":"*","stage":"judge","ts":1782815461,"ok":1,"detail":"judged 168->192"}
+{"model":"*","stage":"judge","ts":1782815529,"ok":1,"detail":"judged 192->208"}
+{"model":"*","stage":"judge","ts":1782815591,"ok":1,"detail":"judged 208->220"}
