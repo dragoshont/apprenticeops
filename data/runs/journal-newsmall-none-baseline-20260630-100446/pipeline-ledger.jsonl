@@ -66,3 +66,7 @@
 {"model":"*","stage":"judge","ts":1782817239,"ok":1,"detail":"judged 468->486"}
 {"model":"*","stage":"judge","ts":1782817312,"ok":1,"detail":"judged 486->502"}
 {"model":"*","stage":"judge","ts":1782817374,"ok":1,"detail":"judged 502->512"}
+{"model":"gemma4:e2b-it-qat","stage":"persist","ts":1782817376,"ok":1,"detail":"581a86d"}
+{"model":"*","stage":"judge","ts":1782817477,"ok":1,"detail":"judged 512->540"}
+{"model":"*","stage":"judge","ts":1782817616,"ok":1,"detail":"judged 540->577"}
+{"model":"*","stage":"judge","ts":1782817705,"ok":1,"detail":"judged 577->597"}
