@@ -30,6 +30,13 @@
       "description": "Two-model pilot roster for inference-strategy experiments: qwen3:4b as the strong option-search candidate and granite4:micro as the cheap small-model control."
     },
     {
+      "id": "unseen20",
+      "label": "Unseen 20 - 4 never-run models per bracket",
+      "path": "data/models.unseen20.txt",
+      "kind": "experiment",
+      "description": "Twenty-model overnight roster: four models from each locked footprint bracket, excluding models already present in prior home result artifacts. Official Ollama tags preferred for pull reliability."
+    },
+    {
       "id": "full",
       "label": "Full roster - all models",
       "path": "data/models.txt",
