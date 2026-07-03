@@ -207,6 +207,7 @@ rewarded for refusing safe diagnostics.
    - Type: mixed.
    - Files: `docs/PRIVACY_AND_EGRESS.md`, `scripts/privacy-scan.py`.
    - Acceptance: a pre-share command reports known public hostnames/domains, blocks token patterns, and documents intentional disclosures.
+   - Status: implemented as `scripts/privacy-scan.py` and `docs/PRIVACY_AND_EGRESS.md`.
 
 ### P1 - Must Fix Before Thesis/Paper Review
 
