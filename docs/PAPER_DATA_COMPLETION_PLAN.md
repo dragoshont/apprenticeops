@@ -44,6 +44,7 @@ but the paper should not rename itself around that future work.
 | `spread10` on external candidates | Completed dev run. | `external-v0-spread10-baseline-20260703-091212`; review in `docs/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`. |
 | CEOps metrics/source analysis | Completed first pass. | `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
 | Cold audit response | Completed first triage plan. | `docs/COLD_AUDIT_RESPONSE_PLAN.md`; top issue is thesis-boundary drift between `<=5B parameters` and legacy `<=5 GB` / `<=8B` framing. |
+| Model lockfile foundation | Completed first gate. | `data/models.lock.jsonl` covers all 158 roster tags; `scripts/validate-model-lock.py` excludes 18 >5B rows and reports 140 current <=5B thesis candidates. |
 
 ## Dependency Graph
 
@@ -170,7 +171,8 @@ whether to clarify, split, or keep them hard.
   where needed, and stop using `<=5 GB` as the research boundary.
 2. **Model lockfile.** Add `data/models.lock.jsonl`, a schema, and a validator so
   the 150+ model universe has parameter tiers, licenses, digests, inclusion
-  decisions, and exclusion reasons.
+  decisions, and exclusion reasons. First gate exists; next work is filling the
+  roster to 150+ verified <=5B candidates and replacing legacy >5B rows.
 3. **Artifact inventory.** Add a concise data/release inventory for snapshots,
    site exports, notebooks, licenses, and model metadata.
 4. **Paper contribution alignment.** Update the manuscript/README/reviewer guide

@@ -195,6 +195,7 @@ rewarded for refusing safe diagnostics.
    - Type: data + code.
    - Files: `data/models.lock.jsonl`, `data/model.schema.json`, `scripts/validate-model-lock.py`.
    - Acceptance: every model has `params_b`, tier, architecture, training type, quantization, artifact size, license/source/digest, included flag, and exclusion reason.
+   - Status: implemented as a first lockfile. It validates all 158 roster tags, excludes 18 >5B rows, and currently leaves 140 included <=5B candidates, so the 150+ thesis universe is **not yet met**.
 
 3. **README correction plan and rewrite.**
    - Type: documentation.
