@@ -49,12 +49,52 @@ def test_report_flags_reliability_and_strategy():
     assert report["dnf"] == 1
     assert report["zero_output_stalls"] == 1
     assert report["judge_empty"] == 1
+    assert report["judge_duplicate_tuples"] == 0
     assert report["dnf_by_inference_strategy"][0]["id"] == "best_of_3_detcheck"
     assert report["usage_by_judge"]["claude"]["tokens_in"] == 10
 
 
+def test_report_flags_duplicate_judge_tuples():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-dup"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v0",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 2,
+        }))
+        write_jsonl(run_dir / "_mirror" / "results.run-dup.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "env.memory_context": "none", "env.inference_strategy": "baseline", "gen_ai.response.finish_reasons": ["stop"], "dnf": False},
+        ])
+        write_jsonl(run_dir / "judged.run-dup.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": 5, "evidence": "ok", "criteria_met": [], "criteria_missed": []},
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "gpt", "score": 4, "evidence": "ok", "criteria_met": [], "criteria_missed": []},
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "gpt", "score": 4, "evidence": "retry duplicate", "criteria_met": [], "criteria_missed": []},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["judged_rows"] == 3
+    assert report["expected_judged_rows"] == 2
+    assert report["judge_unique_tuples"] == 2
+    assert report["judge_duplicate_tuples"] == 1
+    assert report["judge_duplicate_examples"] == [{
+        "count": 2,
+        "model": "m",
+        "scenario": "s1",
+        "rep": 0,
+        "memory_context": "none",
+        "inference_strategy": "baseline",
+        "judge_model": "gpt",
+    }]
+
+
 def main() -> None:
     test_report_flags_reliability_and_strategy()
+    test_report_flags_duplicate_judge_tuples()
     print("report-run-quality tests passed")
 
 

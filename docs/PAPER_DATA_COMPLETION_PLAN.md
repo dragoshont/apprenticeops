@@ -40,7 +40,8 @@ but the paper should not rename itself around that future work.
 | External candidate work | Dev-only follow-up, not paper scoring. | `docs/EXTERNAL_DATASET_INTEGRATION_PLAN.md`, `data/scenarios.external-candidates-v0.json`. |
 | External candidate smoke | Dryrun launch/judge/persist path works, but one duplicate judge row makes it smoke-only. | `external-v0-dryrun-baseline-20260703-063154`. |
 | External candidate pilot | Clean dev evaluation: 80/80 inference rows, 160/160 unique judge tuples. | `external-v0-strategy-pilot-2-baseline-20260703-081018`. |
-| `spread10` on external candidates | Not approved yet. | Requires separate adversarial go/no-go. |
+| Scenario-level error review | Completed for strategy-pilot. | `docs/EXTERNAL_DATASET_PHASE5_ERROR_REVIEW.md`. |
+| `spread10` on external candidates | Candidate next run. | Requires duplicate-judge reporting, completed error review, and adversarial go/no-go. |
 
 ## Dependency Graph
 
@@ -82,17 +83,16 @@ do not flow back into the paper claim unless a new version is explicitly locked.
 | Candidate next action | Verdict | Reason |
 |---|---|---|
 | Start / continue paper submission writing from the 94-model result | **Yes** | Paper data is locked; remaining work is claim audit, artifact inventory, and submission packaging. |
-| Run `spread10 × external-candidates-v0` as a dev evaluation | **Not yet** | It is not paper-blocking, and it needs a separate adversarial go/no-go plus run-quality hardening. |
+| Run `spread10 × external-candidates-v0` as a dev evaluation | **Candidate next** | It is not paper-blocking. Proceed only after duplicate-judge reporting, scenario-level error review, and adversarial go/no-go. |
 | Promote `external-candidates-v0` to Core or paper scoring | **No** | Rights/provenance gate only allows candidate/dev use; no held-out near-duplicate gate or Core lock exists. |
 | Start Architrave Eval schema extraction | **After paper claim audit** | Useful and strategically aligned, but it risks pulling the paper into platform work before submission readiness. |
 | Start AletheiaBench | **No** | It is the right future pressure test, but only after a minimal spec boundary exists. |
 
 The main gap in “starting the experiment already” is not infrastructure. The
 runner works, the dev scenario set launches, and the strategy-pilot result is
-clean. The gap is **interpretability discipline**: before the larger `spread10`
-external-candidate run, add duplicate-judge reporting to `report-run-quality.py`
-and perform a scenario-level error review of the strategy-pilot outputs. Without
-those, `spread10` may produce more data than insight.
+clean. The remaining gate is **interpretability discipline**: a larger `spread10`
+external-candidate run should happen only with duplicate-judge reporting and a
+scenario-level error review already in place.
 
 ## Remaining Work Inventory
 
@@ -112,7 +112,7 @@ those, `spread10` may produce more data than insight.
 | Keep 94-model snapshots frozen for paper claims. | done/ongoing | Any new run is labelled dev/follow-up, not merged into paper snapshots. |
 | Add Croissant / dataset metadata for Datasets & Benchmarks readiness. | not-started | Machine-readable metadata validates and points to immutable data artifacts. |
 | Create artifact inventory: snapshots, site exports, notebooks, scripts, model metadata, licenses. | not-started | Reviewer can tell exactly which files reproduce each headline number. |
-| Add judge-row duplicate reporting to `report-run-quality.py`. | not-started | Report prints duplicate judge tuples, not only inference duplicate tuples. |
+| Add judge-row duplicate reporting to `report-run-quality.py`. | done | Report prints duplicate judge tuples, not only inference duplicate tuples. |
 | Decide whether to de-duplicate the dryrun judged file or leave as caveated smoke. | not-started | If used in any table, de-duplication is scripted and recorded. |
 
 ### C. Tests and Deterministic Gates
@@ -121,8 +121,8 @@ those, `spread10` may produce more data than insight.
 |---|---|---|
 | Existing scenario gates. | passing | `python3 scripts/validate-scenarios.py`. |
 | External candidate gates. | passing | `python3 scripts/validate-external-candidates.py`. |
-| Run-quality gate for external dev runs. | manual/passing | `report-run-quality.py` + unique judge tuple script for strategy-pilot. |
-| Add automated test for judge duplicate detection. | not-started | Test fails on a duplicated `(model, scenario, rep, memory, strategy, judge_model)` row. |
+| Run-quality gate for external dev runs. | passing | `report-run-quality.py` reports inference and judge duplicate tuples. |
+| Add automated test for judge duplicate detection. | done | `scripts/test-report-run-quality.py` fails on a duplicated `(model, scenario, rep, memory, strategy, judge_model)` row. |
 | Add a paper-data audit command. | not-started | One command re-runs all non-notebook structural checks before submission. |
 
 ### D. Documentation
@@ -150,8 +150,8 @@ those, `spread10` may produce more data than insight.
 
 | Decision | Required before |
 |---|---|
-| Is `spread10 × external-candidates-v0` worth the cost? | Any 400-row external dev run. Needs adversarial go/no-go. |
-| Should external candidates be revised based on strategy-pilot errors? | Any promotion beyond dev. Requires scenario-level error review. |
+| Is `spread10 × external-candidates-v0` worth the cost? | Any 400-row external dev run. Needs adversarial go/no-go using `docs/EXTERNAL_DATASET_PHASE5_ERROR_REVIEW.md`. |
+| Should external candidates be revised based on strategy-pilot errors? | Any promotion beyond dev. First-pass error review completed; promotion still requires deeper review. |
 | Should Architrave Eval schemas be extracted now or after submission? | Any `spec/*.schema.json` work. Recommended: after paper claim audit. |
 | Should AletheiaBench be designed now? | Any non-ops scenario pack. Recommended: after spec skeleton, not before. |
 

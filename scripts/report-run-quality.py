@@ -114,6 +114,31 @@ def summarize_run(run_dir: Path) -> dict:
                 judge_parse_errors += 1
             else:
                 judged.append(row)
+    judge_tuple_counts = Counter(
+        (
+            row.get("model"),
+            row.get("scenario"),
+            row.get("rep"),
+            row.get("memory_context") or row.get("env.memory_context") or "none",
+            row.get("inference_strategy") or row.get("env.inference_strategy") or "baseline",
+            row.get("judge_model"),
+        )
+        for row in judged
+    )
+    judge_duplicate_examples = [
+        {
+            "count": count,
+            "model": key[0],
+            "scenario": key[1],
+            "rep": key[2],
+            "memory_context": key[3],
+            "inference_strategy": key[4],
+            "judge_model": key[5],
+        }
+        for key, count in sorted(judge_tuple_counts.items())
+        if count > 1
+    ]
+    judge_duplicates = sum(count - 1 for count in judge_tuple_counts.values() if count > 1)
     keys_seen = set().union(*(row.keys() for row in rows)) if rows else set()
     missing_counts = Counter()
     for row in rows:
@@ -168,6 +193,9 @@ def summarize_run(run_dir: Path) -> dict:
         "expected_judged_rows": expected_judged,
         "parse_errors": parse_errors,
         "judge_parse_errors": judge_parse_errors,
+        "judge_unique_tuples": len(judge_tuple_counts),
+        "judge_duplicate_tuples": judge_duplicates,
+        "judge_duplicate_examples": judge_duplicate_examples[:10],
         "duplicate_result_tuples": duplicates,
         "schema_field_count": len(keys_seen),
         "schema_missing_fields": dict(missing_counts),
@@ -203,7 +231,21 @@ def print_text(reports: list[dict]) -> None:
         print(f"rows: {report['rows']}{expected}; judged: {report['judged_rows']}{expected_j}; fields: {report['schema_field_count']}")
         print(f"parse_errors={report['parse_errors']} duplicate_tuples={report['duplicate_result_tuples']} missing_fields={len(report['schema_missing_fields'])}")
         print(f"reliability: DNF {report['dnf']}/{report['rows']} ({report['dnf_rate']}%) · length {report['length']} ({report['length_rate']}%) · zero-output stalls {report['zero_output_stalls']} ({report['zero_output_stall_rate']}%)")
-        print(f"judge: empty={report['judge_empty']} evidence_missing={report['judge_evidence_missing']} criteria_missing={report['judge_criteria_missing']}")
+        print(
+            f"judge: empty={report['judge_empty']} "
+            f"evidence_missing={report['judge_evidence_missing']} "
+            f"criteria_missing={report['judge_criteria_missing']} "
+            f"duplicate_tuples={report['judge_duplicate_tuples']}"
+        )
+        if report["judge_duplicate_examples"]:
+            for item in report["judge_duplicate_examples"][:5]:
+                print(
+                    "  duplicate judge tuple: "
+                    f"count={item['count']} model={item['model']} "
+                    f"scenario={item['scenario']} rep={item['rep']} "
+                    f"memory={item['memory_context']} strategy={item['inference_strategy']} "
+                    f"judge={item['judge_model']}"
+                )
         if report["dnf_by_model"]:
             top = ", ".join(f"{item['id']}={item['dnf']}" for item in report["dnf_by_model"][:5] if item["dnf"])
             print(f"top DNF models: {top or 'none'}")
