@@ -82,3 +82,25 @@
 {"model":"*","stage":"judge","ts":1783100687,"ok":1,"detail":"judged 352->354"}
 {"model":"*","stage":"judge","ts":1783100731,"ok":1,"detail":"judged 354->356"}
 {"model":"*","stage":"judge","ts":1783100779,"ok":1,"detail":"judged 356->360"}
+{"model":"qwen3:4b-instruct-2507-q4_K_M","stage":"persist","ts":1783100781,"ok":1,"detail":"af4ee35"}
+{"model":"*","stage":"judge","ts":1783100824,"ok":1,"detail":"judged 360->368"}
+{"model":"*","stage":"judge","ts":1783100873,"ok":1,"detail":"judged 368->372"}
+{"model":"*","stage":"judge","ts":1783100919,"ok":1,"detail":"judged 372->374"}
+{"model":"*","stage":"judge","ts":1783100983,"ok":1,"detail":"judged 374->376"}
+{"model":"*","stage":"judge","ts":1783101026,"ok":1,"detail":"judged 376->378"}
+{"model":"*","stage":"judge","ts":1783101061,"ok":1,"detail":"judged 378->380"}
+{"model":"*","stage":"judge","ts":1783101093,"ok":1,"detail":"judged 380->382"}
+{"model":"*","stage":"judge","ts":1783101126,"ok":1,"detail":"judged 382->384"}
+{"model":"*","stage":"judge","ts":1783101171,"ok":1,"detail":"judged 384->390"}
+{"model":"*","stage":"judge","ts":1783101226,"ok":1,"detail":"judged 390->394"}
+{"model":"*","stage":"judge","ts":1783101275,"ok":1,"detail":"judged 394->402"}
+{"model":"*","stage":"judge","ts":1783101323,"ok":1,"detail":"judged 402->410"}
+{"model":"*","stage":"judge","ts":1783101370,"ok":1,"detail":"judged 410->414"}
+{"model":"*","stage":"judge","ts":1783101414,"ok":1,"detail":"judged 414->418"}
+{"model":"*","stage":"judge","ts":1783101465,"ok":1,"detail":"judged 418->424"}
+{"model":"*","stage":"judge","ts":1783101521,"ok":1,"detail":"judged 424->434"}
+{"model":"*","stage":"judge","ts":1783101566,"ok":1,"detail":"judged 434->440"}
+{"model":"*","stage":"judge","ts":1783101609,"ok":1,"detail":"judged 440->442"}
+{"model":"*","stage":"judge","ts":1783101652,"ok":1,"detail":"judged 442->444"}
+{"model":"*","stage":"judge","ts":1783101697,"ok":1,"detail":"judged 444->448"}
+{"model":"*","stage":"judge","ts":1783101748,"ok":1,"detail":"judged 448->450"}
