@@ -20,25 +20,29 @@ reason safely and usefully on real operations tasks without cloud fallback.
 > literature, so it cannot lead).
 
 For a **locally-sovereign** ops assistant — offline (no frontier to escalate to),
-CPU-only, ≤5 GB, the last line — **model selection is the whole game, and every
-proxy a practitioner reaches for (parameter count, benchmark score, a “reasoning”
-badge, perplexity) misleads on a *different* axis.** We profile **quality × safety
-× energy together** on commodity offline hardware and reduce the choice to a
-**measured Pareto front**. The three axes: a judged-quality knee at ~3-4B (where
-*quantization*, not parameters, carries the lift); **safety** as the judge-free
-deterministic refusal axis, governed by *training type, not size* — a result that
-**corroborates** a saturated agent-/SLM-safety literature rather than discovering
-it; and **energy** (Wh/answer, tok/s-per-watt) you pay to run it yourself. The
-contribution is the **integration**: on the front, the “biggest” and “reasoning”
-picks come out **dominated**.
+CPU-only, ≤5 GB, the last line — **deployment selection is the whole game, and
+every proxy a practitioner reaches for (parameter count, benchmark score, a
+“reasoning” badge, perplexity) misleads on a *different* axis.** We profile
+**quality × safety × energy together** on commodity offline hardware and reduce
+the choice to a **measured Pareto front**. The evaluated object is a deployment,
+not an isolated model: model + runtime + hardware + quantization + prompt + memory
++ inference strategy + evaluation policy. The three axes: a judged-quality knee
+at ~2-3B (where *quantization*, not parameters, carries the lift); **safety** as
+the judge-free deterministic refusal axis, governed by *training type, not size*
+— a result that **corroborates** a saturated agent-/SLM-safety literature rather
+than discovering it; and **energy** (Wh/answer, tok/s-per-watt) you pay to run it
+yourself. The contribution is the **integration**: on the front, the “biggest” and
+“reasoning” picks come out **dominated**.
 
 ## Top contributions (proposed)
 
-1. ApprenticeOps benchmark artifact (scenario corpus + scoring + telemetry schema).
-2. Controlled empirical results across 25 local models and 19 scenarios on one
-   commodity node, with explicit uncertainty/statistical treatment.
+1. ApprenticeOps benchmark artifact (scenario corpus + scoring + telemetry schema)
+   as the first deployment-centric scenario pack for homelab/ops tasks.
+2. Controlled empirical results across the consolidated 94-functional-model,
+   19-scenario snapshot on one commodity node, with explicit
+   uncertainty/statistical treatment.
 3. **The three-axis selection map and its Pareto front** — quality × safety ×
-   energy measured *together* for the offline/CPU model-selection decision, a
+   energy measured *together* for the offline/CPU deployment-selection decision, a
    regime no prior benchmark targets whole. Safety is **one axis** of three
    (judge-free deterministic refusal, governed by training type not size) and is
    presented as **corroboration** of the agent-/SLM-safety literature, not
@@ -134,6 +138,13 @@ refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality 
 2. Statistical reporting and limitations sections are complete and consistent.
 3. Reproduction path runs from clean checkout.
 4. Artifact package inventory is complete and link-stable.
+
+## Current completion control plane
+
+The active paper/data completion inventory is
+[`PAPER_DATA_COMPLETION_PLAN.md`](PAPER_DATA_COMPLETION_PLAN.md). It separates
+locked paper-result work from external dev follow-ups and from future Architrave
+Eval / CEOps extraction, so the paper does not absorb every useful next idea.
 
 ## Peer feedback requested now
 

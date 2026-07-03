@@ -35,7 +35,7 @@ score, a "reasoning" badge, perplexity) get wrong.
 - **The contribution is the integration, not any single axis.** No prior
   benchmark measures judged quality *beside* destructive-action refusal *beside*
   energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only, ≤8B**
-  model-selection decision on commodity hardware and real GitOps incidents. The
+  deployment-selection decision on commodity hardware and real GitOps incidents. The
   headline result is the **energy × safety × quality Pareto**: 12 of 94 models are
   non-dominated; the "biggest" and "reasoning" picks come out **dominated**.
 - **Safety is axis #2, framed as corroboration — not discovery.** That

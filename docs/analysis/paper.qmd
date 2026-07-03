@@ -1,6 +1,6 @@
 ---
 title: "ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants"
-subtitle: "A quality × safety × energy benchmark for the offline, CPU-only model-selection decision"
+subtitle: "A quality × safety × energy benchmark for the offline, CPU-only deployment-selection decision"
 author:
   - name: Dragos Hont
     email: dragos.hont@gmail.com
@@ -105,11 +105,11 @@ destructive actions, with no reviewer downstream; (5) **fit and speed** on owned
 hardware.
 
 > **Thesis (stated up front).** For a locally-sovereign ops assistant — offline,
-> CPU-only, ≤ 5 GB, the last line — **model selection is the whole game, and every
+> CPU-only, ≤ 5 GB, the last line — **deployment selection is the whole game, and every
 > proxy a practitioner reaches for (parameter count, benchmark score, a "reasoning"
 > badge, perplexity) misleads on a *different* axis.** We measure three axes in one
-> harness. **(1) Quality:** a usable ops-reasoning floor arrives at **3–4B**, and
-> quantization largely preserves it, so param-count over-predicts what the job
+> harness. **(1) Quality:** a usable ops-reasoning floor arrives at **2–3B**, and
+> quantization largely preserves it, so parameter count over-predicts what the job
 > needs. **(2) Safety:** on deterministic refusal checks the real driver is
 > **training type, not size** — reasoning-distilled models refuse roughly 30 points
 > less than instruct siblings, so a 7.6 B reasoning model is *out-refused by a
@@ -124,16 +124,16 @@ grading rig. Second, **`grounded` is an oracle-retrieval upper bound**: we injec
 the correct reference text directly, so grounded numbers are the *ceiling* of what
 local RAG buys, not the expected value.
 
-**Contributions.** (1) A reproducible, open benchmark for *small,
+**Contributions.** (1) A reproducible, open scenario pack for *small,
 locally-sovereign* ops-reasoning with **real-incident** scenarios and a safety
 gate, framed on the AIOps maturity ladder. (2) An **offline operating contract +
-grounding split** (closed-book vs local-RAG-grounded) that isolates what
-retrieval cannot fix. (3) A **telemetry method** (OpenTelemetry-GenAI-aligned
-[@otel_genai], with measured per-task energy) for profiling on-device LLM ops.
-(4) The **three-axis selection map** — a quality knee at 2–3B (where quantization
-carries the lift), a safety axis governed by training type, and an energy axis —
-reported *together* for the model-selection decision, which no prior benchmark
-does. (5) The released artifact (harness + scenarios + data, Apache-2.0).
+grounding split** (closed-book vs local-RAG-grounded) that isolates what retrieval
+cannot fix. (3) A **telemetry method** (OpenTelemetry-GenAI-aligned
+[@otel_genai], with measured per-task energy) for profiling local LLM deployments.
+(4) The **three-axis deployment-selection map** — a quality knee at 2–3B (where
+quantization carries the lift), a safety axis governed by training type, and an
+energy axis — reported *together*, which no prior benchmark does. (5) The released
+artifact (harness + scenarios + data, Apache-2.0).
 
 # Related Work and Positioning {#sec-related}
 
@@ -215,7 +215,7 @@ twist they do not jointly report: **quantization largely preserves *quality*
 pressures act on different axes of the same selection.
 
 **Gap we fill.** No prior work measures **quality × safety × energy *together***
-for the **offline / CPU-only / locally-sovereign** model-selection decision on
+for the **offline / CPU-only / locally-sovereign** deployment-selection decision on
 commodity hardware and real-homelab incidents. The agent-safety benchmarks run
 frontier/cloud agents and do not meter watts; the systems/SLM papers do not score
 destructive-action refusal against Wh/answer and tokens/s-per-watt. The defensible
