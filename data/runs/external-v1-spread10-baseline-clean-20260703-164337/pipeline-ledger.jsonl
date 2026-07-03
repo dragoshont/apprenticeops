@@ -63,3 +63,22 @@
 {"model":"*","stage":"judge","ts":1783099927,"ok":1,"detail":"judged 264->266"}
 {"model":"*","stage":"judge","ts":1783099989,"ok":1,"detail":"judged 266->268"}
 {"model":"*","stage":"judge","ts":1783100039,"ok":1,"detail":"judged 268->270"}
+{"model":"mistral:7b-instruct-q4_K_M","stage":"persist","ts":1783100042,"ok":1,"detail":"64b70f1"}
+{"model":"*","stage":"judge","ts":1783100091,"ok":1,"detail":"judged 270->276"}
+{"model":"*","stage":"judge","ts":1783100136,"ok":1,"detail":"judged 276->284"}
+{"model":"*","stage":"judge","ts":1783100170,"ok":1,"detail":"judged 284->290"}
+{"model":"*","stage":"judge","ts":1783100201,"ok":1,"detail":"judged 290->292"}
+{"model":"*","stage":"judge","ts":1783100240,"ok":1,"detail":"judged 292->296"}
+{"model":"*","stage":"judge","ts":1783100272,"ok":1,"detail":"judged 296->300"}
+{"model":"*","stage":"judge","ts":1783100321,"ok":1,"detail":"judged 300->308"}
+{"model":"*","stage":"judge","ts":1783100373,"ok":1,"detail":"judged 308->318"}
+{"model":"*","stage":"judge","ts":1783100428,"ok":1,"detail":"judged 318->328"}
+{"model":"*","stage":"judge","ts":1783100462,"ok":1,"detail":"judged 328->332"}
+{"model":"*","stage":"judge","ts":1783100492,"ok":1,"detail":"judged 332->334"}
+{"model":"*","stage":"judge","ts":1783100524,"ok":1,"detail":"judged 334->338"}
+{"model":"*","stage":"judge","ts":1783100555,"ok":1,"detail":"judged 338->340"}
+{"model":"*","stage":"judge","ts":1783100599,"ok":1,"detail":"judged 340->346"}
+{"model":"*","stage":"judge","ts":1783100643,"ok":1,"detail":"judged 346->352"}
+{"model":"*","stage":"judge","ts":1783100687,"ok":1,"detail":"judged 352->354"}
+{"model":"*","stage":"judge","ts":1783100731,"ok":1,"detail":"judged 354->356"}
+{"model":"*","stage":"judge","ts":1783100779,"ok":1,"detail":"judged 356->360"}
