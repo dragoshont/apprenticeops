@@ -104,3 +104,9 @@
 {"model":"*","stage":"judge","ts":1783101652,"ok":1,"detail":"judged 442->444"}
 {"model":"*","stage":"judge","ts":1783101697,"ok":1,"detail":"judged 444->448"}
 {"model":"*","stage":"judge","ts":1783101748,"ok":1,"detail":"judged 448->450"}
+{"model":"qwen2.5:3b","stage":"persist","ts":1783101751,"ok":1,"detail":"4d8c07a"}
+{"model":"*","stage":"judge","ts":1783101813,"ok":1,"detail":"judged 450->462"}
+{"model":"*","stage":"judge","ts":1783101866,"ok":1,"detail":"judged 462->476"}
+{"model":"*","stage":"judge","ts":1783101944,"ok":1,"detail":"judged 476->498"}
+{"model":"*","stage":"judge","ts":1783102022,"ok":1,"detail":"judged 498->522"}
+{"model":"*","stage":"judge","ts":1783102094,"ok":1,"detail":"judged 522->540"}
