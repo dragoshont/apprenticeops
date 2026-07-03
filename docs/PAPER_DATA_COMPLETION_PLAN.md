@@ -42,6 +42,58 @@ but the paper should not rename itself around that future work.
 | External candidate pilot | Clean dev evaluation: 80/80 inference rows, 160/160 unique judge tuples. | `external-v0-strategy-pilot-2-baseline-20260703-081018`. |
 | `spread10` on external candidates | Not approved yet. | Requires separate adversarial go/no-go. |
 
+## Dependency Graph
+
+```mermaid
+flowchart TD
+  A[Locked 94-model paper result] --> B[Paper claim audit]
+  A --> C[Artifact inventory]
+  A --> D[Submission package]
+  B --> E[Manuscript alignment]
+  C --> D
+  E --> D
+
+  F[External source inventory] --> G[Rights and contamination ledger]
+  G --> H[External candidate scenarios]
+  H --> I[Phase 4 adversarial candidate gate]
+  I --> J[Phase 5 dev evaluations]
+  J --> K[Scenario-pack learning]
+  K -.future only.-> L[Architrave Eval spec extraction]
+
+  J -.blocked from.-> A
+  J -.not evidence for.-> D
+  L -.not before paper lock.-> D
+
+  M[Run-quality hardening]
+  M --> J
+  M --> C
+
+  N[Croissant / archival metadata] --> D
+  O[Reviewer guide + reproduction audit] --> D
+```
+
+Read this graph as a guardrail: **the locked 94-model paper result feeds the
+paper; external candidate work feeds future scenario-pack learning.** External
+dev evaluations may improve future ApprenticeOps/Architrave Eval design, but they
+do not flow back into the paper claim unless a new version is explicitly locked.
+
+## Experiment Readiness Verdict
+
+| Candidate next action | Verdict | Reason |
+|---|---|---|
+| Start / continue paper submission writing from the 94-model result | **Yes** | Paper data is locked; remaining work is claim audit, artifact inventory, and submission packaging. |
+| Run `spread10 × external-candidates-v0` as a dev evaluation | **Not yet** | It is not paper-blocking, and it needs a separate adversarial go/no-go plus run-quality hardening. |
+| Promote `external-candidates-v0` to Core or paper scoring | **No** | Rights/provenance gate only allows candidate/dev use; no held-out near-duplicate gate or Core lock exists. |
+| Start Architrave Eval schema extraction | **After paper claim audit** | Useful and strategically aligned, but it risks pulling the paper into platform work before submission readiness. |
+| Start AletheiaBench | **No** | It is the right future pressure test, but only after a minimal spec boundary exists. |
+
+The main gap in “starting the experiment already” is not infrastructure. The
+runner works, the dev scenario set launches, and the strategy-pilot result is
+clean. The gap is **interpretability discipline**: before the larger `spread10`
+external-candidate run, add duplicate-judge reporting to `report-run-quality.py`
+and perform a scenario-level error review of the strategy-pilot outputs. Without
+those, `spread10` may produce more data than insight.
+
 ## Remaining Work Inventory
 
 ### A. Paper Claim and Positioning
