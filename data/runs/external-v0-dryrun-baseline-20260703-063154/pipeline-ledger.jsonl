@@ -5,3 +5,5 @@
 {"model":"*","stage":"judge","ts":1783060634,"ok":1,"detail":"judged 44->56"}
 {"model":"*","stage":"judge","ts":1783060703,"ok":1,"detail":"judged 56->70"}
 {"model":"*","stage":"judge","ts":1783060816,"ok":1,"detail":"judged 70->108"}
+{"model":"qwen2.5:0.5b","stage":"persist","ts":1783060817,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1783060952,"ok":1,"detail":"judged 108->161"}
