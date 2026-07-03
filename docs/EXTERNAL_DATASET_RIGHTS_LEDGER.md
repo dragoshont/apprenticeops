@@ -25,11 +25,11 @@ contexts, expected answers, or label rationales may enter held-out tests.
 |---|---|---|---|---|---|---|---|---|
 | SMOLTRACE SRE tasks | https://huggingface.co/datasets/MCP-1st-Birthday/smoltrace-site-reliability-engineering-tasks | MIT | synthetic | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | blocked | Tool-use pattern research; parquet row use blocked until parser review |
 | AIOps Log Monitoring & Failure Detection | https://www.kaggle.com/datasets/expertshubham/aiops-log-monitoring-and-failure-detection-dataset | MIT | realness-unverified | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | blocked | Detect/monitor candidate patterns only |
-| AI Agent Observability | https://www.kaggle.com/datasets/hamzaabbasai/ai-agent-observability-dataset | Apache-2.0 | synthetic | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | phase5-conditional-split-only | Agent incident taxonomy patterns only |
+| AI Agent Observability | https://www.kaggle.com/datasets/hamzaabbasai/ai-agent-observability-dataset | Apache-2.0 | synthetic | blocked-no-vendoring | blocked | phase3-conditional-pattern-only | blocked | Agent incident taxonomy patterns only |
 | AFID API Failure Intelligence | https://www.kaggle.com/datasets/mirzayasirabdullah07/api-failure-intelligence-dataset-afid | Apache-2.0 | synthetic | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | blocked | API/RCA candidate patterns only |
 | CI/CD Pipeline Failures | https://www.kaggle.com/datasets/mirzayasirabdullah07/cicd-pipeline-failure-logs-dataset-for-aiops | Apache-2.0 | synthetic / real-world-inspired | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | blocked | CI/CD failure candidate patterns only |
 | ITSM Incident-System Relationship | https://www.kaggle.com/datasets/nalisha/itsm-incident-system-relationship-dataset | Apache-2.0 | realness-unverified | blocked-no-vendoring | blocked-too-thin | phase3-conditional-pattern-only | blocked | Graph/relationship patterns only |
-| AI Agent Failure Benchmark | https://www.kaggle.com/datasets/sunil123kumar/ai-agent-failure-benchmark-dataset | Apache-2.0 | synthetic | blocked-no-vendoring | phase6-conditional | phase3-conditional-pattern-only | phase5-conditional-split-only | Failure taxonomy and guardrail patterns only |
+| AI Agent Failure Benchmark | https://www.kaggle.com/datasets/sunil123kumar/ai-agent-failure-benchmark-dataset | Apache-2.0 | synthetic | blocked-no-vendoring | blocked | phase3-conditional-pattern-only | blocked | Failure taxonomy and guardrail patterns only |
 | Salesforce PRB RCA paper | https://arxiv.org/abs/2204.11598 | CC BY paper; data not public | proprietary incident investigations | blocked | blocked | blocked | blocked | Literature citation only |
 | AIOpsLab | https://github.com/microsoft/AIOpsLab | MIT repo | live benchmark framework | blocked-no-vendoring | blocked-not-row-data | phase3-conditional-pattern-only | blocked | Scenario architecture research only |
 | ITBench | https://github.com/itbench-hub/ITBench | Apache-2.0 repo | live benchmark framework | blocked-no-vendoring | blocked-not-row-data | phase3-conditional-pattern-only | blocked | Scenario architecture research only |
@@ -40,8 +40,6 @@ Status vocabulary:
 - `phase3-conditional-pattern-only`: candidate scenarios may be inspired by
    source patterns, but cannot copy row text, prompts, contexts, expected answers,
    label rationales, hostnames, IDs, or exact numeric rows into held-out tests.
-- `phase5-conditional-split-only`: judge calibration may use a reviewed split, but
-   never examples later used for benchmark scoring.
 - `phase6-conditional`: training/fine-tuning requires a model card, train/dev/test
    split, row hashes, held-out exclusions, and separate tuned-model reporting.
 - `blocked-too-thin`: the source is not rich enough to train a language model by

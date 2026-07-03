@@ -7,9 +7,10 @@ the durable summary only.
 ## Scope
 
 The external datasets are being evaluated for **scenario coverage, failure
-taxonomy, judge calibration, and future dev/training material**. They are not part
-of the locked 94-model paper result and are not allowed into `core-current`
-without a separate promotion gate.
+taxonomy, and guardrail-pattern review**. They are not part of the locked 94-model
+paper result and are not allowed into `core-current` without a separate promotion
+gate. Judge calibration, training, and RAG remain blocked until a later phase
+explicitly reopens them with separate gates.
 
 ## Sources profiled
 
@@ -21,7 +22,7 @@ without a separate promotion gate.
 | AFID API Failure Intelligence | 220,000 rows | Apache-2.0 | synthetic-not-real-frequency | API/log RCA scenario generation and remediation labels |
 | CI/CD Pipeline Failures | 45,000 rows | Apache-2.0 | synthetic-not-real-frequency | Build/test/deploy triage and rollback/flaky-test scenarios |
 | ITSM Incident-System Relationship | 500 rows | Apache-2.0 | realness-unverified | Thin incident-system relationship examples only |
-| AI Agent Failure Benchmark | 1,815 CSV rows (card says 1,500) | Apache-2.0 | synthetic-not-real-frequency | Failure taxonomy and judge/guardrail calibration |
+| AI Agent Failure Benchmark | 1,815 CSV rows (card says 1,500) | Apache-2.0 | synthetic-not-real-frequency | Failure taxonomy and guardrail diagnostics |
 
 ## Key observations
 
