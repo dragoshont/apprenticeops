@@ -1,6 +1,6 @@
 # Cold Audit Response Plan
 
-Status: working consolidation plan, created 2026-07-03. This document converts
+Status: implemented first consolidation pass, created 2026-07-03. This document converts
 the external cold audit in `/Users/dragoshont/Repo/ceops-audit-cold.md` into a
 repo-grounded remediation plan for ApprenticeOps / CEOps.
 
@@ -302,9 +302,10 @@ scenario gates, strict run-quality reporting, and the current two-node pipeline.
 What is weak: the public research boundary, model eligibility metadata, privacy
 gate, single-path protocol, and human validation status.
 
-What to fix first: **do not run more broad experiments until the model universe is
-re-locked around <=5B parameters.** The v1 external dev run is useful scenario-pack
-learning, but it does not solve the doctoral-alignment problem.
+What to fix first next: **fill and verify the <=5B model universe.** The model
+lock now enforces the boundary, but it only includes 140 current thesis-track
+candidates. The v1 external dev run is useful scenario-pack learning, but it does
+not solve the doctoral-alignment problem.
 
 Current suitability:
 

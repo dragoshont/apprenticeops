@@ -13,7 +13,7 @@ implementation of `docs/COLD_AUDIT_RESPONSE_PLAN.md`.
 | 4 | Privacy and egress gate | completed | `docs/PRIVACY_AND_EGRESS.md`, `scripts/privacy-scan.py`. | Secret patterns block; intentional public infra terms are reported. | Completed; scan distinguishes local inference from judge egress and reports disclosure classes without treating them as automatic failures. |
 | 5 | Artifact inventory/audit | completed | `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`. | One command validates snapshots/site/model/scenario/run-artifact contracts. | Completed; committed v1 run now includes `run.meta` and passes strict reporting. |
 | 6 | Hardware, judge, statistics specs | completed | `docs/HARDWARE.md`, `docs/JUDGE_VALIDATION.md`, `docs/STATISTICS.md`, `data/hardware-profile.home-ai.json`. | Docs make measured-vs-target hardware and judge/human status explicit. | Completed; human-vs-judge validation remains explicitly open. |
-| 7 | Final consolidation | not-started | Status docs, final search checks, final gates, commit/push. | All validators pass and P0 public claims are reconciled. | pending |
+| 7 | Final consolidation | completed | Status docs, final search checks, final gates, commit/push. | All validators pass and P0 public claims are reconciled. | Completed for this remediation pass; the repo is more defensible, but the doctoral artifact is not yet complete until the open gaps below are resolved. |
 
 ## Phase 1 Finding
 
@@ -36,3 +36,16 @@ filled.
   thesis track while preserving snapshot reproducibility.
 - Do not rewrite README claims before the canonical replacement language and
   validator exist.
+
+## Remaining Open Gaps After This Pass
+
+1. The current <=5B thesis track has **140** included candidates, not the target
+  150+. Replace over-5B legacy rows with verified <=5B models before claiming the
+  final thesis universe.
+2. Model `license`, `source_url`, `ollama_digest`, and `gguf_sha256` are still
+  mostly `unknown`; verify them before serious review.
+3. Human-vs-judge validation remains open.
+4. Privacy scan reports intentional disclosure classes; a human must decide which
+  hostnames/domains/IPs stay public in a thesis package.
+5. `env.harness_dirty` needs instrumentation cleanup (`source_dirty` vs
+  `artifact_dirty`) before it can be used as a clean run-quality signal.

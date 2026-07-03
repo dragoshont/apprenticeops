@@ -133,6 +133,7 @@ whether to clarify, split, or keep them hard.
 | External candidate v1 repairs. | done | `data/scenarios.external-candidates-v1.json` splits/repairs low-scoring v0 scenarios, adds lifecycle metadata, and remains dev-only. |
 | Committed run-artifact strictness. | done | `report-run-quality.py` reads compressed per-model result artifacts; the committed v1 run now includes `run.meta` and passes strict mode. |
 | Add a paper-data audit command. | done | `scripts/audit-paper-data.py` validates snapshots, site exports, model lock, scenario gates, and committed run strictness. |
+| Cold-audit first remediation pass. | done | Model lock, public thesis-boundary wording, protocol, privacy/egress gate, artifact audit, hardware profile, judge-validation note, and statistics note are committed. |
 
 ### D. Documentation
 
