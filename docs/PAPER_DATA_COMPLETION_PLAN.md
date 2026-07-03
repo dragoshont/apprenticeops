@@ -42,6 +42,7 @@ but the paper should not rename itself around that future work.
 | External candidate pilot | Clean dev evaluation: 80/80 inference rows, 160/160 unique judge tuples. | `external-v0-strategy-pilot-2-baseline-20260703-081018`. |
 | Scenario-level error review | Completed for strategy-pilot. | `docs/EXTERNAL_DATASET_PHASE5_ERROR_REVIEW.md`. |
 | `spread10` on external candidates | Completed dev run. | `external-v0-spread10-baseline-20260703-091212`; review in `docs/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`. |
+| CEOps metrics/source analysis | Completed first pass. | `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
 
 ## Dependency Graph
 
@@ -124,6 +125,7 @@ whether to clarify, split, or keep them hard.
 | Run-quality gate for external dev runs. | passing | `report-run-quality.py` reports inference and judge duplicate tuples. |
 | Add automated test for judge duplicate detection. | done | `scripts/test-report-run-quality.py` fails on a duplicated `(model, scenario, rep, memory, strategy, judge_model)` row. |
 | `spread10` external dev run. | done | 400/400 inference rows, 800/800 unique judge tuples, DNF 0/400, zero-output stalls 0/400. |
+| CEOps metrics/source analysis. | done | Metrics verdict and source-driven improvement backlog recorded in `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
 | Add a paper-data audit command. | not-started | One command re-runs all non-notebook structural checks before submission. |
 
 ### D. Documentation
@@ -161,8 +163,9 @@ whether to clarify, split, or keep them hard.
 1. **Paper contribution alignment.** Update `docs/analysis/paper.qmd`, `README.md`,
    and `REVIEWER.md` so the deployment-centric framing is consistent, without
    changing paper-era data or claims.
-2. **Run-quality hardening.** Teach `scripts/report-run-quality.py` to report judge
-   duplicate tuples and add a regression test.
+2. **Run-quality hardening.** Add `--strict` and `--markdown` modes to
+  `scripts/report-run-quality.py` so dev-run reviews stop relying on bespoke
+  snippets.
 3. **Artifact inventory.** Add a concise data/release inventory for snapshots,
    site exports, notebooks, licenses, and model metadata.
 4. **Adversarial go/no-go for `spread10`.** Decide whether breadth is worth the
