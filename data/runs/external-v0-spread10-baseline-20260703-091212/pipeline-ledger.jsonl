@@ -87,3 +87,8 @@
 {"model":"*","stage":"judge","ts":1783073969,"ok":1,"detail":"judged 426->448"}
 {"model":"*","stage":"judge","ts":1783074065,"ok":1,"detail":"judged 448->474"}
 {"model":"*","stage":"judge","ts":1783074145,"ok":1,"detail":"judged 474->496"}
+{"model":"qwen3:1.7b","stage":"persist","ts":1783074148,"ok":1,"detail":"4737724"}
+{"model":"*","stage":"judge","ts":1783074229,"ok":1,"detail":"judged 496->520"}
+{"model":"*","stage":"judge","ts":1783074299,"ok":1,"detail":"judged 520->534"}
+{"model":"*","stage":"judge","ts":1783074363,"ok":1,"detail":"judged 534->550"}
+{"model":"*","stage":"judge","ts":1783074421,"ok":1,"detail":"judged 550->560"}
