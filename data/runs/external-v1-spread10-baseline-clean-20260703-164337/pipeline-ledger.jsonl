@@ -139,3 +139,6 @@
 {"model":"*","stage":"judge","ts":1783103330,"ok":1,"detail":"judged 714->716"}
 {"model":"*","stage":"judge","ts":1783103377,"ok":1,"detail":"judged 716->718"}
 {"model":"*","stage":"judge","ts":1783103449,"ok":1,"detail":"judged 718->734"}
+{"model":"granite4:micro","stage":"persist","ts":1783103452,"ok":1,"detail":"bed5e6d"}
+{"model":"*","stage":"judge","ts":1783103539,"ok":1,"detail":"judged 734->760"}
+{"model":"*","stage":"judge","ts":1783103682,"ok":1,"detail":"judged 760->810"}
