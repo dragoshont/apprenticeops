@@ -1,7 +1,7 @@
 # External Dataset Integration Plan
 
-Status: phased plan with Phase 1 completed and a conservative Phase 2 ledger
-started. This plan is
+Status: phased plan with Phase 1 completed and Phase 2 source-level rights /
+contamination review completed. This plan is
 for improving ApprenticeOps scenario coverage and failure taxonomy. It is **not**
 a plan to change the locked 94-model paper result, and it is **not** a plan to
 fine-tune Pareto models until held-out contamination gates exist.
@@ -33,8 +33,8 @@ off-the-shelf Pareto-model paper claim.
 |---|---|---|---|---|---|
 | 0 | Decision and boundary | completed | Use external datasets for scenario/taxonomy improvement first; defer Pareto fine-tuning. | User accepted direction after adversarial discussion. | Proceed with safeguards. |
 | 1 | Inventory and schema profile | completed | Read local downloaded datasets under `downloads/external-datasets/`; emit manifest, schema summaries, label distributions, and source risk notes. | `scripts/analyze-external-datasets.py` completes and writes `manifest.json`, `schema-summary.md`, and `candidate-map.md`. | Completed; durable summary in `docs/EXTERNAL_DATASET_PHASE1_SUMMARY.md`. |
-| 2 | Rights and contamination ledger | in-progress | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Preliminary conservative ledger in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; all active uses blocked pending review. |
-| 3 | Candidate scenario generation | not-started | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Not started. |
+| 2 | Rights and contamination ledger | completed | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Completed at source level in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; raw redistribution blocked, training deferred, pattern-level candidate design conditionally allowed. |
+| 3 | Candidate scenario generation | next | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Ready to start with pattern-only/no-row-copy constraints. |
 | 4 | Scenario adversarial review | not-started | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Not started. |
 | 5 | Dev evaluation | not-started | Run selected off-the-shelf Pareto models on candidate/dev scenario sets. | Reliability report clean enough to interpret; results reported separately from Core v1. | Not started. |
 | 6 | Optional tuned-model track | not-started | Fine-tune/LoRA/RAG experiments against train/dev material only. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Not started. |
