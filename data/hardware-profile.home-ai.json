@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "profile_id": "home-ai-i5-8350u-24gb-v1",
+  "measured_node": {
+    "hostname": "ai",
+    "role": "locked inference node",
+    "cpu": "Intel Core i5-8350U class, 4 cores / 8 threads",
+    "ram_gib": 24,
+    "gpu_for_inference": false,
+    "os_family": "Linux",
+    "kernel_observed": "7.0.0-22-generic"
+  },
+  "target_class": {
+    "description": "Commodity CPU-only laptop class, T14s/T480s-like, about 24 GiB RAM, no dedicated GPU",
+    "cpu_class": "older 15 W Intel mobile CPU",
+    "ram_gib_approx": 24
+  },
+  "locked_run_settings": {
+    "cpu_governor": "performance",
+    "cpu_no_turbo": 1,
+    "min_perf_pct": 100,
+    "max_perf_pct": 100,
+    "rapl_domain": "package-0",
+    "perf_event_paranoid": 1,
+    "perf_membw": true,
+    "perf_core": true,
+    "sample_interval_s": 0.5,
+    "ollama_version": "0.30.8",
+    "num_ctx": 8192
+  },
+  "evidence": {
+    "source": "committed result rows from external-v1-spread10-baseline-clean-20260703-164337 plus AGENTS.md/REPRODUCE.md topology notes",
+    "env_harness_git_observed": "4f8a9b6",
+    "env_harness_dirty_observed": true,
+    "dirty_note": "Rows can stamp env.harness_dirty=true after generated run artifacts appear in the worktree; use run.meta, manifest hashes, and committed source hash for interpretation until this is split into source_dirty vs artifact_dirty."
+  }
+}

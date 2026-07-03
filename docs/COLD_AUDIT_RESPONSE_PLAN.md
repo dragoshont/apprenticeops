@@ -232,6 +232,7 @@ rewarded for refusing safe diagnostics.
    - Type: documentation + code later.
    - Files: `docs/STATISTICS.md`.
    - Acceptance: CIs, bootstrap units, effect sizes, paired comparisons, and Pareto robustness are specified.
+   - Status: implemented as `docs/STATISTICS.md`; hardware and judge validation companion docs were also added.
 
 ### P2 - Should Improve
 

@@ -12,7 +12,7 @@ implementation of `docs/COLD_AUDIT_RESPONSE_PLAN.md`.
 | 3 | Protocol spine | completed | `docs/PROTOCOL.md` and control-doc sync. | Protocol defines eligibility, tiers, variants, run settings, judging, missing-run policy. | Completed in `docs/PROTOCOL.md`; it explicitly marks the current <=5B lockfile as 140 candidates, not yet the 150+ target. |
 | 4 | Privacy and egress gate | completed | `docs/PRIVACY_AND_EGRESS.md`, `scripts/privacy-scan.py`. | Secret patterns block; intentional public infra terms are reported. | Completed; scan distinguishes local inference from judge egress and reports disclosure classes without treating them as automatic failures. |
 | 5 | Artifact inventory/audit | completed | `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`. | One command validates snapshots/site/model/scenario/run-artifact contracts. | Completed; committed v1 run now includes `run.meta` and passes strict reporting. |
-| 6 | Hardware, judge, statistics specs | not-started | `docs/HARDWARE.md`, `docs/JUDGE_VALIDATION.md`, `docs/STATISTICS.md`. | Docs make measured-vs-target hardware and judge/human status explicit. | pending |
+| 6 | Hardware, judge, statistics specs | completed | `docs/HARDWARE.md`, `docs/JUDGE_VALIDATION.md`, `docs/STATISTICS.md`, `data/hardware-profile.home-ai.json`. | Docs make measured-vs-target hardware and judge/human status explicit. | Completed; human-vs-judge validation remains explicitly open. |
 | 7 | Final consolidation | not-started | Status docs, final search checks, final gates, commit/push. | All validators pass and P0 public claims are reconciled. | pending |
 
 ## Phase 1 Finding
