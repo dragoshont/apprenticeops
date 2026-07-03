@@ -8,6 +8,7 @@ external candidates must not become part of the locked Core catalog by accident.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -45,9 +46,22 @@ REQUIRED_EXTERNAL_FIELDS = {
     "synthesis_basis",
     "source_rows_used",
     "row_hashes_used",
+    "contamination_review",
     "sources",
     "negative_control",
+    "adversarial_fixtures",
 }
+
+SECRET_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"sk-live-[A-Za-z0-9_\-]{8,}",
+        r"sk-[A-Za-z0-9_\-]{16,}",
+        r"ghp_[A-Za-z0-9_]{16,}",
+        r"AKIA[0-9A-Z]{16}",
+        r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    )
+]
 
 
 def fail(message: str) -> None:
@@ -86,6 +100,15 @@ def validate_external_metadata(scenario: dict) -> None:
         fail(f"{scenario_id} must not list source rows used")
     if meta["row_hashes_used"] != []:
         fail(f"{scenario_id} must not list row hashes before row-level review")
+    review = meta["contamination_review"]
+    if not isinstance(review, dict):
+        fail(f"{scenario_id} contamination_review must be an object")
+    if review.get("review_type") != "manual-pattern-synthesis":
+        fail(f"{scenario_id} contamination_review must record manual-pattern-synthesis")
+    if review.get("source_rows_read") is not False:
+        fail(f"{scenario_id} contamination_review must say source_rows_read=false")
+    if review.get("verdict") != "no-row-derived-content":
+        fail(f"{scenario_id} contamination_review must have no-row-derived-content verdict")
     if not isinstance(meta["sources"], list) or not meta["sources"]:
         fail(f"{scenario_id} must list at least one source")
     for source in meta["sources"]:
@@ -93,6 +116,22 @@ def validate_external_metadata(scenario: dict) -> None:
             fail(f"{scenario_id} has incomplete source trace: {source}")
         if len(source["source_file_sha256"]) != 64:
             fail(f"{scenario_id} has invalid source hash: {source}")
+    fixtures = meta["adversarial_fixtures"]
+    if not isinstance(fixtures, list) or len(fixtures) < 2:
+        fail(f"{scenario_id} must include at least two adversarial fixtures")
+    for fixture in fixtures:
+        if not fixture.get("name") or not fixture.get("answer"):
+            fail(f"{scenario_id} has incomplete adversarial fixture: {fixture}")
+        if not isinstance(fixture.get("max_passed"), int):
+            fail(f"{scenario_id} fixture {fixture.get('name')} must set max_passed")
+
+
+def validate_no_live_secret_patterns(scenario: dict) -> None:
+    scenario_id = scenario["id"]
+    payload = json.dumps(scenario, sort_keys=True)
+    for pattern in SECRET_PATTERNS:
+        if pattern.search(payload):
+            fail(f"{scenario_id} contains live-looking secret pattern: {pattern.pattern}")
 
 
 def validate_checks(scenario: dict) -> None:
@@ -110,6 +149,29 @@ def validate_checks(scenario: dict) -> None:
     bad_passed, bad_total, _ = run.run_checks(negative, checks)
     if bad_passed == bad_total:
         fail(f"negative control unexpectedly passed all checks for {scenario_id}")
+
+    for fixture in scenario["external_candidate"]["adversarial_fixtures"]:
+        passed, _, details = run.run_checks(fixture["answer"], checks)
+        if passed > fixture["max_passed"]:
+            fail(
+                f"adversarial fixture {fixture['name']} passed too many checks "
+                f"for {scenario_id}: {passed}>{fixture['max_passed']} {details}"
+            )
+        for expected_failure in fixture.get("must_fail", []):
+            matching = [
+                detail for detail in details
+                if expected_failure.lower() in detail["desc"].lower()
+            ]
+            if not matching:
+                fail(
+                    f"adversarial fixture {fixture['name']} for {scenario_id} "
+                    f"references unknown expected failure: {expected_failure!r}"
+                )
+            if any(detail["pass"] for detail in matching):
+                fail(
+                    f"adversarial fixture {fixture['name']} for {scenario_id} "
+                    f"unexpectedly passed required-failure check {expected_failure!r}: {details}"
+                )
 
 
 def main() -> None:
@@ -129,12 +191,13 @@ def main() -> None:
 
     for scenario in scenarios:
         validate_external_metadata(scenario)
+        validate_no_live_secret_patterns(scenario)
         validate_checks(scenario)
 
     print(
         "external candidate validation passed: "
-        f"{len(scenarios)} candidates, no Core overlap, gold checks pass, "
-        "negative controls fail"
+        f"{len(scenarios)} candidates, no Core overlap, no live-looking secrets, "
+        "gold checks pass, negative controls and adversarial fixtures fail as expected"
     )
 
 

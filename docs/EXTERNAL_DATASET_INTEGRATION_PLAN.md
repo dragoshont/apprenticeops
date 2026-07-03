@@ -1,6 +1,6 @@
 # External Dataset Integration Plan
 
-Status: phased plan with Phases 1-3 completed and Phase 4 next. This plan is
+Status: phased plan with Phases 1-4 completed and Phase 5 not started. This plan is
 for improving ApprenticeOps scenario coverage and failure taxonomy. It is **not**
 a plan to change the locked 94-model paper result, and it is **not** a plan to
 fine-tune Pareto models until held-out contamination gates exist.
@@ -36,7 +36,7 @@ Pareto-model paper claim.
 | 1 | Inventory and schema profile | completed | Read local downloaded datasets under `downloads/external-datasets/`; emit manifest, schema summaries, label distributions, and source risk notes. | `scripts/analyze-external-datasets.py` completes and writes `manifest.json`, `schema-summary.md`, and `candidate-map.md`. | Completed; durable summary in `docs/EXTERNAL_DATASET_PHASE1_SUMMARY.md`. |
 | 2 | Rights and contamination ledger | completed | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Completed at source level in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; raw redistribution blocked, training deferred, pattern-level candidate design conditionally allowed. |
 | 3 | Candidate scenario generation | completed | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Completed in `data/scenarios.external-candidates-v0.json`; validator `scripts/validate-external-candidates.py` passes. |
-| 4 | Scenario adversarial review | next | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Ready to start; no candidate has been promoted. |
+| 4 | Scenario adversarial review | completed | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Completed as an unpromoted candidate gate: first review returned REVISE, repairs were applied, and follow-up leakage/safety plus quality reviews returned PASS. No candidate has been promoted. |
 | 5 | Dev evaluation | not-started | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 promotion. | Reliability report clean enough to interpret; results reported separately from Core v1. | Not started; judge calibration remains blocked. |
 | 6 | Optional tuned-model track | blocked | Fine-tune/LoRA/RAG experiments only if the user later approves a separate tuned-model project. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Blocked; no training or RAG data use is approved by this plan. |
 

@@ -20,8 +20,9 @@ the candidates ready for a benchmark; it makes them ready for Phase 4 attack.
 The validator checks that candidate IDs do not overlap `data/scenarios.json`,
 that every scenario has source trace metadata, that `pattern_only=true`, that
 `copied_source_rows=false`, that `source_rows_used=[]`, that
-`row_hashes_used=[]`, that `core_eligible=false`, and that each gold answer
-passes its deterministic checks while its negative control fails.
+`row_hashes_used=[]`, that `core_eligible=false`, that no live-looking secret
+pattern is present, and that each gold answer passes its deterministic checks
+while negative controls and adversarial fixtures fail as expected.
 
 ## Provenance Method
 
@@ -52,3 +53,25 @@ avoid accidental benchmark contamination. Phase 4 should now attack each item fo
 leakage, weak deterministic checks, overfit gold answers, unsafe remediation,
 class imbalance, and low operational value. No candidate should be promoted until
 that review is complete.
+
+## Phase 4 Review Status
+
+The first Phase 4 review returned `REVISE`, not `PASS`. The findings were useful:
+the original validator only proved shape/gold sanity, negative controls were too
+easy, one scenario contained a live-looking token string, and several candidates
+needed explicit provenance review rather than assertion-only metadata.
+
+Repairs applied:
+
+- Replaced the live-looking token with `EXAMPLE_BEARER_TOKEN_DO_NOT_USE` and added
+	validator-level checks for common live-looking secret patterns.
+- Added candidate-level `contamination_review` metadata stating that raw source
+	rows were not read and no row-derived content was used.
+- Added at least two adversarial fixtures per candidate, with expected failure
+	thresholds and specific `must_fail` checks where partial credit is legitimate.
+- Replaced the strict exact-JSON equality check in the SRE tool-use candidate with
+	property checks for read-only tools, namespace, target, and no mutation.
+
+Follow-up Phase 4 reviews returned `PASS` for leakage/safety/provenance and for
+candidate quality-gate mechanics. This is a **reviewed candidate gate**, not a
+promotion verdict. No candidate has been promoted or wired into runs.
