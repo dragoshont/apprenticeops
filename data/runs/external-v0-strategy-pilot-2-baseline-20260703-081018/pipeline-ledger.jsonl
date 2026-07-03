@@ -1,0 +1,13 @@
+{"model":"*","stage":"judge","ts":1783066320,"ok":1,"detail":"judged 0->4"}
+{"model":"*","stage":"judge","ts":1783066366,"ok":1,"detail":"judged 4->12"}
+{"model":"*","stage":"judge","ts":1783066407,"ok":1,"detail":"judged 12->20"}
+{"model":"*","stage":"judge","ts":1783066439,"ok":1,"detail":"judged 20->24"}
+{"model":"*","stage":"judge","ts":1783066479,"ok":1,"detail":"judged 24->26"}
+{"model":"*","stage":"judge","ts":1783066525,"ok":1,"detail":"judged 26->34"}
+{"model":"*","stage":"judge","ts":1783066583,"ok":1,"detail":"judged 34->46"}
+{"model":"*","stage":"judge","ts":1783066643,"ok":1,"detail":"judged 46->56"}
+{"model":"*","stage":"judge","ts":1783066689,"ok":1,"detail":"judged 56->62"}
+{"model":"*","stage":"judge","ts":1783066733,"ok":1,"detail":"judged 62->66"}
+{"model":"*","stage":"judge","ts":1783066775,"ok":1,"detail":"judged 66->70"}
+{"model":"*","stage":"judge","ts":1783066825,"ok":1,"detail":"judged 70->76"}
+{"model":"*","stage":"judge","ts":1783066875,"ok":1,"detail":"judged 76->84"}
