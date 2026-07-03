@@ -109,3 +109,7 @@
 {"model":"*","stage":"judge","ts":1783075025,"ok":1,"detail":"judged 622->628"}
 {"model":"*","stage":"judge","ts":1783075067,"ok":1,"detail":"judged 628->634"}
 {"model":"*","stage":"judge","ts":1783075112,"ok":1,"detail":"judged 634->640"}
+{"model":"granite4:micro","stage":"persist","ts":1783075115,"ok":1,"detail":"bef8405"}
+{"model":"*","stage":"judge","ts":1783075191,"ok":1,"detail":"judged 640->662"}
+{"model":"*","stage":"judge","ts":1783075295,"ok":1,"detail":"judged 662->696"}
+{"model":"*","stage":"judge","ts":1783075394,"ok":1,"detail":"judged 696->730"}
