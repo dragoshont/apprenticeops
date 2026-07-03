@@ -97,7 +97,10 @@ def validate_sets_and_manifest() -> None:
     all_ids = {scenario["id"] for scenario in all_scenarios}
     core = load_json("data/scenario_sets/core-current.json")["scenarios"]
     extended = load_json("data/scenario_sets/extended.json")["scenarios"]
-    external_candidates = load_json("data/scenarios.external-candidates-v0.json")["scenarios"]
+    external_candidate_sets = {
+        "external-candidates-v0": ("data/scenarios.external-candidates-v0.json", 8),
+        "external-candidates-v1": ("data/scenarios.external-candidates-v1.json", 9),
+    }
 
     core_ids = {scenario["id"] for scenario in core}
     extended_ids = {scenario["id"] for scenario in extended}
@@ -111,11 +114,13 @@ def validate_sets_and_manifest() -> None:
         fail(f"core-current and extended overlap: {sorted(core_ids & extended_ids)}")
     if core_ids | extended_ids != all_ids:
         fail("core-current plus extended does not equal data/scenarios.json")
-    external_ids = {scenario["id"] for scenario in external_candidates}
-    if len(external_ids) != 8:
-        fail(f"expected external-candidates-v0 to contain 8 scenarios, found {len(external_ids)}")
-    if external_ids & all_ids:
-        fail(f"external-candidates-v0 overlaps canonical scenarios: {sorted(external_ids & all_ids)}")
+    for scenario_set_id, (relative_path, expected_count) in external_candidate_sets.items():
+        external_candidates = load_json(relative_path)["scenarios"]
+        external_ids = {scenario["id"] for scenario in external_candidates}
+        if len(external_ids) != expected_count:
+            fail(f"expected {scenario_set_id} to contain {expected_count} scenarios, found {len(external_ids)}")
+        if external_ids & all_ids:
+            fail(f"{scenario_set_id} overlaps canonical scenarios: {sorted(external_ids & all_ids)}")
 
     matrix_sets = {
         entry["id"]: entry for entry in load_json("data/run-matrix.json")["scenario_sets"]
@@ -125,13 +130,14 @@ def validate_sets_and_manifest() -> None:
         fail("run matrix core-current label is stale")
     if matrix_sets["strategy-pilot-6"].get("kind") != "pilot":
         fail("run matrix strategy-pilot-6 kind must be pilot")
-    external_set = matrix_sets.get("external-candidates-v0")
-    if not external_set:
-        fail("run matrix is missing external-candidates-v0")
-    if external_set.get("kind") != "dev":
-        fail("external-candidates-v0 must be a dev scenario set")
-    if matrix.get("defaults", {}).get("scenario_set") == "external-candidates-v0":
-        fail("external-candidates-v0 must not be the default scenario set")
+    for scenario_set_id in external_candidate_sets:
+        external_set = matrix_sets.get(scenario_set_id)
+        if not external_set:
+            fail(f"run matrix is missing {scenario_set_id}")
+        if external_set.get("kind") != "dev":
+            fail(f"{scenario_set_id} must be a dev scenario set")
+        if matrix.get("defaults", {}).get("scenario_set") == scenario_set_id:
+            fail(f"{scenario_set_id} must not be the default scenario set")
     if matrix.get("defaults", {}).get("memory_context") != "none":
         fail("run matrix default memory_context must be none")
     if matrix.get("defaults", {}).get("inference_strategy") != "baseline":
@@ -195,10 +201,40 @@ def validate_sets_and_manifest() -> None:
             fail(f"manifest hash mismatch for {scenario_set}")
 
 
+def validate_scenario_lifecycle_schema() -> None:
+    schema = load_json("data/scenario-lifecycle.schema.json")
+    if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
+        fail("scenario lifecycle schema must declare JSON Schema draft 2020-12")
+    if schema.get("additionalProperties") is not False:
+        fail("scenario lifecycle schema must reject unknown top-level fields")
+    required = schema.get("required") or []
+    properties = schema.get("properties") or {}
+    expected = {
+        "schema_version",
+        "operational_object",
+        "task_lifecycle",
+        "fault_model",
+        "workload_evidence",
+        "action_surface",
+        "evaluator_shape",
+        "promotion_status",
+        "source_trace",
+    }
+    if set(required) != expected:
+        fail(f"scenario lifecycle schema required fields drifted: {sorted(required)}")
+    missing_properties = sorted(expected - set(properties))
+    if missing_properties:
+        fail(f"scenario lifecycle schema missing properties: {missing_properties}")
+    for field in ("task_lifecycle", "promotion_status"):
+        if "enum" not in properties[field].get("items", properties[field]):
+            fail(f"scenario lifecycle schema {field} must define an enum")
+
+
 def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
-    print("scenario validation passed: canonical=33 core-current=20 extended=13 external-candidates-v0=8 memory_contexts=4 inference_strategies=5 plans=1")
+    validate_scenario_lifecycle_schema()
+    print("scenario validation passed: canonical=33 core-current=20 extended=13 external-candidates-v0=8 external-candidates-v1=9 memory_contexts=4 inference_strategies=5 plans=1 lifecycle_schema=1")
 
 
 if __name__ == "__main__":

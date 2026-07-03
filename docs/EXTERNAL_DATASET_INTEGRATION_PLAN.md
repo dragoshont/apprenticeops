@@ -1,6 +1,6 @@
 # External Dataset Integration Plan
 
-Status: phased plan with Phases 1-4 completed and Phase 5 started. This plan is
+Status: phased plan with Phases 1-6 completed and Phase 7 blocked. This plan is
 for improving ApprenticeOps scenario coverage and failure taxonomy. It is **not**
 a plan to change the locked 94-model paper result, and it is **not** a plan to
 fine-tune Pareto models until held-out contamination gates exist.
@@ -37,8 +37,9 @@ Pareto-model paper claim.
 | 2 | Rights and contamination ledger | completed | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Completed at source level in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; raw redistribution blocked, training deferred, pattern-level candidate design conditionally allowed. |
 | 3 | Candidate scenario generation | completed | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Completed in `data/scenarios.external-candidates-v0.json`; validator `scripts/validate-external-candidates.py` passes. |
 | 4 | Scenario adversarial review | completed | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Completed as an unpromoted candidate gate: first review returned REVISE, repairs were applied, and follow-up leakage/safety plus quality reviews returned PASS. No candidate has been promoted. |
-| 5 | Dev evaluation | in-progress | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 candidate-gate review. | Reliability report clean enough to interpret; results reported separately from Core v1. | Dryrun smoke and `strategy-pilot-2` baseline completed. The strategy-pilot run passed the clean uniqueness gate: 80/80 inference rows, 160/160 unique judge tuples, DNF 0/80, zero-output stalls 0/80. Judge calibration remains blocked. |
-| 6 | Optional tuned-model track | blocked | Fine-tune/LoRA/RAG experiments only if the user later approves a separate tuned-model project. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Blocked; no training or RAG data use is approved by this plan. |
+| 5 | Dev evaluation | completed | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 candidate-gate review. | Reliability report clean enough to interpret; results reported separately from Core v1. | Dryrun smoke, `strategy-pilot-2`, and `spread10` completed for `external-candidates-v0`; v0 remains dev-only. Judge calibration remains blocked. |
+| 6 | Candidate-v1 repair | completed | Convert Phase 5 error review into a repaired candidate pack with lifecycle metadata. | v1 validates separately, is wired as `kind: dev`, and does not mutate v0 or Core. | Completed in `data/scenarios.external-candidates-v1.json`; repair review in `docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md`. |
+| 7 | Optional tuned-model track | blocked | Fine-tune/LoRA/RAG experiments only if the user later approves a separate tuned-model project. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Blocked; no training or RAG data use is approved by this plan. |
 
 ## Source classes and intended use
 
@@ -91,8 +92,9 @@ The scenario-set gate is:
 python3 scripts/validate-scenarios.py
 ```
 
-It verifies `external-candidates-v0` is approved by the manifest, contains eight
-non-Core candidate IDs, and is not the default scenario set.
+It verifies `external-candidates-v0` and `external-candidates-v1` are approved by
+the manifest, contain only non-Core candidate IDs, and are not the default
+scenario set.
 
 ## Phase 5 dryrun gate
 
@@ -155,6 +157,26 @@ Gate result:
 This result is a clean **dev evaluation** for the reviewed external candidate set.
 It is still not Core, not paper scoring, not judge calibration, and not training
 data. `spread10` remains unapproved until a separate adversarial go/no-go review.
+
+The subsequent `spread10` dev run also completed cleanly; see
+`docs/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`.
+
+## Phase 6 candidate-v1 repair
+
+Phase 6 produced `data/scenarios.external-candidates-v1.json`, a repaired
+candidate-only catalog derived from the Phase 5 error review. It keeps v0
+reproducible, splits the compressed security scenario, clarifies baseline and
+agent-loop semantics, adds lifecycle metadata, and wires v1 as a dev-only scenario
+set in `data/run-matrix.json` and `data/run-manifest.json`.
+
+Review artifact:
+
+```text
+docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md
+```
+
+No v1 experiment has been run yet. Any future v1 run must be labeled dev-only and
+reported with `report-run-quality.py --strict --markdown` before interpretation.
 
 ## Overnight Phase 1 run
 

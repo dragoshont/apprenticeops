@@ -86,6 +86,61 @@ def finalize_usage(entry: dict) -> dict:
     return entry
 
 
+def add_strict_failure(findings: list[dict], code: str, message: str, *, actual=None, expected=None) -> None:
+    finding = {"code": code, "message": message}
+    if actual is not None:
+        finding["actual"] = actual
+    if expected is not None:
+        finding["expected"] = expected
+    findings.append(finding)
+
+
+def evaluate_interpretation(report: dict) -> dict:
+    failures: list[dict] = []
+    if report.get("expected_rows") is not None and report["rows"] != report["expected_rows"]:
+        add_strict_failure(
+            failures,
+            "result-row-count-mismatch",
+            "inference row count does not match run metadata",
+            actual=report["rows"],
+            expected=report["expected_rows"],
+        )
+    if report.get("expected_judged_rows") is not None and report["judged_rows"] != report["expected_judged_rows"]:
+        add_strict_failure(
+            failures,
+            "judged-row-count-mismatch",
+            "judged row count does not match run metadata",
+            actual=report["judged_rows"],
+            expected=report["expected_judged_rows"],
+        )
+    for field, code, message in (
+        ("parse_errors", "result-parse-errors", "inference result JSONL contains parse errors"),
+        ("judge_parse_errors", "judge-parse-errors", "judged JSONL contains parse errors"),
+        ("duplicate_result_tuples", "duplicate-result-tuples", "duplicate inference tuples were found"),
+        ("judge_duplicate_tuples", "duplicate-judge-tuples", "duplicate judged tuples were found"),
+        ("judge_empty", "empty-judge-rows", "judge produced empty verdict rows"),
+        ("judge_evidence_missing", "judge-evidence-missing", "judge rows are missing evidence"),
+        ("judge_criteria_missing", "judge-criteria-missing", "judge rows are missing criteria fields"),
+    ):
+        value = int(report.get(field) or 0)
+        if value:
+            add_strict_failure(failures, code, message, actual=value, expected=0)
+    push_pending = int((report.get("persistence") or {}).get("push_pending") or 0)
+    if push_pending:
+        add_strict_failure(
+            failures,
+            "push-pending",
+            "run has pending persistence push markers",
+            actual=push_pending,
+            expected=0,
+        )
+    return {
+        "interpretation_ok": not failures,
+        "strict_failure_count": len(failures),
+        "strict_failures": failures,
+    }
+
+
 def summarize_run(run_dir: Path) -> dict:
     run_id = run_dir.name
     meta_path = run_dir / "run.meta"
@@ -178,7 +233,7 @@ def summarize_run(run_dir: Path) -> dict:
     judges = int(meta.get("judges") or 2)
     expected_rows = expected_models * scenario_count * reps if expected_models and scenario_count else None
     expected_judged = expected_rows * judges if expected_rows and meta.get("judge_expected", True) is not False else None
-    return {
+    report = {
         "run_id": run_id,
         "meta": {
             "model_set": meta.get("model_set"),
@@ -219,6 +274,8 @@ def summarize_run(run_dir: Path) -> dict:
             "push_pending": count_lines(run_dir / ".push-pending"),
         },
     }
+    report.update(evaluate_interpretation(report))
+    return report
 
 
 def print_text(reports: list[dict]) -> None:
@@ -229,6 +286,12 @@ def print_text(reports: list[dict]) -> None:
         expected = f"/{report['expected_rows']}" if report.get("expected_rows") else ""
         expected_j = f"/{report['expected_judged_rows']}" if report.get("expected_judged_rows") else ""
         print(f"rows: {report['rows']}{expected}; judged: {report['judged_rows']}{expected_j}; fields: {report['schema_field_count']}")
+        gate = "PASS" if report["interpretation_ok"] else "FAIL"
+        print(f"interpretation: {gate}; strict_failures={report['strict_failure_count']}")
+        for item in report["strict_failures"][:5]:
+            expected_value = f" expected={item['expected']}" if "expected" in item else ""
+            actual_value = f" actual={item['actual']}" if "actual" in item else ""
+            print(f"  strict failure: {item['code']} - {item['message']}{actual_value}{expected_value}")
         print(f"parse_errors={report['parse_errors']} duplicate_tuples={report['duplicate_result_tuples']} missing_fields={len(report['schema_missing_fields'])}")
         print(f"reliability: DNF {report['dnf']}/{report['rows']} ({report['dnf_rate']}%) · length {report['length']} ({report['length_rate']}%) · zero-output stalls {report['zero_output_stalls']} ({report['zero_output_stall_rate']}%)")
         print(
@@ -265,16 +328,89 @@ def print_text(reports: list[dict]) -> None:
         print()
 
 
+def print_markdown(reports: list[dict]) -> None:
+    for report in reports:
+        meta = report["meta"]
+        expected = f"/{report['expected_rows']}" if report.get("expected_rows") else ""
+        expected_j = f"/{report['expected_judged_rows']}" if report.get("expected_judged_rows") else ""
+        gate = "PASS" if report["interpretation_ok"] else "FAIL"
+        print(f"## {report['run_id']}")
+        print()
+        print(f"Scope: `{meta.get('model_set')}` x `{meta.get('scenario_set')}` x `{meta.get('memory_context')}` x `{meta.get('inference_strategy')}`")
+        print()
+        print("### Interpretation Gate")
+        print()
+        print(f"**{gate}** (`strict_failures={report['strict_failure_count']}`)")
+        print()
+        if report["strict_failures"]:
+            print("| Code | Actual | Expected | Finding |")
+            print("|---|---:|---:|---|")
+            for item in report["strict_failures"]:
+                actual = item.get("actual", "")
+                expected_value = item.get("expected", "")
+                print(f"| `{item['code']}` | {actual} | {expected_value} | {item['message']} |")
+            print()
+        print("### Structural Summary")
+        print()
+        print("| Signal | Value |")
+        print("|---|---:|")
+        print(f"| Inference rows | {report['rows']}{expected} |")
+        print(f"| Judged rows | {report['judged_rows']}{expected_j} |")
+        print(f"| Result parse errors | {report['parse_errors']} |")
+        print(f"| Judge parse errors | {report['judge_parse_errors']} |")
+        print(f"| Duplicate inference tuples | {report['duplicate_result_tuples']} |")
+        print(f"| Duplicate judge tuples | {report['judge_duplicate_tuples']} |")
+        print(f"| Judge empty rows | {report['judge_empty']} |")
+        print(f"| Judge evidence missing | {report['judge_evidence_missing']} |")
+        print(f"| Judge criteria missing | {report['judge_criteria_missing']} |")
+        print(f"| Push pending markers | {report['persistence']['push_pending']} |")
+        print()
+        print("### Reliability")
+        print()
+        print("| Signal | Value |")
+        print("|---|---:|")
+        print(f"| DNF | {report['dnf']}/{report['rows']} ({report['dnf_rate']}%) |")
+        print(f"| Length finishes | {report['length']} ({report['length_rate']}%) |")
+        print(f"| Zero-output stalls | {report['zero_output_stalls']} ({report['zero_output_stall_rate']}%) |")
+        print()
+        if report["judge_duplicate_examples"]:
+            print("### Duplicate Judge Examples")
+            print()
+            print("| Count | Model | Scenario | Rep | Memory | Strategy | Judge |")
+            print("|---:|---|---|---:|---|---|---|")
+            for item in report["judge_duplicate_examples"][:10]:
+                print(
+                    f"| {item['count']} | `{item['model']}` | `{item['scenario']}` | {item['rep']} | "
+                    f"`{item['memory_context']}` | `{item['inference_strategy']}` | `{item['judge_model']}` |"
+                )
+            print()
+        if report["dnf_by_inference_strategy"]:
+            print("### Strategy DNF")
+            print()
+            print("| Strategy | DNF | Rows | Rate |")
+            print("|---|---:|---:|---:|")
+            for item in report["dnf_by_inference_strategy"]:
+                print(f"| `{item['id']}` | {item['dnf']} | {item['rows']} | {item['dnf_rate']}% |")
+            print()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("runs", nargs="+", help="run ids or data/runs/<id> directories")
-    parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    output_group.add_argument("--markdown", action="store_true", help="emit review-ready Markdown")
+    parser.add_argument("--strict", action="store_true", help="exit non-zero when structural interpretation gates fail")
     args = parser.parse_args()
     reports = [summarize_run(resolve_run(item)) for item in args.runs]
     if args.json:
         print(json.dumps({"runs": reports}, indent=2, sort_keys=True))
+    elif args.markdown:
+        print_markdown(reports)
     else:
         print_text(reports)
+    if args.strict and any(not report["interpretation_ok"] for report in reports):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

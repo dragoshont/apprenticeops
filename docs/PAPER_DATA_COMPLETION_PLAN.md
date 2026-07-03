@@ -124,8 +124,11 @@ whether to clarify, split, or keep them hard.
 | External candidate gates. | passing | `python3 scripts/validate-external-candidates.py`. |
 | Run-quality gate for external dev runs. | passing | `report-run-quality.py` reports inference and judge duplicate tuples. |
 | Add automated test for judge duplicate detection. | done | `scripts/test-report-run-quality.py` fails on a duplicated `(model, scenario, rep, memory, strategy, judge_model)` row. |
+| Add strict and Markdown run-quality reporting. | done | `report-run-quality.py --strict` fails closed on structural interpretation blockers and `--markdown` emits review-ready output. |
 | `spread10` external dev run. | done | 400/400 inference rows, 800/800 unique judge tuples, DNF 0/400, zero-output stalls 0/400. |
 | CEOps metrics/source analysis. | done | Metrics verdict and source-driven improvement backlog recorded in `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
+| Scenario lifecycle schema. | done | `data/scenario-lifecycle.schema.json` and `docs/SCENARIO_LIFECYCLE_SCHEMA.md` define the future candidate metadata contract; `validate-scenarios.py` checks the schema shell. |
+| External candidate v1 repairs. | done | `data/scenarios.external-candidates-v1.json` splits/repairs low-scoring v0 scenarios, adds lifecycle metadata, and remains dev-only. |
 | Add a paper-data audit command. | not-started | One command re-runs all non-notebook structural checks before submission. |
 
 ### D. Documentation
@@ -163,13 +166,12 @@ whether to clarify, split, or keep them hard.
 1. **Paper contribution alignment.** Update `docs/analysis/paper.qmd`, `README.md`,
    and `REVIEWER.md` so the deployment-centric framing is consistent, without
    changing paper-era data or claims.
-2. **Run-quality hardening.** Add `--strict` and `--markdown` modes to
-  `scripts/report-run-quality.py` so dev-run reviews stop relying on bespoke
-  snippets.
-3. **Artifact inventory.** Add a concise data/release inventory for snapshots,
+2. **Artifact inventory.** Add a concise data/release inventory for snapshots,
    site exports, notebooks, licenses, and model metadata.
-4. **Adversarial go/no-go for `spread10`.** Decide whether breadth is worth the
-   compute/judge cost after the clean `strategy-pilot-2` dev result.
+3. **Paper contribution alignment.** Update the manuscript/README/reviewer guide
+  only where needed to keep deployment-centric framing consistent.
+4. **Optional v1 dev run.** Launch `external-candidates-v1` only after deciding
+  that the additional scenario-pack evidence is worth the compute/judge cost.
 5. **Spec extraction skeleton.** Start only after the paper claim audit is green.
 
 ## Quality Bar

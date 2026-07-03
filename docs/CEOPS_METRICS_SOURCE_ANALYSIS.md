@@ -69,7 +69,10 @@ our scenarios and reports:
 
 ### 1. Scenario lifecycle schema
 
-Add optional metadata fields to future scenario/candidate files:
+Added as `data/scenario-lifecycle.schema.json` with the adoption notes in
+`docs/SCENARIO_LIFECYCLE_SCHEMA.md`. The fields are optional for locked paper
+scenarios and for `external-candidates-v0`; they are intended for future
+candidate-v1 files:
 
 ```text
 operational_object   # app/service/component under evaluation
@@ -83,8 +86,7 @@ source_trace         # source families and row/hash status
 ```
 
 This is the most direct lesson from AIOpsLab and OpenStack failure data. It does
-not require changing existing paper scenarios immediately; add it first to future
-candidate sets or a v1 schema.
+not require changing existing paper scenarios immediately.
 
 ### 2. Scenario-level error review as a standard artifact
 
@@ -102,14 +104,13 @@ blindly adding models.
 
 ### 3. Run-quality report hardening
 
-Already done: judge duplicate tuples are now reported and tested. Next useful
-additions:
+Already done: judge duplicate tuples are now reported and tested. The reporter
+also now exposes an explicit `interpretation_ok` boolean, `strict_failures`, a
+`--strict` non-zero exit for structural interpretation blockers, and
+`--markdown` output for review docs. Next useful additions:
 
-- optional non-zero exit when `--strict` and any structural gate fails;
 - per-scenario reliability table;
-- per-scenario judge mean and deterministic mean table;
-- `report-run-quality.py --markdown` for review docs;
-- explicit `interpretation_ok` boolean in JSON output.
+- per-scenario judge mean and deterministic mean table.
 
 ### 4. Dashboard / mission-control improvements
 
@@ -154,14 +155,19 @@ Do not build a large SDK before these schemas are stable.
 | `ext-tooluse-07-sre-readonly-json-plan` | Strong for top model, low for several. | AIOpsLab evaluator/action interface requires executable actions, not just prose. | Keep as structured action gate; add validator-friendly alternate allowed tail values/order if needed. |
 | `ext-monitor-05-zero-output-timeout-policy` | Moderate but harness-internal. | CEOps reliability is a genuine deployment metric, but not ordinary AIOps. | Keep in CEOps/Architrave Eval pack; do not promote to generic ops Core without reframing. |
 
+Status: these repairs were applied in `data/scenarios.external-candidates-v1.json`
+and reviewed in `docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md`. No v1
+experiment has been run yet.
+
 ## Near-Term Recommendation
 
 Do **not** start another external-candidate model run now. The best next work is:
 
-1. Add `--strict` and `--markdown` modes to `report-run-quality.py`.
-2. Draft a v1 scenario lifecycle schema for future candidate packs.
-3. Repair or split the four low-scoring scenarios listed above.
-4. Only then consider a new dev run or a candidate-v1 scenario set.
+1. Run a dev-only smoke or `strategy-pilot-2` evaluation on
+   `external-candidates-v1` only if more scenario-pack evidence is worth the
+   compute/judge cost.
+2. Attach `report-run-quality.py --strict --markdown` output before interpreting
+   any v1 result.
 
 This sequence converts the online-source research into better evaluation quality
 instead of just a larger table.

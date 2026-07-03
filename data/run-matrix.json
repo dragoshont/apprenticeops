@@ -123,6 +123,13 @@
       "description": "Eight reviewed external-pattern candidate scenarios for Phase 5 dev evaluation only. Not Core, not paper scoring, not judge calibration, and not training data."
     },
     {
+      "id": "external-candidates-v1",
+      "label": "External candidates v1 - repaired lifecycle dev gate",
+      "path": "data/scenarios.external-candidates-v1.json",
+      "kind": "dev",
+      "description": "Nine repaired external-pattern candidate scenarios with lifecycle metadata for future dev evaluation only. Not Core, not paper scoring, not judge calibration, and not training data."
+    },
+    {
       "id": "all",
       "label": "All current scenarios",
       "path": "data/scenarios.json",
