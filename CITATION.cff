@@ -3,12 +3,13 @@ message: "If you use ApprenticeOps (benchmark, harness, or data), please cite it
 title: "ApprenticeOps: Evaluating Small Locally-Sovereign LLMs as Homelab Operations Assistants"
 abstract: >-
   An open, reproducible benchmark and CPU-telemetry method for evaluating small
-  (0.5-8B), quantized, fully-offline local LLMs as homelab/edge operations
-  assistants. It profiles judged quality, destructive-action safety, and energy
-  together on commodity offline hardware over frozen real GitOps incidents, and
-  reduces model selection to a measured quality x safety x energy Pareto front on
-  which the usual proxies (parameter count, benchmark score, a "reasoning" badge,
-  perplexity) select dominated models.
+  open-weight local LLM deployments as homelab/edge operations assistants, with
+  the doctoral track targeting models up to 5B parameters under CPU-only
+  commodity-laptop constraints. It profiles judged quality, destructive-action
+  safety, and energy together on commodity offline hardware over frozen real
+  GitOps incidents, and reduces model selection to a measured quality x safety x
+  energy Pareto front on which the usual proxies (parameter count, benchmark
+  score, a "reasoning" badge, perplexity) select dominated models.
 type: software
 authors:
   - family-names: Hont

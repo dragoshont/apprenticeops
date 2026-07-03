@@ -23,7 +23,7 @@ Target: workshop paper + arXiv preprint.
 ## Abstract (Draft)
 
 We present **ApprenticeOps**, an open, reproducible benchmark and telemetry method
-for evaluating **small, locally-run LLMs (≤ ~5 GB)** as **homelab/edge operations
+for evaluating **small, locally-run LLM deployments** as **homelab/edge operations
 assistants** — detect, diagnose, monitor, expand, upgrade, test, augment, and
 *safely refuse*. Our framing follows the **AIOps maturity ladder** (reactive →
 proactive → predictive/preventive → autonomous): a small model begins as an
@@ -43,7 +43,7 @@ Our finding is a **selection problem**, not a leaderboard: the proxies a
 practitioner reaches for — **parameter count, benchmark score, a "reasoning"
 badge, perplexity** — each mislead, and they mislead on **different axes**, so no
 one of them orders the choice. We profile three axes at once in a single
-offline, CPU-only harness. **Quality:** across a **94-model** sweep (0.36–8B),
+offline, CPU-only harness. The committed paper-era evidence is a **94-model** legacy footprint-bounded sweep (0.36–8B); the current doctoral protocol is being re-locked around open-weight models up to **5B parameters**. **Quality:** across that snapshot,
 judged ops-reasoning climbs steeply with size to a usable floor by **2–3B** — one
 bracket below our **pre-registered 3–4B** prediction — then returns flatten (the
 2–3B→3–4B step adds **<1 point**, the 4–5GB bracket a further **+4.6**), and
@@ -94,7 +94,7 @@ This yields the **reordered requirement stack** a small local ops model is grade
 5. **Fit + speed** on owned hardware.
 
 > **Thesis (state up front).** For a **locally-sovereign** ops assistant —
-> offline, CPU-only, ≤5 GB, the last line with no frontier to escalate to and no
+> offline, CPU-only, and, for the doctoral track, ≤5B parameters, the last line with no frontier to escalate to and no
 > reviewer downstream — **model selection is the whole game, and every proxy a
 > practitioner reaches for (parameter count, benchmark score, a "reasoning" badge,
 > perplexity) misleads on a *different* axis.** We measure three axes in one
@@ -167,11 +167,11 @@ egress disclosed. The deployed apprentice itself makes **zero** external calls.
 
 | RQ | Question | Hypothesis (falsifiable) |
 |---|---|---|
-| **RQ1** | Does ops-reasoning quality scale with model size in the 0.5–8B range on CPU? | H1: quality rises with params but with **diminishing returns**; a knee around **3–4B**. |
+| **RQ1** | Does ops-reasoning quality scale with model size on CPU? | H1: quality rises with params but with **diminishing returns**; a knee around **3–4B** in the legacy footprint-bounded snapshot. The doctoral track re-tests this under a ≤5B-parameter roster. |
 | **RQ2** | Which size bracket is the **speed/quality Pareto frontier** for interactive use (≥8 tok/s)? | H2: the **3–4B** bracket dominates the Pareto front on this hardware. |
 | **RQ3** | Are small models **safe** to put in front of a homelab (do they refuse destructive actions)? | H3: safety is **not** monotonic in size; some small models endorse catastrophic commands (pilot already shows qwen2.5:0.5b does). |
 | **RQ4** | Do **reasoning/"thinking"** models beat instruct models at diagnosis, and at what latency cost on CPU? | H4: thinking models gain accuracy on *diagnose/test* classes but at a **prohibitive token/latency cost** on CPU. |
-| **RQ5** | How far below a **frontier reference** do the best small models land on real ops tasks? | H5: best ≤5 GB model reaches **~60–80 %** of frontier on structured tasks, **less** on open-ended diagnosis. |
+| **RQ5** | How far below a **frontier reference** do the best small local deployments land on real ops tasks? | H5: best small local deployment reaches **~60–80 %** of frontier on structured tasks, **less** on open-ended diagnosis. The doctoral track will report this for ≤5B-parameter models; GB remains a footprint metric. |
 | **RQ6** | How much does **local grounding (RAG)** lift a small model vs closed-book? | H6: grounded − closed-book gap is **large for small models** and shrinks with size — i.e. local RAG substitutes for parameters. |
 | **RQ7** | What is the **energy cost per task** (Wh/answer, tok/s-per-watt) and how does it scale with model size on CPU? | H7: energy/answer rises with params; the **3–4B** knee is also the **energy-efficiency** sweet spot (best correct-answers-per-watt on this box). |
 
@@ -213,19 +213,19 @@ prompt discipline, more samples, or selection bias.
 
 ## 4. Methodology and Experimental Design
 
-- **Primary factor:** model (the 25, grouped by **parameter bracket**: 0-1B, 1-2B,
-  2-3B, 3-4B, 4-5 GB).
+- **Primary factor:** model. The legacy paper-era roster grouped models by size/footprint brackets; the current doctoral target uses parameter tiers T1–T5 up to 5B parameters, with footprint reported separately.
 
-### 2a. Model roster (frozen manifest for this run)
+### 2a. Legacy model roster (frozen manifest for this run)
 
-The current experiment evaluates **25 local Ollama model tags** (exactly the
-entries in `data/models.txt`):
+This historical design section describes an earlier 25-tag run plan. The current
+repo roster is locked in `data/models.lock.jsonl`; it separates the ≤5B-parameter
+thesis track from legacy footprint-bounded rows above 5B.
 
 - **0-1B:** `qwen2.5:0.5b`, `qwen3:0.6b`, `llama3.2:1b`, `granite4:1b-h`, `smollm2:360m`
 - **1-2B:** `qwen3:1.7b`, `smollm2:1.7b`, `qwen2.5:1.5b`, `deepseek-r1:1.5b`, `stablelm2:1.6b`
 - **2-3B:** `granite4:micro`, `qwen2.5:3b`, `phi:2.7b`, `gemma2:2b`, `ministral-3:3b`
 - **3-4B:** `phi4-mini`, `qwen3:4b-instruct-2507-q4_K_M`, `gemma3:4b-it-qat`, `llama3.2:3b`, `qwen3:4b`
-- **4-5GB:** `granite4:tiny-h`, `mistral:7b-instruct-q4_K_M`, `qwen2.5:7b`, `deepseek-r1:7b`, `qwen3:4b-instruct-2507-q8_0`
+- **legacy 4-5GB footprint:** `granite4:tiny-h`, `mistral:7b-instruct-q4_K_M`, `qwen2.5:7b`, `deepseek-r1:7b`, `qwen3:4b-instruct-2507-q8_0`
 
 - **Confound control (REQUIRED for the headline comparison):**
   - **Quantization held constant** — main cross-model comparison uses **q4_K_M**
@@ -542,13 +542,13 @@ implementation-status appendix).
   1. **random** legal answer, 2. **keyword/rule heuristic** diagnoser. A model
   must beat both to count.
 - **Bracket cost/value gate (pre-registered, for staged expansion):** the
-  per-model wall-clock cost rises steeply with size (on this node the **4-5 GB**
+  per-model wall-clock cost rises steeply with size (on this node the legacy **4-5 GB footprint**
   bracket costs ~3× the **1-2 B** bracket per model), so a later expansion wave
   *conditionally* deepens a bracket only if it earns the cost. **Rule, fixed
-  before looking at the expansion data:** expand the **4-5 GB** bracket **iff** its
+  before looking at the legacy footprint-bounded expansion data:** expand the **4-5 GB footprint** bracket **iff** its
   **judged %-of-frontier** exceeds the **3-4 B** bracket by **≥ 5 percentage
   points** *and* their bootstrap **95 % CIs do not overlap**; otherwise the
-  4-5 GB expansion is **held** and "≤5 GB adds cost without judged lift on this
+  4-5 GB footprint expansion is **held** and "larger quantized footprint adds cost without judged lift on this
   CPU" is reported as a **finding** (the 3-4 B Pareto knee), not a gap. The
   decision is made on the **judge** metric (not deterministic checks) and on the
   **complete** bracket (no partial-run pruning). The **`guard` (safety) class is
@@ -584,10 +584,10 @@ the bracket's models — the **5-rep × 2-judge** ensemble):
 | 1-2B | 38.3 % | [37.5, 39.1] |
 | 2-3B | 51.3 % | [50.3, 52.2] |
 | **3-4B** | **52.1 %** | [51.3, 53.1] |
-| 4-5GB | 56.8 % | [54.6, 58.9] |
+| legacy 4-5GB footprint | 56.8 % | [54.6, 58.9] |
 
 The curve rises **steeply** through 2-3B (+13 points), then the 2-3B→3-4B step is
-**flat** (+0.8 points): the diminishing-returns **knee is at 2-3B**. The 4-5GB
+**flat** (+0.8 points): the diminishing-returns **knee is at 2-3B**. The legacy 4-5GB footprint
 bracket then adds a **further +4.6 points** (non-overlapping CIs) — a real but
 **small** lift relative to the early climb, and it costs ~3× the per-model
 wall-clock of the 1-2B bracket (§4 hardware). The decision-relevant shape is
@@ -596,19 +596,19 @@ buys a few points, not a tier.**
 
 *Read the bracket **means** with care: consolidation added many cheap small-quant
 variants to the 3-4B bracket, which lowers its average relative to the unchanged
-4-5GB bracket. The load-bearing comparison is the per-model **frontier**
-(best-in-bracket — the best 3-4B q4 matches the best 4-5GB q8), not the bracket
+legacy 4-5GB footprint bracket. The load-bearing comparison is the per-model **frontier**
+(best-in-bracket — the best 3-4B q4 matches the best 4-5GB-footprint q8), not the bracket
 average.*
 
-**Pre-registered gate verdict → marginal HOLD on 4-5GB.** Applying the §8
-cost/value gate (expand 4-5GB only if it beats 3-4B by **≥ 5 pts with
+**Pre-registered gate verdict → marginal HOLD on the legacy 4-5GB footprint bracket.** Applying the §8
+cost/value gate (expand that footprint bracket only if it beats 3-4B by **≥ 5 pts with
 non-overlapping CIs**): the consolidated lift is **+4.6 pts** with
 **non-overlapping** CIs — directionally a pass, but **just under** the 5-pt bar, so
-the verdict is a **marginal HOLD**. "**≤5 GB buys a small, sub-threshold judged
-lift on this CPU**" is the **finding**, not a gap.
+the verdict is a **marginal HOLD**. "**Larger quantized footprint buys a small,
+sub-threshold judged lift on this CPU**" is the **finding**, not a gap.
 
 **The win is the quant, not the bracket.** The best 3-4B model
-(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best 4-5GB entry**
+(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best legacy 4-5GB-footprint entry**
 (`qwen3:4b-instruct-2507-q8_0`, 71.3 %) — a **q4 4B on the knee matches a q8 4B**,
 and the marginal quality lives in the **model and its quantization**, not the
 parameter jump. *(Confirmed by the 5-rep × 2-judge ensemble, κ_quad = 0.91.)*
@@ -635,7 +635,7 @@ shape as quality:
 | 1-2B | 70.3 % | [68.2, 72.4] |
 | 2-3B | 76.7 % | [74.6, 78.7] |
 | 3-4B | 75.4 % | [73.5, 77.4] |
-| **4-5GB** | **79.8 %** | [75.3, 84.0] |
+| legacy **4-5GB footprint** | **79.8 %** | [75.3, 84.0] |
 
 The plateau is the point: the safest bracket still **endorses roughly one
 destructive action in five**. Behind a human, on low-stakes tasks, that is a
@@ -669,7 +669,7 @@ diagnosis instead talks the model *into* the destructive action.
 > front).** Over the *94 functional models* the bracket curve is **non-monotonic** —
 > 61.6 / 67.5 / 76.7 / 75.4 / **73.3 %** — appearing to say "the biggest bracket
 > is *less* safe." It is **not** an intrinsic size effect: the four reasoning
-> models sit in the **1-2B** (three) and **4-5GB** (one) brackets and drag those
+> models sit in the **1-2B** (three) and legacy **4-5GB footprint** (one) brackets and drag those
 > averages down; remove them (table 1 above) and the curve is monotonic-then-flat. So we
 > do **not** claim "bigger is less safe." We claim the decision-relevant thing:
 > the model a practitioner is most likely to *reach for as an upgrade* — the
@@ -692,8 +692,8 @@ dominated** — beaten on *every* axis at once, so nothing is lost by discarding
 |---|---|---|---|---|
 | **`qwen3:4b-instruct-2507-q4_K_M`** — sovereign pick | 3-4B | 68.6 | **90.8** | 106 |
 | `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` — quality-max | 3-4B | **71.4** | 80.3 | 138 |
-| `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3 | 90.8 | 155 |
-| `granite4:tiny-h` | 4-5GB | 63.5 | 74.2 | 54 |
+| `qwen3:4b-instruct-2507-q8_0` | legacy 4-5GB footprint | 71.3 | 90.8 | 155 |
+| `granite4:tiny-h` | legacy 4-5GB footprint | 63.5 | 74.2 | 54 |
 | `qwen3:1.7b-q8_0` | 1-2B | 62.1 | 82.8 | 93 |
 | `qwen3:1.7b` | 1-2B | 61.5 | 83.6 | 36 |
 | `granite4:1b-h` | 0-1B | 45.3 | 67.8 | 30 |
@@ -761,7 +761,7 @@ revising the hypotheses to fit the outcome.
 | **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | the balanced pick is 3–4B (`2507-q4`), but the non-dominated front spans **all five** brackets | **Partially supported** — no single bracket dominates |
 | **H3** | safety is **not monotonic** in size; some small models endorse destructive actions | non-monotonic, driven by **training type** (instruct 71.4 % vs reasoning-distill 47.2 %), not size | **Supported** |
 | **H4** | thinking models gain on *diagnose/test* but at prohibitive CPU latency | reasoning models evaluated on safety + energy; a per-class accuracy × latency breakdown is not isolated here | **Not directly tested** (future work) |
-| **H5** | best ≤5 GB model reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline was run; the best small model reaches ≈ **71 %** of the judge's 1–5 ceiling (a proxy) | **Not directly tested** (proxy only) |
+| **H5** | best small local deployment reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline was run; the best small model reaches ≈ **71 %** of the judge's 1–5 ceiling (a proxy); the doctoral track will report the <=5B-parameter version separately | **Not directly tested** (proxy only) |
 | **H6** | local **RAG** lift is large for small models, shrinks with size | closed-book vs grounded are *different task classes* — the RAG-lift confound is disclosed (§9); reported descriptively | **Not causally tested** (confound open) |
 | **H7** | energy rises with params; the knee is also the **energy-efficiency** sweet spot | energy/answer rises with params; the **2–3B** quality knee sits near the tok/s-per-watt optimum | **Supported** — knee one bracket smaller |
 
@@ -986,7 +986,7 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   front):** the same papers show the defect is *fixable* (SafeChain training;
   minimal safety-reasoning data in Self-Jailbreaking), so we scope our claim to
   models **as shipped** to a homelab via Ollama — **not** that reasoning is
-  inherently unsafe. Our addition: this holds **at 0.5–8B, on CPU, in an ops
+  inherently unsafe. Our addition in the legacy snapshot: this holds **across 0.5–8B, on CPU, in an ops
   setting**, where the unsafe model is also the one a practitioner is most tempted
   to pick.
 - **Agent / action safety — the cluster we corroborate, positioned against.** A
@@ -999,8 +999,8 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   tasks) and **AgentHazard** (arXiv 2604.02947, 2,653 cases) score
   malicious-action refusal at scale. These run **frontier/cloud or GPU-edge
   agents on synthetic agentic tasks**. We share their *action-over-text* stance
-  and deterministic-check methodology but occupy the regime they do not: **≤8B,
-  quantized, CPU-only, fully offline**, on **frozen real GitOps incidents**, with
+  and deterministic-check methodology but occupy the regime they do not: **small,
+  quantized, CPU-only, fully offline local deployments**, on **frozen real GitOps incidents**, with
   refusal measured **beside energy and quality** for the *selection* decision
   rather than as a standalone safety score.
 - **Small-model & quantization safety — established at larger scale; we replicate

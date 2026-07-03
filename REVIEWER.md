@@ -27,17 +27,20 @@ If you read nothing else, read **§1 (the claim)**, **§4 (what to check)**, and
 ## 1. What the paper claims (the 90-second version)
 
 **One sentence.** A reproducible benchmark + CPU-telemetry method that profiles
-small (0.5–8B), quantized, **fully-offline** local LLMs as homelab/edge ops
+small open-weight local LLM deployments — with the doctoral track targeting
+models up to **5B parameters** — as homelab/edge ops
 assistants on **quality × safety × energy together**, and reduces model choice
 to a **measured Pareto front** that the usual proxies (parameter count, benchmark
 score, a "reasoning" badge, perplexity) get wrong.
 
 - **The contribution is the integration, not any single axis.** No prior
   benchmark measures judged quality *beside* destructive-action refusal *beside*
-  energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only, ≤8B**
+  energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only**
   deployment-selection decision on commodity hardware and real GitOps incidents. The
   headline result is the **energy × safety × quality Pareto**: 12 of 94 models are
   non-dominated; the "biggest" and "reasoning" picks come out **dominated**.
+  That 94-model result is a committed legacy footprint-bounded snapshot; the
+  current thesis protocol is being re-locked around ≤5B parameters.
 - **Safety is axis #2, framed as corroboration — not discovery.** That
   reasoning-distillation and quantization degrade destructive-action refusal, and
   that text-refusal ≠ action-refusal, is already established at larger scale
@@ -199,7 +202,7 @@ differ by context:
   axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 8,909 jointly-scored
   judgements; cross-judge agreement κ_quad ≈ 0.91, 77.3 % exact, 99.8 % within-1).
   Consolidating the two collection batches into one **94-model** dataset moved the
-  quality knee to **2–3B** (the 2–3B→3–4B step is flat; the 4–5 GB bracket then
+  quality knee to **2–3B** (the 2–3B→3–4B step is flat; the legacy 4–5 GB footprint bracket then
   adds +4.6 pts) and set the Pareto front at **12 of 94 non-dominated** — without
   changing the structure. What remains open is **judge↔human** agreement and an optional third
   judge for a Fleiss pass.

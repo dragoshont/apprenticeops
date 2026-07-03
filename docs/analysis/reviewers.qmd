@@ -10,8 +10,9 @@ feedback**.
 
 ## The claim, in one breath
 
-A reproducible benchmark and CPU-telemetry method that profiles small (≤ 8B),
-quantized, **fully-offline** local LLMs as homelab/edge ops assistants on
+A reproducible benchmark and CPU-telemetry method that profiles small
+open-weight local LLM deployments — with the doctoral track targeting models up
+to **5B parameters** — as homelab/edge ops assistants on
 **quality × safety × energy together**, and reduces model choice to a measured
 **Pareto front** that the usual proxies (parameter count, benchmark score, a
 "reasoning" badge, perplexity) get wrong. **The contribution is the integration,
@@ -19,9 +20,8 @@ not any single axis.** The safety result is framed as **corroboration** of the
 agent-/SLM-safety literature, *not* discovery — please hold us to not
 overclaiming there.
 
-This is an **empirical benchmark paper**, first released as an **arXiv preprint**
-(moderated, *not* peer-reviewed) and aimed at the **NeurIPS Datasets & Benchmarks**
-track. Your review is the pre-submission peer feedback arXiv does not provide.
+This is an **empirical benchmark paper in preparation**, aimed at a datasets and
+benchmarks venue. Your review is pre-submission peer feedback.
 
 ## What we are asking you to check
 

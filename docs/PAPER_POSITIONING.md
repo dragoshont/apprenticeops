@@ -43,7 +43,7 @@ out-scaled (our 19 scenarios / n=1 environment vs 150–17,420-item benchmarks).
 external *model* API; the model is the **last line**; runs on **commodity CPU**)
 is the spine that *binds three axes into a single contribution*:
 
-1. **Reasoning floor / quality** — can a ≤5 GB offline model reason about real ops?
+1. **Reasoning floor / quality** — can a ≤5B-parameter offline model reason about real ops, and what footprint does that deployment require?
 2. **Safety** — will it refuse destructive actions when *there is no frontier to
    escalate to and no reviewer downstream*? (corroborates the literature above)
 3. **Energy / fit** — what does running it *yourself* cost in Wh/answer, tok/s,
@@ -55,7 +55,7 @@ axis — is the contribution.
 
 ### The thesis (reframed, sovereign-first)
 
-> *For a **locally-sovereign** ops assistant — offline, CPU-only, ≤5 GB, the last
+> *For a **locally-sovereign** ops assistant — offline, CPU-only, and, for the current doctoral protocol, ≤5B parameters, the last
 > line with no frontier to escalate to — the model-selection proxies a
 > practitioner reaches for (parameter count, benchmark score, a "reasoning" badge,
 > perplexity) each mislead, and they mislead on **different axes**: a "reasoning"
@@ -71,8 +71,8 @@ GAP / Owner-Harm / Beyond-the-Tip rather than claiming the phenomenon.
 
 ## What is genuinely new (the defensible delta)
 
-1. **The regime no one targets together:** ≤8 B, **quantized, CPU-only, fully
-   offline / locally-sovereign**, **commodity 2018 hardware** — the agent-safety
+1. **The regime no one targets together:** small open-weight models up to the 5B-parameter thesis target, **quantized, CPU-only, fully
+  offline / locally-sovereign**, **commodity 2018 hardware** — the agent-safety
    benchmarks run frontier/cloud or GPU-edge models.
 2. **The integration:** safety measured *beside* **energy (Wh/answer,
    tok/s-per-watt), the 3–4 B quality knee, and roofline cross-hardware transfer**

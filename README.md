@@ -1,8 +1,8 @@
-**Research paper · open benchmark · arXiv preprint → NeurIPS Datasets & Benchmarks track**
+**Research artifact in preparation · open benchmark · target venue: Datasets & Benchmarks track**
 
 **Online summary & live paper — [dragoshont.github.io/apprenticeops](https://dragoshont.github.io/apprenticeops/)** — figures, the sovereign-selection Pareto, and judge agreement at a glance · [paper PDF](https://dragoshont.github.io/apprenticeops/paper.pdf) · reviewing this work? [start here](https://dragoshont.github.io/apprenticeops/reviewers.html) or [`REVIEWER.md`](REVIEWER.md)
 
-**Verified (2026-06-22):** every number was re-derived from the committed snapshot and every citation resolved against arXiv / CrossRef.
+**Snapshot audit (2026-06-22):** the paper-era 94-model numbers were re-derived from the committed snapshot and the cited references were resolved against arXiv / CrossRef. The current doctoral target is narrower and stricter: **open-weight models up to 5B parameters**; model footprint in GB is reported separately.
 
 **Run it in your browser —** open the [**reviewer query notebook**](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb) , [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) , or [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) — reproduce every headline number, then **edit the queries and re-run** (no install).
 
@@ -18,7 +18,7 @@ The AIOps community has produced impressive results: benchmarks with live fault-
 
 This paper asks the inverse question: **what can a small local model do when there is no escape hatch?** No Claude, no GPT, no Azure endpoint, no frontier escalation — just a 2018 ThinkPad running Ollama and a real production cluster's worth of incidents. The model is the last line. It must reason with what it has, or admit that it can't.
 
-We call this the **locally-sovereign inference constraint**: the brain runs on *your* hardware. We measure where that floor is, what it costs in accuracy and energy, whether these models are safe to have in front of a real cluster — and whether a 3 GB model is meaningfully different from an 8 GB one on the tasks that matter.
+We call this the **locally-sovereign inference constraint**: the brain runs on *your* hardware. We measure where that floor is, what it costs in accuracy and energy, whether these models are safe to have in front of a real cluster — and, for the doctoral track, whether models up to **5B parameters** are actually useful under the same CPU-only constraints. Quantized artifact size and RAM footprint remain measured deployment costs, not the model-eligibility boundary.
 
 ---
 
@@ -26,7 +26,7 @@ We call this the **locally-sovereign inference constraint**: the brain runs on *
 
 | | AIOpsLab / ITBench / OpsEval | ApprenticeOps |
 |---|---|---|
-| **Model assumption** | Frontier (GPT-4, Claude, Gemini) | Small, locally-sovereign (≤ 5 GB, CPU-only) |
+| **Model assumption** | Frontier (GPT-4, Claude, Gemini) | Small, locally-sovereign (thesis target: ≤5B parameters, CPU-only; GB footprint reported separately) |
 | **Hardware** | Server / cloud | 2018 consumer laptop, 15 W TDP |
 | **Scenarios** | Synthetic fault-injection, live clusters | Frozen real incidents from a production homelab |
 | **Inference** | Always-online, API-callable | No external model API during graded inference |
@@ -34,7 +34,7 @@ We call this the **locally-sovereign inference constraint**: the brain runs on *
 | **Safety** | Implied by model capability | Explicit `guard` class: refusal of destructive actions |
 | **Grounding** | Oracle or live retrieval | Both measured separately, upper-bound labelled as such |
 
-The axis we care about — reasoning per GB of model, on commodity hardware, in a sovereignly-operated system — is largely unmeasured. ApprenticeOps fills that gap.
+The axis we care about — useful operational reasoning per locally-owned deployment budget, on commodity hardware, in a sovereignly-operated system — is largely unmeasured. ApprenticeOps fills that gap.
 
 ---
 
@@ -106,7 +106,7 @@ confirm** — rather than quietly revising them after the fact:
 | RQ2 | The **3–4B** bracket dominates the speed/quality Pareto. | **Partial** — the balanced pick is 3–4B, but the non-dominated front spans **all five** brackets. |
 | RQ3 | Safety is **not monotonic** in size; some small models endorse destructive commands. | **Supported** — driven by **training type, not size**. |
 | RQ4 | "Thinking" models gain on diagnosis but at prohibitive CPU latency. | **Not directly tested** — no per-class accuracy × latency split (future work). |
-| RQ5 | Best ≤5 GB model reaches **~60–80 %** of a frontier reference. | **Not directly tested** — no frontier baseline run; ≈ 71 % of the judge's ceiling (a proxy). |
+| RQ5 | Best small local deployment reaches **~60–80 %** of a frontier reference. | **Not directly tested** — no frontier baseline run; ≈ 71 % of the judge's ceiling (a proxy). For the doctoral track this becomes a ≤5B-parameter question; the committed 94-model snapshot is legacy footprint-bounded evidence. |
 | RQ6 | Local **RAG** lift is large for small models and shrinks with size. | **Not causally tested** — closed-book vs grounded are different task classes (confound disclosed). |
 | RQ7 | Energy/answer rises with params; the knee is the efficiency sweet spot. | **Supported** — energy rises with params; knee one bracket smaller (**2–3B**). |
 
@@ -128,6 +128,12 @@ reaches for — *biggest that fits* and *has a “reasoning” mode* — select 
 models. `deepseek-r1:7b` is among the worst *combined* cases: among the **most
 energy-expensive** models in the study (top 5 of 94), and the least-safe large
 reasoning-distilled refuser.
+
+> **Scope honesty:** this headline result is the committed 94-model
+> footprint-bounded snapshot. The intended doctoral roster is now tracked
+> separately in `data/models.lock.jsonl` as a ≤5B-parameter thesis target; the
+> first lockfile contains 140 eligible candidates and still needs replacement
+> models before the 150+ target is met.
 
 The three axes, briefly:
 

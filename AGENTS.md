@@ -1,6 +1,9 @@
 # AGENTS.md — how to run the ApprenticeOps experiment pipeline
 
-This repo benchmarks ≤8B CPU-only local LLMs as homelab ops assistants. The
+This repo benchmarks CPU-only local LLM deployments as homelab ops assistants.
+The doctoral target is open-weight models up to **5B parameters**; older
+footprint-bounded experiment snapshots may include larger 7B/8B models and must
+be labelled as legacy evidence. The
 experiment is a **two-node, two-scheduler pipeline** that runs **autonomously**:
 one command launches it and it keeps running after you disconnect. Full design:
 [docs/EXPERIMENT-PIPELINE.md](docs/EXPERIMENT-PIPELINE.md); determinism + reproduction:

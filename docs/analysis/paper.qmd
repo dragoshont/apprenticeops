@@ -7,7 +7,7 @@ author:
 date: 2026-06-20
 abstract: |
   We present **ApprenticeOps**, an open, reproducible benchmark and telemetry
-  method for evaluating **small, locally-run LLMs (≤ 8B, ≤ ~5 GB)** as **homelab
+  method for evaluating **small, locally-run LLM deployments** as **homelab
   and edge operations assistants** — models that detect, diagnose, monitor, change,
   secure, and *safely refuse*. We define **offline** as **locally-sovereign
   inference** (no external *model* API), explicitly *not* information-starvation: a
@@ -18,10 +18,12 @@ abstract: |
   along three axes a practitioner must trade off *together*: **judged quality**,
   **destructive-action refusal**, and **energy**.
 
-  Three findings emerge from a **94-model** sweep (0.36–8B). **Quality:** judged
+  Three findings emerge from a **94-model** legacy footprint-bounded sweep
+  (0.36–8B). The doctoral target is stricter — open-weight models up to **5B
+  parameters**, with quantized footprint reported separately. **Quality:** judged
   ops-reasoning climbs steeply to a usable floor by **2–3B** — one bracket below our
   pre-registered **3–4B** prediction — then returns flatten
-  (the 4–5 GB bracket adds a small **+4.6**-point lift), and *quantization*, not
+  (the legacy 4–5 GB footprint bracket adds a small **+4.6**-point lift), and *quantization*, not
   parameter count, carries the marginal lift. **Safety:** on judge-free
   **deterministic** refusal checks the safest bracket still plateaus near **80 %**,
   and the dominant driver of refusal is **training type, not size** —
@@ -105,7 +107,7 @@ destructive actions, with no reviewer downstream; (5) **fit and speed** on owned
 hardware.
 
 > **Thesis (stated up front).** For a locally-sovereign ops assistant — offline,
-> CPU-only, ≤ 5 GB, the last line — **deployment selection is the whole game, and every
+> CPU-only, and, for the doctoral track, ≤5B parameters, the last line — **deployment selection is the whole game, and every
 > proxy a practitioner reaches for (parameter count, benchmark score, a "reasoning"
 > badge, perplexity) misleads on a *different* axis.** We measure three axes in one
 > harness. **(1) Quality:** a usable ops-reasoning floor arrives at **2–3B**, and
@@ -172,7 +174,7 @@ deterministic result (reasoning-distilled models refuse destructive actions ~31
 points less than instruct siblings; @sec-results) is the phenomenon of
 **Self-Jailbreaking** [@yong2026selfjailbreak]: after benign reasoning training,
 models "reason themselves out of safety alignment," named explicitly for the
-DeepSeek-R1-distilled family that drags our 4–5 GB bracket down. **The Hidden
+DeepSeek-R1-distilled family that drags our legacy 4–5 GB footprint bracket down. **The Hidden
 Risks of R1** [@zhou2025hiddenrisks] finds "the stronger the reasoning ability,
 the greater the potential harm," with the thinking trace less safe than the final
 answer; **SafeChain** [@jiang2025safechain] confirms LRMs are not safe relative to
@@ -194,8 +196,8 @@ scores refusal across 110 malicious agent tasks, and **AgentHazard**
 individually-plausible steps. These run frontier or GPU-edge agents on synthetic
 agentic tasks. **Our
 take:** we adopt their action-over-text stance and deterministic-check
-methodology, but move them to the regime they do not occupy — **≤ 8B, quantized,
-CPU-only, fully offline**, on **frozen real GitOps incidents** — and, unlike any
+methodology, but move them to the regime they do not occupy — **small, quantized,
+CPU-only, fully offline local deployments**, on **frozen real GitOps incidents** — and, unlike any
 of them, measure refusal *beside* energy and quality for the *selection* decision
 rather than as a standalone safety score.
 
@@ -298,8 +300,8 @@ excluded appendix.
 
 # Experimental Setup {#sec-setup}
 
-**Model roster.** We evaluate a **94-model roster** of local Ollama tags grouped
-by parameter bracket: 0–1B, 1–2B, 2–3B, 3–4B, 4–5 GB. One model,
+**Model roster.** We evaluate a **94-model legacy footprint-bounded roster** of local Ollama tags grouped
+by the historical brackets used for that snapshot: 0–1B, 1–2B, 2–3B, 3–4B, and 4–5 GB footprint. One model,
 the 2–3B base model `phi:2.7b` (Phi-2), failed to serve on every attempt (95/95
 timeouts) and is reported as a **served-failure**: it is excluded from the
 instruct-vs-reasoning arm split and from the Pareto front — leaving **94 functional
@@ -344,16 +346,17 @@ therefore not a single-grader artifact. A judge–**human** κ remains future wo
 
 ![Cross-judge agreement (Claude Opus 4.8 vs GPT-5.5) over the 8,909 graded answers. Mass on the diagonal gives quadratic-weighted κ = 0.91 (77.3% exact, 99.8% within one point): the quality ranking is not a single-grader artifact.](figures/fig-judge.png){#fig-judge fig-alt="A 5 by 5 confusion heatmap of the two judges' 1-to-5 scores, with counts concentrated on the diagonal."}
 
-**Statistical analysis plan (pre-registered).** Per (model, class) means of
+**Statistical analysis plan (pre-registered for the legacy snapshot).** Per (model, class) means of
 `det_score` and `judge_score` with bootstrap 95 % CIs (10k resamples); paired
 Wilcoxon signed-rank for pairwise comparisons and Friedman across models, with
 Holm–Bonferroni correction. With R = 5 and ~4,400 pairwise comparisons,
 individual-model distinctions mostly will not survive correction, so we frame
-primary conclusions at the **bracket level** (5 well-powered groups) and treat
+primary conclusions at the **legacy bracket level** (5 well-powered groups) and treat
 per-model ranks as descriptive. A **cost/value gate** was fixed before looking at
-the expansion data: expand the 4–5 GB bracket *only if* its judged %-of-frontier
-beats 3–4B by ≥ 5 points with non-overlapping CIs; otherwise the 4–5 GB expansion
-is held and "≤ 5 GB adds cost without judged lift" is reported as a **finding**.
+the footprint-bounded expansion data: expand the legacy 4–5 GB footprint bracket
+*only if* its judged %-of-frontier beats 3–4B by ≥ 5 points with non-overlapping
+CIs; otherwise the expansion is held and "larger quantized footprint adds cost
+without judged lift" is reported as a **finding**.
 The `guard` (safety) class is exempt and always run, since safety does not track
 size.
 
@@ -384,28 +387,29 @@ over 19 scenarios × 5 reps × the bracket's models — the 5-rep × 2-judge ens
 | 1–2B | 38.3 % | [37.5, 39.1] |
 | 2–3B | 51.3 % | [50.3, 52.2] |
 | **3–4B** | 52.1 % | [51.3, 53.1] |
-| **4–5GB** | **56.8 %** | [54.6, 58.9] |
+| legacy **4–5GB footprint** | **56.8 %** | [54.6, 58.9] |
 
-: Quality rises steeply through 2–3B, then a small step at 4–5 GB. {#tbl-quality}
+: Quality rises steeply through 2–3B, then a small step at the legacy 4–5 GB footprint bracket. {#tbl-quality}
 
 The curve rises **steeply** through 2–3B (+13 points), then the 2–3B→3–4B step is
-**flat** (+0.8 points): the diminishing-returns **knee is at 2–3B**. The 4–5 GB
+**flat** (+0.8 points): the diminishing-returns **knee is at 2–3B**. The legacy 4–5 GB footprint
 bracket then adds a **further +4.6 points** (non-overlapping CIs) — a real but
 small lift. Applying the pre-registered gate (≥ 5 points, non-overlapping CIs),
 the +4.6-point lift clears the CI test but sits **just under** the 5-point bar, so
-the verdict is a **marginal HOLD on 4–5 GB** — costly to over-buy, since the
+the verdict is a **marginal HOLD on the legacy 4–5 GB footprint bracket** — costly to over-buy, since the
 bracket costs ~3× the per-model wall-clock of the 1–2B bracket. **The win is the
 quant, not the bracket:** the best 3–4B model
-(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best 4–5 GB entry**
+(`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best legacy 4–5 GB-footprint entry**
 (`qwen3:4b-instruct-2507-q8_0`, 71.3 %) — a q4 4B matches a q8 4B, and the
 marginal quality lives in the quantization, not the parameter jump.
 
 *(Read the bracket **means** with care: consolidation added many cheap small-quant
-variants to the 3–4B bracket, lowering its average relative to the unchanged 4–5 GB
-bracket. The load-bearing comparison is the per-model **frontier** — the best 3–4B
-q4 matches the best 4–5 GB q8 — not the bracket average.)*
+variants to the 3–4B bracket, lowering its average relative to the unchanged legacy
+4–5 GB footprint bracket. The load-bearing comparison is the per-model
+**frontier** — the best 3–4B q4 matches the best 4–5 GB-footprint q8 — not the
+bracket average.)*
 
-![Judged quality (% of frontier) by parameter bracket, with bootstrap 95% confidence intervals. The curve knees at 2-3B; the 4-5 GB bracket adds a small +4.6-point lift over 3-4B (non-overlapping intervals).](figures/fig-quality.png){#fig-quality fig-alt="A bar plot rising from 32% at 0-1B to about 51% at 2-3B, roughly flat at 3-4B (52%), then up to 57% at 4-5GB."}
+![Judged quality (% of frontier) by legacy bracket, with bootstrap 95% confidence intervals. The curve knees at 2-3B; the legacy 4-5 GB footprint bracket adds a small +4.6-point lift over 3-4B (non-overlapping intervals).](figures/fig-quality.png){#fig-quality fig-alt="A bar plot rising from 32% at 0-1B to about 51% at 2-3B, roughly flat at 3-4B (52%), then up to 57% at the legacy 4-5GB footprint bracket."}
 
 ## Safety tracks training type, not size {#sec-safety}
 
@@ -457,7 +461,7 @@ model *into* the destructive action.
 > **Honesty: the size non-monotonicity is mostly the reasoning confound.** Across
 > the 94 functional models the bracket curve appears to say "the biggest bracket is
 > *less* safe." It is not an intrinsic size effect — the four reasoning models
-> sit in the 1–2B (three) and 4–5 GB (one) brackets and drag those averages down;
+> sit in the 1–2B (three) and legacy 4–5 GB footprint (one) brackets and drag those averages down;
 > remove them (@tbl-safety-instruct) and the curve is monotonic-then-flat. We
 > therefore do **not** claim "bigger is less safe." We claim the decision-relevant
 > thing: the model a practitioner is most likely to *reach for as an upgrade* — the
@@ -532,11 +536,11 @@ test — rather than revising the hypotheses to fit the outcome.
 
 | # | Pre-registered prediction | Result | Verdict |
 |---|---|---|---|
-| **H1** | quality rises with params, diminishing returns, knee ~**3–4B** | steep climb to **2–3B**, flat 2–3B→3–4B (+0.8 pt), +4.6 pt to 4–5 GB | **Supported** — knee one bracket *smaller* |
+| **H1** | quality rises with params, diminishing returns, knee ~**3–4B** | steep climb to **2–3B**, flat 2–3B→3–4B (+0.8 pt), +4.6 pt to the legacy 4–5 GB footprint bracket | **Supported** — knee one bracket *smaller* |
 | **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | balanced pick is 3–4B (`2507-q4`), but the front spans **all five** brackets | **Partially supported** |
 | **H3** | safety is **not monotonic** in size | non-monotonic; driven by **training type** (instruct 71.4 % vs reasoning 47.2 %), not size | **Supported** |
 | **H4** | thinking models gain on *diagnose/test* at prohibitive CPU latency | not isolated as a per-class accuracy × latency test here | **Not directly tested** |
-| **H5** | best ≤5 GB reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline run; best small model ≈ **71 %** of the judge ceiling (proxy) | **Not directly tested** |
+| **H5** | best small local deployment reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline run; best small model ≈ **71 %** of the judge ceiling (proxy); the doctoral track will report the <=5B-parameter version separately | **Not directly tested** |
 | **H6** | local **RAG** lift large for small models, shrinks with size | closed-book vs grounded are different task classes — confound disclosed (@sec-limitations) | **Not causally tested** |
 | **H7** | energy rises with params; knee = **energy-efficiency** sweet spot | energy rises with params; the **2–3B** knee sits near the tok/s-per-watt optimum | **Supported** — knee one bracket smaller |
 

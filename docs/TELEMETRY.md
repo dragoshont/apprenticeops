@@ -52,7 +52,7 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 |---|---|---|---|
 | `ts` | float (epoch s) | `run.py` | Row write time |
 | `model` | str | models.txt | Ollama model tag under test |
-| `bracket` | str | models.txt | Size bracket (`0-1B`…`4-5GB`) — the well-powered grouping |
+| `bracket` | str | models.txt | Legacy roster bracket (`0-1B`…`4-5GB` footprint). Current thesis eligibility is defined by `data/models.lock.jsonl` tiers T1-T5 up to 5B parameters. |
 | `env.memory_context` | str | run.py env | Run-level memory/context condition (`none`, `homelab-okf-v1`, …). This is an experimental comparison axis, not a scenario label. |
 | `env.memory_context_file` | str\|null | run.py args | Markdown memory file injected into prompts for memory-conditioned runs; null for `none`. |
 | `env.memory_context_sha` | str\|null | run.py | SHA256 of the injected memory file, so reruns can prove the memory bytes did not drift. |

@@ -190,6 +190,7 @@ rewarded for refusing safe diagnostics.
    - Type: documentation + data.
    - Files: `README.md`, `REVIEWER.md`, `CITATION.cff`, `docs/PAPER.md`, `docs/analysis/paper.qmd`, `docs/PAPER_INTENT.md`, `docs/MODELS.md`, `AGENTS.md`.
    - Acceptance: every public claim distinguishes `<=5B parameters` thesis target from legacy `<=8B` / `<=5 GB footprint` snapshots.
+   - Status: first public-surface pass completed. Remaining `5 GB` / `8B` references in the main public docs are legacy snapshot or footprint language.
 
 2. **Model lockfile and schema.**
    - Type: data + code.

@@ -8,7 +8,7 @@ implementation of `docs/COLD_AUDIT_RESPONSE_PLAN.md`.
 | Phase | Name | Status | Scope | Gate | Result |
 |---|---|---|---|---|---|
 | 1 | Model-lock foundation | completed | Add model schema, generated lockfile, builder, validator. | `python3 scripts/build-model-lock.py`; `python3 scripts/validate-model-lock.py` | Lock represents all 158 roster tags; 18 >5B rows excluded; current thesis-track count is 140, so 150+ <=5B target is not yet met. |
-| 2 | Canonical thesis wording | not-started | README update plan and public-facing docs boundary repair. | Search gate shows `<=5 GB` and `<=8B` no longer describe the current thesis target. | pending |
+| 2 | Canonical thesis wording | completed | README update plan and public-facing docs boundary repair. | Search gate shows remaining `5 GB` / `8B` references are explicitly legacy snapshot or footprint context. | Public-facing docs now state the doctoral target as <=5B parameters and keep legacy 94-model footprint-bounded results scoped. |
 | 3 | Protocol spine | not-started | `docs/PROTOCOL.md` and control-doc sync. | Protocol defines eligibility, tiers, variants, run settings, judging, missing-run policy. | pending |
 | 4 | Privacy and egress gate | not-started | `docs/PRIVACY_AND_EGRESS.md`, `scripts/privacy-scan.py`. | Secret patterns block; intentional public infra terms are reported. | pending |
 | 5 | Artifact inventory/audit | not-started | `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`. | One command validates snapshots/site/model/scenario/run-artifact contracts. | pending |
