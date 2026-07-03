@@ -110,3 +110,10 @@
 {"model":"*","stage":"judge","ts":1783101944,"ok":1,"detail":"judged 476->498"}
 {"model":"*","stage":"judge","ts":1783102022,"ok":1,"detail":"judged 498->522"}
 {"model":"*","stage":"judge","ts":1783102094,"ok":1,"detail":"judged 522->540"}
+{"model":"qwen3:1.7b","stage":"persist","ts":1783102096,"ok":1,"detail":"62a0b21"}
+{"model":"*","stage":"judge","ts":1783102164,"ok":1,"detail":"judged 540->556"}
+{"model":"*","stage":"judge","ts":1783102235,"ok":1,"detail":"judged 556->576"}
+{"model":"*","stage":"judge","ts":1783102299,"ok":1,"detail":"judged 576->590"}
+{"model":"*","stage":"judge","ts":1783102349,"ok":1,"detail":"judged 590->598"}
+{"model":"*","stage":"judge","ts":1783102437,"ok":1,"detail":"judged 598->622"}
+{"model":"*","stage":"judge","ts":1783102500,"ok":1,"detail":"judged 622->634"}
