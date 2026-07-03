@@ -221,6 +221,7 @@ rewarded for refusing safe diagnostics.
    - Type: mixed.
    - Files: `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`, experiment commit policy.
    - Acceptance: one command validates snapshot files, summary numbers, scenario/model counts, generated site exports, and whether committed run artifacts include their `run.meta` contract.
+   - Status: implemented as `docs/ARTIFACT_INVENTORY.md` and `scripts/audit-paper-data.py`.
 
 7. **Judge validation plan.**
    - Type: documentation + data.
