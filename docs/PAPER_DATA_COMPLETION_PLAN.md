@@ -43,6 +43,7 @@ but the paper should not rename itself around that future work.
 | Scenario-level error review | Completed for strategy-pilot. | `docs/EXTERNAL_DATASET_PHASE5_ERROR_REVIEW.md`. |
 | `spread10` on external candidates | Completed dev run. | `external-v0-spread10-baseline-20260703-091212`; review in `docs/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`. |
 | CEOps metrics/source analysis | Completed first pass. | `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
+| Cold audit response | Completed first triage plan. | `docs/COLD_AUDIT_RESPONSE_PLAN.md`; top issue is thesis-boundary drift between `<=5B parameters` and legacy `<=5 GB` / `<=8B` framing. |
 
 ## Dependency Graph
 
@@ -163,15 +164,16 @@ whether to clarify, split, or keep them hard.
 
 ## Recommended Next PRs in This Repo
 
-1. **Paper contribution alignment.** Update `docs/analysis/paper.qmd`, `README.md`,
-   and `REVIEWER.md` so the deployment-centric framing is consistent, without
-   changing paper-era data or claims.
-2. **Artifact inventory.** Add a concise data/release inventory for snapshots,
+1. **Cold-audit P0 alignment.** Implement `docs/COLD_AUDIT_RESPONSE_PLAN.md`:
+  define the `<=5B parameters` thesis track, preserve legacy snapshot language
+  where needed, and stop using `<=5 GB` as the research boundary.
+2. **Model lockfile.** Add `data/models.lock.jsonl`, a schema, and a validator so
+  the 150+ model universe has parameter tiers, licenses, digests, inclusion
+  decisions, and exclusion reasons.
+3. **Artifact inventory.** Add a concise data/release inventory for snapshots,
    site exports, notebooks, licenses, and model metadata.
-3. **Paper contribution alignment.** Update the manuscript/README/reviewer guide
-  only where needed to keep deployment-centric framing consistent.
-4. **Optional v1 dev run.** Launch `external-candidates-v1` only after deciding
-  that the additional scenario-pack evidence is worth the compute/judge cost.
+4. **Paper contribution alignment.** Update the manuscript/README/reviewer guide
+  only after the canonical replacement language and model-lock gate exist.
 5. **Spec extraction skeleton.** Start only after the paper claim audit is green.
 
 ## Quality Bar
