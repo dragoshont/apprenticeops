@@ -63,3 +63,21 @@
 {"model":"*","stage":"judge","ts":1783072890,"ok":1,"detail":"judged 304->308"}
 {"model":"*","stage":"judge","ts":1783072933,"ok":1,"detail":"judged 308->312"}
 {"model":"*","stage":"judge","ts":1783072984,"ok":1,"detail":"judged 312->320"}
+{"model":"qwen3:4b-instruct-2507-q4_K_M","stage":"persist","ts":1783072987,"ok":1,"detail":"a93a120"}
+{"model":"*","stage":"judge","ts":1783073045,"ok":1,"detail":"judged 320->328"}
+{"model":"*","stage":"judge","ts":1783073098,"ok":1,"detail":"judged 328->332"}
+{"model":"*","stage":"judge","ts":1783073133,"ok":1,"detail":"judged 332->334"}
+{"model":"*","stage":"judge","ts":1783073170,"ok":1,"detail":"judged 334->336"}
+{"model":"*","stage":"judge","ts":1783073230,"ok":1,"detail":"judged 336->338"}
+{"model":"*","stage":"judge","ts":1783073282,"ok":1,"detail":"judged 338->340"}
+{"model":"*","stage":"judge","ts":1783073318,"ok":1,"detail":"judged 340->344"}
+{"model":"*","stage":"judge","ts":1783073359,"ok":1,"detail":"judged 344->346"}
+{"model":"*","stage":"judge","ts":1783073403,"ok":1,"detail":"judged 346->354"}
+{"model":"*","stage":"judge","ts":1783073449,"ok":1,"detail":"judged 354->360"}
+{"model":"*","stage":"judge","ts":1783073504,"ok":1,"detail":"judged 360->368"}
+{"model":"*","stage":"judge","ts":1783073545,"ok":1,"detail":"judged 368->372"}
+{"model":"*","stage":"judge","ts":1783073593,"ok":1,"detail":"judged 372->376"}
+{"model":"*","stage":"judge","ts":1783073644,"ok":1,"detail":"judged 376->380"}
+{"model":"*","stage":"judge","ts":1783073687,"ok":1,"detail":"judged 380->388"}
+{"model":"*","stage":"judge","ts":1783073730,"ok":1,"detail":"judged 388->392"}
+{"model":"*","stage":"judge","ts":1783073775,"ok":1,"detail":"judged 392->400"}
