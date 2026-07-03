@@ -214,6 +214,7 @@ rewarded for refusing safe diagnostics.
    - Type: documentation.
    - Files: `docs/PROTOCOL.md`.
    - Acceptance: a reviewer can determine model eligibility, scenario version, prompt settings, repetitions, judging, missing-run policy, and statistics from one file.
+   - Status: implemented as `docs/PROTOCOL.md`.
 
 6. **Artifact inventory and audit command.**
    - Type: mixed.
