@@ -47,7 +47,8 @@ Top five risks:
 | The locked publishable snapshot currently summarizes 94 models. | repo evidence | `data/site/summary.json` has `n_models: 94`; README says consolidated 94-model data. | high | This is a snapshot claim, not the future thesis roster. |
 | Current scenario corpus has 33 scenarios; Core current has 20. | repo evidence | `data/scenarios.json`, `data/scenario_sets/core-current.json`, `scripts/validate-scenarios.py` | high | README already distinguishes old 19, current 33, and Core 20, but this should be made clearer. |
 | External candidate v1 is dev-only and not paper evidence. | repo evidence | `data/run-matrix.json`, `docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md` | high | This boundary is currently strong and should be preserved. |
-| The latest v1 spread10 dev run is structurally interpretable. | repo evidence | `external-v1-spread10-baseline-clean-20260703-164337`, strict report PASS | high | It remains dev-only scenario-pack evidence. |
+| The latest v1 spread10 dev run completed cleanly on the homelab run directory. | repo evidence | `external-v1-spread10-baseline-clean-20260703-164337`, homelab strict report PASS | high | It remains dev-only scenario-pack evidence. |
+| The committed v1 experiment artifacts are not yet self-contained. | repo evidence | Local `report-run-quality.py --strict` reads 450 compressed inference rows and 900 judged rows, but fails `run-meta-missing`. | high | This is now correctly exposed by the reporter and belongs in artifact inventory work. |
 | A reviewer can reproduce all headline numbers from one command today. | unknown | Not fully verified in this response | medium | README claims verification; we need a paper-data audit command to prove it continuously. |
 | The repo is safe from private-data leakage. | unknown | Not fully scanned in this response | low | README discloses real cluster detail in judge egress; a dedicated privacy scan remains needed. |
 
@@ -214,8 +215,8 @@ rewarded for refusing safe diagnostics.
 
 6. **Artifact inventory and audit command.**
    - Type: mixed.
-   - Files: `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`.
-   - Acceptance: one command validates snapshot files, summary numbers, scenario/model counts, and generated site exports.
+   - Files: `docs/ARTIFACT_INVENTORY.md`, `scripts/audit-paper-data.py`, experiment commit policy.
+   - Acceptance: one command validates snapshot files, summary numbers, scenario/model counts, generated site exports, and whether committed run artifacts include their `run.meta` contract.
 
 7. **Judge validation plan.**
    - Type: documentation + data.

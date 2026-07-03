@@ -13,6 +13,7 @@ axis explicit so quality improvements cannot hide DNF/stall/length regressions.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import sys
@@ -26,7 +27,8 @@ RUNS = REPO / "data" / "runs"
 def read_jsonl(path: Path) -> list[dict]:
     rows = []
     try:
-        with path.open(errors="ignore") as handle:
+        opener = gzip.open if path.suffix == ".gz" else open
+        with opener(path, "rt", errors="ignore") as handle:
             for line in handle:
                 line = line.strip()
                 if not line:
@@ -97,6 +99,30 @@ def add_strict_failure(findings: list[dict], code: str, message: str, *, actual=
 
 def evaluate_interpretation(report: dict) -> dict:
     failures: list[dict] = []
+    if not report.get("has_run_meta"):
+        add_strict_failure(
+            failures,
+            "run-meta-missing",
+            "run.meta is missing, so expected row counts and run scope cannot be verified",
+            actual=0,
+            expected=1,
+        )
+    if report.get("run_meta_parse_error"):
+        add_strict_failure(
+            failures,
+            "run-meta-parse-error",
+            "run.meta is not valid JSON",
+            actual=1,
+            expected=0,
+        )
+    if report.get("judged_rows", 0) and not report.get("rows", 0):
+        add_strict_failure(
+            failures,
+            "result-rows-missing",
+            "judged rows exist but no inference result rows were found",
+            actual=0,
+            expected="nonzero",
+        )
     if report.get("expected_rows") is not None and report["rows"] != report["expected_rows"]:
         add_strict_failure(
             failures,
@@ -145,14 +171,21 @@ def summarize_run(run_dir: Path) -> dict:
     run_id = run_dir.name
     meta_path = run_dir / "run.meta"
     meta = {}
+    has_run_meta = meta_path.exists()
+    run_meta_parse_error = False
     if meta_path.exists():
         try:
             meta = json.loads(meta_path.read_text())
         except json.JSONDecodeError:
+            run_meta_parse_error = True
             meta = {"_parse_error": True}
     result_paths = sorted((run_dir / "_mirror").glob("results.*.jsonl"))
     if not result_paths:
         result_paths = sorted(run_dir.glob("results.*.jsonl"))
+    if not result_paths:
+        result_paths = sorted(run_dir.glob("results.*.jsonl.gz"))
+    if not result_paths:
+        result_paths = sorted(run_dir.glob("*.results.jsonl.gz"))
     rows = []
     parse_errors = 0
     for path in result_paths:
@@ -235,6 +268,9 @@ def summarize_run(run_dir: Path) -> dict:
     expected_judged = expected_rows * judges if expected_rows and meta.get("judge_expected", True) is not False else None
     report = {
         "run_id": run_id,
+        "has_run_meta": has_run_meta,
+        "run_meta_parse_error": run_meta_parse_error,
+        "result_file_count": len(result_paths),
         "meta": {
             "model_set": meta.get("model_set"),
             "scenario_set": meta.get("scenario_set"),
@@ -286,6 +322,7 @@ def print_text(reports: list[dict]) -> None:
         expected = f"/{report['expected_rows']}" if report.get("expected_rows") else ""
         expected_j = f"/{report['expected_judged_rows']}" if report.get("expected_judged_rows") else ""
         print(f"rows: {report['rows']}{expected}; judged: {report['judged_rows']}{expected_j}; fields: {report['schema_field_count']}")
+        print(f"run_meta={int(report['has_run_meta'])}; result_files={report['result_file_count']}")
         gate = "PASS" if report["interpretation_ok"] else "FAIL"
         print(f"interpretation: {gate}; strict_failures={report['strict_failure_count']}")
         for item in report["strict_failures"][:5]:
@@ -356,6 +393,8 @@ def print_markdown(reports: list[dict]) -> None:
         print("|---|---:|")
         print(f"| Inference rows | {report['rows']}{expected} |")
         print(f"| Judged rows | {report['judged_rows']}{expected_j} |")
+        print(f"| Run metadata present | {report['has_run_meta']} |")
+        print(f"| Result files | {report['result_file_count']} |")
         print(f"| Result parse errors | {report['parse_errors']} |")
         print(f"| Judge parse errors | {report['judge_parse_errors']} |")
         print(f"| Duplicate inference tuples | {report['duplicate_result_tuples']} |")

@@ -130,6 +130,7 @@ whether to clarify, split, or keep them hard.
 | CEOps metrics/source analysis. | done | Metrics verdict and source-driven improvement backlog recorded in `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
 | Scenario lifecycle schema. | done | `data/scenario-lifecycle.schema.json` and `docs/SCENARIO_LIFECYCLE_SCHEMA.md` define the future candidate metadata contract; `validate-scenarios.py` checks the schema shell. |
 | External candidate v1 repairs. | done | `data/scenarios.external-candidates-v1.json` splits/repairs low-scoring v0 scenarios, adds lifecycle metadata, and remains dev-only. |
+| Committed run-artifact strictness. | in-progress | `report-run-quality.py` now reads compressed per-model result artifacts and fails strict mode when committed judged/results artifacts lack `run.meta`. |
 | Add a paper-data audit command. | not-started | One command re-runs all non-notebook structural checks before submission. |
 
 ### D. Documentation

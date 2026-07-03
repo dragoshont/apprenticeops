@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import contextlib
+import gzip
 import io
 import json
 import pathlib
@@ -20,6 +21,13 @@ spec.loader.exec_module(mod)
 def write_jsonl(path: pathlib.Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as handle:
+        for row in rows:
+            handle.write(json.dumps(row) + "\n")
+
+
+def write_jsonl_gz(path: pathlib.Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(path, "wt") as handle:
         for row in rows:
             handle.write(json.dumps(row) + "\n")
 
@@ -160,11 +168,56 @@ def test_markdown_output_includes_gate_and_duplicate_examples():
     assert "### Duplicate Judge Examples" in rendered
 
 
+def test_strict_gate_fails_judged_only_artifact_without_run_meta():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-judged-only"
+        run_dir.mkdir()
+        write_jsonl(run_dir / "judged.run-judged-only.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": 5, "evidence": "ok", "criteria_met": [], "criteria_missed": []},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["rows"] == 0
+    assert report["judged_rows"] == 1
+    assert report["interpretation_ok"] is False
+    assert {item["code"] for item in report["strict_failures"]} == {
+        "run-meta-missing",
+        "result-rows-missing",
+    }
+
+
+def test_report_reads_committed_gz_result_artifacts():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-gz"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v1",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 1,
+        }))
+        write_jsonl_gz(run_dir / "m.results.jsonl.gz", [
+            {"model": "m", "scenario": "s1", "rep": 0, "env.memory_context": "none", "env.inference_strategy": "baseline", "gen_ai.response.finish_reasons": ["stop"], "dnf": False},
+        ])
+        write_jsonl(run_dir / "judged.run-gz.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": 5, "evidence": "ok", "criteria_met": [], "criteria_missed": []},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["rows"] == 1
+    assert report["result_file_count"] == 1
+    assert report["interpretation_ok"] is True
+
+
 def main() -> None:
     test_report_flags_reliability_and_strategy()
     test_report_flags_duplicate_judge_tuples()
     test_strict_gate_passes_clean_structural_run()
     test_markdown_output_includes_gate_and_duplicate_examples()
+    test_strict_gate_fails_judged_only_artifact_without_run_meta()
+    test_report_reads_committed_gz_result_artifacts()
     print("report-run-quality tests passed")
 
 
