@@ -1,6 +1,6 @@
 # External Dataset Integration Plan
 
-Status: phased plan with Phases 1-4 completed and Phase 5 not started. This plan is
+Status: phased plan with Phases 1-4 completed and Phase 5 started. This plan is
 for improving ApprenticeOps scenario coverage and failure taxonomy. It is **not**
 a plan to change the locked 94-model paper result, and it is **not** a plan to
 fine-tune Pareto models until held-out contamination gates exist.
@@ -37,7 +37,7 @@ Pareto-model paper claim.
 | 2 | Rights and contamination ledger | completed | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Completed at source level in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; raw redistribution blocked, training deferred, pattern-level candidate design conditionally allowed. |
 | 3 | Candidate scenario generation | completed | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Completed in `data/scenarios.external-candidates-v0.json`; validator `scripts/validate-external-candidates.py` passes. |
 | 4 | Scenario adversarial review | completed | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Completed as an unpromoted candidate gate: first review returned REVISE, repairs were applied, and follow-up leakage/safety plus quality reviews returned PASS. No candidate has been promoted. |
-| 5 | Dev evaluation | not-started | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 promotion. | Reliability report clean enough to interpret; results reported separately from Core v1. | Not started; judge calibration remains blocked. |
+| 5 | Dev evaluation | in-progress | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 candidate-gate review. | Reliability report clean enough to interpret; results reported separately from Core v1. | `external-candidates-v0` is wired as a dev scenario set only; dryrun baseline smoke is the first gate. Judge calibration remains blocked. |
 | 6 | Optional tuned-model track | blocked | Fine-tune/LoRA/RAG experiments only if the user later approves a separate tuned-model project. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Blocked; no training or RAG data use is approved by this plan. |
 
 ## Source classes and intended use
@@ -70,10 +70,10 @@ Pareto-model paper claim.
 ## Phase 3 candidate artifact
 
 Phase 3 produced `data/scenarios.external-candidates-v0.json`, a candidate-only
-scenario catalog. It is intentionally not referenced by `data/run-matrix.json`,
-`data/run-manifest.json`, or `core-current`. The file can be reviewed and
-validated, but it is not a benchmark set until Phase 4 decides what, if anything,
-survives.
+scenario catalog. After Phase 4 review, Phase 5 wires it as
+`external-candidates-v0` in `data/run-matrix.json` and `data/run-manifest.json`
+with `kind: dev`. It remains outside `core-current`, outside `data/scenarios.json`,
+and outside the locked paper result.
 
 The validator is:
 
@@ -84,6 +84,31 @@ python3 scripts/validate-external-candidates.py
 It enforces no Core ID overlap, candidate-only provenance metadata, source hash
 traceability, gold-answer deterministic checks, and a negative-control failure
 for every candidate.
+
+The scenario-set gate is:
+
+```bash
+python3 scripts/validate-scenarios.py
+```
+
+It verifies `external-candidates-v0` is approved by the manifest, contains eight
+non-Core candidate IDs, and is not the default scenario set.
+
+## Phase 5 dryrun gate
+
+The first evaluation is deliberately small:
+
+```bash
+RUN_ID=external-v0-dryrun-baseline-$(date -u +%Y%m%d-%H%M%S) \
+  MODEL_SET=dryrun MODELS=data/models.dryrun.txt \
+  SCENARIO_SET=external-candidates-v0 \
+  SCENARIOS=data/scenarios.external-candidates-v0.json \
+  MEMORY_CONTEXT=none INFERENCE_STRATEGY=baseline \
+  setsid nohup ./scripts/run-e2e.sh >/tmp/external-v0-dryrun.boot 2>&1 </dev/null &
+```
+
+This is a dev-smoke run only. It does not calibrate judges, train models, change
+Core, or support paper claims.
 
 ## Overnight Phase 1 run
 

@@ -97,6 +97,7 @@ def validate_sets_and_manifest() -> None:
     all_ids = {scenario["id"] for scenario in all_scenarios}
     core = load_json("data/scenario_sets/core-current.json")["scenarios"]
     extended = load_json("data/scenario_sets/extended.json")["scenarios"]
+    external_candidates = load_json("data/scenarios.external-candidates-v0.json")["scenarios"]
 
     core_ids = {scenario["id"] for scenario in core}
     extended_ids = {scenario["id"] for scenario in extended}
@@ -110,17 +111,27 @@ def validate_sets_and_manifest() -> None:
         fail(f"core-current and extended overlap: {sorted(core_ids & extended_ids)}")
     if core_ids | extended_ids != all_ids:
         fail("core-current plus extended does not equal data/scenarios.json")
+    external_ids = {scenario["id"] for scenario in external_candidates}
+    if len(external_ids) != 8:
+        fail(f"expected external-candidates-v0 to contain 8 scenarios, found {len(external_ids)}")
+    if external_ids & all_ids:
+        fail(f"external-candidates-v0 overlaps canonical scenarios: {sorted(external_ids & all_ids)}")
 
     matrix_sets = {
         entry["id"]: entry for entry in load_json("data/run-matrix.json")["scenario_sets"]
     }
     matrix = load_json("data/run-matrix.json")
-    if set(matrix_sets) != {"core-current", "extended", "strategy-pilot-6", "all"}:
-        fail(f"unexpected scenario_set ids: {sorted(matrix_sets)}")
     if matrix_sets["core-current"]["label"] != "Core 20 - implemented scenarios":
         fail("run matrix core-current label is stale")
     if matrix_sets["strategy-pilot-6"].get("kind") != "pilot":
         fail("run matrix strategy-pilot-6 kind must be pilot")
+    external_set = matrix_sets.get("external-candidates-v0")
+    if not external_set:
+        fail("run matrix is missing external-candidates-v0")
+    if external_set.get("kind") != "dev":
+        fail("external-candidates-v0 must be a dev scenario set")
+    if matrix.get("defaults", {}).get("scenario_set") == "external-candidates-v0":
+        fail("external-candidates-v0 must not be the default scenario set")
     if matrix.get("defaults", {}).get("memory_context") != "none":
         fail("run matrix default memory_context must be none")
     if matrix.get("defaults", {}).get("inference_strategy") != "baseline":
@@ -167,13 +178,14 @@ def validate_sets_and_manifest() -> None:
             fail(f"memory-comparison phase {phase.get('id')} is missing gate text")
 
     manifest_sets = load_json("data/run-manifest.json")["protocol"]["scenario_sets"]
-    expected = {
-        "all": ("data/scenarios.json", 33),
-        "core-current": ("data/scenario_sets/core-current.json", 20),
-        "extended": ("data/scenario_sets/extended.json", 13),
-        "strategy-pilot-6": ("data/scenario_sets/strategy-pilot-6.json", 6),
-    }
-    for scenario_set, (relative_path, count) in expected.items():
+    if set(manifest_sets) != set(matrix_sets):
+        fail(
+            "manifest scenario sets must match run matrix: "
+            f"manifest={sorted(manifest_sets)} matrix={sorted(matrix_sets)}"
+        )
+    for scenario_set, matrix_entry in matrix_sets.items():
+        relative_path = matrix_entry["path"]
+        count = len(load_json(relative_path)["scenarios"])
         manifest_entry = manifest_sets[scenario_set]
         if manifest_entry["path"] != relative_path:
             fail(f"manifest path mismatch for {scenario_set}")
@@ -186,7 +198,7 @@ def validate_sets_and_manifest() -> None:
 def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
-    print("scenario validation passed: all=33 core-current=20 extended=13 strategy-pilot-6=6 memory_contexts=4 inference_strategies=5 plans=1")
+    print("scenario validation passed: canonical=33 core-current=20 extended=13 external-candidates-v0=8 memory_contexts=4 inference_strategies=5 plans=1")
 
 
 if __name__ == "__main__":

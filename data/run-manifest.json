@@ -57,6 +57,11 @@
         "sha256": "826612fea7cea9444f7f331f5c6ce33a3055aed0636a56d11ffceeb302a3f0ee",
         "scenario_count": 6
       },
+      "external-candidates-v0": {
+        "path": "data/scenarios.external-candidates-v0.json",
+        "sha256": "7f188d7ed6e9d5e19902a6e25ce4ea6160258c8e815b0bc9917b4e954434b2eb",
+        "scenario_count": 8
+      },
       "doodle-6": {
         "path": "data/scenario_sets/doodle-6.json",
         "sha256": "585ce70f52232f92524fb7a92bfa8fff93e283d29739d7f8a8b4fa3804d04bcc",
