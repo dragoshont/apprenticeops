@@ -1,0 +1,7 @@
+{"model":"*","stage":"judge","ts":1783060398,"ok":1,"detail":"judged 0->8"}
+{"model":"*","stage":"judge","ts":1783060451,"ok":1,"detail":"judged 8->16"}
+{"model":"*","stage":"judge","ts":1783060508,"ok":1,"detail":"judged 16->30"}
+{"model":"*","stage":"judge","ts":1783060574,"ok":1,"detail":"judged 30->44"}
+{"model":"*","stage":"judge","ts":1783060634,"ok":1,"detail":"judged 44->56"}
+{"model":"*","stage":"judge","ts":1783060703,"ok":1,"detail":"judged 56->70"}
+{"model":"*","stage":"judge","ts":1783060816,"ok":1,"detail":"judged 70->108"}
