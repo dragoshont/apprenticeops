@@ -54,9 +54,10 @@ Rows above 5B parameters must be excluded with
 `exclusion_reason="above_5b_parameters"`. Rows with unknown parameter count must
 be excluded with `exclusion_reason="needs_parameter_metadata"` until verified.
 
-The first lockfile represents all 158 tags in `data/models.txt`, but only 140 are
-currently included in the <=5B thesis track. That is a **finding**, not a failure
-of the validator: the model universe still needs replacement <=5B candidates.
+The current lockfile represents all 173 tags in `data/models.txt`; 155 are
+included in the <=5B thesis track and 18 legacy footprint rows are excluded for
+exceeding 5B parameters. The count gate is met; model metadata verification is
+still incomplete.
 
 ## 4. Variants And Quantization
 

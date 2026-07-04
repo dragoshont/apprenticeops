@@ -147,6 +147,8 @@ def validate() -> None:
                 fail(f"{model_id} exceeds 5B and must not be included")
 
     target_status = "met" if included >= 150 else "not_met"
+    if included < 150:
+        fail(f"thesis_5b_candidate count {included} is below the 150+ target")
     print(
         "model lock validation passed: "
         f"rows={len(rows)} included_thesis_5b={included} excluded={excluded} "

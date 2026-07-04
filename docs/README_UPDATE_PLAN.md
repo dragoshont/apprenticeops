@@ -24,10 +24,10 @@ The committed 94-model result remains useful but must be labeled correctly:
 
 ## Current Model-Universe Status
 
-`data/models.lock.jsonl` currently represents all 158 tags in `data/models.txt`.
-The model-lock validator reports 140 included `thesis_5b_candidate` rows and 18
+`data/models.lock.jsonl` currently represents all 173 tags in `data/models.txt`.
+The model-lock validator reports 155 included `thesis_5b_candidate` rows and 18
 excluded `above_5b_parameters` rows. Therefore the 150+ model, <=5B thesis roster
-is **not yet complete**.
+count gate is complete; provenance metadata remains incomplete.
 
 ## README Rewrite Acceptance Criteria
 

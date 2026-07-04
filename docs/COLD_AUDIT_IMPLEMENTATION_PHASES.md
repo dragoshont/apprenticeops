@@ -17,16 +17,15 @@ implementation of `docs/COLD_AUDIT_RESPONSE_PLAN.md`.
 
 ## Phase 1 Finding
 
-The current `data/models.txt` roster has 158 tags, but the first generated
-`data/models.lock.jsonl` includes only 140 models in the `thesis_5b_candidate`
-track. The remaining 18 rows exceed 5B parameters and are excluded with
+The first generated `data/models.lock.jsonl` included only 140 models in the
+`thesis_5b_candidate` track. Phase 8 added verified <=5B candidates, bringing the
+lock to 173 total rows with 155 included thesis-track models. The remaining 18
+rows exceed 5B parameters and are excluded with
 `exclusion_reason="above_5b_parameters"`.
 
-This means the repository has a strong model roster but **does not yet satisfy**
-the intended 150+ model, <=5B-parameter thesis universe. The next model-universe
-task is not another run; it is replacing those over-5B legacy footprint rows with
-verified <=5B open-weight candidates or lowering the claim until the roster is
-filled.
+This means the repository now satisfies the **count** side of the intended 150+
+model, <=5B-parameter thesis universe. The next model-universe task is metadata
+quality: verify licenses, source URLs, Ollama digests, and GGUF hashes.
 
 ## Adversarial Review Notes
 
@@ -39,13 +38,24 @@ filled.
 
 ## Remaining Open Gaps After This Pass
 
-1. The current <=5B thesis track has **140** included candidates, not the target
-  150+. Replace over-5B legacy rows with verified <=5B models before claiming the
-  final thesis universe.
-2. Model `license`, `source_url`, `ollama_digest`, and `gguf_sha256` are still
+1. Model `license`, `source_url`, `ollama_digest`, and `gguf_sha256` are still
   mostly `unknown`; verify them before serious review.
-3. Human-vs-judge validation remains open.
-4. Privacy scan reports intentional disclosure classes; a human must decide which
+2. Human-vs-judge validation remains open.
+3. Privacy scan reports intentional disclosure classes; a human must decide which
   hostnames/domains/IPs stay public in a thesis package.
-5. `env.harness_dirty` needs instrumentation cleanup (`source_dirty` vs
+4. `env.harness_dirty` needs instrumentation cleanup (`source_dirty` vs
   `artifact_dirty`) before it can be used as a clean run-quality signal.
+
+## Phase 8 Finding
+
+The current lockfile gate now reports:
+
+```text
+rows=173 included_thesis_5b=155 excluded=18 above_5b_excluded=18
+tiers={'T1': 30, 'T2': 41, 'T3': 39, 'T4': 30, 'T5': 15}
+target_150_status=met
+```
+
+The added rows are verified as existing Ollama/Hugging Face tags, but several
+licenses remain `unknown` or coarse (`other`) until source cards are reviewed in
+detail.

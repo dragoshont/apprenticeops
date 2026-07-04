@@ -38,6 +38,9 @@ granite4:350m-bf16
 hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M
 hf.co/LiquidAI/LFM2-700M-GGUF:Q4_K_M
 hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M
+qwen2.5-coder:0.5b
+llama3.2:1b-instruct-q4_K_M
+hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M
 
 # bracket: 1-2B
 qwen3:1.7b
@@ -103,6 +106,10 @@ stablelm-zephyr:3b
 hf.co/Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M
 codegemma:2b
 codegemma:2b-code-q6_K
+gemma:2b-instruct-q4_K_M
+gemma2:2b-instruct-q4_K_M
+qwen3.5:2b
+stable-code:3b
 granite4:micro-h
 starcoder2:3b
 
@@ -151,6 +158,16 @@ granite-code:3b-instruct-q6_K
 granite-code:3b-instruct-q8_0
 starcoder2:3b-q6_K
 starcoder2:3b-q8_0
+granite4.1:3b
+hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M
+phi3:mini
+phi3:mini-4k
+phi3:mini-128k
+llama3.2:3b-instruct-q4_K_M
+
+# bracket: 4-5B
+gemma4:e2b-it-qat
+gemma3n:e2b
 
 # bracket: 4-5GB
 granite4:tiny-h

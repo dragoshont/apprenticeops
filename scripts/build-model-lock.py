@@ -14,12 +14,80 @@ SNAPSHOT = REPO / "data" / "snapshots" / "results_snapshot.csv"
 OUT = REPO / "data" / "models.lock.jsonl"
 
 SPECIAL_PARAMS_B = {
+    "gemma3n:e2b": 5.0,
+    "gemma4:e2b-it-qat": 4.6,
     "phi4-mini": 3.8,
     "phi4-mini-reasoning": 3.8,
+    "phi3:mini": 3.8,
+    "phi3:mini-4k": 3.8,
+    "phi3:mini-128k": 3.8,
     "granite4:micro": 3.4,
     "granite4:micro-h": 3.4,
     "granite4:tiny-h": 6.9,
     "command-r7b:latest": 7.0,
+}
+
+MANUAL_OVERRIDES = {
+    "qwen2.5-coder:0.5b": {
+        "source_url": "https://ollama.com/library/qwen2.5-coder:0.5b",
+        "license": "Apache-2.0",
+    },
+    "llama3.2:1b-instruct-q4_K_M": {
+        "source_url": "https://ollama.com/library/llama3.2:1b-instruct-q4_K_M",
+        "license": "Llama-3.2",
+    },
+    "hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M": {
+        "source_url": "https://huggingface.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF",
+        "license": "other",
+    },
+    "gemma:2b-instruct-q4_K_M": {
+        "source_url": "https://ollama.com/library/gemma:2b-instruct-q4_K_M",
+        "license": "Gemma",
+    },
+    "gemma2:2b-instruct-q4_K_M": {
+        "source_url": "https://ollama.com/library/gemma2:2b-instruct-q4_K_M",
+        "license": "Gemma",
+    },
+    "qwen3.5:2b": {
+        "source_url": "https://ollama.com/library/qwen3.5:2b",
+        "license": "unknown",
+    },
+    "stable-code:3b": {
+        "source_url": "https://ollama.com/library/stable-code:3b",
+        "license": "unknown",
+    },
+    "granite4.1:3b": {
+        "source_url": "https://ollama.com/library/granite4.1:3b",
+        "license": "Apache-2.0",
+    },
+    "hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M": {
+        "source_url": "https://huggingface.co/tiiuae/Falcon-H1-3B-Instruct-GGUF",
+        "license": "other",
+    },
+    "phi3:mini": {
+        "source_url": "https://ollama.com/library/phi3:mini",
+        "license": "MIT",
+    },
+    "phi3:mini-4k": {
+        "source_url": "https://ollama.com/library/phi3:mini-4k",
+        "license": "MIT",
+    },
+    "phi3:mini-128k": {
+        "source_url": "https://ollama.com/library/phi3:mini-128k",
+        "license": "MIT",
+    },
+    "llama3.2:3b-instruct-q4_K_M": {
+        "source_url": "https://ollama.com/library/llama3.2:3b-instruct-q4_K_M",
+        "license": "Llama-3.2",
+    },
+    "gemma4:e2b-it-qat": {
+        "source_url": "https://ollama.com/library/gemma4:e2b-it-qat",
+        "license": "Gemma",
+    },
+    "gemma3n:e2b": {
+        "source_url": "https://ollama.com/library/gemma3n:e2b",
+        "license": "Gemma",
+    },
 }
 
 PUBLISHER_HINTS = [
@@ -35,6 +103,7 @@ PUBLISHER_HINTS = [
     ("nemotron", "NVIDIA", "Nemotron"),
     ("exaone", "LG AI Research", "EXAONE"),
     ("stablelm", "Stability AI", "StableLM"),
+    ("stable-code", "Stability AI", "StableCode"),
     ("codegemma", "Google", "CodeGemma"),
     ("starcoder", "BigCode", "StarCoder"),
     ("opencoder", "OpenCoder", "OpenCoder"),
@@ -187,6 +256,7 @@ def build_rows() -> list[dict]:
         elif params_b > 5:
             exclusion_reason = "above_5b_parameters"
         publisher, family = infer_publisher_family(model_id)
+        override = MANUAL_OVERRIDES.get(model_id, {})
         size_bytes = parse_float(row.get("size_bytes") if row else None)
         artifact_size_gb = round(size_bytes / 1_000_000_000, 3) if size_bytes else None
         track = ["legacy_footprint_snapshot"] if roster_bracket == "4-5GB" else []
@@ -203,8 +273,8 @@ def build_rows() -> list[dict]:
             "quantization": infer_quantization(model_id, row),
             "runtime": "ollama",
             "artifact_size_gb": artifact_size_gb,
-            "source_url": "unknown",
-            "license": "unknown",
+            "source_url": override.get("source_url", "unknown"),
+            "license": override.get("license", "unknown"),
             "ollama_digest": None,
             "gguf_sha256": None,
             "context_length": None,
@@ -216,7 +286,7 @@ def build_rows() -> list[dict]:
             "roster_bracket": roster_bracket,
             "legacy_bracket": roster_bracket if roster_bracket == "4-5GB" else None,
             "measured_snapshot": bool(row),
-            "notes": "Generated from data/models.txt; measured fields imported from data/snapshots/results_snapshot.csv when available. License/source/digest are intentionally unknown until verified.",
+            "notes": "Generated from data/models.txt; measured fields imported from data/snapshots/results_snapshot.csv when available. License/source/digest are intentionally unknown until verified unless explicitly recorded by build-model-lock.py overrides.",
         })
     return rows
 

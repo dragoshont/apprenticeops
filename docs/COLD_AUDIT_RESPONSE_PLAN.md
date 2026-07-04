@@ -42,7 +42,7 @@ Top five risks:
 | The intended thesis target is <=5B parameters, not <=5 GB footprint. | user context | Cold audit file `/Users/dragoshont/Repo/ceops-audit-cold.md` | high | This is the controlling correction for the remediation plan. |
 | Current public docs still frame parts of the work as `0.5-8B` / `<=8B`. | repo evidence | `README.md`, `REVIEWER.md`, `CITATION.cff`, `docs/PAPER.md`, `docs/analysis/paper.qmd` search results | high | Must be reconciled, not blind-replaced, because the locked 94-model snapshot did include larger models. |
 | Current public docs still use `<=5 GB` / `4-5GB` as a research bracket. | repo evidence | `README.md`, `docs/PAPER.md`, `docs/PAPER_INTENT.md`, `docs/MODELS.md`, `docs/TELEMETRY.md` | high | Some uses are valid footprint language; others are thesis-boundary language and must change. |
-| The current model roster has 158 tags. | repo evidence | `data/models.txt` counted locally | high | This matches the 150+ target in count, but not yet in <=5B parameter eligibility. |
+| The current model roster has 173 tags. | repo evidence | `data/models.txt` and `data/models.lock.jsonl` | high | The lock now includes 155 <=5B thesis candidates and excludes 18 >5B legacy rows. |
 | The current roster includes a `4-5GB` bracket with 7B/8B models. | repo evidence | `data/models.txt`; examples include `qwen2.5:7b`, `llama3.1:8b`, `deepseek-r1:8b` | high | This is incompatible with a <=5B-parameter thesis unless marked as legacy/footprint-only/out-of-scope. |
 | The locked publishable snapshot currently summarizes 94 models. | repo evidence | `data/site/summary.json` has `n_models: 94`; README says consolidated 94-model data. | high | This is a snapshot claim, not the future thesis roster. |
 | Current scenario corpus has 33 scenarios; Core current has 20. | repo evidence | `data/scenarios.json`, `data/scenario_sets/core-current.json`, `scripts/validate-scenarios.py` | high | README already distinguishes old 19, current 33, and Core 20, but this should be made clearer. |
@@ -172,7 +172,7 @@ rewarded for refusing safe diagnostics.
 
 | Requirement | Current evidence | Status | Gap | Priority |
 |---|---|---|---|---:|
-| 150+ models | `data/models.txt` has 158 tags. | Partial | Need <=5B eligibility lockfile, not just tags. | P0 |
+| 150+ models | `data/models.lock.jsonl` has 155 included <=5B thesis candidates. | Complete | Metadata provenance still needs verification, but the count gate is met. | P0 |
 | Five parameter tiers up to 5B | Current roster has 0-1B..3-4B plus `4-5GB`; fifth bracket contains 7B/8B models. | Contradictory | Replace footprint tiering with parameter tiering for thesis track. | P0 |
 | CPU-only commodity laptop | `REPRODUCE.md` and README document i5-8350U / 24 GiB node. | Partial | Need target-vs-measured hardware distinction. | P1 |
 | Fair benchmark protocol | Run manifests, validators, seeds, repeats exist. | Partial | Need one protocol doc and model/scenario lock schemas. | P0 |
@@ -196,7 +196,7 @@ rewarded for refusing safe diagnostics.
    - Type: data + code.
    - Files: `data/models.lock.jsonl`, `data/model.schema.json`, `scripts/validate-model-lock.py`.
    - Acceptance: every model has `params_b`, tier, architecture, training type, quantization, artifact size, license/source/digest, included flag, and exclusion reason.
-   - Status: implemented as a first lockfile. It validates all 158 roster tags, excludes 18 >5B rows, and currently leaves 140 included <=5B candidates, so the 150+ thesis universe is **not yet met**.
+   - Status: implemented and expanded. It validates all 173 roster tags, excludes 18 >5B rows, and includes 155 <=5B thesis candidates, so the 150+ count gate is met.
 
 3. **README correction plan and rewrite.**
    - Type: documentation.
@@ -302,10 +302,10 @@ scenario gates, strict run-quality reporting, and the current two-node pipeline.
 What is weak: the public research boundary, model eligibility metadata, privacy
 gate, single-path protocol, and human validation status.
 
-What to fix first next: **fill and verify the <=5B model universe.** The model
-lock now enforces the boundary, but it only includes 140 current thesis-track
-candidates. The v1 external dev run is useful scenario-pack learning, but it does
-not solve the doctoral-alignment problem.
+What to fix first next: **verify the <=5B model metadata.** The model lock now
+enforces the boundary and includes 155 current thesis-track candidates, but
+license/source/digest coverage is still incomplete. The v1 external dev run is
+useful scenario-pack learning, but it does not solve the model-provenance problem.
 
 Current suitability:
 
