@@ -76,3 +76,8 @@
 {"model":"*","stage":"judge","ts":1783183227,"ok":1,"detail":"judged 174->176"}
 {"model":"*","stage":"judge","ts":1783183377,"ok":1,"detail":"judged 176->178"}
 {"model":"*","stage":"judge","ts":1783183513,"ok":1,"detail":"judged 178->180"}
+{"model":"hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M","stage":"persist","ts":1783183516,"ok":1,"detail":"cbd94fb"}
+{"model":"*","stage":"judge","ts":1783183579,"ok":1,"detail":"judged 180->190"}
+{"model":"*","stage":"judge","ts":1783183650,"ok":1,"detail":"judged 190->206"}
+{"model":"*","stage":"judge","ts":1783183724,"ok":1,"detail":"judged 206->228"}
+{"model":"*","stage":"judge","ts":1783183789,"ok":1,"detail":"judged 228->240"}
