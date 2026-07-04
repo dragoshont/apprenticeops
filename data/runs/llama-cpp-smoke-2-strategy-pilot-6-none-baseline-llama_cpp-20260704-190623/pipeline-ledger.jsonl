@@ -2,3 +2,4 @@
 {"model":"*","stage":"judge","ts":1783192115,"ok":1,"detail":"judged 4->12"}
 {"model":"hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783192118,"ok":1,"detail":"23dd683"}
 {"model":"*","stage":"judge","ts":1783192170,"ok":1,"detail":"judged 12->24"}
+{"model":"hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M","stage":"persist","ts":1783192173,"ok":1,"detail":"64b564e"}
