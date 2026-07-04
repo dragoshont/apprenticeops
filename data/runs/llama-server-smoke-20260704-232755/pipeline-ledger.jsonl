@@ -1,2 +1,3 @@
 {"model":"*","stage":"judge","ts":1783207736,"ok":1,"detail":"judged 0->10"}
 {"model":"*","stage":"judge","ts":1783207776,"ok":1,"detail":"judged 10->12"}
+{"model":"hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M","stage":"persist","ts":1783207778,"ok":1,"detail":"f0c7f9c"}
