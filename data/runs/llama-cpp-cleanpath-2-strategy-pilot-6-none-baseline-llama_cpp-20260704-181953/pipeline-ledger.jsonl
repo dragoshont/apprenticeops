@@ -1,1 +1,2 @@
 {"model":"*","stage":"judge","ts":1783189504,"ok":1,"detail":"judged 0->24"}
+{"model":"hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783189506,"ok":1,"detail":"b7035f3"}
