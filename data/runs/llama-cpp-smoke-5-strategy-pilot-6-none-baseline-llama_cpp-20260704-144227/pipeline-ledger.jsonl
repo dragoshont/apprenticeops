@@ -12,3 +12,5 @@
 {"model":"*","stage":"judge","ts":1783176587,"ok":1,"detail":"judged 34->38"}
 {"model":"hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M","stage":"persist","ts":1783176587,"ok":0,"detail":"push failed"}
 {"model":"*","stage":"judge","ts":1783176648,"ok":1,"detail":"judged 38->52"}
+{"model":"hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M","stage":"persist","ts":1783176649,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1783176694,"ok":1,"detail":"judged 52->60"}
