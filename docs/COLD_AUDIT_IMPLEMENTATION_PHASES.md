@@ -70,4 +70,6 @@ until their exact upstream GGUF/digest is locked.
 The license gap is closed at the **family-policy** level, not at the per-artifact
 legal-review level. `data/model-license-rules.json` records the evidence URL and
 license class used to populate `data/models.lock.jsonl`. The remaining provenance
-gap is digest/hash validation for each included artifact.
+gap is digest/hash validation for most included artifacts. Committed run rows now
+populate Ollama digests for the 8 included spread10 models that were part of the
+external-v1 run; 147 included rows still need digest or GGUF hash evidence.

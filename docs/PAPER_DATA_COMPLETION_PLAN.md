@@ -173,7 +173,7 @@ whether to clarify, split, or keep them hard.
 2. **Model lockfile.** Add `data/models.lock.jsonl`, a schema, and a validator so
   the 150+ model universe has parameter tiers, licenses, digests, inclusion
   decisions, and exclusion reasons. Count gate is met; next work is verifying
-  digest/hash metadata for the 155 included candidates. License/source metadata
+  digest/hash metadata for the remaining included candidates. License/source metadata
   now has an audited family-policy table.
 3. **Artifact inventory.** Add a concise data/release inventory for snapshots,
    site exports, notebooks, licenses, and model metadata.

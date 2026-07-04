@@ -305,8 +305,9 @@ gate, single-path protocol, and human validation status.
 What to fix first next: **lock artifact digests/hashes.** The model lock now
 enforces the boundary and includes 155 current thesis-track candidates; `source_url`
 and license coverage are audited through `data/model-license-rules.json`. Digest
-and GGUF hash coverage remains incomplete. The v1 external dev run is useful
-scenario-pack learning, but it does not solve the artifact-provenance problem.
+and GGUF hash coverage remains incomplete for 147 included rows. The v1 external
+dev run is useful scenario-pack learning, but it does not solve the remaining
+artifact-provenance problem.
 
 Current suitability:
 

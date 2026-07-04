@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import re
 from pathlib import Path
@@ -12,6 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 ROSTER = REPO / "data" / "models.txt"
 SNAPSHOT = REPO / "data" / "snapshots" / "results_snapshot.csv"
 LICENSE_RULES = REPO / "data" / "model-license-rules.json"
+RUNS = REPO / "data" / "runs"
 OUT = REPO / "data" / "models.lock.jsonl"
 
 SPECIAL_PARAMS_B = {
@@ -128,6 +130,28 @@ def load_snapshot() -> dict[str, dict]:
 
 def load_license_rules() -> list[dict]:
     return json.loads(LICENSE_RULES.read_text())["rules"]
+
+
+def load_run_metadata() -> dict[str, dict]:
+    metadata: dict[str, dict] = {}
+    for path in sorted(RUNS.glob("*/*.results.jsonl.gz")):
+        with gzip.open(path, "rt", errors="ignore") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                model = row.get("model")
+                digest = row.get("ollama.digest")
+                if model and digest and model not in metadata:
+                    metadata[model] = {
+                        "ollama_digest": digest,
+                        "context_length": row.get("ollama.context_length"),
+                        "size_bytes": row.get("ollama.size_bytes"),
+                    }
+    return metadata
 
 
 def parse_float(value: str | None) -> float | None:
@@ -275,9 +299,11 @@ def infer_architecture(model_id: str, row: dict | None) -> str:
 def build_rows() -> list[dict]:
     measured = load_snapshot()
     license_rules = load_license_rules()
+    run_metadata = load_run_metadata()
     rows: list[dict] = []
     for roster_bracket, model_id in load_roster():
         row = measured.get(model_id)
+        run_meta = run_metadata.get(model_id, {})
         params_b = measured_params_b(row) or infer_params_b(model_id)
         tier = tier_for(params_b)
         included = params_b is not None and 0 < params_b <= 5
@@ -289,7 +315,7 @@ def build_rows() -> list[dict]:
         publisher, family = infer_publisher_family(model_id)
         override = MANUAL_OVERRIDES.get(model_id, {})
         license_meta = license_for(model_id, license_rules)
-        size_bytes = parse_float(row.get("size_bytes") if row else None)
+        size_bytes = parse_float(run_meta.get("size_bytes")) or parse_float(row.get("size_bytes") if row else None)
         artifact_size_gb = round(size_bytes / 1_000_000_000, 3) if size_bytes else None
         track = ["legacy_footprint_snapshot"] if roster_bracket == "4-5GB" else []
         if included:
@@ -313,9 +339,9 @@ def build_rows() -> list[dict]:
             "license_url": license_meta["license_url"],
             "license_status": license_meta["license_status"],
             "license_class": license_meta["license_class"],
-            "ollama_digest": None,
+            "ollama_digest": run_meta.get("ollama_digest"),
             "gguf_sha256": None,
-            "context_length": None,
+            "context_length": run_meta.get("context_length"),
             "included": included,
             "track": track,
             "exclusion_reason": exclusion_reason,
