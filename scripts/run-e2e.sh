@@ -171,7 +171,7 @@ json.loads(path.read_text())
 PY
 else
 python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" "$INFERENCE_RUNTIME" "$LLAMA_CPP_MODEL_MAP" "$LLAMA_CPP_EXTRA_ARGS" "$MAX_TOKENS_CAP" "$RUN_REPEATS" "$RUN_TEMP" "$RUN_ALLOW_UNLOCKED" <<'PY'
-import hashlib, json, sys
+import hashlib, json, os, sys
 from pathlib import Path
 meta = json.loads(Path(sys.argv[1]).read_text())
 if int(meta.get("schema_version") or 0) < 2:
