@@ -10,3 +10,5 @@
 {"model":"*","stage":"judge","ts":1783176511,"ok":1,"detail":"judged 28->32"}
 {"model":"*","stage":"judge","ts":1783176546,"ok":1,"detail":"judged 32->34"}
 {"model":"*","stage":"judge","ts":1783176587,"ok":1,"detail":"judged 34->38"}
+{"model":"hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M","stage":"persist","ts":1783176587,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1783176648,"ok":1,"detail":"judged 38->52"}
