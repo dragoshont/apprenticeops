@@ -18,9 +18,26 @@ export interface ModelSet {
   label: string;
   path: string;
   kind?: string;
+  runtime?: string;
+  llama_cpp_model_map?: string;
+  llama_cpp_model_map_sha256?: string;
+  llama_cpp_artifacts?: string;
+  llama_cpp_artifacts_sha256?: string;
+  llama_cpp_extra_args?: string;
+  max_tokens_cap?: number | null;
+  run_repeats?: number | null;
+  run_temp?: number | null;
+  run_allow_unlocked?: boolean;
   description?: string;
   model_count?: number | null;
   sha256?: string;
+}
+
+export interface RuntimeOption {
+  id: "ollama" | "llama_cpp" | string;
+  label: string;
+  kind?: string;
+  description?: string;
 }
 
 export interface ScenarioSet {
@@ -102,6 +119,7 @@ export interface RunBatchItem {
   memory_context: string;
   memory_context_file?: string | null;
   inference_strategy?: string | null;
+  inference_runtime?: string | null;
   strategy_prompt_file?: string | null;
   status: string;
   started_at?: number | null;
@@ -136,6 +154,7 @@ export interface RunBatch {
   model_set: string;
   scenario_set: string;
   inference_strategy?: string | null;
+  inference_runtime?: string | null;
   memory_contexts: string[];
   status: string;
   user?: string;
@@ -158,8 +177,9 @@ export interface ScenarioInventoryRow {
 }
 
 export interface RunMatrix {
-  defaults?: { model_set?: string; scenario_set?: string; memory_context?: string; inference_strategy?: string };
+  defaults?: { model_set?: string; scenario_set?: string; memory_context?: string; inference_strategy?: string; inference_runtime?: string };
   model_sets: ModelSet[];
+  runtime_options?: RuntimeOption[];
   scenario_sets: ScenarioSet[];
   memory_contexts?: MemoryContext[];
   inference_strategies?: InferenceStrategy[];
@@ -193,6 +213,8 @@ export interface InputDetails {
   scenario_set: ScenarioSet;
   memory_context: MemoryContext & { markdown: string; chars: number };
   inference_strategy?: InferenceStrategy & { markdown?: string; chars?: number };
+  inference_runtime?: RuntimeOption;
+  runtime_config?: Record<string, string | number | boolean | null>;
   scenarios: InputScenarioDetails[];
 }
 
@@ -314,6 +336,7 @@ export interface AnalyticsScope {
   scenario_set?: string | null;
   memory_context?: string | null;
   inference_strategy?: string | null;
+  inference_runtime?: string | null;
 }
 
 export interface SelectedScope {
@@ -328,6 +351,7 @@ export interface SelectedScope {
   scenario_set?: string | null;
   memory_context?: string | null;
   inference_strategy?: string | null;
+  inference_runtime?: string | null;
   analytics_scope?: string | null;
   state?: string | null;
 }
@@ -348,6 +372,7 @@ export interface Session {
   scenario_set: string;
   memory_context?: string;
   inference_strategy?: string;
+  inference_runtime?: string;
   historical?: boolean;
   user?: string;
   state: PipelineState | string;
@@ -415,7 +440,7 @@ export interface Status {
   error?: string;
   user?: string;
   markers?: { canceled: boolean; paused: boolean };
-  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; inference_strategy?: string; strategy_prompt_file?: string | null; expect?: number; started_at?: number };
+  meta?: { run_id?: string; models?: string; model_set?: string; scenarios?: string; scenario_set?: string; memory_context?: string; memory_context_file?: string | null; inference_strategy?: string; inference_runtime?: string; strategy_prompt_file?: string | null; expect?: number; started_at?: number; llama_cpp_model_map?: string | null; llama_cpp_extra_args?: string | null; max_tokens_cap?: number | null; run_repeats_override?: number | null; run_temp_override?: number | null; run_allow_unlocked?: boolean | null };
   selected_scope?: SelectedScope;
   analytics_scope?: AnalyticsScope;
   persistence?: PersistenceStatus;

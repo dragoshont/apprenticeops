@@ -52,7 +52,7 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 |---|---|---|---|
 | `ts` | float (epoch s) | `run.py` | Row write time |
 | `model` | str | models.txt | Ollama model tag under test |
-| `adapter` | str | snapshots / dataset exports | Snapshot-level runtime adapter label (`ollama` or `llama_cpp`). Existing paper-era snapshots are backfilled as `ollama`. |
+| `adapter` | str | `run.py`; snapshots / dataset exports | Runtime adapter label (`ollama` or `llama_cpp`). Existing paper-era snapshots are backfilled as `ollama`; current raw rows stamp this directly. |
 | `bracket` | str | models.txt | Legacy roster bracket (`0-1B`…`4-5GB` footprint). Current thesis eligibility is defined by `data/models.lock.jsonl` tiers T1-T5 up to 5B parameters. |
 | `env.inference_runtime` | str | run.py env | Raw-row runtime adapter (`ollama` or `llama_cpp`). |
 | `env.memory_context` | str | run.py env | Run-level memory/context condition (`none`, `homelab-okf-v1`, …). This is an experimental comparison axis, not a scenario label. |

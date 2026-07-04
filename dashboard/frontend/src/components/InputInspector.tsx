@@ -6,7 +6,7 @@ import { Card } from "./ui";
 
 type Tab = "memory" | "strategy" | "scenarios" | "models";
 
-export function InputInspector({ selection, title = "Experiment Inputs" }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string }; title?: string }) {
+export function InputInspector({ selection, title = "Experiment Inputs" }: { selection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string; inferenceRuntime?: string }; title?: string }) {
   const [tab, setTab] = useState<Tab>("memory");
   const [query, setQuery] = useState("");
   const [details, setDetails] = useState<InputDetails | null>(null);
@@ -18,7 +18,7 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchInputs(selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy ?? "baseline")
+    fetchInputs(selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy ?? "baseline", selection.inferenceRuntime)
       .then((data) => {
         if (!cancelled) setDetails(data);
       })
@@ -31,7 +31,7 @@ export function InputInspector({ selection, title = "Experiment Inputs" }: { sel
     return () => {
       cancelled = true;
     };
-  }, [selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy]);
+  }, [selection.modelSet, selection.scenarioSet, selection.memoryContext, selection.inferenceStrategy, selection.inferenceRuntime]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const scenarios = useMemo(() => {
@@ -121,8 +121,19 @@ function StrategyPane({ details }: { details: InputDetails | null }) {
             {strategy.id} · {strategy.candidate_count ?? 1} candidate{strategy.candidate_count === 1 ? "" : "s"} · {strategy.selection_method ?? "single_call"}
           </div>
         </div>
-        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_strategy={strategy.id}</span>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_strategy={strategy.id}</span>
+          {details.inference_runtime?.id && <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_runtime={details.inference_runtime.id}</span>}
+        </div>
       </div>
+      {details.runtime_config && Object.keys(details.runtime_config).length > 0 && (
+        <div className="mb-3 rounded-lg border border-line bg-panel p-3">
+          <div className="label mb-1">Runtime config</div>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap text-[11px] leading-relaxed text-muted">
+            {JSON.stringify(details.runtime_config, null, 2)}
+          </pre>
+        </div>
+      )}
       {strategy.markdown ? (
         <div className="max-h-96 overflow-auto pr-2">
           <MarkdownView text={strategy.markdown} />

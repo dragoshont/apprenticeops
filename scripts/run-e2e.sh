@@ -118,7 +118,7 @@ obj = {
   "class_counts": dict(Counter(s.get("class") or "unknown" for s in items if isinstance(s, dict))),
   "difficulty_counts": dict(Counter(s.get("difficulty") or "unknown" for s in items if isinstance(s, dict))),
   "grounding_counts": dict(Counter(s.get("grounding") or "unknown" for s in items if isinstance(s, dict))),
-  "reps": int(os.environ.get("REPS", "5")),
+  "reps": int(os.environ.get("RUN_REPEATS") or os.environ.get("REPS", "5")),
   "judges": int(os.environ.get("NJUDGES", "2")),
   "expect": int(os.environ.get("EXPECT", "0") or "0"),
   "user": os.environ.get("RUN_USER", "user"),
@@ -135,7 +135,7 @@ os.replace(tmp, path)
 json.loads(path.read_text())
 PY
 else
-python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" "$INFERENCE_RUNTIME" "$LLAMA_CPP_MODEL_MAP" "$LLAMA_CPP_EXTRA_ARGS" <<'PY'
+python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" "$INFERENCE_RUNTIME" "$LLAMA_CPP_MODEL_MAP" "$LLAMA_CPP_EXTRA_ARGS" "$MAX_TOKENS_CAP" "$RUN_REPEATS" "$RUN_TEMP" "$RUN_ALLOW_UNLOCKED" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 meta = json.loads(Path(sys.argv[1]).read_text())
@@ -161,6 +161,10 @@ strategy_file = sys.argv[7]
 inference_runtime = sys.argv[8]
 llama_cpp_model_map = sys.argv[9]
 llama_cpp_extra_args = sys.argv[10]
+max_tokens_cap = sys.argv[11]
+run_repeats = sys.argv[12]
+run_temp = sys.argv[13]
+run_allow_unlocked = sys.argv[14]
 if meta.get("memory_context", "none") != memory_context:
   raise SystemExit(f"run.meta memory_context={meta.get('memory_context')!r} does not match launch {memory_context!r}")
 if (meta.get("memory_context_file") or "") != memory_file:
@@ -183,6 +187,14 @@ if llama_cpp_model_map:
     raise SystemExit("run.meta llama.cpp model map hash mismatch; start a new run")
 if (meta.get("llama_cpp_extra_args") or "") != llama_cpp_extra_args:
   raise SystemExit("run.meta llama.cpp extra args mismatch; start a new run")
+if str(meta.get("max_tokens_cap") or "") != max_tokens_cap:
+  raise SystemExit("run.meta max token cap mismatch; start a new run")
+if run_repeats and int(meta.get("reps") or 0) != int(run_repeats):
+  raise SystemExit("run.meta repeat override mismatch; start a new run")
+if str(meta.get("run_temp_override") or "") != run_temp:
+  raise SystemExit("run.meta temperature override mismatch; start a new run")
+if ("1" if meta.get("run_allow_unlocked") else "") != run_allow_unlocked:
+  raise SystemExit("run.meta unlocked-run flag mismatch; start a new run")
 if (meta.get("strategy_prompt_file") or "") != strategy_file:
   raise SystemExit("run.meta strategy prompt file mismatch; start a new run")
 if strategy_file:

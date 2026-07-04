@@ -2,12 +2,42 @@
   "_comment": "Server-approved run-launch matrix. Browser clients submit ids only; backend resolves paths and computes counts/hashes from files.",
   "schema_version": 1,
   "defaults": {
-    "model_set": "dryrun",
-    "scenario_set": "core-current",
+    "model_set": "llama-cpp-smoke-5",
+    "scenario_set": "strategy-pilot-6",
     "memory_context": "none",
-    "inference_strategy": "baseline"
+    "inference_strategy": "baseline",
+    "inference_runtime": "llama_cpp"
   },
+  "runtime_options": [
+    {
+      "id": "llama_cpp",
+      "label": "llama.cpp direct GGUF",
+      "kind": "experiment",
+      "description": "Preferred CEOps experiment runtime. Requires a model set with a server-owned llama_cpp_model_map and staged GGUF artifacts."
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama service runtime",
+      "kind": "service_legacy",
+      "description": "LAN/API service runtime and legacy snapshot runtime. Use for older Ollama-tagged model sets and service/app checks."
+    }
+  ],
   "model_sets": [
+    {
+      "id": "llama-cpp-smoke-5",
+      "label": "llama.cpp smoke - 5 direct GGUFs",
+      "path": "data/models.llama-cpp-smoke-5.txt",
+      "kind": "validation",
+      "runtime": "llama_cpp",
+      "llama_cpp_model_map": "data/llama-cpp-smoke-5.model-map.json",
+      "llama_cpp_artifacts": "data/llama-cpp-smoke-5.artifacts.json",
+      "llama_cpp_extra_args": "-t 4 -c 1024",
+      "max_tokens_cap": 96,
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Runtime-plumbing proof for the deployed llama.cpp adapter. This is R=1 smoke evidence, not canonical thesis scoring."
+    },
     {
       "id": "dryrun",
       "label": "Dry run - 2 small models",

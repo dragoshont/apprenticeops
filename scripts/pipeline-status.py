@@ -153,6 +153,7 @@ def enrich_batch(batch):
         work_pct = round(100 * done / total, 1) if total else float(run.get("progress_pct") or 0)
         run["ordinal"] = index + 1
         run["inference_strategy"] = run.get("inference_strategy") or batch.get("inference_strategy") or "baseline"
+        run["inference_runtime"] = run.get("inference_runtime") or batch.get("inference_runtime") or "ollama"
         run["units_done"] = done
         run["units_total"] = total
         run["work_pct"] = work_pct
@@ -638,6 +639,7 @@ def nodes():
                "free -m | awk '/Mem:/{print $3\"/\"$2\" MB\"}'; "
                "df -h / | awk 'NR==2{print $5\" used\"}'")
     ai = _ai("echo $(hostname); ollama --version 2>/dev/null | head -1; "
+             "if [ -r /etc/profile.d/ceops-runtime.sh ]; then . /etc/profile.d/ceops-runtime.sh; echo runtime=${CEOPS_EXPERIMENT_RUNTIME:-unknown}/${CEOPS_SERVICE_RUNTIME:-unknown}; echo llama.cpp=${LLAMA_CPP_GIT_DESCRIBE:-unknown}; fi; "
              "echo turbo=$(cat /sys/devices/system/cpu/intel_pstate/no_turbo 2>/dev/null); "
              "echo gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null); "
              "echo freq=$(awk '{s+=$1;n++}END{if(n)printf \"%d\",s/n/1000}' /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq 2>/dev/null)MHz; "
@@ -672,8 +674,14 @@ def run_matrix():
         except Exception:  # noqa: BLE001
             return []
 
-    model_sets = [{**m, "model_count": model_count(m.get("path", "")), "sha256": sha(m.get("path", ""))}
-                  for m in matrix.get("model_sets", [])]
+    model_sets = []
+    for item in matrix.get("model_sets", []):
+        row = {**item, "model_count": model_count(item.get("path", "")), "sha256": sha(item.get("path", ""))}
+        if item.get("llama_cpp_model_map"):
+            row["llama_cpp_model_map_sha256"] = sha(item["llama_cpp_model_map"])
+        if item.get("llama_cpp_artifacts"):
+            row["llama_cpp_artifacts_sha256"] = sha(item["llama_cpp_artifacts"])
+        model_sets.append(row)
     memory_contexts = []
     for item in matrix.get("memory_contexts", []):
         path = item.get("path")
@@ -720,7 +728,8 @@ def run_matrix():
             })
             if sset.get("id") not in row["sets"]:
                 row["sets"].append(sset.get("id"))
-    return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
+        return {"defaults": matrix.get("defaults", {}), "model_sets": model_sets,
+            "runtime_options": matrix.get("runtime_options", []),
             "scenario_sets": scenario_sets, "memory_contexts": memory_contexts,
             "inference_strategies": inference_strategies,
             "experiment_plans": matrix.get("experiment_plans", []),
@@ -858,6 +867,7 @@ def analytics_scope(run_id, meta):
         "scenario_set": meta.get("scenario_set"),
         "memory_context": meta.get("memory_context") or "none",
         "inference_strategy": meta.get("inference_strategy") or "baseline",
+        "inference_runtime": meta.get("inference_runtime") or meta.get("adapter") or "ollama",
     }
 
 
@@ -874,6 +884,7 @@ def selected_scope(run_id, state, meta, batches):
         "scenario_set": meta.get("scenario_set"),
         "memory_context": meta.get("memory_context") or "none",
         "inference_strategy": meta.get("inference_strategy") or "baseline",
+        "inference_runtime": meta.get("inference_runtime") or meta.get("adapter") or "ollama",
         "analytics_scope": "selected_run",
         "state": state,
     }
@@ -891,6 +902,7 @@ def selected_scope(run_id, state, meta, batches):
                     "scenario_set": run.get("scenario_set") or batch.get("scenario_set"),
                     "memory_context": run.get("memory_context") or meta.get("memory_context") or "none",
                     "inference_strategy": run.get("inference_strategy") or batch.get("inference_strategy") or meta.get("inference_strategy") or "baseline",
+                    "inference_runtime": run.get("inference_runtime") or batch.get("inference_runtime") or meta.get("inference_runtime") or "ollama",
                     "state": run.get("status") or state,
                 })
                 return scope
@@ -990,6 +1002,7 @@ def sessions():
             "scenario_set": meta.get("scenario_set") or scen_ctx["set"],
             "memory_context": meta.get("memory_context") or "none",
             "inference_strategy": meta.get("inference_strategy") or "baseline",
+            "inference_runtime": meta.get("inference_runtime") or meta.get("adapter") or "ollama",
             "historical": scen_ctx["historical"],
             "user": meta.get("user") or "user",
             "state": state,
@@ -1061,7 +1074,8 @@ def main():
     chart_scope = analytics_scope(run_id, {**meta, "memory_context": scope.get("memory_context") or meta.get("memory_context") or "none",
                                            "model_set": scope.get("model_set") or meta.get("model_set"),
                                            "scenario_set": scope.get("scenario_set") or meta.get("scenario_set"),
-                                           "inference_strategy": scope.get("inference_strategy") or meta.get("inference_strategy") or "baseline"})
+                                           "inference_strategy": scope.get("inference_strategy") or meta.get("inference_strategy") or "baseline",
+                                           "inference_runtime": scope.get("inference_runtime") or meta.get("inference_runtime") or "ollama"})
     pareto_rows = pareto(run_id, cons, scen_class)
     for row in pareto_rows:
         row.update(chart_scope)

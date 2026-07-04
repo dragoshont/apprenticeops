@@ -22,9 +22,10 @@ runs entirely on home + ai — no workstation/Mac is in the loop.**
 
 Runtime policy: `data/runtime-policy.json` keeps **Ollama** as the service/API and
 legacy snapshot runtime, and sets **llama.cpp** as the preferred runtime for future
-locked thesis experiments. The first adapter is `INFERENCE_RUNTIME=llama_cpp` via
-`llama-cli` for direct local GGUF files. Do not label broad thesis results as
-llama.cpp-produced until a locked smoke/full-run artifact exists.
+locked thesis experiments. The adapter is `INFERENCE_RUNTIME=llama_cpp` via the
+non-interactive llama.cpp subprocess backend (default `llama-completion`) for
+direct local GGUF files. Do not label broad thesis results as llama.cpp-produced
+until a locked full-run artifact exists.
 
 ## Run it — the ONE command (from `home`, in `~/apprenticeops`)
 
