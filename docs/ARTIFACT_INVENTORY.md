@@ -10,9 +10,9 @@ doctoral <=5B-parameter roster is complete.
 
 | Artifact | Purpose | Gate |
 |---|---|---|
-| `data/snapshots/results_snapshot.csv` | Raw inference snapshot used by analysis exports. | Non-empty CSV; audited by `scripts/audit-paper-data.py`. |
-| `data/snapshots/judged_snapshot.csv` | Two-judge quality snapshot. | Non-empty CSV; audited by `scripts/audit-paper-data.py`. |
-| `data/snapshots/judged_snapshot.det.csv` | Deterministic/single-pass snapshot retained for comparison. | Non-empty CSV; audited by `scripts/audit-paper-data.py`. |
+| `data/snapshots/results_snapshot.csv` | Raw inference snapshot used by analysis exports. | Non-empty CSV with `adapter` column; audited by `scripts/audit-paper-data.py`. |
+| `data/snapshots/judged_snapshot.csv` | Two-judge quality snapshot. | Non-empty CSV with `adapter` column; audited by `scripts/audit-paper-data.py`. |
+| `data/snapshots/judged_snapshot.det.csv` | Deterministic/single-pass snapshot retained for comparison. | Non-empty CSV with `adapter` column; audited by `scripts/audit-paper-data.py`. |
 | `data/site/summary.json` | Machine-readable headline summary. | Expected `n_models=94`, `n_pareto=12`, `n_dominated=82`, `quality_knee_bracket=2-3B`. |
 | `data/site/models.csv` | Per-model site export. | Row count must equal `summary.n_models`. |
 | `data/site/pareto.csv` | Pareto-front site export. | Row count must equal `summary.n_pareto`. |

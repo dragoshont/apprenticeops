@@ -91,6 +91,14 @@ def audit_snapshots() -> None:
     det_rows = count_csv_rows("data/snapshots/judged_snapshot.det.csv")
     if result_rows < 1 or judged_rows < 1 or det_rows < 1:
         fail("snapshot CSV files must contain rows")
+    for relative_path in REQUIRED_SNAPSHOTS:
+        with (REPO / relative_path).open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        if "adapter" not in (rows[0].keys() if rows else []):
+            fail(f"{relative_path} is missing required adapter column")
+        adapters = {row.get("adapter") for row in rows}
+        if not adapters <= {"ollama", "llama_cpp"}:
+            fail(f"{relative_path} has invalid adapter values: {sorted(adapters)}")
     print(f"snapshot audit passed: results={result_rows} judged={judged_rows} det={det_rows}")
 
 
@@ -110,6 +118,7 @@ def main() -> None:
     run_check([sys.executable, "scripts/audit-model-metadata.py"])
     run_check([sys.executable, "scripts/validate-runtime-policy.py"])
     run_check([sys.executable, "scripts/test-run-env-static.py"])
+    run_check([sys.executable, "scripts/test-merge-wave.py"])
     run_check([sys.executable, "scripts/validate-human-eval.py"])
     run_check([sys.executable, "scripts/validate-external-candidates.py"])
     run_check([sys.executable, "scripts/validate-scenarios.py"])

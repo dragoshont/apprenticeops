@@ -51,11 +51,12 @@ def main():
     ap.add_argument("--out", default="dataset.csv")
     args = ap.parse_args()
 
-    jm = defaultdict(list)  # (model, scenario, rep, memory_context) -> [judge scores]
+    jm = defaultdict(list)  # (model, scenario, rep, memory_context, adapter) -> [judge scores]
     for j in load(args.judged):
         if j.get("score") is not None:
             jm[(j.get("model"), j.get("scenario"), j.get("rep"),
-                j.get("memory_context") or "none")].append(j["score"])
+                j.get("memory_context") or "none",
+                j.get("adapter") or j.get("inference_runtime") or "ollama")].append(j["score"])
 
     out = []
     for r in load(args.results):
@@ -68,9 +69,11 @@ def main():
         pc = r.get("perf.core") or {}
         finish = (r.get("gen_ai.response.finish_reasons") or [None])[0]
         memory_context = r.get("env.memory_context") or "none"
-        js = jm.get((r.get("model"), r.get("scenario"), r.get("rep"), memory_context))
+        adapter = r.get("env.inference_runtime") or r.get("adapter") or "ollama"
+        js = jm.get((r.get("model"), r.get("scenario"), r.get("rep"), memory_context, adapter))
         out.append({
             "model": r.get("model"), "bracket": r.get("bracket"),
+            "adapter": adapter,
             "memory_context": memory_context,
             "scenario": r.get("scenario"), "class": r.get("class"),
             "grounding": r.get("grounding"), "difficulty": r.get("difficulty"),
