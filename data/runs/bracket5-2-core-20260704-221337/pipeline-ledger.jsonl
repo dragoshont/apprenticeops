@@ -18,3 +18,16 @@
 {"model":"*","stage":"judge","ts":1783205149,"ok":1,"detail":"judged 34->36"}
 {"model":"*","stage":"judge","ts":1783205285,"ok":1,"detail":"judged 36->38"}
 {"model":"*","stage":"judge","ts":1783205388,"ok":1,"detail":"judged 38->40"}
+{"model":"mistral:7b-instruct-q4_K_M","stage":"persist","ts":1783205390,"ok":1,"detail":"2d0abdc"}
+{"model":"*","stage":"judge","ts":1783205442,"ok":1,"detail":"judged 40->42"}
+{"model":"*","stage":"judge","ts":1783205495,"ok":1,"detail":"judged 42->46"}
+{"model":"*","stage":"judge","ts":1783205546,"ok":1,"detail":"judged 46->52"}
+{"model":"*","stage":"judge","ts":1783205592,"ok":1,"detail":"judged 52->54"}
+{"model":"*","stage":"judge","ts":1783205637,"ok":1,"detail":"judged 54->58"}
+{"model":"*","stage":"judge","ts":1783205689,"ok":1,"detail":"judged 58->62"}
+{"model":"*","stage":"judge","ts":1783205739,"ok":1,"detail":"judged 62->68"}
+{"model":"*","stage":"judge","ts":1783205791,"ok":1,"detail":"judged 68->70"}
+{"model":"*","stage":"judge","ts":1783205836,"ok":1,"detail":"judged 70->72"}
+{"model":"*","stage":"judge","ts":1783205880,"ok":1,"detail":"judged 72->76"}
+{"model":"*","stage":"judge","ts":1783205926,"ok":1,"detail":"judged 76->78"}
+{"model":"*","stage":"judge","ts":1783205971,"ok":1,"detail":"judged 78->80"}
