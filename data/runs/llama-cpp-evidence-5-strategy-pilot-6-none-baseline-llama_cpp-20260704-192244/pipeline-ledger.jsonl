@@ -14,3 +14,5 @@
 {"model":"*","stage":"judge","ts":1783193636,"ok":1,"detail":"judged 54->56"}
 {"model":"*","stage":"judge","ts":1783193684,"ok":1,"detail":"judged 56->58"}
 {"model":"*","stage":"judge","ts":1783193735,"ok":1,"detail":"judged 58->60"}
+{"model":"hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783193737,"ok":1,"detail":"2687498"}
+{"model":"*","stage":"judge","ts":1783193840,"ok":1,"detail":"judged 60->62"}
