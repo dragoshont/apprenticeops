@@ -31,3 +31,4 @@
 {"model":"*","stage":"judge","ts":1783205880,"ok":1,"detail":"judged 72->76"}
 {"model":"*","stage":"judge","ts":1783205926,"ok":1,"detail":"judged 76->78"}
 {"model":"*","stage":"judge","ts":1783205971,"ok":1,"detail":"judged 78->80"}
+{"model":"granite4:tiny-h","stage":"persist","ts":1783205973,"ok":1,"detail":"d28a9f2"}
