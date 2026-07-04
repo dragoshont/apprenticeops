@@ -28,6 +28,12 @@
     "ollama_version": "0.30.8",
     "num_ctx": 8192
   },
+  "runtime_policy": {
+    "service_runtime": "ollama",
+    "legacy_snapshot_runtime": "ollama",
+    "experiment_runtime": "llama_cpp",
+    "runner_adapter_status": "planned"
+  },
   "evidence": {
     "source": "committed result rows from external-v1-spread10-baseline-clean-20260703-164337 plus AGENTS.md/REPRODUCE.md topology notes",
     "env_harness_git_observed": "4f8a9b6",

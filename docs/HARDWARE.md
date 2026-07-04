@@ -13,7 +13,7 @@ current measured node is narrower:
 | Measured node | ThinkPad T480s / `home-ai`, hostname `ai` |
 | CPU class | Intel i5-8350U class, 4C/8T, 15 W mobile CPU |
 | RAM | about 24 GiB |
-| Inference runtime | Ollama 0.30.8 |
+| Inference runtimes | Ollama 0.30.8 for service/legacy rows; llama.cpp provisioned as preferred future experiment runtime |
 | GPU use | none for graded inference |
 | OS | Linux, observed kernel `7.0.0-22-generic` in committed v1 run rows |
 
@@ -30,7 +30,8 @@ The reproducible systems pass expects:
 - perf counters available (`perf_event_paranoid <= 2`);
 - memory-bandwidth and core perf sampling enabled;
 - sample interval 0.5 s;
-- Ollama 0.30.8;
+- Ollama 0.30.8 for committed legacy rows;
+- llama.cpp installed/provisioned on the AI node for future thesis experiments;
 - context length 8192.
 
 These settings are checked by `run.py --preflight-only` against

@@ -85,6 +85,21 @@ are marked `llama_cpp_status="direct_gguf"` and include `llama.cpp` in
 locked. This lets us consider a lighter llama.cpp runtime without pretending the
 current Ollama measurements were produced by llama.cpp.
 
+## 4a. Runtime Policy
+
+The runtime policy is machine-readable in `data/runtime-policy.json` and checked
+by `scripts/validate-runtime-policy.py`:
+
+- `service_runtime=ollama`: Ollama remains supported for LAN/API clients,
+  OpenClaw, and legacy snapshot reproducibility.
+- `experiment_runtime=llama_cpp`: future locked thesis experiments should use
+  llama.cpp after the runner adapter lands.
+- `legacy_snapshot_runtime=ollama`: the committed 94-model snapshot and current
+  v1 dev run remain Ollama-based evidence.
+
+As of this protocol version, the runner adapter status is `planned`. Do not label
+new rows as llama.cpp-run until a smoke artifact proves the adapter.
+
 ## 5. Scenario Sets
 
 Scenario definitions live in JSON files with top-level `scenarios` arrays. Current

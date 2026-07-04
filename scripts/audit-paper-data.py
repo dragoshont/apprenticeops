@@ -108,6 +108,7 @@ def main() -> None:
     audit_snapshots()
     run_check([sys.executable, "scripts/validate-model-lock.py"])
     run_check([sys.executable, "scripts/audit-model-metadata.py"])
+    run_check([sys.executable, "scripts/validate-runtime-policy.py"])
     run_check([sys.executable, "scripts/test-run-env-static.py"])
     run_check([sys.executable, "scripts/validate-human-eval.py"])
     run_check([sys.executable, "scripts/validate-external-candidates.py"])

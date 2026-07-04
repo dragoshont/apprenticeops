@@ -73,3 +73,14 @@ license class used to populate `data/models.lock.jsonl`. The remaining provenanc
 gap is digest/hash validation for most included artifacts. Committed run rows now
 populate Ollama digests for the 8 included spread10 models that were part of the
 external-v1 run; 147 included rows still need digest or GGUF hash evidence.
+
+## Phase 10 Finding
+
+The runtime architecture now explicitly supports **both** runtimes:
+
+- Ollama remains the service/API and legacy snapshot runtime.
+- llama.cpp is the preferred runtime for future locked thesis experiments.
+
+`data/runtime-policy.json` and `scripts/validate-runtime-policy.py` enforce that
+split. The runner adapter is still marked `planned`, so the repository no longer
+overclaims that current rows were produced by llama.cpp.

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "service_runtime": "ollama",
+  "experiment_runtime": "llama_cpp",
+  "legacy_snapshot_runtime": "ollama",
+  "runner_adapter_status": "planned",
+  "notes": "Ollama remains supported for LAN/API service use and legacy snapshot reproducibility. llama.cpp is the preferred runtime for future thesis experiments; the runner adapter must be completed before launching a locked llama.cpp sweep."
+}

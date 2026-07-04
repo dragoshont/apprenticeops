@@ -26,6 +26,7 @@ doctoral <=5B-parameter roster is complete.
 | `data/model.schema.json` | Model lock schema shell. | Checked by the validator. |
 | `data/model-license-rules.json` | License rule table with evidence URLs/classes. | Consumed by `scripts/build-model-lock.py`; included rows must not have unknown license metadata. |
 | `scripts/audit-model-metadata.py` | Model metadata coverage report. | Fails if included rows lack `source_url` or license metadata; reports missing digests/hashes and llama.cpp compatibility. |
+| `data/runtime-policy.json` | Runtime split: Ollama service, llama.cpp experiments, Ollama legacy snapshot. | `scripts/validate-runtime-policy.py`. |
 | `data/run-manifest.json` | Locked run environment and scenario-set hashes. | `scripts/validate-scenarios.py`. |
 | `data/run-matrix.json` | Approved model/scenario/memory/strategy launch matrix. | `scripts/validate-scenarios.py`. |
 | `data/scenario-lifecycle.schema.json` | Future candidate scenario lifecycle schema. | `scripts/validate-scenarios.py`. |

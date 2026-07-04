@@ -1,7 +1,7 @@
 # REPRODUCE — ApprenticeOps
 
 > This is the **reproducibility contract** for the paper. Goal: a stranger with
-> Ollama and a CPU can clone, run, and regenerate every number. This file is
+> Ollama / llama.cpp and a CPU can clone, run, and regenerate every number. This file is
 > written to be lifted verbatim into the **standalone paper repo** (see
 > `## Extracting the standalone repo`).
 
@@ -9,7 +9,8 @@
 
 | Requirement | Why | Notes |
 |---|---|---|
-| **Ollama** ≥ 0.30 | runs the models locally | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
+| **Ollama** ≥ 0.30 | reproduces the committed legacy/paper-era runs and serves LAN/API clients | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
+| **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role; runner adapter is still a separate gate. |
 | **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models |
 | **Linux host** for full telemetry | `run.py` reads `/proc` for RAM/swap | macOS/Windows run fine but **RAM/swap series will be empty** (documented limitation) |
 | **~60–120 GB free disk** | model weights (pulled then freed per model) | 95 models, q4 |
@@ -24,13 +25,15 @@ Two nodes, no laptop in the loop:
 
 | Node | Role | Runs |
 |---|---|---|
-| **`home-ai`** (the locked i5-8350U / 24 GB) | **experiment node** | `ollama` + `run.py` under the lock (turbo-off, RAPL `package-0`, perf on). All `env.*` / manifest checks target this node. |
+| **`home-ai`** (the locked i5-8350U / 24 GB) | **experiment node** | Ollama + `run.py` reproduce committed rows today; llama.cpp is provisioned as the preferred future experiment runtime. All `env.*` / manifest checks target this node. |
 | **`homelab`** (always-on server) | **control plane** | the agent/editor, `git`, the **judge** (`judge.py` → frontier API), and orchestration — it SSHes to `home-ai` to launch sweeps and pulls results back. |
 
-A clean reproduction needs only `home-ai` + Ollama; the split just separates the
-graded experiment (offline, locked) from the grading rig (online, frontier judge) —
-the same offline/online boundary the paper draws. The experiment node is driven
-over SSH, so nothing depends on a particular workstation.
+A clean reproduction of the committed snapshot needs `home-ai` + Ollama. The
+thesis runtime direction is `home-ai` + llama.cpp, recorded in
+`data/runtime-policy.json`; do not mix the two without labelling the runtime. The
+split separates the graded experiment (offline, locked) from the grading rig
+(online, frontier judge) — the same offline/online boundary the paper draws. The
+experiment node is driven over SSH, so nothing depends on a particular workstation.
 
 ## 1. Clone & smoke-test (5 min)
 

@@ -14,11 +14,16 @@ one command launches it and it keeps running after you disconnect. Full design:
 | Node | Role | Notes |
 |---|---|---|
 | **home** (hostname `home`) | orchestrator + judge + git | runs the schedulers, judges via the Copilot CLI, commits to GitHub |
-| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, ollama **0.30.8**, Turbo off, governor performance |
+| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, Ollama **0.30.8** retained for service/legacy runs, llama.cpp provisioned as preferred future experiment runtime, Turbo off, governor performance |
 
 `home → ai` is **passwordless SSH**. `home` holds the repo clone at
 `~/apprenticeops`, has `gh` SSH auth, and the Copilot CLI. **After launch the pipeline
 runs entirely on home + ai — no workstation/Mac is in the loop.**
+
+Runtime policy: `data/runtime-policy.json` keeps **Ollama** as the service/API and
+legacy snapshot runtime, and sets **llama.cpp** as the preferred runtime for future
+locked thesis experiments. Do not label rows as llama.cpp-produced until the
+runner adapter is implemented and a smoke artifact exists.
 
 ## Run it — the ONE command (from `home`, in `~/apprenticeops`)
 
