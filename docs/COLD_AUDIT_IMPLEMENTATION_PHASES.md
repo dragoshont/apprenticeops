@@ -82,5 +82,6 @@ The runtime architecture now explicitly supports **both** runtimes:
 - llama.cpp is the preferred runtime for future locked thesis experiments.
 
 `data/runtime-policy.json` and `scripts/validate-runtime-policy.py` enforce that
-split. The runner adapter is still marked `planned`, so the repository no longer
-overclaims that current rows were produced by llama.cpp.
+split. The first adapter is implemented as `llama_cli_direct_gguf`, so direct
+local GGUF rows can run through `INFERENCE_RUNTIME=llama_cpp`. No locked
+llama.cpp sweep has been run yet.

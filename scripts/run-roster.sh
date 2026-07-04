@@ -24,6 +24,7 @@ SCENARIO_SET="${SCENARIO_SET:-all}"
 MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
 INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
+INFERENCE_RUNTIME="${INFERENCE_RUNTIME:-ollama}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
@@ -82,7 +83,7 @@ if [ "$INFERENCE_STRATEGY" = "single_call_tournament_brief" ] && [ -z "$STRATEGY
   exit 1
 fi
 log "memory: context=$MEMORY_CONTEXT file=${MEMORY_CONTEXT_FILE:-none}"
-log "strategy: inference_strategy=$INFERENCE_STRATEGY prompt=${STRATEGY_PROMPT_FILE:-none} timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
+log "strategy: inference_strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME prompt=${STRATEGY_PROMPT_FILE:-none} timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -139,7 +140,7 @@ NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
 NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
 log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \

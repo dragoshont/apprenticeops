@@ -3,6 +3,7 @@
   "service_runtime": "ollama",
   "experiment_runtime": "llama_cpp",
   "legacy_snapshot_runtime": "ollama",
-  "runner_adapter_status": "planned",
-  "notes": "Ollama remains supported for LAN/API service use and legacy snapshot reproducibility. llama.cpp is the preferred runtime for future thesis experiments; the runner adapter must be completed before launching a locked llama.cpp sweep."
+  "runner_adapter_status": "implemented",
+  "adapter_kind": "llama_cli_direct_gguf",
+  "notes": "Ollama remains supported for LAN/API service use and legacy snapshot reproducibility. llama.cpp is the preferred runtime for future thesis experiments. The first adapter uses llama-cli with direct local GGUF files; no locked llama.cpp sweep has been run yet."
 }

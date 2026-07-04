@@ -97,8 +97,10 @@ by `scripts/validate-runtime-policy.py`:
 - `legacy_snapshot_runtime=ollama`: the committed 94-model snapshot and current
   v1 dev run remain Ollama-based evidence.
 
-As of this protocol version, the runner adapter status is `planned`. Do not label
-new rows as llama.cpp-run until a smoke artifact proves the adapter.
+As of this protocol version, the runner adapter status is `implemented` for the
+`llama_cli_direct_gguf` path: `INFERENCE_RUNTIME=llama_cpp` uses `llama-cli` and
+requires a local direct GGUF path. Do not label broad thesis results as
+llama.cpp-run until a locked smoke/full-run artifact exists.
 
 ## 5. Scenario Sets
 

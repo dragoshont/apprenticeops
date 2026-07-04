@@ -10,7 +10,7 @@
 | Requirement | Why | Notes |
 |---|---|---|
 | **Ollama** ≥ 0.30 | reproduces the committed legacy/paper-era runs and serves LAN/API clients | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
-| **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role; runner adapter is still a separate gate. |
+| **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role; the first adapter uses `llama-cli` with direct local GGUF files. |
 | **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models |
 | **Linux host** for full telemetry | `run.py` reads `/proc` for RAM/swap | macOS/Windows run fine but **RAM/swap series will be empty** (documented limitation) |
 | **~60–120 GB free disk** | model weights (pulled then freed per model) | 95 models, q4 |
@@ -30,7 +30,7 @@ Two nodes, no laptop in the loop:
 
 A clean reproduction of the committed snapshot needs `home-ai` + Ollama. The
 thesis runtime direction is `home-ai` + llama.cpp, recorded in
-`data/runtime-policy.json`; do not mix the two without labelling the runtime. The
+`data/runtime-policy.json`; do not mix the two without labelling the runtime. The first adapter is `INFERENCE_RUNTIME=llama_cpp` via `llama-cli` for direct local GGUF files. The
 split separates the graded experiment (offline, locked) from the grading rig
 (online, frontier judge) — the same offline/online boundary the paper draws. The
 experiment node is driven over SSH, so nothing depends on a particular workstation.
