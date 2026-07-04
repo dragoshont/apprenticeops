@@ -98,8 +98,13 @@ result is promoted beyond diagnostic runtime evidence.
 
 ## Remaining Work Before Canonical llama.cpp Evidence
 
+The data-capture gate is reviewed in
+`docs/CEOPS_DATA_CAPTURE_ADVERSARIAL_REVIEW.md`. That review is now the source
+of truth for what must be fixed before a weeks-long all-model `llama_cpp` run.
+
 | Task | Gate |
 |---|---|
+| Fill `llama_cpp` telemetry gaps. | Streaming timing, child-process RSS/faults/threads, runtime/tokenizer token counts or explicit approximation labels, and `llama-bench -o jsonl` sidecars are present. |
 | Re-run the locked mini-wave with clean producer source provenance. | `env.harness_source_dirty=false` on every row, plus strict quality and audit gates. |
 | Avoid monitoring SSH sessions during reset windows. | `reset.ok=True` on every row. |
 | Decide whether the mini-wave is judged. | If judged, `report-run-quality.py --strict` passes for inference + judge rows. |
