@@ -123,11 +123,37 @@ and timeout-policy changes visible instead of letting them hide inside averages.
 | `dnf` | bool | run.py | Did-not-finish (timeout / stall / oom / loop) |
 | `warmup_s` / `warmup_err` | s / str | run.py | Cold-load time (model pull+load) and any warmup error |
 
-OpenTelemetry GenAI content fields (`gen_ai.input.messages`,
-`gen_ai.output.messages`, `gen_ai.system_instructions`) are intentionally not
-emitted as span attributes. ApprenticeOps stores the prompt diagnostics and the
-verbatim completion in the result row/output artifact instead, which keeps the
-data reusable without pretending this JSONL file is a live OTel exporter.
+OpenTelemetry GenAI content fields are captured in the JSONL rows for benchmark
+runs because the scenario corpus is synthetic/controlled and secret-free:
+
+| Field | Source | Meaning |
+|---|---|---|
+| `prompt.capture.enabled` / `prompt.capture.policy` | run.py env/policy | Whether exact prompt capture is enabled and why. Default policy is `benchmark_secret_free`. |
+| `prompt.full` / `prompt.sha256` | run.py | Exact serialized prompt sent to the runtime and its SHA256. |
+| `prompt.user_content` / `prompt.user_content_sha256` | run.py | User-content portion separated from the system instruction. |
+| `gen_ai.system_instructions` | run.py | Structured system instruction object. |
+| `gen_ai.input.messages` | run.py | Structured input message list for reproducibility and downstream training conversion. |
+| `gen_ai.output.messages` / `gen_ai.output.sha256` | run.py | Structured assistant output message and output hash. |
+
+These fields are large by design. Disable them with `CAPTURE_PROMPT_CONTENT=0`
+only for private/prod-like runs; canonical benchmark runs should keep them on.
+
+### Distillation and fine-tuning helpers
+
+| Field | Source | Meaning |
+|---|---|---|
+| `distill.example_schema` | run.py | Current row-to-training schema marker (`chat_sft_v1`). |
+| `distill.input_messages` | run.py | System/user chat messages without assistant output. |
+| `distill.output_message` | run.py | Assistant message plus finish reason. |
+| `distill.messages` | run.py | Full system/user/assistant triple for SFT-style conversion. |
+| `distill.input_sha256` / `distill.output_sha256` | run.py | Stable content hashes for deduplication and joins. |
+| `distill.reference_answer` / `distill.reference_answer_sha256` | scenarios.json | Gold/reference answer when present. This is **not** model input; it is a supervised target/reference. |
+| `distill.reference_answer_source` | run.py | Source of the reference target, currently `scenario.gold_answer`. |
+| `distill.judge_rubric` / `distill.judge_rubric_sha256` | scenarios.json | Rubric text/hash for later preference or teacher-data construction. |
+
+Low-scoring model outputs should be treated as negative/contrastive examples, not
+as SFT targets. The `distill.reference_answer` and judge rows define the safer
+teacher/evaluator signal.
 
 ### llama.cpp-native internals and sidecars
 

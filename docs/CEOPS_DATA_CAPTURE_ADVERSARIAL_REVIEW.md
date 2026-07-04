@@ -9,9 +9,10 @@ we are leaving useful evidence behind.
 
 **Do not launch the weeks-long all-model run yet.** The provenance defect is fixed
 for future launches (`SYNC_MODE=origin`, `env.harness_source_dirty=false` in the
-two-model smoke). The first implementation slice also fixes the major
-direct-`llama.cpp` telemetry gaps for a clean R=1 smoke, but we still need a clean
-R=5 mini-wave before promoting this path to canonical long-run status.
+two-model smoke). The first two implementation slices also fix the major
+direct-`llama.cpp` telemetry gaps and exact prompt/message capture for clean R=1
+smokes, but we still need a clean R=5 mini-wave before promoting this path to
+canonical long-run status.
 
 The current capture is strong enough for:
 
@@ -68,6 +69,36 @@ validated the implementation from `origin/main`:
 | Bench sidecar | PASS: `llama_cpp.bench.returncode=0`, `llama_cpp.bench.rows=2`, and bench SHA present. |
 | Persistence | PASS: clean persistence; experiment branch pushed and finalized at `b8146c3`. |
 
+Commit `8641e33` implements the second remediation slice for reproducibility and
+future fine-tuning/distillation data:
+
+- exact serialized prompt capture: `prompt.full`, `prompt.sha256`, and
+   `prompt.user_content`;
+- structured OpenTelemetry-style content: `gen_ai.system_instructions`,
+   `gen_ai.input.messages`, and `gen_ai.output.messages`;
+- scenario/reference hashes: context, question, deterministic checks, gold answer,
+   and judge rubric hashes;
+- distillation scaffolding: `distill.input_messages`, `distill.output_message`,
+   `distill.messages`, reference answer/source/hash, and output hash;
+- explicit capture policy fields: `prompt.capture.enabled` and
+   `prompt.capture.policy`.
+
+Clean dashboard smoke
+`llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-194150`
+validated the prompt/distillation capture from `origin/main`:
+
+| Check | Result |
+|---|---|
+| Source provenance | PASS: `env.harness_git=8641e33`, `env.harness_source_dirty=false`. |
+| Rows | PASS: `12/12` inference rows, `24/24` judged rows. |
+| Field count | PASS: `222` top-level raw fields. |
+| Prompt capture | PASS: `prompt.full`, `prompt.sha256`, `gen_ai.input.messages`, and `gen_ai.system_instructions` populated for `12/12` rows. |
+| Output capture | PASS: `gen_ai.output.messages` and `distill.output_sha256` populated for `12/12` rows. |
+| Distillation data | PASS: `distill.messages` length `3` and `distill.reference_answer` populated for `12/12` rows. |
+| Existing telemetry | PASS: TTFT, process RSS, and `llama-bench` SHA still populated for `12/12` rows. |
+| Quality gate | PASS: `report-run-quality.py` found `strict_failures=0`. |
+| Persistence | PASS: clean persistence; experiment branch pushed and finalized at `9d45330`. |
+
 ## Actual Field Inventory
 
 We audited two `llama_cpp` runs:
@@ -105,7 +136,7 @@ The important missingness in judged rows is `usage=null`: `24/24` in the clean
 smoke and `300/300` in the R=5 mini-wave. Scores, evidence, verdicts, judges,
 scenario hashes, and adapter/runtime stamps are present.
 
-## Present But Empty For `llama_cpp`
+## Original Present-But-Empty Gaps For `llama_cpp`
 
 Field count alone overstates coverage. The clean two-model smoke had 159 total
 sample ticks. These fields were present but had zero non-null sample values:
@@ -132,6 +163,11 @@ Some all-null fields are expected because the condition was inactive
 (`env.memory_context_file`, `env.strategy_prompt_file`, `gen_ai.thinking`,
 `http.exception`, `socket_exception`, `reset.warnings`). The timing, tokenizer,
 version, and child-process fields are real gaps.
+
+Status after `2575ec5` and `8641e33`: the timing, token-source,
+child-process, prompt/message, reference-answer, and distillation-message gaps are
+resolved for clean R=1 smoke rows. The final promotion gate is a clean R=5
+mini-wave with the same fields populated.
 
 ## Public Baseline Comparison
 
@@ -258,12 +294,13 @@ pass these gates:
 | Token accounting | Token counts are runtime/tokenizer-derived, or reports explicitly label them approximate and use character-normalized metrics for runtime comparison. |
 | `llama.cpp` provenance | Row or sidecar records `LLAMA_CPP_GIT_COMMIT`, build/version, model path, GGUF size/hash, cache/context/thread/offload settings. |
 | Structured bench sidecar | Per-run or per-model `llama-bench -o jsonl` sidecar exists for the staged GGUFs. |
+| Prompt and distillation capture | `prompt.full`, `prompt.sha256`, structured input/output messages, reference answer/hash, and `distill.messages` are populated for every successful row. |
 | Existing integrity gates | `report-run-quality.py --strict` passes, reset state is clean, persistence is clean, and `audit-run.py` passes for R=5 evidence runs. |
 
 ## Recommendation
 
-Do not start the weeks-long all-model run yet. The first telemetry remediation
-slice is implemented and smoke-validated. The next required gate is a clean
-`llama-cpp-evidence-5` R=5 mini-wave from `origin/main`; only after that passes
-with the new fields populated should we promote the `llama_cpp` path to canonical
-long-run status.
+Do not start the weeks-long all-model run yet. The telemetry and prompt-capture
+remediation slices are implemented and smoke-validated. The next required gate is
+a clean `llama-cpp-evidence-5` R=5 mini-wave from `origin/main`; only after that
+passes with the new fields populated should we promote the `llama_cpp` path to
+canonical long-run status.

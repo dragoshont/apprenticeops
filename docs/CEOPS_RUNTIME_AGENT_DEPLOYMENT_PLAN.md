@@ -84,6 +84,19 @@ passed the runtime and capture checks after the telemetry remediation:
 - `env.harness_artifact_dirty=true`, as expected once generated `results.*`,
   `logs/`, and `outputs/` exist in the producer checkout.
 
+The follow-up prompt-capture smoke
+`llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-194150`
+validated the training/distillation data shape:
+
+- `env.harness_git=8641e33` and `env.harness_source_dirty=false`;
+- `222` raw fields;
+- `prompt.full`, `prompt.sha256`, `gen_ai.system_instructions`,
+  `gen_ai.input.messages`, and `gen_ai.output.messages` populated for `12/12`
+  rows;
+- `distill.messages`, `distill.reference_answer`, reference hashes, and output
+  hashes populated for `12/12` rows;
+- strict quality report passed and persistence was clean.
+
 > **Scope honesty:** the smoke proves deployability and telemetry plumbing. It is
 > intentionally rejected by `scripts/audit-run.py` as paper evidence because the
 > locked protocol requires R=5.
@@ -108,6 +121,7 @@ of truth for what must be fixed before a weeks-long all-model `llama_cpp` run.
 | Task | Gate |
 |---|---|
 | Fill `llama_cpp` telemetry gaps. | Streaming timing, child-process RSS/faults/threads, runtime/tokenizer token counts or explicit approximation labels, and `llama-bench -o jsonl` sidecars are present. |
+| Fill prompt/distillation capture gaps. | Exact serialized prompt, structured input/output messages, reference answer hashes, and distillation message triples are present. |
 | Re-run the locked mini-wave with clean producer source provenance. | `env.harness_source_dirty=false` on every row, plus strict quality and audit gates. |
 | Avoid monitoring SSH sessions during reset windows. | `reset.ok=True` on every row. |
 | Decide whether the mini-wave is judged. | If judged, `report-run-quality.py --strict` passes for inference + judge rows. |
