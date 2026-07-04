@@ -27,6 +27,7 @@ results.*.jsonl
 results/
 outputs/
 logs/
+data/collected/
 data/run-batches/
 .tmp/
 
