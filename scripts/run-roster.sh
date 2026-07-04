@@ -25,11 +25,17 @@ MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
 INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
 INFERENCE_RUNTIME="${INFERENCE_RUNTIME:-ollama}"
+LLAMA_CPP_MODEL_MAP="${LLAMA_CPP_MODEL_MAP:-}"
+LLAMA_CPP_EXTRA_ARGS="${LLAMA_CPP_EXTRA_ARGS:-}"
+MAX_TOKENS_CAP="${MAX_TOKENS_CAP:-}"
+RUN_REPEATS="${RUN_REPEATS:-5}"
+RUN_TEMP="${RUN_TEMP:-0.7}"
+RUN_ALLOW_UNLOCKED="${RUN_ALLOW_UNLOCKED:-0}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
 mkdir -p "$LOGDIR" outputs
-ts() { date -uIs; }
+ts() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 log() { echo "[$(ts)] $*" | tee -a "$LOGDIR/driver.log"; }
 
 cleanup() {
@@ -83,7 +89,12 @@ if [ "$INFERENCE_STRATEGY" = "single_call_tournament_brief" ] && [ -z "$STRATEGY
   exit 1
 fi
 log "memory: context=$MEMORY_CONTEXT file=${MEMORY_CONTEXT_FILE:-none}"
-log "strategy: inference_strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME prompt=${STRATEGY_PROMPT_FILE:-none} timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
+log "strategy: inference_strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME prompt=${STRATEGY_PROMPT_FILE:-none} llama_cpp_model_map=${LLAMA_CPP_MODEL_MAP:-none} repeats=$RUN_REPEATS temp=$RUN_TEMP max_tokens_cap=${MAX_TOKENS_CAP:-none} allow_unlocked=$RUN_ALLOW_UNLOCKED timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
+
+ALLOW_UNLOCKED_ARGS=()
+if [ "$RUN_ALLOW_UNLOCKED" = "1" ]; then
+  ALLOW_UNLOCKED_ARGS=(--allow-unlocked)
+fi
 
 # 0) never contend with another eval
 while pgrep -f "run.py --models" >/dev/null 2>&1; do log "waiting for in-flight run.py ..."; sleep 120; done
@@ -123,13 +134,13 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C"
 
 # 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
-if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" python3 run.py --preflight-only \
+if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" python3 run.py --preflight-only \
   --scenarios "$SCENARIOS" \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
   --inference-strategy "$INFERENCE_STRATEGY" \
   ${STRATEGY_PROMPT_FILE:+--strategy-prompt-file "$STRATEGY_PROMPT_FILE"} \
-  --temp 0.7 --repeats 5 --seed-base 1 >"$LOGDIR/preflight.log" 2>&1; then
+  --temp "$RUN_TEMP" --repeats "$RUN_REPEATS" --seed-base 1 "${ALLOW_UNLOCKED_ARGS[@]}" >"$LOGDIR/preflight.log" 2>&1; then
   log "FATAL: preflight FAILED:"; sed 's/^/    /' "$LOGDIR/preflight.log" | tee -a "$LOGDIR/driver.log"
   exit 3
 fi
@@ -138,15 +149,15 @@ log "preflight OK"
 # 5) THE LOCKED ROSTER RUN — per-model quiesce + reset-state evidence, all telemetry
 NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
 NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
-log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=5, all telemetry, --rm-after ---"
+log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=${RUN_REPEATS}, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
   --inference-strategy "$INFERENCE_STRATEGY" \
   ${STRATEGY_PROMPT_FILE:+--strategy-prompt-file "$STRATEGY_PROMPT_FILE"} \
-  --temp 0.7 --repeats 5 --seed-base 1 --rm-after ${LIMIT:+--limit "$LIMIT"} \
+  --temp "$RUN_TEMP" --repeats "$RUN_REPEATS" --seed-base 1 --rm-after "${ALLOW_UNLOCKED_ARGS[@]}" ${LIMIT:+--limit "$LIMIT"} \
   --out "$OUT" >>"$LOGDIR/run.log" 2>&1
 rc=$?
 

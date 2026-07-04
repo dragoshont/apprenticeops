@@ -98,9 +98,20 @@ by `scripts/validate-runtime-policy.py`:
   v1 dev run remain Ollama-based evidence.
 
 As of this protocol version, the runner adapter status is `implemented` for the
-`llama_cli_direct_gguf` path: `INFERENCE_RUNTIME=llama_cpp` uses `llama-cli` and
+`llama_cpp_subprocess_direct_gguf` path: `INFERENCE_RUNTIME=llama_cpp` uses a
+non-interactive llama.cpp subprocess backend (default: `llama-completion`) and
 requires a local direct GGUF path. Do not label broad thesis results as
-llama.cpp-run until a locked smoke/full-run artifact exists.
+llama.cpp-run until a locked full-run artifact exists.
+
+The first bounded runtime proof is the 5-model sample described by:
+
+- `data/models.llama-cpp-smoke-5.txt`
+- `data/llama-cpp-smoke-5.model-map.json`
+- `data/llama-cpp-smoke-5.artifacts.json`
+
+That smoke uses `strategy-pilot-6`, `RUN_REPEATS=1`, and `MAX_TOKENS_CAP=96` to
+prove runtime plumbing and adapter telemetry. It is not canonical thesis evidence;
+`scripts/audit-run.py` must fail it against the locked R=5 manifest.
 
 ## 5. Scenario Sets
 

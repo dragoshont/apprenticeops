@@ -25,8 +25,8 @@ def main() -> None:
         fail("legacy_snapshot_runtime must remain ollama")
     if policy.get("runner_adapter_status") not in {"planned", "implemented"}:
         fail("runner_adapter_status must be planned or implemented")
-    if policy.get("runner_adapter_status") == "implemented" and policy.get("adapter_kind") != "llama_cli_direct_gguf":
-        fail("implemented runner adapter must declare adapter_kind=llama_cli_direct_gguf")
+    if policy.get("runner_adapter_status") == "implemented" and policy.get("adapter_kind") != "llama_cpp_subprocess_direct_gguf":
+        fail("implemented runner adapter must declare adapter_kind=llama_cpp_subprocess_direct_gguf")
 
     rows = [json.loads(line) for line in LOCK.read_text().splitlines() if line.strip()]
     included = [row for row in rows if row["included"]]

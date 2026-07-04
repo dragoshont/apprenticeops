@@ -2,7 +2,9 @@
 """
 run.py — node-side small-model eval runner (stdlib only, runs ON home-ai).
 
-Talks to the local Ollama (127.0.0.1:11434), so it must run on the node:
+Runs against the configured local inference runtime: Ollama for legacy/service
+evidence, or llama.cpp direct-GGUF subprocesses for the experiment runtime. It
+must run on the node:
     scp -r scripts/ai-node/small-model-eval dragos@home-ai.home.domain:/tmp/sme
     ssh dragos@home-ai.home.domain 'cd /tmp/sme && python3 run.py --models models.txt'
 
@@ -46,7 +48,7 @@ import urllib.request
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 INFERENCE_RUNTIME = os.environ.get("INFERENCE_RUNTIME", "ollama")
-LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI", "llama-cli")
+LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI") or (shutil.which("llama-completion") or "llama-cli")
 LLAMA_CPP_MODELS_DIR = os.environ.get("LLAMA_CPP_MODELS", os.environ.get("LLAMA_CPP_MODEL_DIR", "/srv/llama.cpp/models"))
 LLAMA_CPP_MODEL_MAP = os.environ.get("LLAMA_CPP_MODEL_MAP", "")
 LLAMA_CPP_EXTRA_ARGS = os.environ.get("LLAMA_CPP_EXTRA_ARGS", "")
@@ -81,6 +83,7 @@ _DIRIGERA_SSL.verify_mode = ssl.CERT_NONE
 DEFAULT_TIMEOUT_S = 180      # hard wall-clock per request
 DEFAULT_STALL_S = 60         # no new token for this long -> DNF:stall
 DEFAULT_MAX_TOKENS = 512     # num_predict cap
+MAX_TOKENS_CAP = int(os.environ.get("MAX_TOKENS_CAP", "0") or "0")
 DEFAULT_TIMEOUT_POLICY_ID = os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry")
 DEFAULT_INFERENCE_STRATEGY = os.environ.get("INFERENCE_STRATEGY", "baseline")
 ZERO_OUTPUT_RETRIES = int(os.environ.get("ZERO_OUTPUT_RETRIES", "1"))
@@ -1273,6 +1276,8 @@ def _llama_cpp_cmd(model_path: str, prompt: str, *, max_tokens: int, temperature
         "-c", str(NUM_CTX),
         "--temp", str(temperature),
         "--no-display-prompt",
+        "-no-cnv",
+        "--simple-io",
     ]
     if seed is not None:
         cmd.extend(["--seed", str(seed)])
@@ -1496,6 +1501,8 @@ def resolve_policy(s, *, model, memory_context_id, strategy_id):
     timeout_s = int(s.get("timeout_s") or DEFAULT_TIMEOUT_S)
     stall_s = int(s.get("stall_s") or DEFAULT_STALL_S)
     max_tokens = int(s.get("max_tokens") or DEFAULT_MAX_TOKENS)
+    if MAX_TOKENS_CAP > 0:
+        max_tokens = min(max_tokens, MAX_TOKENS_CAP)
     reasons = ["scenario_or_default"]
     model_low = model.lower()
     if memory_context_id != "none":
@@ -1516,6 +1523,7 @@ def resolve_policy(s, *, model, memory_context_id, strategy_id):
         "timeout_s": min(timeout_s, 600),
         "stall_s": min(stall_s, 120),
         "max_tokens": max_tokens,
+        "max_tokens_cap": MAX_TOKENS_CAP or None,
         "timeout_policy_id": DEFAULT_TIMEOUT_POLICY_ID,
         "policy_reasons": reasons,
     }
@@ -2068,8 +2076,9 @@ def main():
                          protocol=_protocol, scenarios_path=args.scenarios)
     if args.preflight_only:
         if problems:
-            sys.stderr.write("PREFLIGHT: FAIL\n" + "\n".join(f"  - {p}" for p in problems) + "\n")
-            sys.exit(3)
+            tag = "WARN (unlocked)" if args.allow_unlocked else "FAIL"
+            sys.stderr.write(f"PREFLIGHT: {tag}\n" + "\n".join(f"  - {p}" for p in problems) + "\n")
+            sys.exit(0 if args.allow_unlocked else 3)
         sys.stderr.write(f"PREFLIGHT: OK \u2014 node matches {args.manifest}\n"
                          + json.dumps(env_fp, indent=2) + "\n")
         sys.exit(0)
@@ -2270,6 +2279,7 @@ def main():
                     _disk = [s.get("disk_mb_s") for s in sampler.samples if isinstance(s.get("disk_mb_s"), (int, float))]
                     row = {
                         "ts": time.time(), "model": model, "bracket": bracket,
+                        "adapter": INFERENCE_RUNTIME,
                         "scenario": s["id"], "class": s["class"],
                         "aiopslab_task": s.get("aiopslab_task"),
                         "grounding": s.get("grounding"),

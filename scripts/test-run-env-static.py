@@ -79,6 +79,10 @@ def test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed() -> None:
     assert tel["gen_ai.response.finish_reasons"] == ["DNF:runtime_unsupported"]
 
 
+def test_runtime_name_is_snapshot_adapter_name() -> None:
+    assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp"}
+
+
 def main() -> None:
     test_artifact_only_dirty_is_not_source_dirty()
     test_source_dirty_is_distinct_from_artifacts()
@@ -86,6 +90,7 @@ def main() -> None:
     test_llama_cpp_resolves_direct_gguf_from_model_dir()
     test_llama_cpp_rejects_ollama_wrapped_model_without_mapping()
     test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed()
+    test_runtime_name_is_snapshot_adapter_name()
     print("run env provenance tests passed")
 
 
