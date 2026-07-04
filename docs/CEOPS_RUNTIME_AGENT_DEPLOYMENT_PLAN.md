@@ -69,15 +69,18 @@ The smoke produced rows with `adapter=llama_cpp`, `env.inference_runtime=llama_c
 
 After the first evidence mini-wave exposed dirty producer-source provenance, we
 made canonical producer launches use `SYNC_MODE=origin` by default and added a
-two-model validation set, `llama-cpp-smoke-2`. The dashboard-launched validation
-run `llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-182852`
-passed the runtime and capture checks:
+two-model validation set, `llama-cpp-smoke-2`. The latest dashboard-launched
+validation run
+`llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-190623`
+passed the runtime and capture checks after the telemetry remediation:
 
 - `run.meta.sync_mode=origin`;
 - `12/12` inference rows and `24/24` judged rows;
 - `adapter=llama_cpp`, `env.inference_runtime=llama_cpp`, and `finish=stop` for every row;
 - `reset.ok=True` for `12/12` rows;
-- `env.harness_git=163cb12` and `env.harness_source_dirty=false` for every row;
+- `env.harness_git=2575ec5` and `env.harness_source_dirty=false` for every row;
+- TTFT, prefill, decode jitter, timing-derived token counts, row-level process
+  RSS/fault/context-switch metrics, and `llama-bench` sidecar hashes populated;
 - `env.harness_artifact_dirty=true`, as expected once generated `results.*`,
   `logs/`, and `outputs/` exist in the producer checkout.
 

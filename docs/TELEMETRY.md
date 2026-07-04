@@ -103,7 +103,12 @@ and timeout-policy changes visible instead of letting them hide inside averages.
 ### Generation telemetry (`gen_ai.*`, per request)
 | Field | Unit | Source | Meaning |
 |---|---|---|---|
-| `gen_ai.usage.input_tokens` / `output_tokens` | tokens | Ollama | Prompt / completion token counts |
+| `gen_ai.provider.name` | str | run.py | Runtime/provider label (`ollama`, `llama_cpp`). |
+| `gen_ai.output.type` | str | run.py | Output modality requested/captured; current rows use `text`. |
+| `gen_ai.request.stream` | bool | run.py | Whether the request path is streamed/chunk-observed. |
+| `gen_ai.response.model` | str | run.py/runtime | Model name reported as the responder. |
+| `gen_ai.usage.input_tokens` / `output_tokens` | tokens | Ollama / llama.cpp timing | Prompt / completion token counts. `llama_cpp` rows parse `--perf` timing counts when available. |
+| `gen_ai.usage.token_source` | str | run.py | Token-count source, e.g. `llama_cpp_timing` or `char_estimate`. |
 | `gen_ai.usage.output_chars` | chars | run.py | Completion character count → **tokenizer-independent** throughput (C2) |
 | `gen_ai.completion` | str | run.py | **Verbatim model answer** — retained in the durable row so a run can be re-judged, shown as a transcript, or a judge verdict audited against the actual output |
 | `gen_ai.thinking` | str \| null | run.py | Verbatim thinking-phase text (null when `--think` is off) |
@@ -117,6 +122,28 @@ and timeout-policy changes visible instead of letting them hide inside averages.
 | `gen_ai.response.finish_reasons` | list | Ollama/run.py | Stop reason or `DNF:*` |
 | `dnf` | bool | run.py | Did-not-finish (timeout / stall / oom / loop) |
 | `warmup_s` / `warmup_err` | s / str | run.py | Cold-load time (model pull+load) and any warmup error |
+
+OpenTelemetry GenAI content fields (`gen_ai.input.messages`,
+`gen_ai.output.messages`, `gen_ai.system_instructions`) are intentionally not
+emitted as span attributes. ApprenticeOps stores the prompt diagnostics and the
+verbatim completion in the result row/output artifact instead, which keeps the
+data reusable without pretending this JSONL file is a live OTel exporter.
+
+### llama.cpp-native internals and sidecars
+
+| Field | Source | Meaning |
+|---|---|---|
+| `llama_cpp.model_path` / `size_bytes` | model map / filesystem | Direct GGUF path and file size that ran. |
+| `llama_cpp.cli` / `llama_cpp.command_args` | run.py | CLI binary and sanitized command arguments (prompt omitted). |
+| `llama_cpp.stderr_tail` | llama.cpp stderr | Last stderr lines for sampler/runtime/timing audit. |
+| `llama_cpp.timing.*` | llama.cpp `--perf` stderr | Parsed load, prompt-eval, eval, and total times plus prompt/eval token counts and rates. |
+| `llama_cpp.sampler.*` and `gen_ai.request.top_*` / penalties | llama.cpp stderr | Parsed sampler defaults/settings printed by llama.cpp. |
+| `llama_cpp.proc.*` | `os.wait4()` | Child-process max RSS, faults, context switches, and user/system CPU time. |
+| `llama_cpp.bench.*` | `llama-bench -o jsonl` sidecar | Per-model structured benchmark sidecar path, SHA, row count, repetitions, prompt/gen token counts, and return code. |
+
+`llama-bench` sidecars are calibration artifacts, not substitutes for scenario
+rows. They capture runtime/backend settings and prompt/decode throughput under a
+fixed synthetic shape, while scenario rows capture task-conditioned behavior.
 
 ### Ollama-native internals (from `/api/show`, `/api/ps`, and the response)
 | Field | Source | Meaning |
@@ -158,7 +185,7 @@ and timeout-policy changes visible instead of letting them hide inside averages.
 |---|---|---|---|
 | `peak_swap_mb` | MB | /proc | Peak swap used (capacity-bound signal) |
 | `min_mem_avail_mb` | MB | /proc | Min available RAM during the request |
-| `mem.peak_rss_mb` | MB | /proc | Peak model-runner resident set |
+| `mem.peak_rss_mb` | MB | /proc or `os.wait4()` | Peak model-runner resident set; direct `llama_cpp` rows use child-process rusage when the sampler misses a short process. |
 | `membw.peak_mb_s` | MB/s | perf | Peak achieved DRAM bandwidth (only if `PERF_MEMBW=1`) → **MBU** numerator |
 | `membw.series` | list | perf | Bandwidth(t) samples |
 | `membw.requests` | dict | perf | Memory-request split by requestor: `ia`=CPU, `gt`=iGPU, `io`=device — gt≈0 proves no GPU offload |
@@ -166,7 +193,7 @@ and timeout-policy changes visible instead of letting them hide inside averages.
 | `swap.start_mb` | MB | Sampler | First-sample swap → swap **delta** (in-pressure) vs `peak_swap_mb` |
 | `gpu.peak_freq_mhz` | MHz | i915 | Peak iGPU GT clock over the task (~300 = idle = CPU-only) |
 | `perf.core` | dict | perf | CPU microarch (PERF_CORE=1): instructions, cycles, **ipc**, cache_misses, llc_load_misses, branch_misses |
-| `proc.minflt` / `proc.majflt` / `proc.ctxt_switches` | n | /proc | Per-request minor/major page-fault + context-switch **deltas** (first→last sample) |
+| `proc.minflt` / `proc.majflt` / `proc.ctxt_switches` | n | /proc or `os.wait4()` | Per-request minor/major page-fault + context-switch counts; direct `llama_cpp` rows use child-process rusage. |
 | `samples` | list | Sampler | The 1 Hz multivariate series (next table) |
 
 ---

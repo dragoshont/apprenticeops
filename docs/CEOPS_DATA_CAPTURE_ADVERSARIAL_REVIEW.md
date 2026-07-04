@@ -9,8 +9,9 @@ we are leaving useful evidence behind.
 
 **Do not launch the weeks-long all-model run yet.** The provenance defect is fixed
 for future launches (`SYNC_MODE=origin`, `env.harness_source_dirty=false` in the
-two-model smoke), but the current direct-`llama.cpp` subprocess adapter still
-under-captures important systems and generation telemetry.
+two-model smoke). The first implementation slice also fixes the major
+direct-`llama.cpp` telemetry gaps for a clean R=1 smoke, but we still need a clean
+R=5 mini-wave before promoting this path to canonical long-run status.
 
 The current capture is strong enough for:
 
@@ -20,8 +21,8 @@ The current capture is strong enough for:
 - RAPL power, thermal, CPU frequency, memory bandwidth, disk/network rates;
 - full model completions and judge evidence.
 
-It is not yet strong enough for a canonical weeks-long `llama_cpp` systems run
-because:
+The original direct-`llama.cpp` adapter was not strong enough for a canonical
+weeks-long systems run because:
 
 1. `llama_cpp` generation is captured through `subprocess.run()`, so stdout is
    buffered. This loses true time-to-first-token, per-chunk timing, and jitter.
@@ -38,6 +39,34 @@ because:
 > **Scope honesty:** this review does not say the last rows are useless. It says
 > they are **deployment-plumbing evidence**, not yet the final measurement shape
 > for a weeks-long canonical systems run.
+
+## Implementation Update
+
+Commit `2575ec5` implements the first remediation slice:
+
+- streams `llama.cpp` stdout/stderr instead of buffering with `subprocess.run()`;
+- records TTFT, multi-point `progress_trace`, and decode chunk jitter;
+- parses `llama.cpp` prompt/eval token counts and timing from `--perf` stderr;
+- records OpenTelemetry GenAI scalar fields such as provider, output type,
+   response model, and stream mode;
+- captures per-child max RSS, page faults, context switches, and CPU time with
+   `os.wait4()`;
+- emits per-model `llama-bench -o jsonl` sidecars and records their hashes.
+
+Clean dashboard smoke
+`llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-190623`
+validated the implementation from `origin/main`:
+
+| Check | Result |
+|---|---|
+| Source provenance | PASS: `env.harness_git=2575ec5`, `env.harness_source_dirty=false`. |
+| Rows | PASS: `12/12` inference rows, `24/24` judged rows. |
+| Quality gate | PASS: `report-run-quality.py` found `strict_failures=0`. |
+| Streaming timing | PASS: TTFT, prefill, decode jitter, and multi-point `progress_trace` populated for `12/12` rows. |
+| Token source | PASS: `gen_ai.usage.token_source=llama_cpp_timing`. |
+| Process telemetry | PASS: row-level max RSS, minor faults, and context switches populated for `12/12` rows. |
+| Bench sidecar | PASS: `llama_cpp.bench.returncode=0`, `llama_cpp.bench.rows=2`, and bench SHA present. |
+| Persistence | PASS: clean persistence; experiment branch pushed and finalized at `b8146c3`. |
 
 ## Actual Field Inventory
 
@@ -117,7 +146,7 @@ version, and child-process fields are real gaps.
 
 ## Adversarial Findings
 
-### BLOCKER — `llama_cpp` timing is not streaming-grade
+### RESOLVED FOR SMOKE — `llama_cpp` timing is now streaming-grade
 
 Evidence: `run.py` calls `subprocess.run(cmd, capture_output=True, text=True)` in
 `run_llama_cpp`, then sets `gen_ai.server.time_to_first_token_s=None`,
@@ -129,11 +158,11 @@ LLM serving metrics when available. For local deployment UX, TTFT and decode
 jitter are not decorative; they distinguish "slow to start" from "slow to
 decode".
 
-Fix before long run: stream the `llama.cpp` subprocess stdout/stderr or move to
-`llama-server`/SSE for the experiment adapter. Record first output time,
-per-chunk timing, time-per-output-token, and a real progress trace.
+Fix status: implemented in `2575ec5` by streaming stdout/stderr from the
+subprocess. The clean smoke populated TTFT, prefill, decode jitter, and
+multi-point progress traces for every row.
 
-### BLOCKER — child-process memory/fault telemetry is empty
+### RESOLVED FOR ROW-LEVEL METRICS — child-process memory/fault telemetry
 
 Evidence: in the clean two-model smoke, `rss_mb`, `threads`, `majflt`, `minflt`,
 `ctxt_vol`, and `ctxt_invol` were non-null in `0/159` sample ticks. Top-level
@@ -144,11 +173,12 @@ Why this matters: the thesis target is local deployment fit. Without child RSS,
 threads, faults, and context switches, the memory-pressure claim relies on
 system-wide available memory and bandwidth but misses the actual process footprint.
 
-Fix before long run: have the sampler track the `llama.cpp` child PID and compute
-RSS/thread/fault/context-switch deltas from `/proc/<pid>`. Fail the pre-long-run
-gate if `rss_mb` is null for all ticks.
+Fix status: implemented in `2575ec5` with `os.wait4()` child resource usage. The
+clean smoke populated row-level max RSS, minor faults, and context switches for
+every row. Per-tick `samples[].rss_mb` remains best-effort for very short rows;
+the row-level process fields are the long-run gate.
 
-### SHOULD-FIX — tokenizer counts are estimates for `llama_cpp`
+### RESOLVED FOR `llama.cpp` TIMING COUNTS — tokenizer counts are no longer only estimates
 
 Evidence: `run_llama_cpp` sets input/output tokens with `max(1, len(text) // 4)`
 and `max(1, len(prompt) // 4)` instead of tokenizer or runtime totals.
@@ -157,33 +187,34 @@ Why this matters: token-normalized throughput, token usage, and comparison with
 Ollama rows become approximate. Character throughput remains useful, but token/s
 claims should be marked approximate until fixed.
 
-Fix: parse `llama.cpp` timing/token output from stderr, use a tokenizer counter,
-or run through an endpoint/tool path that returns prompt and completion token
-counts. Until then, prefer `gen_ai.usage.output_chars` and wall time for
-cross-runtime comparisons.
+Fix status: implemented in `2575ec5` by parsing prompt/eval token counts from
+`llama.cpp --perf` output. Rows stamp `gen_ai.usage.token_source`; the clean smoke
+reported `llama_cpp_timing` for every row.
 
-### SHOULD-FIX — `llama.cpp` build/version and structured bench data are missing
+### PARTIALLY RESOLVED — `llama.cpp` build/version and structured bench data
 
 Evidence: `llama_cpp.version` and `env.llama_cpp_version` are null for every
 clean-smoke row, while `llama-bench` can emit `build_commit`, `build_number`,
 `cpu_info`, `backends`, model size/params, thread/cache/offload settings, and
 prompt/decode averages/stddevs in JSON/JSONL.
 
-Fix: stamp `LLAMA_CPP_GIT_COMMIT` / `LLAMA_CPP_GIT_DESCRIBE` from the runtime
-profile into every row and add a per-run sidecar from `llama-bench -o jsonl` for
-each staged GGUF. This is separate calibration, not a replacement for scenario
-rows.
+Fix status: `2575ec5` stamps `LLAMA_CPP_GIT_COMMIT` / `LLAMA_CPP_GIT_DESCRIBE`
+when the runtime profile exports them, and writes `llama-bench -o jsonl` sidecars
+with row count, return code, and SHA. Remaining caveat: `llama_cpp.version` from
+`llama-completion --version` may still be null if the binary does not implement a
+version flag; the profile variables are the source of truth.
 
-### SHOULD-FIX — GenAI semantic-convention scalar fields are incomplete
+### RESOLVED FOR CORE SCALARS — GenAI semantic-convention scalar fields
 
 Missing cheap fields include `gen_ai.provider.name`, `server.address`,
 `server.port`, `gen_ai.request.stream`, `gen_ai.response.model`,
 `gen_ai.request.top_p`, `gen_ai.request.top_k`, and repeat/frequency/presence
 penalty settings when we rely on defaults.
 
-Fix: add explicit scalar defaults to rows. If a setting is not controlled, stamp
-`null` plus a `runtime_default` policy reason rather than leaving the reader to
-guess.
+Fix status: `2575ec5` adds provider, output type, response model, stream mode,
+token source, and parsed sampler fields where `llama.cpp` prints them. Remaining
+nice-to-have: explicit null/policy fields for settings the runtime defaults but
+does not print.
 
 ### SHOULD-FIX — judge usage is null
 
@@ -223,7 +254,7 @@ pass these gates:
 | Source provenance | `env.harness_source_dirty=false` for every row. |
 | Runtime identity | `adapter=llama_cpp`, `env.inference_runtime=llama_cpp`, `run.meta.sync_mode=origin`. |
 | Streaming timing | `gen_ai.server.time_to_first_token_s`, `phase.prefill_s`, `decode.dt_p50_ms`, `decode.dt_p95_ms`, and multi-point `progress_trace` are populated for successful rows. |
-| Child process telemetry | `rss_mb`, `threads`, page faults, and context-switch fields are non-null in `samples[]` and summarized in top-level `mem.*` / `proc.*`. |
+| Child process telemetry | Row-level max RSS, page faults, context switches, and CPU time are populated from `os.wait4()`; per-tick process samples are best-effort for short rows. |
 | Token accounting | Token counts are runtime/tokenizer-derived, or reports explicitly label them approximate and use character-normalized metrics for runtime comparison. |
 | `llama.cpp` provenance | Row or sidecar records `LLAMA_CPP_GIT_COMMIT`, build/version, model path, GGUF size/hash, cache/context/thread/offload settings. |
 | Structured bench sidecar | Per-run or per-model `llama-bench -o jsonl` sidecar exists for the staged GGUFs. |
@@ -231,8 +262,8 @@ pass these gates:
 
 ## Recommendation
 
-Do not start the weeks-long all-model run yet. The next engineering slice should
-fix the `llama_cpp` adapter telemetry gaps, then rerun `llama-cpp-smoke-2` and
-`llama-cpp-evidence-5`. Only after the R=5 clean-source mini-wave passes with
-streaming timing and child-process telemetry populated should we promote the
-`llama_cpp` path to canonical long-run status.
+Do not start the weeks-long all-model run yet. The first telemetry remediation
+slice is implemented and smoke-validated. The next required gate is a clean
+`llama-cpp-evidence-5` R=5 mini-wave from `origin/main`; only after that passes
+with the new fields populated should we promote the `llama_cpp` path to canonical
+long-run status.
