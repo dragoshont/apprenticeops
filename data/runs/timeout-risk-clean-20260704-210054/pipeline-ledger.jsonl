@@ -29,3 +29,4 @@
 {"model":"*","stage":"judge","ts":1783201533,"ok":1,"detail":"judged 72->76"}
 {"model":"*","stage":"judge","ts":1783201585,"ok":1,"detail":"judged 76->78"}
 {"model":"*","stage":"judge","ts":1783201630,"ok":1,"detail":"judged 78->80"}
+{"model":"hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783201632,"ok":1,"detail":"6c0fc24"}
