@@ -1454,6 +1454,79 @@ def _llama_cpp_thread_arg() -> str | None:
     return None
 
 
+LLAMA_CPP_BENCH_COMMON_FIELDS = (
+    "build_commit", "build_number", "cpu_info", "gpu_info", "backends",
+    "model_filename", "model_type", "model_size", "model_n_params",
+    "n_batch", "n_ubatch", "n_threads", "cpu_mask", "cpu_strict", "poll",
+    "type_k", "type_v", "n_gpu_layers", "n_cpu_moe", "split_mode",
+    "main_gpu", "no_kv_offload", "flash_attn", "devices", "tensor_split",
+    "tensor_buft_overrides", "use_mmap", "use_direct_io", "embeddings",
+    "no_op_offload", "no_host", "fit_target", "fit_min_ctx",
+)
+
+LLAMA_CPP_BENCH_TEST_FIELDS = (
+    "n_prompt", "n_gen", "n_depth", "test_time", "avg_ns", "stddev_ns",
+    "avg_ts", "stddev_ts", "samples_ns", "samples_ts",
+)
+
+
+def _load_jsonl(path: str) -> list[dict]:
+    rows = []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(obj, dict):
+                    rows.append(obj)
+    except OSError:
+        pass
+    return rows
+
+
+def _llama_cpp_bench_kind(row: dict) -> str:
+    n_prompt = int(row.get("n_prompt") or 0)
+    n_gen = int(row.get("n_gen") or 0)
+    if n_prompt > 0 and n_gen == 0:
+        return "pp"
+    if n_prompt == 0 and n_gen > 0:
+        return "tg"
+    if n_prompt > 0 and n_gen > 0:
+        return "pg"
+    return "unknown"
+
+
+def summarize_llama_cpp_bench(bench_path: str) -> dict:
+    rows = _load_jsonl(bench_path)
+    if not rows:
+        return {}
+    summary = {
+        "llama_cpp.bench.test_summaries": [
+            {"kind": _llama_cpp_bench_kind(row), **{k: row.get(k) for k in LLAMA_CPP_BENCH_TEST_FIELDS if k in row}}
+            for row in rows
+        ]
+    }
+    first = rows[0]
+    for field in LLAMA_CPP_BENCH_COMMON_FIELDS:
+        if field in first:
+            summary[f"llama_cpp.bench.{field}"] = first.get(field)
+    seen_kinds = set()
+    for row in rows:
+        kind = _llama_cpp_bench_kind(row)
+        if kind in seen_kinds:
+            continue
+        seen_kinds.add(kind)
+        for field in LLAMA_CPP_BENCH_TEST_FIELDS:
+            if field in row:
+                summary[f"llama_cpp.bench.{kind}.{field}"] = row.get(field)
+    return summary
+
+
 def llama_cpp_bench(model: str, outputs_dir: str) -> dict:
     if INFERENCE_RUNTIME != "llama_cpp" or not LLAMA_CPP_BENCH:
         return {}
@@ -1510,6 +1583,7 @@ def llama_cpp_bench(model: str, outputs_dir: str) -> dict:
         "llama_cpp.bench.n_gen": LLAMA_CPP_BENCH_GEN_TOKENS,
         "llama_cpp.bench.returncode": rc,
         "llama_cpp.bench.stderr_tail": stderr_tail,
+        **summarize_llama_cpp_bench(bench_path),
     }
 
 

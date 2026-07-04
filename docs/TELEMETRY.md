@@ -6,8 +6,12 @@ Every evaluation run emits **one JSONL row per `(model, scenario, rep)`** to
 `gen_ai.*`-aligned). `calibrate.py` writes the hardware **ceilings** to
 `calibration.json`; `report.py` joins the two into the derived systems metrics.
 
-This file is the **contract** for that data: every field, its unit, and where it
-comes from. It is what makes the released dataset reusable (PAPER.md §4b).
+This file is the **conceptual contract** for that data: field families, units,
+and where they come from. The exhaustive observed field list is generated in
+`docs/ROW_FIELD_CATALOG.md` from real JSONL artifacts plus
+`data/row-field-descriptions.json`. Regenerate it with
+`scripts/generate-row-field-catalog.py` whenever row shape changes; do not hand-
+maintain giant field tables in README-like docs.
 
 ---
 

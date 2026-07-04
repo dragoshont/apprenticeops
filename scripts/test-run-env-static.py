@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
 import tempfile
 
@@ -152,6 +153,51 @@ def test_output_capture_fields_include_assistant_message() -> None:
     assert fields["distill.output_sha256"] == mod._sha256_text("Answer")
 
 
+def test_llama_cpp_bench_summary_promotes_common_and_test_fields() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        path = pathlib.Path(td) / "bench.jsonl"
+        rows = [
+            {
+                "build_commit": "abc123",
+                "build_number": 987,
+                "cpu_info": "test cpu",
+                "backends": "CPU",
+                "model_filename": "model.gguf",
+                "model_size": 1234,
+                "model_n_params": 5678,
+                "n_threads": 4,
+                "type_k": "f16",
+                "type_v": "f16",
+                "use_mmap": True,
+                "n_prompt": 128,
+                "n_gen": 0,
+                "avg_ns": 1000,
+                "stddev_ns": 10,
+                "avg_ts": 128000.0,
+                "stddev_ts": 120.0,
+                "samples_ts": [127900.0, 128100.0],
+            },
+            {
+                "build_commit": "abc123",
+                "n_prompt": 0,
+                "n_gen": 32,
+                "avg_ns": 2000,
+                "stddev_ns": 20,
+                "avg_ts": 16000.0,
+                "stddev_ts": 80.0,
+                "samples_ts": [15900.0, 16100.0],
+            },
+        ]
+        path.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+        summary = mod.summarize_llama_cpp_bench(str(path))
+    assert summary["llama_cpp.bench.build_commit"] == "abc123"
+    assert summary["llama_cpp.bench.n_threads"] == 4
+    assert summary["llama_cpp.bench.pp.avg_ts"] == 128000.0
+    assert summary["llama_cpp.bench.tg.n_gen"] == 32
+    assert summary["llama_cpp.bench.test_summaries"][0]["kind"] == "pp"
+    assert summary["llama_cpp.bench.test_summaries"][1]["kind"] == "tg"
+
+
 def main() -> None:
     test_artifact_only_dirty_is_not_source_dirty()
     test_source_dirty_is_distinct_from_artifacts()
@@ -165,6 +211,7 @@ def main() -> None:
     test_rusage_fields_promote_process_metrics()
     test_prompt_capture_fields_include_exact_prompt_and_distill_target()
     test_output_capture_fields_include_assistant_message()
+    test_llama_cpp_bench_summary_promotes_common_and_test_fields()
     print("run env provenance tests passed")
 
 

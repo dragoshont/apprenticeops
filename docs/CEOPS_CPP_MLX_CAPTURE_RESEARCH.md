@@ -20,7 +20,8 @@ matter for optimization and future training data.
 
 The current subprocess adapter now captures enough for a **clean systems smoke**:
 source provenance, exact prompt/message data, completions, judge labels, TTFT,
-prefill/decode timing, row-level process resources, and `llama-bench` sidecars.
+prefill/decode timing, row-level process resources, and parsed `llama-bench`
+calibration summaries plus sidecars.
 
 It still does **not** exhaust what `llama.cpp` can expose. The missing high-value
 signals are mostly available through `llama-server`, not `llama-completion`:
@@ -85,8 +86,9 @@ non-streaming `/completion` response with `n_probs=5`, `return_tokens=true`,
   generation settings, and sampler defaults.
 
 This is stronger than the current subprocess row. The subprocess path gets
-timings and process resources now, but it cannot see token alternatives,
-`tokens_cached`, normalized generation settings, or server slot/cache state.
+timings, process resources, prompt/distillation fields, and parsed `llama-bench`
+calibration summaries now, but it cannot see token alternatives, `tokens_cached`,
+normalized generation settings, or server slot/cache state.
 
 ## Caching Findings
 
