@@ -69,6 +69,9 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 | `seed` | int | run.py | Sampling seed (fixed per rep for reproducibility) |
 | `temp` | float | run.py | Sampling temperature (0 = deterministic pass) |
 | `think` | bool | run.py | Reasoning/think mode requested |
+| `env.harness_source_dirty` | bool | run.py | Future rows: source/tracked files were dirty at row-stamp time. Use this for source reproducibility checks. |
+| `env.harness_artifact_dirty` | bool | run.py | Future rows: generated artifacts (`results.*`, `logs/`, `outputs/`, `calibration.json`, `data/runs/`, etc.) were present/dirty. |
+| `env.harness_dirty` | bool | run.py | Backward-compatible aggregate of source/artifact dirtiness. Older rows only have this field. |
 
 `memory_context` is deliberately separate from `grounding`. `grounding` describes
 whether a scenario itself supplies reference material; `env.memory_context`

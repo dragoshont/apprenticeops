@@ -50,11 +50,14 @@ Systems metrics are node-bound:
 The paper should not generalize these systems numbers to all laptops. It should
 state: single-node measurement, released harness, invite reruns.
 
-## Known Hardware/Profile Caveat
+## Harness Dirty Semantics
 
-The committed v1 dev run rows stamp `env.harness_dirty=true` even though the run
-was launched from an origin-synced source checkout. This appears to reflect
-generated run artifacts appearing in the worktree by row-stamp time. Treat it as
-a follow-up instrumentation issue: split `source_dirty` from `artifact_dirty` in
-future rows. Do not use the dirty flag alone to reject a run whose `run.meta`,
-scenario hashes, model set, and strict report are otherwise clean.
+Older rows only had `env.harness_dirty`, which could become true after generated
+artifacts appeared in the worktree. New rows split this into:
+
+- `env.harness_source_dirty`: tracked/source files changed;
+- `env.harness_artifact_dirty`: generated run artifacts such as `results.*`,
+  `logs/`, `outputs/`, `calibration.json`, or `data/runs/` changed;
+- `env.harness_dirty`: backward-compatible aggregate of the two.
+
+Use `env.harness_source_dirty` for source reproducibility checks on future rows.

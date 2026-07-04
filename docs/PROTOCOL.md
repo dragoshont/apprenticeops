@@ -28,7 +28,7 @@ RAM pressure. GB is **not** the thesis eligibility boundary.
 | Track | Purpose | Evidence status |
 |---|---|---|
 | `legacy_footprint_snapshot` | Reproducible paper-era 94-model result, including some footprint-bounded 7B/8B rows. | Historical/paper-era evidence; not the final <=5B thesis roster. |
-| `thesis_5b_candidate` | Models eligible for the current doctoral target. | Defined by `data/models.lock.jsonl`; currently 140 included rows, so the 150+ target is not complete. |
+| `thesis_5b_candidate` | Models eligible for the current doctoral target. | Defined by `data/models.lock.jsonl`; currently 155 included rows, so the 150+ count target is met. |
 | `dev_external_candidate` | External-pattern scenario-pack learning. | Dev-only; never Core/paper scoring without a later lock. |
 | `app_task` | Product/application model probes such as Aletheia journal or doodle tasks. | App evidence only, separate from ops benchmark claims. |
 

@@ -218,6 +218,13 @@ def infer_publisher_family(model_id: str) -> tuple[str, str]:
     return "unknown", "unknown"
 
 
+def infer_source_url(model_id: str) -> str:
+    if model_id.startswith("hf.co/"):
+        body = model_id.removeprefix("hf.co/").split(":", 1)[0]
+        return f"https://huggingface.co/{body}"
+    return f"https://ollama.com/library/{model_id}"
+
+
 def infer_training_type(model_id: str) -> str:
     text = model_id.lower()
     if "coder" in text or "code" in text or "starcoder" in text or "opencoder" in text:
@@ -273,7 +280,7 @@ def build_rows() -> list[dict]:
             "quantization": infer_quantization(model_id, row),
             "runtime": "ollama",
             "artifact_size_gb": artifact_size_gb,
-            "source_url": override.get("source_url", "unknown"),
+            "source_url": override.get("source_url", infer_source_url(model_id)),
             "license": override.get("license", "unknown"),
             "ollama_digest": None,
             "gguf_sha256": None,

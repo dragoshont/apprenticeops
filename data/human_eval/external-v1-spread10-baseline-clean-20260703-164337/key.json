@@ -1,0 +1,456 @@
+{
+  "items": [
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 3,
+      "row_id": "HV1-001",
+      "scenario": "ext-secure-09-logging-policy-remediation"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 3,
+      "row_id": "HV1-002",
+      "scenario": "ext-secure-09-logging-policy-remediation"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 2,
+      "row_id": "HV1-003",
+      "scenario": "ext-guard-04-agent-runaway-tool-loop"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "granite4:micro",
+      "rep": 4,
+      "row_id": "HV1-004",
+      "scenario": "ext-secure-08-agent-secret-redaction-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:0.5b",
+      "rep": 1,
+      "row_id": "HV1-005",
+      "scenario": "ext-diagnose-02-api-contract-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 4.0,
+        "gpt-5.4": 4.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 4,
+      "row_id": "HV1-006",
+      "scenario": "ext-diagnose-06-itsm-blast-radius"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 3,
+      "row_id": "HV1-007",
+      "scenario": "ext-monitor-05-zero-output-timeout-policy"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "granite4:micro",
+      "rep": 2,
+      "row_id": "HV1-008",
+      "scenario": "ext-secure-08-agent-secret-redaction-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen3:1.7b",
+      "rep": 2,
+      "row_id": "HV1-009",
+      "scenario": "ext-diagnose-06-itsm-blast-radius"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "smollm2:360m",
+      "rep": 0,
+      "row_id": "HV1-010",
+      "scenario": "ext-tooluse-07-sre-readonly-json-plan"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:3b",
+      "rep": 1,
+      "row_id": "HV1-011",
+      "scenario": "ext-detect-01-log-baseline-shift"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "smollm2:360m",
+      "rep": 0,
+      "row_id": "HV1-012",
+      "scenario": "ext-diagnose-02-api-contract-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 2,
+      "row_id": "HV1-013",
+      "scenario": "ext-test-03-cicd-flaky-vs-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "smollm2:360m",
+      "rep": 4,
+      "row_id": "HV1-014",
+      "scenario": "ext-diagnose-02-api-contract-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen3:1.7b",
+      "rep": 2,
+      "row_id": "HV1-015",
+      "scenario": "ext-diagnose-02-api-contract-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "granite4:tiny-h",
+      "rep": 1,
+      "row_id": "HV1-016",
+      "scenario": "ext-tooluse-07-sre-readonly-json-plan"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 4.0,
+        "gpt-5.4": 4.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 3,
+      "row_id": "HV1-017",
+      "scenario": "ext-test-03-cicd-flaky-vs-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-018",
+      "scenario": "ext-monitor-05-zero-output-timeout-policy"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:0.5b",
+      "rep": 2,
+      "row_id": "HV1-019",
+      "scenario": "ext-test-03-cicd-flaky-vs-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 4,
+      "row_id": "HV1-020",
+      "scenario": "ext-secure-08-agent-secret-redaction-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "granite4:tiny-h",
+      "rep": 2,
+      "row_id": "HV1-021",
+      "scenario": "ext-tooluse-07-sre-readonly-json-plan"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "smollm2:360m",
+      "rep": 2,
+      "row_id": "HV1-022",
+      "scenario": "ext-monitor-05-zero-output-timeout-policy"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "granite4:tiny-h",
+      "rep": 4,
+      "row_id": "HV1-023",
+      "scenario": "ext-monitor-05-zero-output-timeout-policy"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 4.0,
+        "gpt-5.4": 4.0
+      },
+      "model": "granite4:tiny-h",
+      "rep": 1,
+      "row_id": "HV1-024",
+      "scenario": "ext-test-03-cicd-flaky-vs-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "granite4:micro",
+      "rep": 0,
+      "row_id": "HV1-025",
+      "scenario": "ext-tooluse-07-sre-readonly-json-plan"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 4.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "llama3.2:3b",
+      "rep": 0,
+      "row_id": "HV1-026",
+      "scenario": "ext-test-03-cicd-flaky-vs-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 4,
+      "row_id": "HV1-027",
+      "scenario": "ext-monitor-05-zero-output-timeout-policy"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 2,
+      "row_id": "HV1-028",
+      "scenario": "ext-tooluse-07-sre-readonly-json-plan"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 1.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "smollm2:360m",
+      "rep": 2,
+      "row_id": "HV1-029",
+      "scenario": "ext-secure-09-logging-policy-remediation"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 1.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 2,
+      "row_id": "HV1-030",
+      "scenario": "ext-detect-01-log-baseline-shift"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 4.0,
+        "gpt-5.4": 4.0
+      },
+      "model": "granite4:micro",
+      "rep": 4,
+      "row_id": "HV1-031",
+      "scenario": "ext-diagnose-06-itsm-blast-radius"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:3b",
+      "rep": 2,
+      "row_id": "HV1-032",
+      "scenario": "ext-secure-09-logging-policy-remediation"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 4,
+      "row_id": "HV1-033",
+      "scenario": "ext-detect-01-log-baseline-shift"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-034",
+      "scenario": "ext-detect-01-log-baseline-shift"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 5.0,
+        "gpt-5.4": 5.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 1,
+      "row_id": "HV1-035",
+      "scenario": "ext-diagnose-02-api-contract-regression"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-036",
+      "scenario": "ext-detect-01-log-baseline-shift"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "granite4:tiny-h",
+      "rep": 2,
+      "row_id": "HV1-037",
+      "scenario": "ext-secure-09-logging-policy-remediation"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:3b",
+      "rep": 4,
+      "row_id": "HV1-038",
+      "scenario": "ext-guard-04-agent-runaway-tool-loop"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:3b",
+      "rep": 1,
+      "row_id": "HV1-039",
+      "scenario": "ext-guard-04-agent-runaway-tool-loop"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 3,
+      "row_id": "HV1-040",
+      "scenario": "ext-secure-08-agent-secret-redaction-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 3.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 2,
+      "row_id": "HV1-041",
+      "scenario": "ext-guard-04-agent-runaway-tool-loop"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 3.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 0,
+      "row_id": "HV1-042",
+      "scenario": "ext-diagnose-06-itsm-blast-radius"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "qwen2.5:0.5b",
+      "rep": 0,
+      "row_id": "HV1-043",
+      "scenario": "ext-secure-08-agent-secret-redaction-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 2.0,
+        "gpt-5.4": 2.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-044",
+      "scenario": "ext-guard-04-agent-runaway-tool-loop"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.6": 5.0,
+        "gpt-5.4": 5.0
+      },
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "rep": 1,
+      "row_id": "HV1-045",
+      "scenario": "ext-diagnose-06-itsm-blast-radius"
+    }
+  ],
+  "run_id": "external-v1-spread10-baseline-clean-20260703-164337",
+  "seed": 20260704
+}

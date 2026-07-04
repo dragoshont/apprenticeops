@@ -30,7 +30,7 @@ Top five risks:
 | Risk | Severity | Why it matters |
 |---|---:|---|
 | Thesis boundary drift: README, REVIEWER, CITATION, paper docs still say `0.5-8B`, `<=8B`, `<=5 GB`, or `4-5GB` as research framing. | P0 | The cold audit's highest-priority question fails unless the repo distinguishes old snapshot framing from the new <=5B-parameter thesis. |
-| No committed model lockfile with parameter tiers, licenses, digests, inclusion/exclusion decisions, and variant handling. | P0 | `data/models.txt` has 158 tags, but the tier comments are not enough for a defensible 150+ model doctoral protocol. |
+| Model metadata provenance remains incomplete. | P0 | `data/models.lock.jsonl` has 173 tags and 155 <=5B thesis candidates, but most licenses and all digests/hashes still need verification. |
 | README and reviewer docs overstate current publication readiness in places. | P0 | Claims such as preprint/NeurIPS readiness and verified numbers must be tied to the locked snapshot and caveated as pre-submission. |
 | Statistical and judge/human validation story is incomplete for doctoral claims. | P1 | Cross-judge agreement is present, but human-vs-judge validation remains an open item and should not read as completed. |
 | Reproducibility is strong operationally but scattered across docs. | P1 | A reviewer needs one protocol path: eligibility -> locked models -> scenarios -> run -> judge -> report -> figures. |
@@ -303,9 +303,10 @@ What is weak: the public research boundary, model eligibility metadata, privacy
 gate, single-path protocol, and human validation status.
 
 What to fix first next: **verify the <=5B model metadata.** The model lock now
-enforces the boundary and includes 155 current thesis-track candidates, but
-license/source/digest coverage is still incomplete. The v1 external dev run is
-useful scenario-pack learning, but it does not solve the model-provenance problem.
+enforces the boundary and includes 155 current thesis-track candidates, and
+`source_url` coverage is audited. License and digest/hash coverage remain
+incomplete. The v1 external dev run is useful scenario-pack learning, but it does
+not solve the model-provenance problem.
 
 Current suitability:
 

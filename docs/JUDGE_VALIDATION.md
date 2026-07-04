@@ -40,3 +40,21 @@ Before thesis/paper review, define and commit:
 
 Until then, all judge-quality claims should say **cross-judge robust, not yet
 human-validated**.
+
+## Prepared Packet
+
+The first committed packet is:
+
+```text
+data/human_eval/external-v1-spread10-baseline-clean-20260703-164337/
+```
+
+It contains a 45-item blind sheet, blank score CSV, and private key file for the
+dev-only external-v1 spread10 run. Validate the packet with:
+
+```bash
+python3 scripts/validate-human-eval.py
+```
+
+This prepares the human-validation workflow but does **not** complete human
+validation. The scores are intentionally blank until a human rater fills them.

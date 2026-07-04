@@ -1550,20 +1550,51 @@ def _env_static():
         kernel = os.uname().release
     except Exception:  # noqa: BLE001
         kernel = None
+    repo = os.path.dirname(os.path.abspath(__file__))
+    git_status = _sh_out(["git", "-C", repo, "status", "--short", "--untracked-files=all"])
+    source_dirty, artifact_dirty = _classify_git_status(git_status)
     return {
         "env.host": socket.gethostname(),
         "env.kernel": kernel,
         "env.ollama_version": _sh_out(["ollama", "--version"]),
-        "env.harness_git": _sh_out(
-            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "rev-parse", "--short", "HEAD"]),
-        "env.harness_dirty": bool(_sh_out(
-            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "status", "--short"])),
+        "env.harness_git": _sh_out(["git", "-C", repo, "rev-parse", "--short", "HEAD"]),
+        "env.harness_dirty": source_dirty or artifact_dirty,
+        "env.harness_source_dirty": source_dirty,
+        "env.harness_artifact_dirty": artifact_dirty,
         "env.num_ctx": NUM_CTX,
         "env.sample_interval_s": SAMPLE_INTERVAL_S,
         "env.perf_membw": PERF_MEMBW,
         "env.perf_core": PERF_CORE,
         "env.run_id": os.environ.get("RUN_ID"),
     }
+
+
+ARTIFACT_STATUS_PREFIXES = (
+    "calibration.json",
+    "logs/",
+    "outputs/",
+    "results.",
+    "data/runs/",
+    "data/run-batches/",
+    "data/experiments/",
+)
+
+
+def _classify_git_status(status_text: str | None) -> tuple[bool, bool]:
+    """Return (source_dirty, artifact_dirty) for porcelain git status text."""
+    source_dirty = False
+    artifact_dirty = False
+    for raw in (status_text or "").splitlines():
+        if not raw.strip():
+            continue
+        path = raw[3:].strip() if len(raw) > 3 else raw.strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path.startswith(ARTIFACT_STATUS_PREFIXES):
+            artifact_dirty = True
+        else:
+            source_dirty = True
+    return source_dirty, artifact_dirty
 
 
 def _env_volatile():
