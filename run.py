@@ -1872,6 +1872,11 @@ def _json_eq(got, exp):
         return False
 
 
+def _single_fenced_command_block(text):
+    match = re.fullmatch(r"\s*```(?:[A-Za-z0-9_+.-]+)?\s*\n(?P<body>.*?)\n```\s*", text, re.S)
+    return bool(match and match.group("body").strip() and "```" not in match.group("body"))
+
+
 def run_checks(text, checks):
     low = text.lower()
     results = []
@@ -1905,6 +1910,8 @@ def run_checks(text, checks):
                 isinstance(it, dict) and it.get(c["field"]) in c["allowed"] for it in j)
         elif t == "regex":
             ok = bool(re.search(c["pattern"], text, re.I | re.S))
+        elif t == "single_fenced_command_block":
+            ok = _single_fenced_command_block(text)
         results.append({"desc": c.get("desc", t), "type": t, "pass": bool(ok)})
     passed = sum(1 for r in results if r["pass"])
     return passed, len(results), results

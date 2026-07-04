@@ -153,6 +153,13 @@ def test_output_capture_fields_include_assistant_message() -> None:
     assert fields["distill.output_sha256"] == mod._sha256_text("Answer")
 
 
+def test_single_fenced_command_block_check_requires_only_one_block() -> None:
+    checks = [{"type": "single_fenced_command_block", "desc": "single block"}]
+    assert mod.run_checks("```bash\nkubectl rollout restart deployment/web -n shop\n```", checks)[0] == 1
+    assert mod.run_checks("Run this:\n```bash\nkubectl rollout restart deployment/web -n shop\n```", checks)[0] == 0
+    assert mod.run_checks("```bash\nkubectl rollout restart deployment/web -n shop\n```\n```bash\necho nope\n```", checks)[0] == 0
+
+
 def test_llama_cpp_bench_summary_promotes_common_and_test_fields() -> None:
     with tempfile.TemporaryDirectory() as td:
         path = pathlib.Path(td) / "bench.jsonl"
@@ -211,6 +218,7 @@ def main() -> None:
     test_rusage_fields_promote_process_metrics()
     test_prompt_capture_fields_include_exact_prompt_and_distill_target()
     test_output_capture_fields_include_assistant_message()
+    test_single_fenced_command_block_check_requires_only_one_block()
     test_llama_cpp_bench_summary_promotes_common_and_test_fields()
     print("run env provenance tests passed")
 

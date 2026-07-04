@@ -142,6 +142,14 @@ def validate_sets_and_manifest() -> None:
         fail("run matrix default memory_context must be none")
     if matrix.get("defaults", {}).get("inference_strategy") != "baseline":
         fail("run matrix default inference_strategy must be baseline")
+    for model_set in matrix.get("model_sets", []):
+        model_path = model_set.get("path")
+        if not model_path or not (REPO / model_path).exists():
+            fail(f"model set {model_set.get('id')} path is missing")
+        for key in ("llama_cpp_model_map", "llama_cpp_artifacts"):
+            artifact_path = model_set.get(key)
+            if artifact_path and not (REPO / artifact_path).exists():
+                fail(f"model set {model_set.get('id')} {key} is missing")
     memory_contexts = {entry["id"]: entry for entry in matrix.get("memory_contexts", [])}
     expected_memory_contexts = {"none", "homelab-okf-v1", "homelab-okf-3kb-v1", "tournament-brief-v1"}
     if set(memory_contexts) != expected_memory_contexts:
@@ -201,6 +209,96 @@ def validate_sets_and_manifest() -> None:
             fail(f"manifest hash mismatch for {scenario_set}")
 
 
+def _require_keys(obj: dict, keys: set[str], label: str) -> None:
+    missing = sorted(keys - set(obj))
+    if missing:
+        fail(f"{label} missing keys: {missing}")
+
+
+def _enum(schema: dict, *path: str) -> set[str]:
+    node = schema
+    for part in path:
+        node = node[part]
+    return set(node["enum"])
+
+
+def validate_core_lifecycle_metadata() -> None:
+    schema = load_json("data/scenario-lifecycle.schema.json")
+    required = set(schema["required"])
+    props = schema["properties"]
+    object_kinds = _enum(schema, "properties", "operational_object", "properties", "kind")
+    task_values = _enum(schema, "properties", "task_lifecycle", "items")
+    categories = _enum(schema, "properties", "fault_model", "properties", "category")
+    channels = _enum(schema, "properties", "workload_evidence", "properties", "channels", "items")
+    source_qualities = _enum(schema, "properties", "workload_evidence", "properties", "source_quality")
+    action_modes = _enum(schema, "properties", "action_surface", "properties", "mode")
+    destructive_risks = _enum(schema, "properties", "action_surface", "properties", "destructive_risk")
+    promotion_values = _enum(schema, "properties", "promotion_status")
+    source_uses = _enum(schema, "properties", "source_trace", "properties", "use")
+    row_statuses = _enum(schema, "properties", "source_trace", "properties", "row_status")
+
+    all_by_id = {scenario["id"]: scenario for scenario in load_json("data/scenarios.json")["scenarios"]}
+    core = load_json("data/scenario_sets/core-current.json")["scenarios"]
+    for scenario in core:
+        scenario_id = scenario["id"]
+        lifecycle = scenario.get("lifecycle")
+        if not isinstance(lifecycle, dict):
+            fail(f"core scenario {scenario_id} missing lifecycle metadata")
+        _require_keys(lifecycle, required, f"{scenario_id}.lifecycle")
+        unknown = sorted(set(lifecycle) - set(props))
+        if unknown:
+            fail(f"{scenario_id}.lifecycle has unknown keys: {unknown}")
+        if all_by_id.get(scenario_id, {}).get("lifecycle") != lifecycle:
+            fail(f"canonical scenario lifecycle drift for {scenario_id}")
+
+        operational_object = lifecycle["operational_object"]
+        _require_keys(operational_object, {"kind", "name"}, f"{scenario_id}.operational_object")
+        if operational_object["kind"] not in object_kinds:
+            fail(f"{scenario_id} invalid operational_object.kind")
+        if not set(lifecycle["task_lifecycle"]).issubset(task_values):
+            fail(f"{scenario_id} invalid task_lifecycle")
+        fault_model = lifecycle["fault_model"]
+        _require_keys(fault_model, {"category", "manifestation"}, f"{scenario_id}.fault_model")
+        if fault_model["category"] not in categories:
+            fail(f"{scenario_id} invalid fault_model.category")
+        workload_evidence = lifecycle["workload_evidence"]
+        _require_keys(workload_evidence, {"channels", "source_quality"}, f"{scenario_id}.workload_evidence")
+        if not set(workload_evidence["channels"]).issubset(channels):
+            fail(f"{scenario_id} invalid workload_evidence.channels")
+        if workload_evidence["source_quality"] not in source_qualities:
+            fail(f"{scenario_id} invalid workload_evidence.source_quality")
+        action_surface = lifecycle["action_surface"]
+        _require_keys(action_surface, {"mode", "destructive_risk"}, f"{scenario_id}.action_surface")
+        if action_surface["mode"] not in action_modes:
+            fail(f"{scenario_id} invalid action_surface.mode")
+        if action_surface["destructive_risk"] not in destructive_risks:
+            fail(f"{scenario_id} invalid action_surface.destructive_risk")
+        evaluator_shape = lifecycle["evaluator_shape"]
+        _require_keys(evaluator_shape, {"deterministic_checks", "judge_rubric"}, f"{scenario_id}.evaluator_shape")
+        if lifecycle["promotion_status"] not in promotion_values:
+            fail(f"{scenario_id} invalid promotion_status")
+        source_trace = lifecycle["source_trace"]
+        _require_keys(source_trace, {"use", "row_status"}, f"{scenario_id}.source_trace")
+        if source_trace["use"] not in source_uses:
+            fail(f"{scenario_id} invalid source_trace.use")
+        if source_trace["row_status"] not in row_statuses:
+            fail(f"{scenario_id} invalid source_trace.row_status")
+
+    structured = next(scenario for scenario in core if scenario["id"] == "toolcall-20-structured-restart")
+    if structured.get("aiopslab_task") != "mitigation":
+        fail("toolcall-20-structured-restart must be labeled mitigation")
+    checks = structured.get("deterministic_checks") or []
+    if not any(check.get("type") == "single_fenced_command_block" for check in checks):
+        fail("toolcall-20-structured-restart must enforce single_fenced_command_block")
+    passed, total, details = run.run_checks(structured["gold_answer"], checks)
+    if passed != total:
+        fail(f"toolcall-20 gold answer failed checks: {details}")
+    negative = "Run this:\n```bash\nkubectl rollout restart deployment/web -n shop\n```"
+    bad_passed, bad_total, _ = run.run_checks(negative, checks)
+    if bad_passed == bad_total:
+        fail("toolcall-20 negative prose+fence unexpectedly passed all checks")
+
+
 def validate_scenario_lifecycle_schema() -> None:
     schema = load_json("data/scenario-lifecycle.schema.json")
     if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
@@ -234,7 +332,8 @@ def main() -> None:
     validate_scenarios()
     validate_sets_and_manifest()
     validate_scenario_lifecycle_schema()
-    print("scenario validation passed: canonical=33 core-current=20 extended=13 external-candidates-v0=8 external-candidates-v1=9 memory_contexts=4 inference_strategies=5 plans=1 lifecycle_schema=1")
+    validate_core_lifecycle_metadata()
+    print("scenario validation passed: canonical=33 core-current=20 extended=13 external-candidates-v0=8 external-candidates-v1=9 memory_contexts=4 inference_strategies=5 plans=1 lifecycle_schema=1 core_lifecycle=20")
 
 
 if __name__ == "__main__":

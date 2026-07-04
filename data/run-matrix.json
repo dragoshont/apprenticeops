@@ -54,6 +54,20 @@
       "description": "Two-model llama.cpp clean-producer-path validation. This is R=1 smoke evidence for launch/source provenance, not canonical thesis scoring."
     },
     {
+      "id": "llama-cpp-timeout-risk-2",
+      "label": "llama.cpp timeout-risk probe - 1B plus 4-5B",
+      "path": "data/models.llama-cpp-timeout-risk-2.txt",
+      "kind": "validation",
+      "runtime": "llama_cpp",
+      "llama_cpp_model_map": "data/llama-cpp-smoke-5.model-map.json",
+      "llama_cpp_artifacts": "data/llama-cpp-smoke-5.artifacts.json",
+      "llama_cpp_extra_args": "-t 4 -c 1024",
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Timeout-risk probe over Core 20 with one ~1B model and one 4-5B-bracket model. Uses normal scenario token caps so DNF/stall/length behavior is visible."
+    },
+    {
       "id": "llama-cpp-evidence-5",
       "label": "llama.cpp evidence mini-wave - 5 direct GGUFs",
       "path": "data/models.llama-cpp-smoke-5.txt",

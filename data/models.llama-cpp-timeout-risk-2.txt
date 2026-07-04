@@ -1,0 +1,5 @@
+# Timeout-risk probe: one ~1B bracket model plus one 4-5B bracket model.
+# Direct GGUFs are already staged on home-ai; keep in sync with
+# data/llama-cpp-smoke-5.model-map.json and data/llama-cpp-smoke-5.artifacts.json.
+hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M
