@@ -125,6 +125,33 @@ def test_rusage_fields_promote_process_metrics() -> None:
     assert parsed["proc.ctxt_switches"] == 55
 
 
+def test_prompt_capture_fields_include_exact_prompt_and_distill_target() -> None:
+    scenario = {
+        "id": "example",
+        "context": "Synthetic context",
+        "question": "What next?",
+        "gold_answer": "Do the safe thing.",
+        "judge_rubric": "Reward safe answers.",
+        "deterministic_checks": [{"type": "any_include", "patterns": ["safe"]}],
+    }
+    prompt = mod.build_prompt(scenario, "Known background")
+    fields = mod.prompt_capture_fields(scenario, "Known background", prompt)
+    assert fields["prompt.full"] == prompt
+    assert fields["prompt.sha256"] == mod._sha256_text(prompt)
+    assert fields["gen_ai.system_instructions"][0]["content"] == mod.PROMPT_SYSTEM_INSTRUCTIONS
+    assert fields["gen_ai.input.messages"][0]["role"] == "user"
+    assert fields["distill.reference_answer"] == "Do the safe thing."
+    assert fields["distill.reference_answer_source"] == "scenario.gold_answer"
+
+
+def test_output_capture_fields_include_assistant_message() -> None:
+    fields = mod.output_capture_fields("Answer", "stop")
+    assert fields["gen_ai.output.messages"][0]["role"] == "assistant"
+    assert fields["gen_ai.output.messages"][0]["parts"][0]["content"] == "Answer"
+    assert fields["distill.output_message"]["finish_reason"] == "stop"
+    assert fields["distill.output_sha256"] == mod._sha256_text("Answer")
+
+
 def main() -> None:
     test_artifact_only_dirty_is_not_source_dirty()
     test_source_dirty_is_distinct_from_artifacts()
@@ -136,6 +163,8 @@ def main() -> None:
     test_llama_cpp_timing_parser_extracts_counts_and_rates()
     test_llama_cpp_sampler_parser_extracts_otel_scalars()
     test_rusage_fields_promote_process_metrics()
+    test_prompt_capture_fields_include_exact_prompt_and_distill_target()
+    test_output_capture_fields_include_assistant_message()
     print("run env provenance tests passed")
 
 

@@ -95,6 +95,10 @@ DEFAULT_MAX_TOKENS = 512     # num_predict cap
 MAX_TOKENS_CAP = int(os.environ.get("MAX_TOKENS_CAP", "0") or "0")
 DEFAULT_TIMEOUT_POLICY_ID = os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry")
 DEFAULT_INFERENCE_STRATEGY = os.environ.get("INFERENCE_STRATEGY", "baseline")
+CAPTURE_PROMPT_CONTENT = os.environ.get("CAPTURE_PROMPT_CONTENT", "1") != "0"
+PROMPT_CAPTURE_POLICY = os.environ.get("PROMPT_CAPTURE_POLICY", "benchmark_secret_free")
+PROMPT_TEMPLATE_ID = "ceops_ops_assistant_v1"
+PROMPT_SYSTEM_INSTRUCTIONS = "You are a homelab operations assistant. Use ONLY the information given. Be concise and specific."
 ZERO_OUTPUT_RETRIES = int(os.environ.get("ZERO_OUTPUT_RETRIES", "1"))
 INFERENCE_STRATEGIES = {
     "baseline",
@@ -1832,6 +1836,85 @@ def run_checks(text, checks):
     return passed, len(results), results
 
 
+def _sha256_text(text: str | None) -> str | None:
+    return hashlib.sha256((text or "").encode()).hexdigest() if text is not None else None
+
+
+def _json_sha256(obj) -> str:
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _prompt_user_content(s, memory_context=""):
+    memory = ""
+    if memory_context:
+        memory = ("--- HOMELAB MEMORY ---\n"
+                  "The following is stable, curated background about the homelab. "
+                  "Use it only when it is relevant to the scenario; the scenario "
+                  "context remains authoritative for incident-specific facts.\n"
+                  f"{memory_context}\n\n")
+    return f"{memory}--- CONTEXT ---\n{s['context']}\n\n--- TASK ---\n{s['question']}"
+
+
+def _otel_text_part(content: str) -> dict:
+    return {"type": "text", "content": content}
+
+
+def _chat_message(role: str, content: str) -> dict:
+    return {"role": role, "parts": [_otel_text_part(content)]}
+
+
+def prompt_capture_fields(s, memory_context, prompt):
+    user_content = _prompt_user_content(s, memory_context)
+    checks = s.get("deterministic_checks") or []
+    gold = s.get("gold_answer")
+    rubric = s.get("judge_rubric")
+    fields = {
+        "prompt.capture.enabled": CAPTURE_PROMPT_CONTENT,
+        "prompt.capture.policy": PROMPT_CAPTURE_POLICY,
+        "prompt.template_id": PROMPT_TEMPLATE_ID,
+        "prompt.template_sha256": _sha256_text(PROMPT_SYSTEM_INSTRUCTIONS),
+        "prompt.sha256": _sha256_text(prompt),
+        "prompt.user_content_sha256": _sha256_text(user_content),
+        "scenario.context_sha256": _sha256_text(s.get("context") or ""),
+        "scenario.question_sha256": _sha256_text(s.get("question") or ""),
+        "scenario.gold_answer_sha256": _sha256_text(gold) if gold is not None else None,
+        "scenario.judge_rubric_sha256": _sha256_text(rubric) if rubric is not None else None,
+        "scenario.deterministic_checks_sha256": _json_sha256(checks),
+        "distill.example_schema": "chat_sft_v1",
+        "distill.input_sha256": _sha256_text(prompt),
+        "distill.reference_answer_sha256": _sha256_text(gold) if gold is not None else None,
+        "distill.reference_answer_source": "scenario.gold_answer" if gold is not None else None,
+        "distill.judge_rubric_sha256": _sha256_text(rubric) if rubric is not None else None,
+    }
+    if CAPTURE_PROMPT_CONTENT:
+        fields.update({
+            "prompt.full": prompt,
+            "prompt.user_content": user_content,
+            "gen_ai.system_instructions": [_otel_text_part(PROMPT_SYSTEM_INSTRUCTIONS)],
+            "gen_ai.input.messages": [_chat_message("user", user_content)],
+            "distill.input_messages": [
+                {"role": "system", "content": PROMPT_SYSTEM_INSTRUCTIONS},
+                {"role": "user", "content": user_content},
+            ],
+            "distill.reference_answer": gold,
+            "distill.judge_rubric": rubric,
+        })
+    return fields
+
+
+def output_capture_fields(text: str, finish: str | None):
+    fields = {
+        "gen_ai.output.sha256": _sha256_text(text or ""),
+        "distill.output_sha256": _sha256_text(text or ""),
+    }
+    if CAPTURE_PROMPT_CONTENT:
+        fields.update({
+            "gen_ai.output.messages": [_chat_message("assistant", text or "")],
+            "distill.output_message": {"role": "assistant", "content": text or "", "finish_reason": finish},
+        })
+    return fields
+
+
 def prompt_diagnostics(s, memory_context, prompt):
     context = s.get("context") or ""
     task = s.get("question") or ""
@@ -2679,6 +2762,7 @@ def main():
                         "effective.timeout_policy_id": policy["timeout_policy_id"],
                         "effective.policy_reasons": policy["policy_reasons"],
                         **prompt_diagnostics(s, memory_context, prompt),
+                        **prompt_capture_fields(s, memory_context, prompt),
                         **env_fp,
                         **meta,
                         **tel,
@@ -2690,6 +2774,10 @@ def main():
                     # answer. The judge still reads outputs/<...>.txt; this is the
                     # committed copy.
                     row["gen_ai.completion"] = text
+                    finish_reason = (row.get("gen_ai.response.finish_reasons") or [None])[0]
+                    row.update(output_capture_fields(text, finish_reason))
+                    if CAPTURE_PROMPT_CONTENT and "distill.input_messages" in row:
+                        row["distill.messages"] = [*row["distill.input_messages"], row["distill.output_message"]]
                     row["gen_ai.thinking"] = think_text or None
                     fout.write(json.dumps(row) + "\n"); fout.flush()
                     suffix = f"__r{rep}" if args.repeats > 1 else ""
@@ -2730,16 +2818,7 @@ def main():
 
 
 def build_prompt(s, memory_context=""):
-    memory = ""
-    if memory_context:
-        memory = ("--- HOMELAB MEMORY ---\n"
-                  "The following is stable, curated background about the homelab. "
-                  "Use it only when it is relevant to the scenario; the scenario "
-                  "context remains authoritative for incident-specific facts.\n"
-                  f"{memory_context}\n\n")
-    return (f"You are a homelab operations assistant. Use ONLY the information "
-            f"given. Be concise and specific.\n\n"
-            f"{memory}--- CONTEXT ---\n{s['context']}\n\n--- TASK ---\n{s['question']}")
+    return f"{PROMPT_SYSTEM_INSTRUCTIONS}\n\n{_prompt_user_content(s, memory_context)}"
 
 
 if __name__ == "__main__":
