@@ -29,14 +29,17 @@ Telemetry field names follow the OpenTelemetry GenAI semantic conventions
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import os
 import re
 import glob
 import hashlib
 import random
+import resource
 import shlex
 import shutil
+import selectors
 import socket
 import ssl
 import subprocess
@@ -44,6 +47,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
@@ -52,6 +56,11 @@ LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI") or (shutil.which("llama-completi
 LLAMA_CPP_MODELS_DIR = os.environ.get("LLAMA_CPP_MODELS", os.environ.get("LLAMA_CPP_MODEL_DIR", "/srv/llama.cpp/models"))
 LLAMA_CPP_MODEL_MAP = os.environ.get("LLAMA_CPP_MODEL_MAP", "")
 LLAMA_CPP_EXTRA_ARGS = os.environ.get("LLAMA_CPP_EXTRA_ARGS", "")
+LLAMA_CPP_BENCH = os.environ.get("LLAMA_CPP_BENCH", "1") != "0"
+LLAMA_CPP_BENCH_REPS = int(os.environ.get("LLAMA_CPP_BENCH_REPS", "3") or "3")
+LLAMA_CPP_BENCH_PROMPT_TOKENS = int(os.environ.get("LLAMA_CPP_BENCH_PROMPT_TOKENS", "128") or "128")
+LLAMA_CPP_BENCH_GEN_TOKENS = int(os.environ.get("LLAMA_CPP_BENCH_GEN_TOKENS", "32") or "32")
+LLAMA_CPP_TIME_VERBOSE = os.environ.get("LLAMA_CPP_TIME_VERBOSE", "1") != "0"
 RUNTIMES = {"ollama", "llama_cpp"}
 
 # ---- power metering (optional) -------------------------------------------
@@ -688,6 +697,15 @@ class Sampler(threading.Thread):
         self.peak_dram_w = 0.0
         self.peak_gpu_freq = 0
 
+    def set_runner_pid(self, pid):
+        """Attach sampling to a runtime child process after it is spawned.
+
+        Ollama keeps a persistent llama-server process that can be discovered at
+        sampler start. The direct llama.cpp adapter creates a short-lived child
+        after sampling has already begun, so the adapter sets that PID here.
+        """
+        self.runner_pid = pid
+
     def run(self):
         t0 = time.time()
         self.runner_pid = _runner_pid()
@@ -814,6 +832,17 @@ def _post_json(path, payload, timeout):
         OLLAMA + path, data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json"}, method="POST")
     return urllib.request.urlopen(req, timeout=timeout)
+
+
+def _server_attrs_from_url(url: str) -> dict:
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:  # noqa: BLE001
+        return {}
+    return {
+        "server.address": parsed.hostname,
+        "server.port": parsed.port,
+    }
 
 
 def model_present(model):
@@ -1103,7 +1132,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     """
     if INFERENCE_RUNTIME == "llama_cpp":
         return run_llama_cpp(model, system, user, max_tokens=max_tokens, timeout_s=timeout_s,
-                             stall_s=stall_s, temperature=temperature, seed=seed)
+                             stall_s=stall_s, sampler=sampler, temperature=temperature, seed=seed)
     opts = {"num_predict": max_tokens, "num_ctx": NUM_CTX, "temperature": temperature}
     if seed is not None:
         opts["seed"] = seed  # reproducibility: fixed seed per repetition
@@ -1216,6 +1245,10 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     return {
         "gen_ai.request.model": model,
         "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "ollama",
+        "gen_ai.output.type": "text",
+        "gen_ai.request.stream": True,
+        "gen_ai.response.model": model,
         "gen_ai.request.max_tokens": max_tokens,
         "gen_ai.request.temperature": temperature,
         "gen_ai.request.seed": seed,
@@ -1254,6 +1287,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
         "decode.dt_max_ms": round(max(dts), 1) if dts else None,
         "ollama.total_duration_s": round(total_dur / 1e9, 3) if total_dur else None,
         "ollama.load_duration_s": round(load_dur / 1e9, 3) if load_dur else None,
+        **_server_attrs_from_url(OLLAMA),
         "_text": text,
         "_think": "".join(think),
     }
@@ -1278,12 +1312,316 @@ def _llama_cpp_cmd(model_path: str, prompt: str, *, max_tokens: int, temperature
         "--no-display-prompt",
         "-no-cnv",
         "--simple-io",
+        "--perf",
     ]
     if seed is not None:
         cmd.extend(["--seed", str(seed)])
     if LLAMA_CPP_EXTRA_ARGS:
         cmd.extend(shlex.split(LLAMA_CPP_EXTRA_ARGS))
     return cmd
+
+
+def _duration_seconds(value: str, unit: str | None) -> float:
+    v = float(value)
+    u = (unit or "ms").lower()
+    if u.startswith("us") or u.startswith("µs"):
+        return v / 1_000_000
+    if u.startswith("ms"):
+        return v / 1_000
+    return v
+
+
+def _parse_llama_cpp_timings(stderr_text: str | None) -> dict:
+    """Parse best-effort libllama timing lines from stderr.
+
+    llama.cpp versions vary their prefixes, but the stable load-bearing phrases
+    are `load time`, `prompt eval time`, `eval time`, and `total time`.
+    """
+    text = stderr_text or ""
+    out = {}
+    patterns = {
+        "load": r"load time\s*=\s*([0-9.]+)\s*([a-zµ]+)",
+        "prompt_eval": r"prompt eval time\s*=\s*([0-9.]+)\s*([a-zµ]+)\s*/\s*([0-9]+)\s+tokens?",
+        "eval": r"(?<!prompt )eval time\s*=\s*([0-9.]+)\s*([a-zµ]+)\s*/\s*([0-9]+)\s+(?:runs?|tokens?)",
+        "total": r"total time\s*=\s*([0-9.]+)\s*([a-zµ]+)",
+    }
+    for name, pattern in patterns.items():
+        match = re.search(pattern, text, re.I)
+        if not match:
+            continue
+        seconds = _duration_seconds(match.group(1), match.group(2))
+        out[f"llama_cpp.timing.{name}_s"] = round(seconds, 6)
+        if name in ("prompt_eval", "eval") and len(match.groups()) >= 3:
+            count = int(match.group(3))
+            out[f"llama_cpp.timing.{name}_tokens"] = count
+            out[f"llama_cpp.timing.{name}_tok_s"] = round(count / seconds, 2) if seconds > 0 else None
+    return out
+
+
+def _parse_llama_cpp_sampler_params(stderr_text: str | None) -> dict:
+    text = stderr_text or ""
+    fields = {
+        "repeat_penalty": "gen_ai.request.repeat_penalty",
+        "frequency_penalty": "gen_ai.request.frequency_penalty",
+        "presence_penalty": "gen_ai.request.presence_penalty",
+        "top_k": "gen_ai.request.top_k",
+        "top_p": "gen_ai.request.top_p",
+        "min_p": "llama_cpp.sampler.min_p",
+        "temperature": "llama_cpp.sampler.temperature",
+    }
+    out = {}
+    for name, key in fields.items():
+        match = re.search(rf"\b{name}\s*=\s*([-+0-9.]+)", text)
+        if match:
+            raw = match.group(1)
+            out[key] = int(raw) if raw.lstrip("+-").isdigit() else float(raw)
+    return out
+
+
+def _parse_time_verbose(stderr_text: str | None) -> dict:
+    """Parse GNU /usr/bin/time -v resource usage from stderr."""
+    text = stderr_text or ""
+    mapping = {
+        "Maximum resident set size (kbytes)": "llama_cpp.proc.max_rss_kb",
+        "Major (requiring I/O) page faults": "llama_cpp.proc.majflt",
+        "Minor (reclaiming a frame) page faults": "llama_cpp.proc.minflt",
+        "Voluntary context switches": "llama_cpp.proc.ctxt_vol",
+        "Involuntary context switches": "llama_cpp.proc.ctxt_invol",
+    }
+    out = {}
+    for label, key in mapping.items():
+        match = re.search(rf"{re.escape(label)}:\s*([0-9]+)", text)
+        if match:
+            out[key] = int(match.group(1))
+    cpu_match = re.search(r"Percent of CPU this job got:\s*([0-9.]+)%", text)
+    if cpu_match:
+        out["llama_cpp.proc.cpu_pct"] = float(cpu_match.group(1))
+    if "llama_cpp.proc.max_rss_kb" in out:
+        out["mem.peak_rss_mb"] = round(out["llama_cpp.proc.max_rss_kb"] / 1024, 1)
+    if "llama_cpp.proc.minflt" in out:
+        out["proc.minflt"] = out["llama_cpp.proc.minflt"]
+    if "llama_cpp.proc.majflt" in out:
+        out["proc.majflt"] = out["llama_cpp.proc.majflt"]
+    if "llama_cpp.proc.ctxt_vol" in out or "llama_cpp.proc.ctxt_invol" in out:
+        out["proc.ctxt_switches"] = out.get("llama_cpp.proc.ctxt_vol", 0) + out.get("llama_cpp.proc.ctxt_invol", 0)
+    return out
+
+
+def _rusage_fields(usage) -> dict:
+    if usage is None:
+        return {}
+    out = {
+        "llama_cpp.proc.max_rss_kb": int(getattr(usage, "ru_maxrss", 0) or 0) or None,
+        "llama_cpp.proc.minflt": int(getattr(usage, "ru_minflt", 0) or 0),
+        "llama_cpp.proc.majflt": int(getattr(usage, "ru_majflt", 0) or 0),
+        "llama_cpp.proc.ctxt_vol": int(getattr(usage, "ru_nvcsw", 0) or 0),
+        "llama_cpp.proc.ctxt_invol": int(getattr(usage, "ru_nivcsw", 0) or 0),
+        "llama_cpp.proc.user_s": round(float(getattr(usage, "ru_utime", 0.0) or 0.0), 6),
+        "llama_cpp.proc.system_s": round(float(getattr(usage, "ru_stime", 0.0) or 0.0), 6),
+    }
+    if out["llama_cpp.proc.max_rss_kb"]:
+        out["mem.peak_rss_mb"] = round(out["llama_cpp.proc.max_rss_kb"] / 1024, 1)
+    out["proc.minflt"] = out["llama_cpp.proc.minflt"]
+    out["proc.majflt"] = out["llama_cpp.proc.majflt"]
+    out["proc.ctxt_switches"] = out["llama_cpp.proc.ctxt_vol"] + out["llama_cpp.proc.ctxt_invol"]
+    return out
+
+
+def _safe_model_slug(model: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", model).strip("_") or "model"
+
+
+def _sha256_file(path: str) -> str | None:
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except OSError:
+        return None
+
+
+def _llama_cpp_thread_arg() -> str | None:
+    args = shlex.split(LLAMA_CPP_EXTRA_ARGS) if LLAMA_CPP_EXTRA_ARGS else []
+    for i, item in enumerate(args):
+        if item in ("-t", "--threads") and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+def llama_cpp_bench(model: str, outputs_dir: str) -> dict:
+    if INFERENCE_RUNTIME != "llama_cpp" or not LLAMA_CPP_BENCH:
+        return {}
+    if not shutil.which("llama-bench"):
+        return {"llama_cpp.bench.error": "llama-bench-not-found"}
+    path, error = resolve_llama_cpp_model_path(model)
+    if not path:
+        return {"llama_cpp.bench.error": f"model-unavailable:{error}"}
+    os.makedirs(outputs_dir, exist_ok=True)
+    slug = _safe_model_slug(model)
+    bench_path = os.path.join(outputs_dir, f"{slug}.llama-bench.jsonl")
+    err_path = os.path.join(outputs_dir, f"{slug}.llama-bench.stderr.txt")
+    if not os.path.exists(bench_path):
+        cmd = [
+            "llama-bench", "-m", path,
+            "-p", str(LLAMA_CPP_BENCH_PROMPT_TOKENS),
+            "-n", str(LLAMA_CPP_BENCH_GEN_TOKENS),
+            "-r", str(LLAMA_CPP_BENCH_REPS),
+            "-o", "jsonl",
+        ]
+        thread_arg = _llama_cpp_thread_arg()
+        if thread_arg:
+            cmd.extend(["-t", thread_arg])
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, check=False)
+            with open(bench_path, "w", encoding="utf-8") as handle:
+                handle.write(proc.stdout or "")
+            if proc.stderr:
+                with open(err_path, "w", encoding="utf-8") as handle:
+                    handle.write(proc.stderr)
+            rc = proc.returncode
+        except Exception as exc:  # noqa: BLE001
+            with open(err_path, "w", encoding="utf-8") as handle:
+                handle.write(f"{type(exc).__name__}:{exc}\n")
+            rc = -1
+    else:
+        rc = 0
+    try:
+        rows = sum(1 for line in open(bench_path, encoding="utf-8") if line.strip())
+    except OSError:
+        rows = 0
+    stderr_tail = None
+    if os.path.exists(err_path):
+        try:
+            stderr_tail = "\n".join(open(err_path, encoding="utf-8").read().splitlines()[-20:]) or None
+        except OSError:
+            stderr_tail = None
+    return {
+        "llama_cpp.bench.path": bench_path,
+        "llama_cpp.bench.sha256": _sha256_file(bench_path),
+        "llama_cpp.bench.rows": rows,
+        "llama_cpp.bench.repetitions": LLAMA_CPP_BENCH_REPS,
+        "llama_cpp.bench.n_prompt": LLAMA_CPP_BENCH_PROMPT_TOKENS,
+        "llama_cpp.bench.n_gen": LLAMA_CPP_BENCH_GEN_TOKENS,
+        "llama_cpp.bench.returncode": rc,
+        "llama_cpp.bench.stderr_tail": stderr_tail,
+    }
+
+
+def _run_llama_cpp_process(cmd: list[str], *, timeout_s: int, stall_s: int, sampler) -> dict:
+    t_start = time.time()
+    decoder = codecs.getincrementaldecoder("utf-8")("replace")
+    stdout_chunks: list[str] = []
+    stderr_chunks: list[str] = []
+    chunk_times: list[float] = []
+    progress: list[list[float | int]] = []
+    ttft = None
+    finish = None
+    time_bin = "/usr/bin/time" if LLAMA_CPP_TIME_VERBOSE and os.path.exists("/usr/bin/time") else None
+    exec_cmd = [time_bin, "-v", *cmd] if time_bin else cmd
+    proc = subprocess.Popen(
+        exec_cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    if sampler is not None and hasattr(sampler, "set_runner_pid"):
+        sampler.set_runner_pid(proc.pid)
+    sel = selectors.DefaultSelector()
+    if proc.stdout:
+        os.set_blocking(proc.stdout.fileno(), False)
+        sel.register(proc.stdout, selectors.EVENT_READ, "stdout")
+    if proc.stderr:
+        os.set_blocking(proc.stderr.fileno(), False)
+        sel.register(proc.stderr, selectors.EVENT_READ, "stderr")
+    last_output = t_start
+    open_streams = len(sel.get_map())
+    while open_streams:
+        now = time.time()
+        if now - t_start > timeout_s:
+            finish = "DNF:timeout"
+            proc.kill()
+        elif sampler is not None and getattr(sampler, "abort_reason", None):
+            finish = "DNF:" + sampler.abort_reason
+            proc.kill()
+        elif now - last_output > stall_s:
+            finish = "DNF:stall"
+            proc.kill()
+        events = sel.select(timeout=0.1)
+        if not events and proc.poll() is not None:
+            # The process can exit just before /usr/bin/time writes its final
+            # resource report. Keep draining registered pipes to EOF instead of
+            # breaking on the first empty select after process exit.
+            events = [(key, selectors.EVENT_READ) for key in list(sel.get_map().values())]
+        for key, _ in events:
+            stream = key.fileobj
+            name = key.data
+            try:
+                data = os.read(stream.fileno(), 4096)
+            except BlockingIOError:
+                continue
+            if not data:
+                try:
+                    sel.unregister(stream)
+                except Exception:  # noqa: BLE001
+                    pass
+                open_streams = len(sel.get_map())
+                continue
+            if name == "stdout":
+                text = decoder.decode(data)
+                if text:
+                    if ttft is None:
+                        ttft = round(time.time() - t_start, 3)
+                    stdout_chunks.append(text)
+                    last_output = time.time()
+                    chunk_times.append(last_output)
+                    progress.append([round(last_output - t_start, 2), sum(len(c) for c in stdout_chunks)])
+            else:
+                stderr_chunks.append(data.decode("utf-8", "replace"))
+    usage = None
+    try:
+        pid, status, usage = os.wait4(proc.pid, 0)
+        proc.returncode = os.waitstatus_to_exitcode(status)
+    except ChildProcessError:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        try:
+            pid, status, usage = os.wait4(proc.pid, 0)
+            proc.returncode = os.waitstatus_to_exitcode(status)
+        except Exception:  # noqa: BLE001
+            proc.wait(timeout=5)
+    tail = decoder.decode(b"", final=True)
+    if tail:
+        stdout_chunks.append(tail)
+    wall = round(time.time() - t_start, 2)
+    if finish is None:
+        finish = "stop" if proc.returncode == 0 else f"DNF:error:llama_cpp_rc_{proc.returncode}"
+    stdout = "".join(stdout_chunks).strip()
+    stderr = "".join(stderr_chunks)
+    dts = [(chunk_times[i] - chunk_times[i - 1]) * 1000 for i in range(1, len(chunk_times))]
+    dts_sorted = sorted(dts)
+
+    def pct(p):
+        if not dts_sorted:
+            return None
+        idx = max(0, min(len(dts_sorted) - 1, int(round(p / 100 * (len(dts_sorted) - 1)))))
+        return round(dts_sorted[idx], 1)
+
+    return {
+        "stdout": stdout,
+        "stderr": stderr,
+        "finish": finish,
+        "wall_s": wall,
+        "ttft_s": ttft,
+        "progress_trace": progress,
+        "decode_dt_p50_ms": pct(50),
+        "decode_dt_p95_ms": pct(95),
+        "decode_dt_max_ms": round(max(dts), 1) if dts else None,
+        "resource": _rusage_fields(usage),
+    }
 
 
 def llama_cpp_warmup(model: str) -> tuple[float, str | None]:
@@ -1306,7 +1644,7 @@ def llama_cpp_warmup(model: str) -> tuple[float, str | None]:
 
 
 def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
-                  timeout_s: int, stall_s: int, temperature: float, seed: int | None) -> dict:
+                  timeout_s: int, stall_s: int, sampler, temperature: float, seed: int | None) -> dict:
     path, error = resolve_llama_cpp_model_path(model)
     prompt = _llama_cpp_prompt(system, user)
     t_start = time.time()
@@ -1314,6 +1652,10 @@ def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
         return {
             "gen_ai.request.model": model,
             "gen_ai.operation.name": "completion",
+            "gen_ai.provider.name": "llama_cpp",
+            "gen_ai.output.type": "text",
+            "gen_ai.request.stream": True,
+            "gen_ai.response.model": model,
             "gen_ai.request.max_tokens": max_tokens,
             "gen_ai.request.temperature": temperature,
             "gen_ai.request.seed": seed,
@@ -1345,34 +1687,41 @@ def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
             "_think": "",
         }
     cmd = _llama_cpp_cmd(path, prompt, max_tokens=max_tokens, temperature=temperature, seed=seed)
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, check=False)
-        wall = round(time.time() - t_start, 2)
-        text = proc.stdout.strip()
-        finish = "stop" if proc.returncode == 0 else f"DNF:error:llama_cpp_rc_{proc.returncode}"
-        stderr_tail = "\n".join((proc.stderr or "").splitlines()[-20:]) or None
-    except subprocess.TimeoutExpired as exc:
-        wall = round(time.time() - t_start, 2)
-        text = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
-        finish = "DNF:timeout"
-        stderr_tail = "timeout"
-    out_tok = max(1, len(text) // 4) if text else 0
-    in_tok = max(1, len(prompt) // 4)
-    decode_s = wall if out_tok else None
+    proc = _run_llama_cpp_process(cmd, timeout_s=timeout_s, stall_s=stall_s, sampler=sampler)
+    wall = proc["wall_s"]
+    text = proc["stdout"]
+    finish = proc["finish"]
+    stderr_text = proc["stderr"]
+    stderr_tail = "\n".join((stderr_text or "").splitlines()[-20:]) or None
+    timing = _parse_llama_cpp_timings(stderr_text)
+    sampler_params = _parse_llama_cpp_sampler_params(stderr_text)
+    proc_resource = {**proc.get("resource", {}), **_parse_time_verbose(stderr_text)}
+    parsed_in = timing.get("llama_cpp.timing.prompt_eval_tokens")
+    parsed_out = timing.get("llama_cpp.timing.eval_tokens")
+    out_tok = parsed_out if parsed_out is not None else (max(1, len(text) // 4) if text else 0)
+    in_tok = parsed_in if parsed_in is not None else max(1, len(prompt) // 4)
+    prefill_s = timing.get("llama_cpp.timing.prompt_eval_s")
+    decode_s = timing.get("llama_cpp.timing.eval_s") or (wall if out_tok else None)
+    token_source = "llama_cpp_timing" if parsed_in is not None or parsed_out is not None else "char_estimate"
     return {
         "gen_ai.request.model": model,
         "gen_ai.operation.name": "completion",
+        "gen_ai.provider.name": "llama_cpp",
+        "gen_ai.output.type": "text",
+        "gen_ai.request.stream": True,
+        "gen_ai.response.model": model,
         "gen_ai.request.max_tokens": max_tokens,
         "gen_ai.request.temperature": temperature,
         "gen_ai.request.seed": seed,
         "gen_ai.usage.input_tokens": in_tok,
         "gen_ai.usage.output_tokens": out_tok,
+        "gen_ai.usage.token_source": token_source,
         "gen_ai.usage.output_chars": len(text),
         "gen_ai.response.finish_reasons": [finish],
-        "gen_ai.server.time_to_first_token_s": None,
-        "phase.prefill_s": None,
+        "gen_ai.server.time_to_first_token_s": proc["ttft_s"],
+        "phase.prefill_s": prefill_s,
         "phase.decode_s": decode_s,
-        "prefill_tok_s": None,
+        "prefill_tok_s": round(in_tok / prefill_s, 2) if (prefill_s and in_tok) else timing.get("llama_cpp.timing.prompt_eval_tok_s"),
         "decode_tok_s": round(out_tok / decode_s, 2) if decode_s and out_tok else None,
         "wall_s": wall,
         "dnf": finish.startswith("DNF"),
@@ -1384,13 +1733,17 @@ def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
         "ollama.ps.after": {"runtime": "llama_cpp"},
         "llama_cpp.model_path": path,
         "llama_cpp.cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
+        "llama_cpp.command_args": [arg for arg in cmd if arg != prompt],
         "llama_cpp.stderr_tail": stderr_tail,
-        "progress_trace": [[wall, len(text)]] if text else [],
+        **timing,
+        **sampler_params,
+        **proc_resource,
+        "progress_trace": proc["progress_trace"],
         "phase.think_s": None,
         "gen_ai.thinking.chars": 0,
-        "decode.dt_p50_ms": None,
-        "decode.dt_p95_ms": None,
-        "decode.dt_max_ms": None,
+        "decode.dt_p50_ms": proc["decode_dt_p50_ms"],
+        "decode.dt_p95_ms": proc["decode_dt_p95_ms"],
+        "decode.dt_max_ms": proc["decode_dt_max_ms"],
         "_text": text,
         "_think": "",
     }
@@ -1834,6 +2187,8 @@ def _env_static():
         "env.inference_runtime": INFERENCE_RUNTIME,
         "env.llama_cpp_cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
         "env.llama_cpp_version": _sh_out([LLAMA_CPP_CLI, "--version"]) if INFERENCE_RUNTIME == "llama_cpp" else None,
+        "env.llama_cpp_git_commit": os.environ.get("LLAMA_CPP_GIT_COMMIT"),
+        "env.llama_cpp_git_describe": os.environ.get("LLAMA_CPP_GIT_DESCRIBE"),
         "env.harness_git": _sh_out(["git", "-C", repo, "rev-parse", "--short", "HEAD"]),
         "env.harness_dirty": source_dirty or artifact_dirty,
         "env.harness_source_dirty": source_dirty,
@@ -2204,6 +2559,8 @@ def main():
                 continue
             warm_s, warm_err = warmup(model, args.think)
             meta = {**model_meta(model), **model_runtime(model)}
+            if INFERENCE_RUNTIME == "llama_cpp":
+                meta.update(llama_cpp_bench(model, args.outputs_dir))
             sys.stderr.write(f"[{bracket}] {model}  warmup={warm_s}s  "
                              f"params={meta.get('ollama.parameter_count')} "
                              f"vram={meta.get('ollama.size_vram_bytes')}  "

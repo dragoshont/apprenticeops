@@ -72,6 +72,7 @@ def test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed() -> None:
         max_tokens=8,
         timeout_s=1,
         stall_s=1,
+        sampler=None,
         temperature=0,
         seed=1,
     )
@@ -83,6 +84,47 @@ def test_runtime_name_is_snapshot_adapter_name() -> None:
     assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp"}
 
 
+def test_llama_cpp_timing_parser_extracts_counts_and_rates() -> None:
+    stderr = """
+llama_perf_context_print:        load time =     138.07 ms
+llama_perf_context_print: prompt eval time =     496.76 ms /   219 tokens (    2.27 ms per token,   440.85 tokens per second)
+llama_perf_context_print:        eval time =     199.29 ms /    15 runs   (   13.29 ms per token,    75.27 tokens per second)
+llama_perf_context_print:       total time =     699.32 ms /   234 tokens
+"""
+    parsed = mod._parse_llama_cpp_timings(stderr)
+    assert parsed["llama_cpp.timing.prompt_eval_tokens"] == 219
+    assert parsed["llama_cpp.timing.eval_tokens"] == 15
+    assert parsed["llama_cpp.timing.prompt_eval_s"] == 0.49676
+    assert parsed["llama_cpp.timing.eval_tok_s"] == 75.27
+
+
+def test_llama_cpp_sampler_parser_extracts_otel_scalars() -> None:
+    stderr = """
+repeat_last_n = 64, repeat_penalty = 1.000, frequency_penalty = 0.000, presence_penalty = 0.000
+top_k = 40, top_p = 0.950, min_p = 0.050, temp = 0.700
+"""
+    parsed = mod._parse_llama_cpp_sampler_params(stderr)
+    assert parsed["gen_ai.request.repeat_penalty"] == 1.0
+    assert parsed["gen_ai.request.top_k"] == 40
+    assert parsed["gen_ai.request.top_p"] == 0.95
+
+
+def test_rusage_fields_promote_process_metrics() -> None:
+    usage = type("Usage", (), {
+        "ru_maxrss": 433996,
+        "ru_minflt": 10193,
+        "ru_majflt": 0,
+        "ru_nvcsw": 35,
+        "ru_nivcsw": 20,
+        "ru_utime": 3.124156,
+        "ru_stime": 0.04403,
+    })()
+    parsed = mod._rusage_fields(usage)
+    assert parsed["mem.peak_rss_mb"] == 423.8
+    assert parsed["proc.minflt"] == 10193
+    assert parsed["proc.ctxt_switches"] == 55
+
+
 def main() -> None:
     test_artifact_only_dirty_is_not_source_dirty()
     test_source_dirty_is_distinct_from_artifacts()
@@ -91,6 +133,9 @@ def main() -> None:
     test_llama_cpp_rejects_ollama_wrapped_model_without_mapping()
     test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed()
     test_runtime_name_is_snapshot_adapter_name()
+    test_llama_cpp_timing_parser_extracts_counts_and_rates()
+    test_llama_cpp_sampler_parser_extracts_otel_scalars()
+    test_rusage_fields_promote_process_metrics()
     print("run env provenance tests passed")
 
 
