@@ -1,3 +1,4 @@
 {"model":"*","stage":"judge","ts":1783196320,"ok":1,"detail":"judged 0->2"}
 {"model":"*","stage":"judge","ts":1783196366,"ok":1,"detail":"judged 2->10"}
 {"model":"*","stage":"judge","ts":1783196422,"ok":1,"detail":"judged 10->24"}
+{"model":"hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783196425,"ok":1,"detail":"ff03373"}
