@@ -29,6 +29,7 @@ services:
       HOME_SSH: ${HOME_SSH:-dragos@home.home.domain}
       AI_SSH: ${AI_SSH:-dragos@home-ai.home.domain}
       REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops-runtime-agent}
+      AI_REPO: ${AI_REPO:-/home/dragos/apprenticeops-runtime-agent}
       POLL_S: "5"
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       AUTH_HEADER: ${AUTH_HEADER:-X-authentik-username}

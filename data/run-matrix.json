@@ -39,6 +39,21 @@
       "description": "Runtime-plumbing proof for the deployed llama.cpp adapter. This is R=1 smoke evidence, not canonical thesis scoring."
     },
     {
+      "id": "llama-cpp-smoke-2",
+      "label": "llama.cpp smoke - 2 direct GGUFs",
+      "path": "data/models.llama-cpp-smoke-2.txt",
+      "kind": "validation",
+      "runtime": "llama_cpp",
+      "llama_cpp_model_map": "data/llama-cpp-smoke-5.model-map.json",
+      "llama_cpp_artifacts": "data/llama-cpp-smoke-5.artifacts.json",
+      "llama_cpp_extra_args": "-t 4 -c 1024",
+      "max_tokens_cap": 96,
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Two-model llama.cpp clean-producer-path validation. This is R=1 smoke evidence for launch/source provenance, not canonical thesis scoring."
+    },
+    {
       "id": "llama-cpp-evidence-5",
       "label": "llama.cpp evidence mini-wave - 5 direct GGUFs",
       "path": "data/models.llama-cpp-smoke-5.txt",

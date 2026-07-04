@@ -23,8 +23,8 @@ and quoted before being sent to ``home``.
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
   AI_SSH      how home reaches the ai node           (default: "home-ai.home.domain")
-    AI_REPO     repo path on the ai node               (default: "/home/dragos/apprenticeops")
   REPO_DIR    repo path on home                      (default: "~/apprenticeops")
+    AI_REPO     repo path on the ai node               (default: REPO_DIR)
   POLL_S      websocket push cadence, seconds        (default: 5)
   HOST/PORT   bind                                   (default: 127.0.0.1:8770)
 """
@@ -50,8 +50,8 @@ from pydantic import BaseModel
 
 HOME_SSH = os.environ.get("HOME_SSH", "homelab")
 AI_SSH = os.environ.get("AI_SSH", "home-ai.home.domain")
-AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 REPO_DIR = os.environ.get("REPO_DIR", "~/apprenticeops")
+AI_REPO = os.environ.get("AI_REPO", REPO_DIR)
 POLL_S = float(os.environ.get("POLL_S", "5"))
 
 # Auth toggle. When AUTH_ENABLED is true the app trusts an Authentik forward-auth

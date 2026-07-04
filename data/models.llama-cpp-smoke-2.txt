@@ -1,0 +1,5 @@
+# Two direct-GGUF models staged on home-ai for clean producer-path validation.
+# Keep in sync with data/llama-cpp-smoke-5.model-map.json and
+# data/llama-cpp-smoke-5.artifacts.json.
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M
+hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M
