@@ -25,7 +25,7 @@ cd "$(dirname "$0")/.."
 export PATH="/usr/local/bin:$PATH"
 
 RUN_ID="${RUN_ID:?set RUN_ID (the producer run id, e.g. roster-20260624-1200)}"
-AI="${AI:-dragos@home-ai.home.domain}"
+AI="${AI:-dragos@home-ai.hont.ro}"
 AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"                 # where run-roster.sh runs on `ai`
 BRANCH="${BRANCH:-experiment/${RUN_ID}}"
 POLL_S="${POLL_S:-30}"

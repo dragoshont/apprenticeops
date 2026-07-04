@@ -22,7 +22,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 RUNS = REPO / "data" / "runs"
 RUN_BATCHES = REPO / "data" / "run-batches"
-AI = os.environ.get("AI", "dragos@home-ai.home.domain")
+AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 

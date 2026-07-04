@@ -23,7 +23,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
 EXPERIMENTS = os.path.join(REPO, "data", "experiments")
 RUN_BATCHES = os.path.join(REPO, "data", "run-batches")
-AI = os.environ.get("AI", "dragos@home-ai.home.domain")
+AI = os.environ.get("AI", "dragos@home-ai.hont.ro")
 AI_REPO = os.environ.get("AI_REPO", "/home/dragos/apprenticeops")
 STAGES = ["lock", "reset", "infer", "emit", "collect", "judge", "persist"]
 

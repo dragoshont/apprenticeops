@@ -3,7 +3,7 @@
 # The container SSHes into the `home` node to read pipeline status and drive the
 # run, and onward to `ai` for control. It therefore needs an SSH key + an ssh
 # config that defines the `HOME_SSH` host (and `home` must itself reach
-# `home-ai.home.domain` passwordlessly, which it already does).
+# `home-ai.hont.ro` passwordlessly, which it already does).
 #
 # Mount the operator's ~/.ssh read-only. The key must be passphrase-less (or in a
 # forwarded agent). Simplest: a dedicated key referenced by a Host block.
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     environment:
       HOME_SSH: ${HOME_SSH:-dragos@home.home.domain}
-      AI_SSH: ${AI_SSH:-dragos@home-ai.home.domain}
+      AI_SSH: ${AI_SSH:-dragos@home-ai.hont.ro}
       REPO_DIR: ${REPO_DIR:-/home/dragos/apprenticeops-runtime-agent}
       AI_REPO: ${AI_REPO:-/home/dragos/apprenticeops-runtime-agent}
       POLL_S: "5"

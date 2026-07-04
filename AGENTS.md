@@ -14,7 +14,7 @@ one command launches it and it keeps running after you disconnect. Full design:
 | Node | Role | Notes |
 |---|---|---|
 | **home** (hostname `home`) | orchestrator + judge + git | runs the schedulers, judges via the Copilot CLI, commits to GitHub |
-| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, Ollama **0.30.8** retained for service/legacy runs, llama.cpp provisioned as preferred future experiment runtime, Turbo off, governor performance |
+| **ai** (`home-ai.hont.ro`, hostname `ai`) | **locked inference only** | i5-8350U, Ollama **0.30.8** retained for service/legacy runs, llama.cpp provisioned as preferred future experiment runtime, Turbo off, governor performance |
 
 `home → ai` is **passwordless SSH**. `home` holds the repo clone at
 `~/apprenticeops`, has `gh` SSH auth, and the Copilot CLI. **After launch the pipeline
@@ -139,7 +139,7 @@ Producer logs on **ai**: `logs/<RUN_ID>/`.
 ```bash
 # stop (use the bracket trick — see gotchas):
 pkill -9 -f '[j]udge-scheduler'; pkill -9 -f '[j]udge.py'
-ssh home-ai.home.domain "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
+ssh home-ai.hont.ro "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
 # restart: just run the ONE command again. The producer is MODEL-LEVEL RESUMABLE
 # (skips already-complete models) and the consumer skips already-judged models —
 # re-launching the same RUN_ID continues where it stopped.
