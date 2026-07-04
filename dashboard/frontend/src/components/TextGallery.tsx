@@ -16,6 +16,16 @@ export type TextOutput = {
   text: string;
   /** The journal entry / ask that produced it (optional). */
   prompt?: string;
+  /** Scenario task/question shown to the model after context. */
+  task?: string;
+  /** Scenario context supplied to the model before the task. */
+  context?: string;
+  /** Exact serialized model prompt captured by the runner. */
+  fullPrompt?: string;
+  /** SHA-256 of the exact serialized model prompt. */
+  promptSha256?: string;
+  /** Whether exact prompt capture was enabled for this row. */
+  promptCaptureEnabled?: boolean;
   /** The gold reference answer (optional). */
   gold?: string;
 };
@@ -130,10 +140,33 @@ function TextModal({ output, onClose }: { output: TextOutput; onClose: () => voi
         </header>
 
         <div className="space-y-3 p-4">
-          {output.prompt && (
+          {(output.task || output.prompt) && (
             <div className="rounded-xl border border-line bg-panel2/20 p-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-faint">Prompt</div>
-              <p className="whitespace-pre-wrap text-[12px] leading-snug text-muted">{output.prompt}</p>
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-faint">Task</div>
+              <p className="whitespace-pre-wrap text-[12px] leading-snug text-muted">{output.task ?? output.prompt}</p>
+            </div>
+          )}
+
+          {output.context && (
+            <div className="rounded-xl border border-line bg-panel2/20 p-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-faint">Scenario context supplied to model</div>
+              <p className="whitespace-pre-wrap text-[12px] leading-snug text-muted">{output.context}</p>
+            </div>
+          )}
+
+          {output.fullPrompt && (
+            <details className="rounded-xl border border-line bg-panel2/20 p-3">
+              <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wide text-faint outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                Full serialized model prompt
+              </summary>
+              {output.promptSha256 && <div className="mt-1 font-mono text-[10px] text-faint">sha256={output.promptSha256}</div>}
+              <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap text-[11px] leading-snug text-muted">{output.fullPrompt}</pre>
+            </details>
+          )}
+
+          {!output.fullPrompt && output.promptCaptureEnabled === false && (
+            <div className="rounded-xl border border-line bg-panel2/20 p-3 text-[12px] text-muted">
+              Exact prompt capture was disabled for this row; only scenario task/context are available.
             </div>
           )}
 

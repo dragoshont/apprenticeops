@@ -896,6 +896,7 @@ if results.exists():
             for sc in sdata.get("scenarios", []):
                 prompts[sc.get("id")] = {
                     "question": (sc.get("question") or sc.get("context") or "")[:800],
+                    "context": (sc.get("context") or "")[:1600],
                     "gold": (sc.get("gold_answer") or "")[:400],
                 }
         except Exception:
@@ -922,7 +923,16 @@ if results.exists():
         pr = prompts.get(scen)
         if pr:
             item["prompt"] = pr["question"]
+            item["task"] = pr["question"]
+            item["context"] = pr["context"]
             item["gold"] = pr["gold"]
+        full_prompt = row.get("prompt.full")
+        if isinstance(full_prompt, str) and full_prompt.strip():
+            item["fullPrompt"] = full_prompt[:6000]
+        prompt_sha = row.get("prompt.sha256")
+        if isinstance(prompt_sha, str) and prompt_sha:
+            item["promptSha256"] = prompt_sha
+        item["promptCaptureEnabled"] = bool(row.get("prompt.capture.enabled"))
         jk = (scen, model, rep)
         if jk in jmean:
             item["judgeScore"] = jmean[jk]
