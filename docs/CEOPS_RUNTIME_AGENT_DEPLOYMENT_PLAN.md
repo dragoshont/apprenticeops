@@ -67,6 +67,20 @@ evidence. The latest adapter-aware smoke used:
 The smoke produced rows with `adapter=llama_cpp`, `env.inference_runtime=llama_cpp`,
 `llama_cpp.cli=/usr/local/bin/llama-completion`, and `finish=stop` for every row.
 
+After the first evidence mini-wave exposed dirty producer-source provenance, we
+made canonical producer launches use `SYNC_MODE=origin` by default and added a
+two-model validation set, `llama-cpp-smoke-2`. The dashboard-launched validation
+run `llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-182852`
+passed the runtime and capture checks:
+
+- `run.meta.sync_mode=origin`;
+- `12/12` inference rows and `24/24` judged rows;
+- `adapter=llama_cpp`, `env.inference_runtime=llama_cpp`, and `finish=stop` for every row;
+- `reset.ok=True` for `12/12` rows;
+- `env.harness_git=163cb12` and `env.harness_source_dirty=false` for every row;
+- `env.harness_artifact_dirty=true`, as expected once generated `results.*`,
+  `logs/`, and `outputs/` exist in the producer checkout.
+
 > **Scope honesty:** the smoke proves deployability and telemetry plumbing. It is
 > intentionally rejected by `scripts/audit-run.py` as paper evidence because the
 > locked protocol requires R=5.
@@ -86,7 +100,7 @@ result is promoted beyond diagnostic runtime evidence.
 
 | Task | Gate |
 |---|---|
-| Launch a locked mini-wave with `RUN_REPEATS=5` and no smoke token cap. | `llama-cpp-evidence-5` run passes strict quality and audit gates. |
+| Re-run the locked mini-wave with clean producer source provenance. | `env.harness_source_dirty=false` on every row, plus strict quality and audit gates. |
 | Avoid monitoring SSH sessions during reset windows. | `reset.ok=True` on every row. |
 | Decide whether the mini-wave is judged. | If judged, `report-run-quality.py --strict` passes for inference + judge rows. |
 | Promote result only after review. | Docs label it locked `llama_cpp` evidence, not smoke. |
@@ -101,3 +115,6 @@ result is promoted beyond diagnostic runtime evidence.
   the repeat set against the locked manifest.
 - Runtime identity must be visible; raw rows, snapshots, run metadata, sessions,
   and UI surfaces all carry the adapter/runtime label.
+- Producer source provenance matters; canonical launches now default to
+  `SYNC_MODE=origin`, and use `env.harness_source_dirty`, not the aggregate
+  `env.harness_dirty`, as the source-cleanliness gate.

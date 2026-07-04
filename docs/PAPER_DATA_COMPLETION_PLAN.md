@@ -155,7 +155,7 @@ whether to clarify, split, or keep them hard.
 | GitHub Pages analysis site. | configured | `.github/workflows/publish-analysis.yml` renders `docs/analysis`. |
 | Mission-control dashboard. | useful for operations, not paper-critical | Live CEOps should show `external-candidates-v0` as dev-only via matrix description. |
 | Clean homelab run checkouts. | working but ad hoc | Use clean SSH-remote checkouts for launched runs; avoid dirty experiment worktrees. |
-| AI-node canonical sync. | partial | Dev runs may use `SYNC_MODE=working-tree`; canonical paper runs must use committed/pushed code and `SYNC_MODE=origin`. |
+| AI-node canonical sync. | fixed for future runs | Default launch path now uses `SYNC_MODE=origin`; two-model `llama_cpp` smoke `llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-182852` stamped `env.harness_source_dirty=false`. |
 | Experiment branches. | working | External dev branches exist and are pushed; no need to merge into `main`. |
 
 ### F. Decisions Before More Data

@@ -114,8 +114,30 @@ and AI-node GGUF availability.
 | Judge criteria arrays | CAVEAT: some rows have empty `criteria_met` or empty `criteria_missed`, but no row has both empty; official quality reports `criteria_missing=0`. |
 | Producer source provenance | CAVEAT: raw rows stamp `env.harness_git=51ec19e` with `env.harness_dirty=true`, `env.harness_source_dirty=true`, and `env.harness_artifact_dirty=true` for `150/150` rows. |
 
+## Remediation Test
+
+We fixed the launch path so canonical producer launches default to
+`SYNC_MODE=origin`, record `sync_mode` in `run.meta`, and route `AI_REPO` to the
+same clean runtime-agent path as `REPO_DIR` unless explicitly overridden. We then
+ran a dashboard-launched two-model validation:
+
+| Field | Value |
+|---|---|
+| Run id | `llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-182852` |
+| Model set | `llama-cpp-smoke-2` |
+| Scenario set | `strategy-pilot-6` |
+| Runtime | `llama_cpp` |
+| Sync mode | `origin` |
+| Rows | PASS: `12/12` inference rows, `24/24` judged rows. |
+| Source provenance | PASS: `env.harness_git=163cb12`, `env.harness_source_dirty=false` for every row. |
+| Artifact provenance | Expected: `env.harness_artifact_dirty=true` after generated run artifacts appeared in the checkout. |
+| Strict quality | PASS: `report-run-quality.py` found zero DNF, stalls, missing fields, duplicate tuples, judge-empty rows, missing evidence, or missing criteria. |
+| Protocol audit | Expected smoke failure: `audit-run.py` rejects R=1 because the locked manifest requires R=5. |
+
 > **Limit.** This is a valid mini-wave, not a population-level model result. It
 > validates the runtime path, capture quality, reset discipline, and judging
 > pipeline for the staged five direct-GGUF models under `strategy-pilot-6`.
 > Because the AI-node producer checkout was dirty, it is not a clean-source
 > canonical thesis run; any paper use must carry that caveat plainly.
+> The remediation smoke shows the source-provenance defect is fixed for future
+> launches; it does not retroactively make this mini-wave clean-source canonical.
