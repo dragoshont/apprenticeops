@@ -72,6 +72,10 @@ HOME_SSH=dragos@home AI_SSH=dragos@home-ai.hont.ro REPO_DIR=/home/dragos/apprent
   docker compose -f compose.yaml -f compose.host.yaml up -d --build
 ```
 
+Dashboard launches use `SYNC_MODE=origin` by default, so the AI producer runs
+from the pushed `origin/main` source. Set `SYNC_MODE=working-tree` only for an
+explicit dev run where the home checkout contains intentional uncommitted code.
+
 → reachable on the LAN at **http://192.168.1.201:8770**. The container mounts
 `~/.ssh` read-only; an entrypoint copies it into a root-owned `~/.ssh` with the
 strict perms OpenSSH requires. `restart: unless-stopped` + a `/healthz`

@@ -37,6 +37,7 @@ RUN_REPEATS="${RUN_REPEATS:-}"
 RUN_TEMP="${RUN_TEMP:-}"
 RUN_ALLOW_UNLOCKED="${RUN_ALLOW_UNLOCKED:-}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
+SYNC_MODE="${SYNC_MODE:-origin}"
 AI="${AI:-dragos@home-ai.home.domain}"
 AI_REPO="${AI_REPO:-$PWD}"
 POLL_S="${POLL_S:-15}"
@@ -102,6 +103,7 @@ obj = {
   "memory_context_sha256": sha256(memory_path) if memory_path else None,
   "inference_strategy": strategy_id,
   "inference_runtime": os.environ.get("INFERENCE_RUNTIME", "ollama"),
+  "sync_mode": os.environ.get("SYNC_MODE", "origin"),
   "llama_cpp_model_map": str(llama_cpp_model_map) if llama_cpp_model_map else None,
   "llama_cpp_model_map_sha256": sha256(llama_cpp_model_map) if llama_cpp_model_map else None,
   "llama_cpp_extra_args": os.environ.get("LLAMA_CPP_EXTRA_ARGS") or None,
@@ -165,6 +167,7 @@ max_tokens_cap = sys.argv[11]
 run_repeats = sys.argv[12]
 run_temp = sys.argv[13]
 run_allow_unlocked = sys.argv[14]
+sync_mode = os.environ.get("SYNC_MODE", "origin")
 if meta.get("memory_context", "none") != memory_context:
   raise SystemExit(f"run.meta memory_context={meta.get('memory_context')!r} does not match launch {memory_context!r}")
 if (meta.get("memory_context_file") or "") != memory_file:
@@ -178,6 +181,8 @@ if (meta.get("inference_strategy") or "baseline") != inference_strategy:
   raise SystemExit(f"run.meta inference_strategy={meta.get('inference_strategy')!r} does not match launch {inference_strategy!r}")
 if (meta.get("inference_runtime") or "ollama") != inference_runtime:
   raise SystemExit(f"run.meta inference_runtime={meta.get('inference_runtime')!r} does not match launch {inference_runtime!r}")
+if (meta.get("sync_mode") or "origin") != sync_mode:
+  raise SystemExit(f"run.meta sync_mode={meta.get('sync_mode')!r} does not match launch {sync_mode!r}")
 if (meta.get("llama_cpp_model_map") or "") != llama_cpp_model_map:
   raise SystemExit("run.meta llama.cpp model map mismatch; start a new run")
 if llama_cpp_model_map:
@@ -243,9 +248,9 @@ case "${1:-run}" in
   watch) while true; do clear; progress; sleep 20; done ;;
 esac
 
-elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  scenarios=$SCENARIOS  memory=$MEMORY_CONTEXT strategy=$INFERENCE_STRATEGY expect=$EXPECT ==="
+elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  scenarios=$SCENARIOS  memory=$MEMORY_CONTEXT strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME sync=$SYNC_MODE expect=$EXPECT ==="
 elog "launching PRODUCER on ai (detached) ..."
-PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "INFERENCE_STRATEGY=$INFERENCE_STRATEGY" "INFERENCE_RUNTIME=$INFERENCE_RUNTIME" "LLAMA_CPP_MODEL_MAP=$LLAMA_CPP_MODEL_MAP" "LLAMA_CPP_EXTRA_ARGS=$LLAMA_CPP_EXTRA_ARGS" "MAX_TOKENS_CAP=$MAX_TOKENS_CAP" "RUN_REPEATS=$RUN_REPEATS" "RUN_TEMP=$RUN_TEMP" "RUN_ALLOW_UNLOCKED=$RUN_ALLOW_UNLOCKED" "STRATEGY_PROMPT_FILE=$STRATEGY_PROMPT_FILE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
+PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "INFERENCE_STRATEGY=$INFERENCE_STRATEGY" "INFERENCE_RUNTIME=$INFERENCE_RUNTIME" "LLAMA_CPP_MODEL_MAP=$LLAMA_CPP_MODEL_MAP" "LLAMA_CPP_EXTRA_ARGS=$LLAMA_CPP_EXTRA_ARGS" "MAX_TOKENS_CAP=$MAX_TOKENS_CAP" "RUN_REPEATS=$RUN_REPEATS" "RUN_TEMP=$RUN_TEMP" "RUN_ALLOW_UNLOCKED=$RUN_ALLOW_UNLOCKED" "STRATEGY_PROMPT_FILE=$STRATEGY_PROMPT_FILE" "SYNC_MODE=$SYNC_MODE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
 setsid bash -c "$PROD_ENV ./scripts/run-from-homelab.sh >>$(shell_quote "$LOG") 2>&1" </dev/null &
 elog "launching CONSUMER on home (detached, flock-guarded) ..."
 RUN_ID="$RUN_ID" AI="$AI" AI_REPO="$AI_REPO" EXPECT="$EXPECT" POLL_S="$POLL_S" SCENARIOS="$SCENARIOS" SCENARIO_SET="$SCENARIO_SET" \

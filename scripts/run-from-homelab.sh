@@ -10,7 +10,8 @@
 #   ./scripts/run-from-homelab.sh status          # tail the node-side driver log
 #
 # Config (env): HOME_AI (ssh host/alias), REMOTE_DIR, BRANCH, RUN_ID, COLLECT,
-# SYNC_MODE=working-tree|origin.
+# SYNC_MODE=origin|working-tree. Origin is the default; working-tree is an
+# explicit dev override for uncommitted code.
 # Trust: set up homelab->home-ai SSH first (homelab's pubkey or signed SSH cert in
 # home-ai). This script uses BatchMode (no password prompts).
 set -uo pipefail
@@ -18,7 +19,7 @@ HOME_AI="${HOME_AI:-home-ai}"
 REMOTE_DIR="${REMOTE_DIR:-/home/dragos/apprenticeops}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-https://github.com/dragoshont/apprenticeops}"
-SYNC_MODE="${SYNC_MODE:-working-tree}"
+SYNC_MODE="${SYNC_MODE:-origin}"
 RUN_ID="${RUN_ID:-roster-$(date -u +%Y%m%d-%H%M)}"
 MODELS="${MODELS:-data/models.txt}"
 MODEL_SET="${MODEL_SET:-manual}"
@@ -71,9 +72,9 @@ esac
 log "=== orchestrate $RUN_ID  control=$(hostname) -> experiment=${HOME_AI}:${REMOTE_DIR} ==="
 require_ssh
 
-# 1) code state. Default = mirror the deployed working tree so the dashboard can
-# launch a validated but not-yet-committed local change. For canonical paper runs,
-# set SYNC_MODE=origin after committing/pushing; run.py stamps env.harness_dirty.
+# 1) code state. Default = sync the AI producer to the pushed source. Use
+# SYNC_MODE=working-tree only for explicit dev runs with uncommitted local code;
+# run.py stamps env.harness_source_dirty and env.harness_artifact_dirty.
 if [ "$SYNC_MODE" = "origin" ]; then
   log "--- syncing home-ai to origin/${BRANCH} ---"
   COMMIT="$("${SSH[@]}" "set -e

@@ -51,11 +51,11 @@ The `setsid nohup … </dev/null &` wrapper is what makes it **detach from your 
 session** — verified: the launch returns the same second it starts, and a fresh
 connection shows it still running.
 
-Code sync mode: dashboard/dev launches default to `SYNC_MODE=working-tree`, which
-mirrors the deployed home checkout to `ai` so a validated local change is not
-silently replaced by `origin/main`. For canonical paper runs, commit and push
-first, then launch with `SYNC_MODE=origin`; rows stamp `env.harness_git` and
-`env.harness_dirty` so the regime is auditable.
+Code sync mode: launches default to `SYNC_MODE=origin`, so the producer runs from
+the pushed `origin/main` source by default. Use `SYNC_MODE=working-tree` only as
+an explicit dev override when testing an uncommitted home checkout. Rows stamp
+`env.harness_git`, `env.harness_source_dirty`, and `env.harness_artifact_dirty`
+so the regime is auditable.
 
 ## Run the memory axis autonomously
 
