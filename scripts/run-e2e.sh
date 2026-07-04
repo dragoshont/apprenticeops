@@ -22,6 +22,7 @@ cd "$(dirname "$0")/.."
 export PATH="/usr/local/bin:$PATH"            # node + copilot (nvm-symlinked) in daemon PATH
 
 RUN_ID="${RUN_ID:-e2e-$(date -u +%Y%m%d-%H%M)}"
+ACTION="${1:-run}"
 MODELS="${MODELS:-data/models.dryrun.txt}"
 MODEL_SET="${MODEL_SET:-manual}"
 SCENARIOS="${SCENARIOS:-data/scenarios.json}"
@@ -44,6 +45,38 @@ POLL_S="${POLL_S:-15}"
 WORK="data/runs/${RUN_ID}"
 LOG="${WORK}/e2e.log"
 mkdir -p "$WORK"
+
+if [[ "$ACTION" =~ ^(progress|status|watch)$ && -f "$WORK/run.meta" ]]; then
+  eval "$(python3 - "$WORK/run.meta" <<'PY'
+import json, shlex, sys
+meta = json.load(open(sys.argv[1]))
+mapping = {
+  "MODELS": "models",
+  "MODEL_SET": "model_set",
+  "SCENARIOS": "scenarios",
+  "SCENARIO_SET": "scenario_set",
+  "MEMORY_CONTEXT": "memory_context",
+  "MEMORY_CONTEXT_FILE": "memory_context_file",
+  "INFERENCE_STRATEGY": "inference_strategy",
+  "INFERENCE_RUNTIME": "inference_runtime",
+  "LLAMA_CPP_MODEL_MAP": "llama_cpp_model_map",
+  "LLAMA_CPP_EXTRA_ARGS": "llama_cpp_extra_args",
+  "STRATEGY_PROMPT_FILE": "strategy_prompt_file",
+  "SYNC_MODE": "sync_mode",
+}
+for env_key, meta_key in mapping.items():
+  value = meta.get(meta_key)
+  if value is None:
+    value = ""
+  print(f"{env_key}={shlex.quote(str(value))}")
+for env_key, meta_key in (("MAX_TOKENS_CAP", "max_tokens_cap"), ("RUN_REPEATS", "run_repeats_override"), ("RUN_TEMP", "run_temp_override")):
+  value = meta.get(meta_key)
+  print(f"{env_key}={shlex.quote('' if value is None else str(value))}")
+print(f"RUN_ALLOW_UNLOCKED={'1' if meta.get('run_allow_unlocked') else ''}")
+print(f"EXPECT={int(meta.get('expect') or 0)}")
+PY
+)"
+fi
 # consumer exits cleanly once EXPECT models are judged; default = model count in MODELS
 EXPECT="${EXPECT:-$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS" 2>/dev/null || echo 0)}"
 export RUN_ID MODELS MODEL_SET SCENARIOS SCENARIO_SET MEMORY_CONTEXT MEMORY_CONTEXT_FILE INFERENCE_STRATEGY INFERENCE_RUNTIME LLAMA_CPP_MODEL_MAP LLAMA_CPP_EXTRA_ARGS MAX_TOKENS_CAP RUN_REPEATS RUN_TEMP RUN_ALLOW_UNLOCKED STRATEGY_PROMPT_FILE RUN_USER EXPECT
@@ -243,7 +276,7 @@ progress() {
   echo "  consumer alive: $(pgrep -fc '[j]udge-scheduler' || echo 0)"
 }
 
-case "${1:-run}" in
+case "$ACTION" in
   progress|status) progress; exit 0 ;;
   watch) while true; do clear; progress; sleep 20; done ;;
 esac

@@ -35,6 +35,7 @@ EXPECT="${EXPECT:-0}"                               # >0 = exit once this many m
 SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 
 RESULTS="results.${RUN_ID}.jsonl"
+REMOTE_OUTPUTS="outputs/${RUN_ID}"
 WORK="data/runs/${RUN_ID}"
 MIRROR="${WORK}/_mirror"                            # local mirror of the ai artifacts
 LEDGER="${WORK}/pipeline-ledger.jsonl"
@@ -95,7 +96,7 @@ while true; do
   # ---- S5 collect: incremental mirror of the producer's artifacts ----------
   rsync -az -e "$SSH" "$AI:$AI_REPO/$RESULTS"      "$MIRROR/"          2>/dev/null || true
   rsync -az -e "$SSH" "$AI:$AI_REPO/$RESULTS.done" "$MIRROR/"          2>/dev/null || true
-  rsync -az -e "$SSH" "$AI:$AI_REPO/outputs/"      "$MIRROR/outputs/"  2>/dev/null || true
+  rsync -az --delete -e "$SSH" "$AI:$AI_REPO/$REMOTE_OUTPUTS/" "$MIRROR/outputs/"  2>/dev/null || true
 
   # ---- S6 judge: score EVERY answer available right now, ${JUDGE_WORKERS:-8}-wide,
   # the instant it exists (judge.py skips already-judged rows). The producer keeps

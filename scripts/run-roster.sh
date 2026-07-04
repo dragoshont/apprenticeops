@@ -34,7 +34,8 @@ RUN_ALLOW_UNLOCKED="${RUN_ALLOW_UNLOCKED:-0}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
-mkdir -p "$LOGDIR" outputs
+OUTPUTS_DIR="${OUTPUTS_DIR:-outputs/${RUN_ID}}"
+mkdir -p "$LOGDIR" "$OUTPUTS_DIR"
 ts() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 log() { echo "[$(ts)] $*" | tee -a "$LOGDIR/driver.log"; }
 
@@ -45,7 +46,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT ==="
+log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT outputs=$OUTPUTS_DIR ==="
 [ -f "$MODELS" ] || { log "FATAL: $MODELS not found"; exit 1; }
 [ -f "$SCENARIOS" ] || { log "FATAL: $SCENARIOS not found"; exit 1; }
 if [ -z "$MEMORY_CONTEXT_FILE" ] && [ "$MEMORY_CONTEXT" != "none" ]; then
@@ -158,7 +159,7 @@ python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-see
   --inference-strategy "$INFERENCE_STRATEGY" \
   ${STRATEGY_PROMPT_FILE:+--strategy-prompt-file "$STRATEGY_PROMPT_FILE"} \
   --temp "$RUN_TEMP" --repeats "$RUN_REPEATS" --seed-base 1 --rm-after "${ALLOW_UNLOCKED_ARGS[@]}" ${LIMIT:+--limit "$LIMIT"} \
-  --out "$OUT" >>"$LOGDIR/run.log" 2>&1
+  --out "$OUT" --outputs-dir "$OUTPUTS_DIR" >>"$LOGDIR/run.log" 2>&1
 rc=$?
 
 # 6) quick reset-state health summary (proves identical-start across models)
