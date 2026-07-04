@@ -113,6 +113,12 @@ That smoke uses `strategy-pilot-6`, `RUN_REPEATS=1`, and `MAX_TOKENS_CAP=96` to
 prove runtime plumbing and adapter telemetry. It is not canonical thesis evidence;
 `scripts/audit-run.py` must fail it against the locked R=5 manifest.
 
+The first non-smoke `llama.cpp` mini-wave is `model_set=llama-cpp-evidence-5`.
+It reuses the same staged artifacts but removes the smoke overrides, so
+`run-roster.sh` uses the locked `R=5` protocol and no smoke token cap. The result
+is evidence-capable only if the run-quality, persistence, reset-state, and
+`audit-run.py` gates recorded in `docs/CEOPS_LLAMA_CPP_EVIDENCE_PHASE.md` pass.
+
 ## 5. Scenario Sets
 
 Scenario definitions live in JSON files with top-level `scenarios` arrays. Current

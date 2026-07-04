@@ -36,6 +36,7 @@ The source of truth is `data/run-matrix.json`.
 | `model_sets[].llama_cpp_extra_args` | Server-owned subprocess args. | `-t 4 -c 1024` for smoke |
 | `model_sets[].run_repeats` | Non-canonical smoke repeat override. | `1` for smoke only |
 | `model_sets[].max_tokens_cap` | Non-canonical smoke token cap. | `96` for smoke only |
+| `llama-cpp-evidence-5` | First non-smoke mini-wave using the staged GGUFs. | Default locked `R=5`, no token cap |
 
 The browser submits only ids. Paths, subprocess args, repeat overrides, and token
 caps are resolved by the backend from `data/run-matrix.json` and then shell-quoted
@@ -70,11 +71,22 @@ The smoke produced rows with `adapter=llama_cpp`, `env.inference_runtime=llama_c
 > intentionally rejected by `scripts/audit-run.py` as paper evidence because the
 > locked protocol requires R=5.
 
+## Evidence Mini-Wave
+
+The first non-smoke `llama_cpp` evidence phase is recorded in
+`docs/CEOPS_LLAMA_CPP_EVIDENCE_PHASE.md` and exposed as
+`model_set=llama-cpp-evidence-5`. It deliberately reuses the same staged direct
+GGUF artifacts as the smoke, but removes the smoke-only overrides. A successful
+mini-wave must therefore produce 150 inference rows for
+`strategy-pilot-6` (`5 models x 6 scenarios x R=5`) and pass both
+`scripts/report-run-quality.py --strict` and `scripts/audit-run.py` before any
+result is promoted beyond diagnostic runtime evidence.
+
 ## Remaining Work Before Canonical llama.cpp Evidence
 
 | Task | Gate |
 |---|---|
-| Launch a locked mini-wave with `RUN_REPEATS=5` and no smoke token cap. | `scripts/audit-run.py` passes without the R=1 failure. |
+| Launch a locked mini-wave with `RUN_REPEATS=5` and no smoke token cap. | `llama-cpp-evidence-5` run passes strict quality and audit gates. |
 | Avoid monitoring SSH sessions during reset windows. | `reset.ok=True` on every row. |
 | Decide whether the mini-wave is judged. | If judged, `report-run-quality.py --strict` passes for inference + judge rows. |
 | Promote result only after review. | Docs label it locked `llama_cpp` evidence, not smoke. |

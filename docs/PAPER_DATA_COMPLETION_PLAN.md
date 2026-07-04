@@ -45,6 +45,7 @@ but the paper should not rename itself around that future work.
 | CEOps metrics/source analysis | Completed first pass. | `docs/CEOPS_METRICS_SOURCE_ANALYSIS.md`. |
 | Cold audit response | Completed first triage plan. | `docs/COLD_AUDIT_RESPONSE_PLAN.md`; top issue is thesis-boundary drift between `<=5B parameters` and legacy `<=5 GB` / `<=8B` framing. |
 | Model lockfile foundation | Completed count gate. | `data/models.lock.jsonl` covers 173 roster tags; `scripts/validate-model-lock.py` excludes 18 >5B rows and reports 155 current <=5B thesis candidates. |
+| llama.cpp evidence mini-wave | Pre-registered, not yet interpreted. | `docs/CEOPS_LLAMA_CPP_EVIDENCE_PHASE.md`; `model_set=llama-cpp-evidence-5` uses the staged five GGUFs with locked `R=5` and no smoke cap. |
 
 ## Dependency Graph
 
@@ -125,6 +126,7 @@ whether to clarify, split, or keep them hard.
 | Existing scenario gates. | passing | `python3 scripts/validate-scenarios.py`. |
 | External candidate gates. | passing | `python3 scripts/validate-external-candidates.py`. |
 | Run-quality gate for external dev runs. | passing | `report-run-quality.py` reports inference and judge duplicate tuples. |
+| Run-quality gate for `llama_cpp` mini-wave. | planned | Interpret only if `report-run-quality.py --strict` and `audit-run.py` both pass, persistence is clean, and reset-state warnings are zero or explicitly caveated. |
 | Add automated test for judge duplicate detection. | done | `scripts/test-report-run-quality.py` fails on a duplicated `(model, scenario, rep, memory, strategy, judge_model)` row. |
 | Add strict and Markdown run-quality reporting. | done | `report-run-quality.py --strict` fails closed on structural interpretation blockers and `--markdown` emits review-ready output. |
 | `spread10` external dev run. | done | 400/400 inference rows, 800/800 unique judge tuples, DNF 0/400, zero-output stalls 0/400. |

@@ -39,6 +39,17 @@
       "description": "Runtime-plumbing proof for the deployed llama.cpp adapter. This is R=1 smoke evidence, not canonical thesis scoring."
     },
     {
+      "id": "llama-cpp-evidence-5",
+      "label": "llama.cpp evidence mini-wave - 5 direct GGUFs",
+      "path": "data/models.llama-cpp-smoke-5.txt",
+      "kind": "experiment",
+      "runtime": "llama_cpp",
+      "llama_cpp_model_map": "data/llama-cpp-smoke-5.model-map.json",
+      "llama_cpp_artifacts": "data/llama-cpp-smoke-5.artifacts.json",
+      "llama_cpp_extra_args": "-t 4 -c 1024",
+      "description": "First locked llama.cpp mini-wave over the staged five direct-GGUF models. Uses the default R=5 protocol and no smoke token cap; promote only if run-quality and audit gates pass."
+    },
+    {
       "id": "dryrun",
       "label": "Dry run - 2 small models",
       "path": "data/models.dryrun.txt",
