@@ -1,0 +1,7 @@
+{"model":"*","stage":"judge","ts":1783176217,"ok":1,"detail":"judged 0->2"}
+{"model":"*","stage":"judge","ts":1783176259,"ok":1,"detail":"judged 2->10"}
+{"model":"*","stage":"judge","ts":1783176300,"ok":1,"detail":"judged 10->14"}
+{"model":"hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783176300,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1783176345,"ok":1,"detail":"judged 14->18"}
+{"model":"*","stage":"judge","ts":1783176389,"ok":1,"detail":"judged 18->22"}
+{"model":"*","stage":"judge","ts":1783176432,"ok":1,"detail":"judged 22->24"}
