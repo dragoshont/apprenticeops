@@ -16,6 +16,12 @@
       "description": "Preferred CEOps experiment runtime. Requires a model set with a server-owned llama_cpp_model_map and staged GGUF artifacts."
     },
     {
+      "id": "llama_cpp_server",
+      "label": "llama.cpp server GGUF",
+      "kind": "experiment_probe",
+      "description": "Diagnostic llama-server adapter for token/logprob/props/slots/metrics capture. Treat as a separate runtime regime from llama.cpp subprocess rows."
+    },
+    {
       "id": "ollama",
       "label": "Ollama service runtime",
       "kind": "service_legacy",
@@ -52,6 +58,21 @@
       "run_temp": 0.7,
       "run_allow_unlocked": true,
       "description": "Two-model llama.cpp clean-producer-path validation. This is R=1 smoke evidence for launch/source provenance, not canonical thesis scoring."
+    },
+    {
+      "id": "llama-cpp-server-smoke-1",
+      "label": "llama.cpp server smoke - 1 direct GGUF",
+      "path": "data/models.llama-cpp-server-smoke-1.txt",
+      "kind": "validation",
+      "runtime": "llama_cpp_server",
+      "llama_cpp_model_map": "data/llama-cpp-smoke-5.model-map.json",
+      "llama_cpp_artifacts": "data/llama-cpp-smoke-5.artifacts.json",
+      "llama_cpp_extra_args": "-t 4 -c 1024",
+      "max_tokens_cap": 64,
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "One-model smoke for the llama-server adapter and token/logprob sidecar capture. This is adapter validation, not canonical scoring."
     },
     {
       "id": "llama-cpp-timeout-risk-2",

@@ -1,0 +1,3 @@
+# Minimal llama.cpp server adapter smoke model.
+# Direct GGUF already staged on home-ai; keep in sync with data/llama-cpp-smoke-5.*.
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M

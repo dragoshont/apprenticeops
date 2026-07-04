@@ -605,7 +605,7 @@ def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: st
         raise HTTPException(404, f"unknown inference_runtime '{runtime_id}'")
     if model.get("runtime") and model.get("runtime") != runtime_id:
         raise HTTPException(400, f"model_set '{model_set}' requires inference_runtime={model.get('runtime')}")
-    if runtime_id == "llama_cpp" and not model.get("llama_cpp_model_map"):
+    if runtime_id in {"llama_cpp", "llama_cpp_server"} and not model.get("llama_cpp_model_map"):
         raise HTTPException(400, f"model_set '{model_set}' does not declare llama_cpp_model_map")
     if not model.get("model_count"):
         raise HTTPException(400, f"model_set '{model_set}' contains no models")
@@ -617,7 +617,7 @@ def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: st
 def _runtime_env(model_set: dict, runtime: dict) -> dict[str, object]:
     runtime_id = runtime["id"]
     env: dict[str, object] = {"INFERENCE_RUNTIME": runtime_id}
-    if runtime_id == "llama_cpp":
+    if runtime_id in {"llama_cpp", "llama_cpp_server"}:
         env["LLAMA_CPP_MODEL_MAP"] = model_set["llama_cpp_model_map"]
         if model_set.get("llama_cpp_artifacts"):
             env["LLAMA_CPP_ARTIFACTS"] = model_set["llama_cpp_artifacts"]

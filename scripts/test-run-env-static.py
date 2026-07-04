@@ -82,7 +82,7 @@ def test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed() -> None:
 
 
 def test_runtime_name_is_snapshot_adapter_name() -> None:
-    assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp"}
+    assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp", "llama_cpp_server"}
 
 
 def test_llama_cpp_timing_parser_extracts_counts_and_rates() -> None:
@@ -124,6 +124,27 @@ def test_rusage_fields_promote_process_metrics() -> None:
     assert parsed["mem.peak_rss_mb"] == 423.8
     assert parsed["proc.minflt"] == 10193
     assert parsed["proc.ctxt_switches"] == 55
+
+
+def test_llama_cpp_server_metric_delta_and_probability_summary() -> None:
+    before = mod._metrics_map("""
+llamacpp:prompt_tokens_total 10
+llamacpp:tokens_predicted_total 5
+""")
+    after = mod._metrics_map("""
+llamacpp:prompt_tokens_total 14
+llamacpp:tokens_predicted_total 8
+""")
+    assert mod._metric_delta(before, after, "llamacpp:prompt_tokens_total") == 4.0
+    assert mod._metric_delta(before, after, "llamacpp:tokens_predicted_total") == 3.0
+    summary = mod._probability_summary([
+        {"id": 1, "logprob": -0.1, "top_logprobs": [{"logprob": -0.1}, {"logprob": -1.1}]},
+        {"id": 2, "logprob": -0.3, "top_logprobs": [{"logprob": -0.3}, {"logprob": -0.8}]},
+    ])
+    assert summary["count"] == 2
+    assert summary["token_ids"] == [1, 2]
+    assert summary["mean_logprob"] == -0.2
+    assert summary["mean_top1_margin"] == 0.75
 
 
 def test_prompt_capture_fields_include_exact_prompt_and_distill_target() -> None:
@@ -239,6 +260,7 @@ def main() -> None:
     test_llama_cpp_timing_parser_extracts_counts_and_rates()
     test_llama_cpp_sampler_parser_extracts_otel_scalars()
     test_rusage_fields_promote_process_metrics()
+    test_llama_cpp_server_metric_delta_and_probability_summary()
     test_prompt_capture_fields_include_exact_prompt_and_distill_target()
     test_llama_cpp_artifact_fields_promote_model_identity()
     test_output_capture_fields_include_assistant_message()

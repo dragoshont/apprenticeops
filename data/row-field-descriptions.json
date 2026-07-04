@@ -57,6 +57,7 @@
     {"prefix": "llama_cpp.bench.", "category": "llama.cpp-bench", "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration."},
     {"prefix": "llama_cpp.artifact.", "category": "llama.cpp-artifact", "description": "Direct-GGUF model artifact identity from the staged llama.cpp artifact manifest: repo, filename, path, size, checksum, parameter count, and license metadata."},
     {"prefix": "llama_cpp.proc.", "category": "llama.cpp-process", "description": "Child-process resource usage captured from os.wait4 for llama.cpp."},
+    {"prefix": "llama_cpp.server.", "category": "llama.cpp-server", "description": "llama-server adapter capture: server endpoint identity, props/slots/metrics summaries, token ids, logprob summaries, and sidecar provenance."},
     {"prefix": "llama_cpp.sampler.", "category": "llama.cpp-sampler", "description": "Sampler parameter parsed from llama.cpp stderr."},
     {"prefix": "llama_cpp.timing.", "category": "llama.cpp-timing", "description": "Internal llama.cpp timing parsed from --perf stderr."},
     {"prefix": "llama_cpp.", "category": "llama.cpp", "description": "llama.cpp runtime, model, command, sidecar, or error field."},

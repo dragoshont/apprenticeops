@@ -46,6 +46,7 @@ import subprocess
 import sys
 import threading
 import time
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -53,6 +54,10 @@ import urllib.request
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 INFERENCE_RUNTIME = os.environ.get("INFERENCE_RUNTIME", "ollama")
 LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI") or (shutil.which("llama-completion") or "llama-cli")
+LLAMA_CPP_SERVER = os.environ.get("LLAMA_CPP_SERVER") or (shutil.which("llama-server") or "llama-server")
+LLAMA_CPP_SERVER_HOST = os.environ.get("LLAMA_CPP_SERVER_HOST", "127.0.0.1")
+LLAMA_CPP_SERVER_PORT = int(os.environ.get("LLAMA_CPP_SERVER_PORT", "18080") or "18080")
+LLAMA_CPP_SERVER_N_PROBS = int(os.environ.get("LLAMA_CPP_SERVER_N_PROBS", "5") or "5")
 LLAMA_CPP_MODELS_DIR = os.environ.get("LLAMA_CPP_MODELS", os.environ.get("LLAMA_CPP_MODEL_DIR", "/srv/llama.cpp/models"))
 LLAMA_CPP_MODEL_MAP = os.environ.get("LLAMA_CPP_MODEL_MAP", "")
 LLAMA_CPP_ARTIFACTS = os.environ.get("LLAMA_CPP_ARTIFACTS", "data/llama-cpp-smoke-5.artifacts.json")
@@ -62,7 +67,8 @@ LLAMA_CPP_BENCH_REPS = int(os.environ.get("LLAMA_CPP_BENCH_REPS", "3") or "3")
 LLAMA_CPP_BENCH_PROMPT_TOKENS = int(os.environ.get("LLAMA_CPP_BENCH_PROMPT_TOKENS", "128") or "128")
 LLAMA_CPP_BENCH_GEN_TOKENS = int(os.environ.get("LLAMA_CPP_BENCH_GEN_TOKENS", "32") or "32")
 LLAMA_CPP_TIME_VERBOSE = os.environ.get("LLAMA_CPP_TIME_VERBOSE", "1") != "0"
-RUNTIMES = {"ollama", "llama_cpp"}
+LLAMA_CPP_RUNTIMES = {"llama_cpp", "llama_cpp_server"}
+RUNTIMES = {"ollama", *LLAMA_CPP_RUNTIMES}
 
 # ---- power metering (optional) -------------------------------------------
 # Reads instantaneous wall power (watts) from the node's smart plug over the LAN.
@@ -890,7 +896,7 @@ def _server_attrs_from_url(url: str) -> dict:
 
 
 def model_present(model):
-    if INFERENCE_RUNTIME == "llama_cpp":
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
         return resolve_llama_cpp_model_path(model)[0] is not None
     try:
         with _post_json("/api/show", {"model": model}, 30) as r:
@@ -990,8 +996,8 @@ def ollama_ps_snapshot():
 
 
 def runtime_ps_snapshot():
-    if INFERENCE_RUNTIME == "llama_cpp":
-        return {"runtime": "llama_cpp"}
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
+        return {"runtime": INFERENCE_RUNTIME}
     return ollama_ps_snapshot()
 
 
@@ -1016,7 +1022,7 @@ def model_meta(model):
     """Ollama-native model metadata from /api/show (no model load): the EXACT
     parameter count, quantization, native context length and architecture. Makes
     `params` a real feature instead of a bracket guess. Best-effort {}."""
-    if INFERENCE_RUNTIME == "llama_cpp":
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
         row = MODEL_LOCK.get(model) or {}
         return {
             "llama_cpp.status": row.get("llama_cpp_status"),
@@ -1070,7 +1076,7 @@ def model_runtime(model):
     """Ollama /api/ps view of the loaded model: total size, VRAM bytes (0 = pure
     CPU) and the CPU/GPU split. `size_vram=0` is Ollama's OWN proof that nothing
     is offloaded to the iGPU. Best-effort {}."""
-    if INFERENCE_RUNTIME == "llama_cpp":
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
         path, error = resolve_llama_cpp_model_path(model)
         size = os.path.getsize(path) if path and os.path.exists(path) else None
         return {
@@ -1105,7 +1111,7 @@ def ensure_pulled(model, retries=4, backoff_s=10):
     ("Error: EOF"); a single attempt then marks the model pull_failed and skips
     it. Retry with linear backoff so a flaky network doesn't DNF a model that is
     actually available (the wave-2 'Error: EOF' fix)."""
-    if INFERENCE_RUNTIME == "llama_cpp":
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
         path, error = resolve_llama_cpp_model_path(model)
         if path:
             return True
@@ -1129,6 +1135,9 @@ def ensure_pulled(model, retries=4, backoff_s=10):
 
 
 def unload(model):
+    if INFERENCE_RUNTIME == "llama_cpp_server":
+        llama_cpp_server_stop()
+        return
     if INFERENCE_RUNTIME == "llama_cpp":
         return
     try:
@@ -1141,7 +1150,7 @@ def remove_model(model):
     """Delete a model from disk (`ollama rm`). Best-effort. Used by --rm-after to
     bound disk during large sweeps: pull -> test -> rm, so the models dir never
     grows past ~one model at a time (the wave-2 'no space left on device' fix)."""
-    if INFERENCE_RUNTIME == "llama_cpp":
+    if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
         return
     try:
         subprocess.run(["ollama", "rm", model],
@@ -1153,6 +1162,8 @@ def remove_model(model):
 
 def warmup(model, think):
     """Cold-load the model; return load seconds (warmup phase span)."""
+    if INFERENCE_RUNTIME == "llama_cpp_server":
+        return llama_cpp_server_warmup(model)
     if INFERENCE_RUNTIME == "llama_cpp":
         return llama_cpp_warmup(model)
     t0 = time.time()
@@ -1174,6 +1185,9 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     Streaming chat under the watchdog. Returns a telemetry dict aligned to
     OTel gen_ai.* plus our phase timings and the raw text.
     """
+    if INFERENCE_RUNTIME == "llama_cpp_server":
+        return run_llama_cpp_server(model, system, user, max_tokens=max_tokens, timeout_s=timeout_s,
+                                    stall_s=stall_s, sampler=sampler, temperature=temperature, seed=seed)
     if INFERENCE_RUNTIME == "llama_cpp":
         return run_llama_cpp(model, system, user, max_tokens=max_tokens, timeout_s=timeout_s,
                              stall_s=stall_s, sampler=sampler, temperature=temperature, seed=seed)
@@ -1867,6 +1881,334 @@ def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
     }
 
 
+LLAMA_CPP_SERVER_PROC: subprocess.Popen | None = None
+LLAMA_CPP_SERVER_MODEL: str | None = None
+LLAMA_CPP_SERVER_BASE = f"http://{LLAMA_CPP_SERVER_HOST}:{LLAMA_CPP_SERVER_PORT}"
+
+
+def _server_json(path: str, payload: dict | None = None, timeout: int = 10):
+    data = None
+    headers = {}
+    method = "GET"
+    if payload is not None:
+        data = json.dumps(payload).encode()
+        headers["Content-Type"] = "application/json"
+        method = "POST"
+    req = urllib.request.Request(LLAMA_CPP_SERVER_BASE + path, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        body = resp.read()
+        content_type = resp.headers.get("content-type", "")
+        if "json" in content_type:
+            return json.loads(body.decode())
+        return body.decode(errors="replace")
+
+
+def _metrics_map(text: str | None) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for line in (text or "").splitlines():
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        try:
+            out[parts[0]] = float(parts[1])
+        except ValueError:
+            continue
+    return out
+
+
+def _metric_delta(before: dict[str, float], after: dict[str, float], key: str) -> float | None:
+    if key not in before and key not in after:
+        return None
+    return round(float(after.get(key, 0.0) - before.get(key, 0.0)), 6)
+
+
+def _slots_summary(slots) -> dict:
+    if not isinstance(slots, list):
+        return {"count": None, "processing": None}
+    return {
+        "count": len(slots),
+        "processing": sum(1 for slot in slots if slot.get("is_processing")),
+        "n_ctx": sorted({slot.get("n_ctx") for slot in slots if slot.get("n_ctx") is not None}),
+    }
+
+
+def _probability_summary(probabilities) -> dict:
+    probs = probabilities if isinstance(probabilities, list) else []
+    logprobs = [item.get("logprob") for item in probs if isinstance(item.get("logprob"), (int, float))]
+    margins = []
+    for item in probs:
+        top = item.get("top_logprobs") if isinstance(item, dict) else None
+        if isinstance(top, list) and len(top) >= 2:
+            first = top[0].get("logprob")
+            second = top[1].get("logprob")
+            if isinstance(first, (int, float)) and isinstance(second, (int, float)):
+                margins.append(float(first) - float(second))
+    top_ns = [len(item.get("top_logprobs") or []) for item in probs if isinstance(item, dict)]
+    return {
+        "count": len(probs),
+        "mean_logprob": round(sum(logprobs) / len(logprobs), 6) if logprobs else None,
+        "min_logprob": round(min(logprobs), 6) if logprobs else None,
+        "mean_top1_margin": round(sum(margins) / len(margins), 6) if margins else None,
+        "top_logprobs_n": max(top_ns) if top_ns else None,
+        "token_ids": [item.get("id") for item in probs if isinstance(item, dict) and item.get("id") is not None],
+    }
+
+
+def llama_cpp_server_stop() -> None:
+    global LLAMA_CPP_SERVER_PROC, LLAMA_CPP_SERVER_MODEL
+    proc = LLAMA_CPP_SERVER_PROC
+    LLAMA_CPP_SERVER_PROC = None
+    LLAMA_CPP_SERVER_MODEL = None
+    if not proc:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=15)
+    except Exception:  # noqa: BLE001
+        try:
+            proc.kill()
+            proc.wait(timeout=5)
+        except Exception:
+            pass
+
+
+def llama_cpp_server_start(model: str) -> tuple[float, str | None]:
+    global LLAMA_CPP_SERVER_PROC, LLAMA_CPP_SERVER_MODEL
+    if LLAMA_CPP_SERVER_PROC and LLAMA_CPP_SERVER_PROC.poll() is None and LLAMA_CPP_SERVER_MODEL == model:
+        return 0.0, None
+    llama_cpp_server_stop()
+    path, error = resolve_llama_cpp_model_path(model)
+    if not path:
+        return 0.0, f"llama_cpp_model_unavailable:{error}"
+    cmd = [
+        LLAMA_CPP_SERVER,
+        "-m", path,
+        "--host", LLAMA_CPP_SERVER_HOST,
+        "--port", str(LLAMA_CPP_SERVER_PORT),
+        "--metrics",
+        "--props",
+        "--slots",
+        "--no-webui",
+    ]
+    if LLAMA_CPP_EXTRA_ARGS:
+        cmd.extend(shlex.split(LLAMA_CPP_EXTRA_ARGS))
+    t0 = time.time()
+    try:
+        LLAMA_CPP_SERVER_PROC = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+        LLAMA_CPP_SERVER_MODEL = model
+        deadline = time.time() + 90
+        last_error = None
+        while time.time() < deadline:
+            if LLAMA_CPP_SERVER_PROC.poll() is not None:
+                return round(time.time() - t0, 2), f"llama_server_exited:{LLAMA_CPP_SERVER_PROC.returncode}"
+            try:
+                _server_json("/health", timeout=1)
+                return round(time.time() - t0, 2), None
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                time.sleep(0.25)
+        return round(time.time() - t0, 2), f"llama_server_not_ready:{type(last_error).__name__}:{str(last_error)[:120]}"
+    except Exception as exc:  # noqa: BLE001
+        LLAMA_CPP_SERVER_PROC = None
+        LLAMA_CPP_SERVER_MODEL = None
+        return round(time.time() - t0, 2), f"llama_server_start_error:{type(exc).__name__}:{str(exc)[:160]}"
+
+
+def llama_cpp_server_warmup(model: str) -> tuple[float, str | None]:
+    warm_s, err = llama_cpp_server_start(model)
+    if err:
+        return warm_s, err
+    try:
+        _server_json("/completion", {"prompt": "ok", "n_predict": 1, "temperature": 0, "cache_prompt": False}, timeout=60)
+    except Exception as exc:  # noqa: BLE001
+        return warm_s, f"warmup_error:{type(exc).__name__}:{str(exc)[:160]}"
+    return warm_s, None
+
+
+def run_llama_cpp_server(model: str, system: str, user: str, *, max_tokens: int,
+                         timeout_s: int, stall_s: int, sampler, temperature: float, seed: int | None) -> dict:
+    path, error = resolve_llama_cpp_model_path(model)
+    prompt = _llama_cpp_prompt(system, user)
+    if not path:
+        return {
+            "gen_ai.request.model": model,
+            "gen_ai.operation.name": "completion",
+            "gen_ai.provider.name": "llama_cpp_server",
+            "gen_ai.response.finish_reasons": ["DNF:runtime_unsupported"],
+            "dnf": True,
+            "wall_s": 0.0,
+            "decode_tok_s": None,
+            "llama_cpp.model_error": error,
+            "progress_trace": [],
+            "_text": "",
+            "_think": "",
+        }
+    warm_s, start_error = llama_cpp_server_start(model)
+    if start_error:
+        return {
+            "gen_ai.request.model": model,
+            "gen_ai.operation.name": "completion",
+            "gen_ai.provider.name": "llama_cpp_server",
+            "gen_ai.response.finish_reasons": ["DNF:runtime_start_failed"],
+            "dnf": True,
+            "wall_s": warm_s,
+            "decode_tok_s": None,
+            "llama_cpp.model_path": path,
+            "llama_cpp.server.error": start_error,
+            "progress_trace": [],
+            "_text": "",
+            "_think": "",
+        }
+    t0 = time.time()
+    exception = None
+    props = slots_before = slots_after = metrics_before_text = metrics_after_text = None
+    prompt_tokens = []
+    response = {}
+    try:
+        props = _server_json("/props", timeout=5)
+        slots_before = _server_json("/slots", timeout=5)
+        metrics_before_text = _server_json("/metrics", timeout=5)
+        try:
+            tokenized = _server_json("/tokenize", {"content": prompt}, timeout=10)
+            prompt_tokens = tokenized.get("tokens") if isinstance(tokenized, dict) else []
+        except Exception:  # noqa: BLE001
+            prompt_tokens = []
+        payload = {
+            "prompt": prompt,
+            "n_predict": max_tokens,
+            "temperature": temperature,
+            "n_probs": LLAMA_CPP_SERVER_N_PROBS,
+            "cache_prompt": False,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+        response = _server_json("/completion", payload, timeout=timeout_s)
+        metrics_after_text = _server_json("/metrics", timeout=5)
+        slots_after = _server_json("/slots", timeout=5)
+    except Exception as exc:  # noqa: BLE001
+        exception = exc
+        try:
+            metrics_after_text = _server_json("/metrics", timeout=2)
+        except Exception:
+            pass
+        try:
+            slots_after = _server_json("/slots", timeout=2)
+        except Exception:
+            pass
+    wall = round(time.time() - t0, 2)
+    if exception is not None:
+        finish = "DNF:timeout" if isinstance(exception, TimeoutError) else f"DNF:server_error:{type(exception).__name__}"
+        return {
+            "gen_ai.request.model": model,
+            "gen_ai.operation.name": "completion",
+            "gen_ai.provider.name": "llama_cpp_server",
+            "gen_ai.output.type": "text",
+            "gen_ai.request.stream": False,
+            "gen_ai.response.model": model,
+            "gen_ai.request.max_tokens": max_tokens,
+            "gen_ai.request.temperature": temperature,
+            "gen_ai.request.seed": seed,
+            "gen_ai.response.finish_reasons": [finish],
+            "dnf": True,
+            "wall_s": wall,
+            "decode_tok_s": None,
+            "llama_cpp.model_path": path,
+            "llama_cpp.server.base_url": LLAMA_CPP_SERVER_BASE,
+            "llama_cpp.server.exception": f"{type(exception).__name__}:{str(exception)[:240]}",
+            "llama_cpp.server.metrics_before": metrics_before_text,
+            "llama_cpp.server.metrics_after": metrics_after_text,
+            "llama_cpp.server.slots_before": slots_before,
+            "llama_cpp.server.slots_after": slots_after,
+            "progress_trace": [],
+            "_text": "",
+            "_think": "",
+        }
+    text = response.get("content") or ""
+    timings = response.get("timings") or {}
+    probabilities = response.get("completion_probabilities") or []
+    prob_summary = _probability_summary(probabilities)
+    metrics_before = _metrics_map(metrics_before_text if isinstance(metrics_before_text, str) else "")
+    metrics_after = _metrics_map(metrics_after_text if isinstance(metrics_after_text, str) else "")
+    stop_type = response.get("stop_type")
+    finish = "length" if stop_type == "limit" else "stop"
+    out_tok = int(response.get("tokens_predicted") or len(prob_summary.get("token_ids") or []) or max(1, len(text) // 4) if text else 0)
+    in_tok = int(response.get("tokens_evaluated") or len(prompt_tokens) or max(1, len(prompt) // 4))
+    prompt_s = (timings.get("prompt_ms") / 1000) if isinstance(timings.get("prompt_ms"), (int, float)) else None
+    decode_s = (timings.get("predicted_ms") / 1000) if isinstance(timings.get("predicted_ms"), (int, float)) else None
+    return {
+        "gen_ai.request.model": model,
+        "gen_ai.operation.name": "completion",
+        "gen_ai.provider.name": "llama_cpp_server",
+        "gen_ai.output.type": "text",
+        "gen_ai.request.stream": False,
+        "gen_ai.response.model": model,
+        "gen_ai.request.max_tokens": max_tokens,
+        "gen_ai.request.temperature": temperature,
+        "gen_ai.request.seed": seed,
+        "gen_ai.usage.input_tokens": in_tok,
+        "gen_ai.usage.output_tokens": out_tok,
+        "gen_ai.usage.output_chars": len(text),
+        "gen_ai.usage.token_source": "llama_server",
+        "gen_ai.response.finish_reasons": [finish],
+        "gen_ai.server.time_to_first_token_s": None,
+        "phase.prefill_s": prompt_s,
+        "phase.decode_s": decode_s,
+        "prefill_tok_s": round(in_tok / prompt_s, 2) if prompt_s and in_tok else timings.get("prompt_per_second"),
+        "decode_tok_s": round(out_tok / decode_s, 2) if decode_s and out_tok else timings.get("predicted_per_second"),
+        "wall_s": wall,
+        "dnf": False,
+        "stall.phase": None,
+        "stall_phase": None,
+        "http.exception": None,
+        "socket_exception": None,
+        "ollama.ps.before": {"runtime": "llama_cpp_server"},
+        "ollama.ps.after": {"runtime": "llama_cpp_server"},
+        "llama_cpp.model_path": path,
+        "llama_cpp.server.binary": shutil.which(LLAMA_CPP_SERVER) or LLAMA_CPP_SERVER,
+        "llama_cpp.server.base_url": LLAMA_CPP_SERVER_BASE,
+        "llama_cpp.server.endpoint": "/completion",
+        "llama_cpp.server.props.build_info": (props or {}).get("build_info") if isinstance(props, dict) else None,
+        "llama_cpp.server.props.total_slots": (props or {}).get("total_slots") if isinstance(props, dict) else None,
+        "llama_cpp.server.props.chat_template_sha256": _sha256_text((props or {}).get("chat_template")) if isinstance(props, dict) else None,
+        "llama_cpp.server.slots_before": _slots_summary(slots_before),
+        "llama_cpp.server.slots_after": _slots_summary(slots_after),
+        "llama_cpp.server.metrics.prompt_tokens_delta": _metric_delta(metrics_before, metrics_after, "llamacpp:prompt_tokens_total"),
+        "llama_cpp.server.metrics.predicted_tokens_delta": _metric_delta(metrics_before, metrics_after, "llamacpp:tokens_predicted_total"),
+        "llama_cpp.server.metrics.prompt_seconds_delta": _metric_delta(metrics_before, metrics_after, "llamacpp:prompt_seconds_total"),
+        "llama_cpp.server.metrics.predicted_seconds_delta": _metric_delta(metrics_before, metrics_after, "llamacpp:tokens_predicted_seconds_total"),
+        "llama_cpp.server.metrics.decode_calls_delta": _metric_delta(metrics_before, metrics_after, "llamacpp:n_decode_total"),
+        "llama_cpp.server.prompt_token_ids": prompt_tokens,
+        "llama_cpp.server.prompt_token_count": len(prompt_tokens),
+        "llama_cpp.server.output_token_ids": prob_summary["token_ids"],
+        "llama_cpp.server.completion_probabilities_count": prob_summary["count"],
+        "llama_cpp.server.logprob.mean": prob_summary["mean_logprob"],
+        "llama_cpp.server.logprob.min": prob_summary["min_logprob"],
+        "llama_cpp.server.logprob.mean_top1_margin": prob_summary["mean_top1_margin"],
+        "llama_cpp.server.top_logprobs_n": prob_summary["top_logprobs_n"],
+        "llama_cpp.server.stop_type": stop_type,
+        "progress_trace": [],
+        "phase.think_s": None,
+        "gen_ai.thinking.chars": 0,
+        "decode.dt_p50_ms": None,
+        "decode.dt_p95_ms": None,
+        "decode.dt_max_ms": None,
+        "_server_capture": {
+            "request": {"n_predict": max_tokens, "temperature": temperature, "seed": seed, "n_probs": LLAMA_CPP_SERVER_N_PROBS},
+            "props": props,
+            "slots_before": slots_before,
+            "slots_after": slots_after,
+            "metrics_before": metrics_before_text,
+            "metrics_after": metrics_after_text,
+            "prompt_token_ids": prompt_tokens,
+            "completion_response": response,
+        },
+        "_text": text,
+        "_think": "",
+    }
+
+
 # --------------------------------------------------------------------------
 # Deterministic checks
 # --------------------------------------------------------------------------
@@ -2424,9 +2766,10 @@ def _env_static():
         "env.ollama_version": _sh_out(["ollama", "--version"]),
         "env.inference_runtime": INFERENCE_RUNTIME,
         "env.llama_cpp_cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
-        "env.llama_cpp_artifacts": LLAMA_CPP_ARTIFACTS if INFERENCE_RUNTIME == "llama_cpp" else None,
-        "env.llama_cpp_artifacts_sha256": hashlib.sha256(open(LLAMA_CPP_ARTIFACTS, "rb").read()).hexdigest() if INFERENCE_RUNTIME == "llama_cpp" and LLAMA_CPP_ARTIFACTS and os.path.exists(LLAMA_CPP_ARTIFACTS) else None,
-        "env.llama_cpp_version": _sh_out([LLAMA_CPP_CLI, "--version"]) if INFERENCE_RUNTIME == "llama_cpp" else None,
+        "env.llama_cpp_server": shutil.which(LLAMA_CPP_SERVER) or LLAMA_CPP_SERVER if INFERENCE_RUNTIME == "llama_cpp_server" else None,
+        "env.llama_cpp_artifacts": LLAMA_CPP_ARTIFACTS if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES else None,
+        "env.llama_cpp_artifacts_sha256": hashlib.sha256(open(LLAMA_CPP_ARTIFACTS, "rb").read()).hexdigest() if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES and LLAMA_CPP_ARTIFACTS and os.path.exists(LLAMA_CPP_ARTIFACTS) else None,
+        "env.llama_cpp_version": _sh_out([LLAMA_CPP_CLI, "--version"]) if INFERENCE_RUNTIME == "llama_cpp" else (_sh_out([LLAMA_CPP_SERVER, "--version"]) if INFERENCE_RUNTIME == "llama_cpp_server" else None),
         "env.llama_cpp_git_commit": os.environ.get("LLAMA_CPP_GIT_COMMIT"),
         "env.llama_cpp_git_describe": os.environ.get("LLAMA_CPP_GIT_DESCRIBE"),
         "env.harness_git": _sh_out(["git", "-C", repo, "rev-parse", "--short", "HEAD"]),
@@ -2799,8 +3142,9 @@ def main():
                 continue
             warm_s, warm_err = warmup(model, args.think)
             meta = {**model_meta(model), **model_runtime(model)}
-            if INFERENCE_RUNTIME == "llama_cpp":
+            if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
                 meta.update(llama_cpp_artifact_fields(model))
+            if INFERENCE_RUNTIME == "llama_cpp":
                 meta.update(llama_cpp_bench(model, args.outputs_dir))
             sys.stderr.write(f"[{bracket}] {model}  warmup={warm_s}s  "
                              f"params={meta.get('ollama.parameter_count')} "
@@ -2852,6 +3196,20 @@ def main():
                         pcore.stop(); pcore.join(timeout=2)
                     text = tel.pop("_text")
                     think_text = tel.pop("_think", "")
+                    server_capture = tel.pop("_server_capture", None)
+                    suffix = f"__r{rep}" if args.repeats > 1 else ""
+                    _osafe = model.replace('/', '_').replace(':', '_')
+                    if server_capture:
+                        server_sidecar = os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.llama-server.json")
+                        with open(server_sidecar, "w", encoding="utf-8") as sidecar:
+                            json.dump(server_capture, sidecar, sort_keys=True)
+                            sidecar.write("\n")
+                        tel["llama_cpp.server.sidecar_path"] = server_sidecar
+                        tel["llama_cpp.server.sidecar_sha256"] = _sha256_file(server_sidecar)
+                        try:
+                            tel["llama_cpp.server.sidecar_bytes"] = os.path.getsize(server_sidecar)
+                        except OSError:
+                            tel["llama_cpp.server.sidecar_bytes"] = None
                     passed, total, detail = run_checks(text, s.get("deterministic_checks", []))
                     # energy: prefer RAPL on-die joules; else smart-plug watts.
                     ej = _rapl_delta_j(rapl0, rapl1)
@@ -2938,8 +3296,6 @@ def main():
                         row["distill.messages"] = [*row["distill.input_messages"], row["distill.output_message"]]
                     row["gen_ai.thinking"] = think_text or None
                     fout.write(json.dumps(row) + "\n"); fout.flush()
-                    suffix = f"__r{rep}" if args.repeats > 1 else ""
-                    _osafe = model.replace('/', '_').replace(':', '_')
                     with open(os.path.join(args.outputs_dir, f"{_osafe}__{s['id']}{suffix}.txt"), "w") as o:
                         o.write(text)
                     if think_text:
