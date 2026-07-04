@@ -46,13 +46,13 @@
     "judged_fields": 17,
     "judged_rows": 24,
     "raw_fields": 276,
-    "raw_rows": 6,
+    "raw_rows": 12,
     "run_meta_fields": 36,
     "run_meta_rows": 1,
     "sample_fields": 23,
-    "sample_rows": 14
+    "sample_rows": 158
   },
-  "run_id": "benchrow-dev-plus-judged-smoke",
+  "run_id": "llama-cpp-smoke-2-strategy-pilot-6-none-baseline-llama_cpp-20260704-201750",
   "sections": {
     "judged_rows": [
       {
@@ -70,8 +70,8 @@
         "category": "judge",
         "description": "Judge criteria list for met or missed requirements.",
         "field": "criteria_met",
-        "missing": 12,
-        "non_null": 12,
+        "missing": 11,
+        "non_null": 13,
         "rows": 24,
         "types": [
           "list"
@@ -249,8 +249,8 @@
         "description": "Runtime adapter label stamped into snapshots and raw rows, for example ollama or llama_cpp.",
         "field": "adapter",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -259,9 +259,9 @@
         "category": "scenario",
         "description": "AIOpsLab-inspired lifecycle/task mapping for the scenario.",
         "field": "aiopslab_task",
-        "missing": 1,
-        "non_null": 5,
-        "rows": 6,
+        "missing": 2,
+        "non_null": 10,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -270,9 +270,9 @@
         "category": "model",
         "description": "Legacy footprint bracket from older rosters; current thesis tiering uses model_lock.* fields.",
         "field": "bracket",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -282,8 +282,8 @@
         "description": "Scenario taxonomy class such as detect, diagnose, guard, test, expand, or upgrade.",
         "field": "class",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -293,8 +293,8 @@
         "description": "Decode chunk/inter-token timing statistic captured from streaming output.",
         "field": "decode.dt_max_ms",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -304,8 +304,8 @@
         "description": "Decode chunk/inter-token timing statistic captured from streaming output.",
         "field": "decode.dt_p50_ms",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -315,8 +315,8 @@
         "description": "Decode chunk/inter-token timing statistic captured from streaming output.",
         "field": "decode.dt_p95_ms",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -326,8 +326,8 @@
         "description": "Decode throughput metric.",
         "field": "decode_tok_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -337,8 +337,8 @@
         "description": "Deterministic scenario check result or check details.",
         "field": "det_detail",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -348,8 +348,8 @@
         "description": "Deterministic scenario check result or check details.",
         "field": "det_passed",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -359,8 +359,8 @@
         "description": "Deterministic scenario check result or check details.",
         "field": "det_score",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -370,8 +370,8 @@
         "description": "Deterministic scenario check result or check details.",
         "field": "det_total",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -381,8 +381,8 @@
         "description": "Author-assigned scenario difficulty label.",
         "field": "difficulty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -392,8 +392,8 @@
         "description": "Disk I/O summary for the request window.",
         "field": "disk.read_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -403,8 +403,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.example_schema",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -414,8 +414,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.input_messages",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -425,8 +425,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.input_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -436,8 +436,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.judge_rubric",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -447,8 +447,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.judge_rubric_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -458,8 +458,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.messages",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -469,8 +469,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.output_message",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "dict"
         ]
@@ -480,8 +480,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.output_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -491,8 +491,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.reference_answer",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -502,8 +502,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.reference_answer_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -513,8 +513,8 @@
         "description": "Fine-tuning/distillation helper field derived from prompt, reference, output, or labels.",
         "field": "distill.reference_answer_source",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -524,8 +524,8 @@
         "description": "Did-not-finish flag. True rows are reliability failures, not missing data.",
         "field": "dnf",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -535,8 +535,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.max_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -546,8 +546,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.policy_reasons",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -557,8 +557,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.retry_attempts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -568,8 +568,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.retry_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -578,9 +578,9 @@
         "category": "policy",
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.retry_reason",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -590,8 +590,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.stall_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -601,8 +601,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.timeout_policy_id",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -612,8 +612,8 @@
         "description": "Effective timeout/token/retry policy after scenario/model/runtime adjustments.",
         "field": "effective.timeout_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -623,8 +623,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.cpu_governor",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -634,8 +634,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.cpu_max_perf_pct",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -645,8 +645,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.cpu_min_perf_pct",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -656,8 +656,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.cpu_no_turbo",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -667,8 +667,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.harness_artifact_dirty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -678,8 +678,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.harness_dirty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -688,11 +688,11 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.harness_git",
-        "missing": 6,
-        "non_null": 0,
-        "rows": 6,
+        "missing": 0,
+        "non_null": 12,
+        "rows": 12,
         "types": [
-          "null"
+          "str"
         ]
       },
       {
@@ -700,8 +700,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.harness_source_dirty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -711,8 +711,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.host",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -722,8 +722,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.inference_runtime",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -733,8 +733,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.inference_strategy",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -744,8 +744,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.kernel",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -755,8 +755,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.llama_cpp_cli",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -765,9 +765,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.llama_cpp_git_commit",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -776,9 +776,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.llama_cpp_git_describe",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -787,9 +787,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.llama_cpp_version",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -799,8 +799,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.memory_context",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -809,9 +809,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.memory_context_file",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -820,9 +820,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.memory_context_sha",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -832,8 +832,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.num_ctx",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -843,8 +843,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.ollama_version",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -854,8 +854,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.perf_core",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -865,8 +865,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.perf_event_paranoid",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -876,8 +876,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.perf_membw",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -887,8 +887,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.rapl_domain",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -898,8 +898,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.run_id",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -909,8 +909,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.sample_interval_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -919,11 +919,11 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.scenario_set",
-        "missing": 6,
-        "non_null": 0,
-        "rows": 6,
+        "missing": 0,
+        "non_null": 12,
+        "rows": 12,
         "types": [
-          "null"
+          "str"
         ]
       },
       {
@@ -931,8 +931,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.scenarios_path",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -942,8 +942,8 @@
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.scenarios_sha",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -952,9 +952,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.strategy_prompt_file",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -963,9 +963,9 @@
         "category": "environment",
         "description": "Static or run-level environment/provenance field stamped by the runner.",
         "field": "env.strategy_prompt_sha",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -975,8 +975,8 @@
         "description": "Verbatim model answer retained for re-judging, transcript inspection, and distillation exports.",
         "field": "gen_ai.completion",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -986,8 +986,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.input.messages",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -997,8 +997,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.operation.name",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1008,8 +1008,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.output.messages",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1019,8 +1019,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.output.sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1030,8 +1030,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.output.type",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1041,8 +1041,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.provider.name",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1052,8 +1052,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.frequency_penalty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1063,8 +1063,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.max_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1074,8 +1074,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.model",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1085,8 +1085,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.presence_penalty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1096,8 +1096,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.repeat_penalty",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1107,8 +1107,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.seed",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1118,8 +1118,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.stream",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1129,8 +1129,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.temperature",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1140,8 +1140,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.top_k",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1151,8 +1151,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.request.top_p",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1162,8 +1162,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.response.finish_reasons",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1173,8 +1173,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.response.model",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1184,8 +1184,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.server.time_to_first_token_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1195,8 +1195,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.system_instructions",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1205,9 +1205,9 @@
         "category": "generation",
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.thinking",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -1217,8 +1217,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.thinking.chars",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1228,8 +1228,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.usage.input_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1239,8 +1239,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.usage.output_chars",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1250,8 +1250,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.usage.output_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1261,8 +1261,8 @@
         "description": "OpenTelemetry-style generative AI request, response, usage, or content field.",
         "field": "gen_ai.usage.token_source",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1272,8 +1272,8 @@
         "description": "GPU/iGPU observation used mainly to prove CPU-only or offload state.",
         "field": "gpu.peak_freq_mhz",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1283,8 +1283,8 @@
         "description": "Whether the scenario answer is derivable from supplied context or requires closed-book knowledge.",
         "field": "grounding",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1293,9 +1293,9 @@
         "category": "http-forensics",
         "description": "HTTP runtime connection/content timing or exception field.",
         "field": "http.exception",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -1305,8 +1305,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.backends",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1316,8 +1316,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.build_commit",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1327,8 +1327,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.build_number",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1338,8 +1338,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.cpu_info",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1349,8 +1349,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.cpu_mask",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1360,8 +1360,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.cpu_strict",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1371,8 +1371,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.devices",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1382,8 +1382,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.embeddings",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1393,8 +1393,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.fit_min_ctx",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1404,8 +1404,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.fit_target",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1415,8 +1415,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.flash_attn",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1425,9 +1425,9 @@
         "category": "llama.cpp-bench",
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.gpu_info",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1437,8 +1437,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.main_gpu",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1448,8 +1448,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.model_filename",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1459,8 +1459,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.model_n_params",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1470,8 +1470,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.model_size",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1481,8 +1481,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.model_type",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1492,8 +1492,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_batch",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1503,8 +1503,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_cpu_moe",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1514,8 +1514,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_gen",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1525,8 +1525,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_gpu_layers",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1536,8 +1536,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_prompt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1547,8 +1547,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_threads",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1558,8 +1558,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.n_ubatch",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1569,8 +1569,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.no_host",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1580,8 +1580,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.no_kv_offload",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1591,8 +1591,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.no_op_offload",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1602,8 +1602,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.path",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1613,8 +1613,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.poll",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1624,8 +1624,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.avg_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1635,8 +1635,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.avg_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1646,8 +1646,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.n_depth",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1657,8 +1657,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.n_gen",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1668,8 +1668,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.n_prompt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1679,8 +1679,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.samples_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1690,8 +1690,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.samples_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1701,8 +1701,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.stddev_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1712,8 +1712,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.stddev_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1723,8 +1723,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.pp.test_time",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1734,8 +1734,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.repetitions",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1745,8 +1745,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.returncode",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1756,8 +1756,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.rows",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1767,8 +1767,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1778,8 +1778,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.split_mode",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1788,9 +1788,9 @@
         "category": "llama.cpp-bench",
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.stderr_tail",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -1800,8 +1800,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tensor_buft_overrides",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1811,8 +1811,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tensor_split",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1822,8 +1822,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.test_summaries",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1833,8 +1833,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.avg_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1844,8 +1844,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.avg_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1855,8 +1855,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.n_depth",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1866,8 +1866,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.n_gen",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1877,8 +1877,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.n_prompt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1888,8 +1888,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.samples_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1899,8 +1899,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.samples_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -1910,8 +1910,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.stddev_ns",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -1921,8 +1921,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.stddev_ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -1932,8 +1932,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.tg.test_time",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1943,8 +1943,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.type_k",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1954,8 +1954,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.type_v",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1965,8 +1965,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.use_direct_io",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1976,8 +1976,8 @@
         "description": "Parsed llama-bench calibration sidecar field for this model/runtime configuration.",
         "field": "llama_cpp.bench.use_mmap",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -1987,8 +1987,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.cli",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -1998,8 +1998,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.command_args",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -2008,9 +2008,9 @@
         "category": "llama.cpp",
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.model_error",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2020,8 +2020,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.model_path",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2031,8 +2031,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.ctxt_invol",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2042,8 +2042,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.ctxt_vol",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2053,8 +2053,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.majflt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2064,8 +2064,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.max_rss_kb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2075,8 +2075,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.minflt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2086,8 +2086,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.system_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2097,8 +2097,8 @@
         "description": "Child-process resource usage captured from os.wait4 for llama.cpp.",
         "field": "llama_cpp.proc.user_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2108,8 +2108,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.runtime_options",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -2119,8 +2119,8 @@
         "description": "Sampler parameter parsed from llama.cpp stderr.",
         "field": "llama_cpp.sampler.min_p",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2130,8 +2130,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.size_bytes",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2141,8 +2141,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.status",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2152,8 +2152,8 @@
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.stderr_tail",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2163,8 +2163,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.eval_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2174,8 +2174,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.eval_tok_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2185,8 +2185,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.eval_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2196,8 +2196,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.load_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2207,8 +2207,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.prompt_eval_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2218,8 +2218,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.prompt_eval_tok_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2229,8 +2229,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.prompt_eval_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2240,8 +2240,8 @@
         "description": "Internal llama.cpp timing parsed from --perf stderr.",
         "field": "llama_cpp.timing.total_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2250,9 +2250,9 @@
         "category": "llama.cpp",
         "description": "llama.cpp runtime, model, command, sidecar, or error field.",
         "field": "llama_cpp.version",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2262,8 +2262,8 @@
         "description": "Memory/RSS measurement for the request or runtime child process.",
         "field": "mem.avail_start_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2273,8 +2273,8 @@
         "description": "Memory/RSS measurement for the request or runtime child process.",
         "field": "mem.peak_rss_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2283,9 +2283,9 @@
         "category": "systems-memory",
         "description": "Memory/RSS measurement for the request or runtime child process.",
         "field": "mem.rss_start_mb",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2295,8 +2295,8 @@
         "description": "Memory-bandwidth measurement from perf/IMC counters.",
         "field": "membw.peak_mb_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2306,8 +2306,8 @@
         "description": "Memory-bandwidth measurement from perf/IMC counters.",
         "field": "membw.requests",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "dict"
         ]
@@ -2316,9 +2316,9 @@
         "category": "systems-memory",
         "description": "Memory-bandwidth measurement from perf/IMC counters.",
         "field": "membw.series",
-        "missing": 4,
-        "non_null": 2,
-        "rows": 6,
+        "missing": 0,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -2328,8 +2328,8 @@
         "description": "Minimum value observed over the request window.",
         "field": "min_mem_avail_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2339,8 +2339,8 @@
         "description": "Model deployment identifier requested for this row.",
         "field": "model",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2350,8 +2350,8 @@
         "description": "Model metadata from the lockfile, such as parameter tier or license class.",
         "field": "model_lock.license",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2361,8 +2361,8 @@
         "description": "Model metadata from the lockfile, such as parameter tier or license class.",
         "field": "model_lock.license_class",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2372,8 +2372,8 @@
         "description": "Model metadata from the lockfile, such as parameter tier or license class.",
         "field": "model_lock.params_b",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2383,8 +2383,8 @@
         "description": "Model metadata from the lockfile, such as parameter tier or license class.",
         "field": "model_lock.tier",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2394,8 +2394,8 @@
         "description": "Network I/O invariant/summary for offline-local inference checks.",
         "field": "net.peak_kb_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2405,8 +2405,8 @@
         "description": "Network I/O invariant/summary for offline-local inference checks.",
         "field": "net.total_kb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2416,8 +2416,8 @@
         "description": "Ollama runtime metadata or compatibility placeholder.",
         "field": "ollama.ps.after",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "dict"
         ]
@@ -2427,8 +2427,8 @@
         "description": "Ollama runtime metadata or compatibility placeholder.",
         "field": "ollama.ps.before",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "dict"
         ]
@@ -2437,9 +2437,9 @@
         "category": "scenario",
         "description": "Identifier for paired scenario variants when present.",
         "field": "pair_id",
-        "missing": 4,
-        "non_null": 2,
-        "rows": 6,
+        "missing": 8,
+        "non_null": 4,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2449,8 +2449,8 @@
         "description": "Peak value observed over the request window.",
         "field": "peak_swap_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2459,9 +2459,9 @@
         "category": "systems-perf",
         "description": "perf-derived CPU or memory performance counters.",
         "field": "perf.core",
-        "missing": 4,
-        "non_null": 2,
-        "rows": 6,
+        "missing": 0,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "dict"
         ]
@@ -2471,8 +2471,8 @@
         "description": "Prompt/prefill/decode/thinking phase duration.",
         "field": "phase.decode_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2482,8 +2482,8 @@
         "description": "Prompt/prefill/decode/thinking phase duration.",
         "field": "phase.prefill_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2492,9 +2492,9 @@
         "category": "timing",
         "description": "Prompt/prefill/decode/thinking phase duration.",
         "field": "phase.think_s",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2504,8 +2504,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.energy_wh",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2515,8 +2515,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.idle_watts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2526,8 +2526,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.mean_watts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2537,8 +2537,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.peak_dram_w",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2548,8 +2548,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.peak_watts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2559,8 +2559,8 @@
         "description": "Power and energy measurement for the request window.",
         "field": "power.source",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2570,8 +2570,8 @@
         "description": "Prompt/prefill throughput metric.",
         "field": "prefill_tok_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2581,8 +2581,8 @@
         "description": "Process-level page fault or context-switch summary.",
         "field": "proc.ctxt_switches",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2592,8 +2592,8 @@
         "description": "Process-level page fault or context-switch summary.",
         "field": "proc.majflt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2603,8 +2603,8 @@
         "description": "Process-level page fault or context-switch summary.",
         "field": "proc.minflt",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2614,8 +2614,8 @@
         "description": "Cumulative output progress curve over wall time.",
         "field": "progress_trace",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -2625,8 +2625,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.capture.enabled",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -2636,8 +2636,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.capture.policy",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2647,8 +2647,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.char_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2658,8 +2658,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.estimated_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2669,8 +2669,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.full",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2680,8 +2680,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.memory_char_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2691,8 +2691,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.scenario_context_char_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2702,8 +2702,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2713,8 +2713,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.task_char_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2724,8 +2724,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.template_id",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2735,8 +2735,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.template_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2746,8 +2746,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.user_content",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2757,8 +2757,8 @@
         "description": "Exact prompt, prompt hash, prompt section counts, or prompt-capture policy field.",
         "field": "prompt.user_content_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2768,8 +2768,8 @@
         "description": "Repeat index for variance runs.",
         "field": "rep",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2779,8 +2779,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.cpu_freq_mhz",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2790,8 +2790,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.cpu_governor",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2801,8 +2801,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.cpu_no_turbo",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2812,8 +2812,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.cpu_temp_c",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2823,8 +2823,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.load1",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -2834,8 +2834,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.mem_avail_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2845,8 +2845,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.ok",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -2856,8 +2856,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.perf_event_paranoid",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2867,8 +2867,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.running_procs",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2878,8 +2878,8 @@
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.swap_used_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2888,9 +2888,9 @@
         "category": "reset-state",
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.top_proc",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2899,9 +2899,9 @@
         "category": "reset-state",
         "description": "Per-model reset-state evidence captured before model inference.",
         "field": "reset.warnings",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -2911,8 +2911,8 @@
         "description": "Per-request sampler time series; see samples[] field catalog.",
         "field": "samples",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -2922,8 +2922,8 @@
         "description": "Scenario identifier.",
         "field": "scenario",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2933,8 +2933,8 @@
         "description": "Scenario content/check/reference hash captured for reproducibility and distillation.",
         "field": "scenario.context_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2944,8 +2944,8 @@
         "description": "Scenario content/check/reference hash captured for reproducibility and distillation.",
         "field": "scenario.deterministic_checks_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2955,8 +2955,8 @@
         "description": "Scenario content/check/reference hash captured for reproducibility and distillation.",
         "field": "scenario.gold_answer_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2966,8 +2966,8 @@
         "description": "Scenario content/check/reference hash captured for reproducibility and distillation.",
         "field": "scenario.judge_rubric_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2977,8 +2977,8 @@
         "description": "Scenario content/check/reference hash captured for reproducibility and distillation.",
         "field": "scenario.question_sha256",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -2988,8 +2988,8 @@
         "description": "Sampling seed for this repeat.",
         "field": "seed",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -2998,9 +2998,9 @@
         "category": "http-forensics",
         "description": "Legacy socket exception or stall classification field.",
         "field": "socket_exception",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3009,9 +3009,9 @@
         "category": "reliability",
         "description": "Did-not-finish stall phase/classification field.",
         "field": "stall.phase",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3020,9 +3020,9 @@
         "category": "reliability",
         "description": "Did-not-finish stall phase/classification field.",
         "field": "stall_phase",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3032,8 +3032,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.candidate_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3043,8 +3043,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.candidates",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "list"
         ]
@@ -3054,8 +3054,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.extra_calls",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3064,9 +3064,9 @@
         "category": "strategy",
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.failure_mode",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3076,8 +3076,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.id",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -3086,9 +3086,9 @@
         "category": "strategy",
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.prompt_sha256",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3098,8 +3098,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.sample_index",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3109,8 +3109,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.selected_candidate",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3120,8 +3120,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.selection_method",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -3131,8 +3131,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.total_input_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3142,8 +3142,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.total_output_tokens",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3153,8 +3153,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.total_retry_count",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3164,8 +3164,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.total_wall_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3175,8 +3175,8 @@
         "description": "Inference-strategy metadata, candidate details, or selected-candidate trace.",
         "field": "strategy.version",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "str"
         ]
@@ -3186,8 +3186,8 @@
         "description": "Swap measurement at request start or peak.",
         "field": "swap.start_mb",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "int"
         ]
@@ -3197,8 +3197,8 @@
         "description": "Sampling temperature used for this row.",
         "field": "temp",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3208,8 +3208,8 @@
         "description": "Thermal state before or during the request.",
         "field": "thermal.peak_c",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3219,8 +3219,8 @@
         "description": "Thermal state before or during the request.",
         "field": "thermal.start_c",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3230,8 +3230,8 @@
         "description": "Whether thinking/reasoning mode was requested.",
         "field": "think",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "bool"
         ]
@@ -3241,8 +3241,8 @@
         "description": "Unix timestamp when the row was written.",
         "field": "ts",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3252,8 +3252,8 @@
         "description": "End-to-end row wall-clock duration in seconds.",
         "field": "wall_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3262,9 +3262,9 @@
         "category": "runtime",
         "description": "Model warmup duration or warmup error.",
         "field": "warmup_err",
-        "missing": 6,
+        "missing": 12,
         "non_null": 0,
-        "rows": 6,
+        "rows": 12,
         "types": [
           "null"
         ]
@@ -3274,8 +3274,8 @@
         "description": "Model warmup duration or warmup error.",
         "field": "warmup_s",
         "missing": 0,
-        "non_null": 6,
-        "rows": 6,
+        "non_null": 12,
+        "rows": 12,
         "types": [
           "float"
         ]
@@ -3685,8 +3685,8 @@
         "description": "Per-sample CPU core utilization, frequency, or power.",
         "field": "core_freq",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "list"
         ]
@@ -3695,9 +3695,9 @@
         "category": "sample-cpu",
         "description": "Per-sample CPU core utilization, frequency, or power.",
         "field": "core_util",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "list"
         ]
@@ -3706,9 +3706,9 @@
         "category": "sample-cpu",
         "description": "Per-sample CPU core utilization, frequency, or power.",
         "field": "core_w",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3718,8 +3718,8 @@
         "description": "Per-sample aggregate CPU utilization, frequency, or temperature.",
         "field": "cpu_freq_mhz",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "int"
         ]
@@ -3729,8 +3729,8 @@
         "description": "Per-sample aggregate CPU utilization, frequency, or temperature.",
         "field": "cpu_temp_c",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3739,9 +3739,9 @@
         "category": "sample-cpu",
         "description": "Per-sample aggregate CPU utilization, frequency, or temperature.",
         "field": "cpu_util_pct",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3750,9 +3750,9 @@
         "category": "sample-process",
         "description": "Per-sample context switch counter when a runtime process is attached.",
         "field": "ctxt_invol",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3761,9 +3761,9 @@
         "category": "sample-process",
         "description": "Per-sample context switch counter when a runtime process is attached.",
         "field": "ctxt_vol",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3772,9 +3772,9 @@
         "category": "sample-io",
         "description": "Per-sample disk I/O rate.",
         "field": "disk_mb_s",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3783,9 +3783,9 @@
         "category": "sample-power",
         "description": "Per-sample DRAM RAPL power.",
         "field": "dram_w",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3795,8 +3795,8 @@
         "description": "Per-sample integrated GPU frequency or activity signal.",
         "field": "gpu_freq_mhz",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "int"
         ]
@@ -3806,8 +3806,8 @@
         "description": "Per-sample system load average.",
         "field": "load1",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3816,9 +3816,9 @@
         "category": "sample-process",
         "description": "Per-sample major page fault counter.",
         "field": "majflt",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3828,8 +3828,8 @@
         "description": "Per-sample memory availability or pressure field.",
         "field": "mem_avail_mb",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "int"
         ]
@@ -3838,9 +3838,9 @@
         "category": "sample-process",
         "description": "Per-sample minor page fault counter.",
         "field": "minflt",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3849,9 +3849,9 @@
         "category": "sample-network",
         "description": "Per-sample non-loopback network I/O rate.",
         "field": "net_kb_s",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3860,9 +3860,9 @@
         "category": "sample-power",
         "description": "Per-sample RAPL package power.",
         "field": "rapl_watts",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3871,9 +3871,9 @@
         "category": "sample-process",
         "description": "Per-sample runtime child RSS when attached.",
         "field": "rss_mb",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3883,8 +3883,8 @@
         "description": "Per-sample swap usage.",
         "field": "swap_used_mb",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "int"
         ]
@@ -3894,8 +3894,8 @@
         "description": "Seconds since request sampler start.",
         "field": "t",
         "missing": 0,
-        "non_null": 14,
-        "rows": 14,
+        "non_null": 158,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3904,9 +3904,9 @@
         "category": "sample-time",
         "description": "Seconds since request sampler start.",
         "field": "threads",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
@@ -3915,9 +3915,9 @@
         "category": "sample-power",
         "description": "Per-sample uncore RAPL power.",
         "field": "uncore_w",
-        "missing": 6,
-        "non_null": 8,
-        "rows": 14,
+        "missing": 12,
+        "non_null": 146,
+        "rows": 158,
         "types": [
           "float"
         ]
@@ -3926,9 +3926,9 @@
         "category": "sample-power",
         "description": "Per-sample smart-plug power if configured.",
         "field": "watts",
-        "missing": 14,
+        "missing": 158,
         "non_null": 0,
-        "rows": 14,
+        "rows": 158,
         "types": [
           "null"
         ]
