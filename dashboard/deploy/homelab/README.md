@@ -22,7 +22,7 @@ redirect (mirrors `apps/homeautomation/home-assistant/forward-auth.yaml`).
 ```bash
 cd ~/apprenticeops/dashboard
 sed -i 's/^AUTH_ENABLED=.*/AUTH_ENABLED=true/' .env   # or edit by hand
-HOME_SSH=dragos@home AI_SSH=home-ai.home.domain REPO_DIR=/home/dragos/apprenticeops AUTH_ENABLED=true \
+HOME_SSH=dragos@home AI_SSH=home-ai.hont.ro REPO_DIR=/home/dragos/apprenticeops-runtime-agent AUTH_ENABLED=true \
   docker compose -f compose.yaml -f compose.host.yaml up -d
 ```
 (Direct `:8770` LAN hits now return 401 — that's intended; access is via `ceops.home.domain`.)

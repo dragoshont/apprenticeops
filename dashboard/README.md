@@ -62,11 +62,13 @@ host does), and connect as **dragos** (the container runs as root, so the bare
 `home` alias would auth as `root@home` and be refused):
 
 ```bash
-cd dashboard
+# Keep this as a clean deployment checkout; do not point the dashboard at a
+# dirty experiment worktree.
+cd ~/apprenticeops-runtime-agent/dashboard
 # one-time: open the port to the LAN
 sudo ufw allow from 192.168.1.0/24 to any port 8770 proto tcp
 # values are also kept in dashboard/.env on the host
-HOME_SSH=dragos@home AI_SSH=home-ai.home.domain REPO_DIR=/home/dragos/apprenticeops AUTH_ENABLED=false \
+HOME_SSH=dragos@home AI_SSH=dragos@home-ai.hont.ro REPO_DIR=/home/dragos/apprenticeops-runtime-agent AUTH_ENABLED=false \
   docker compose -f compose.yaml -f compose.host.yaml up -d --build
 ```
 
