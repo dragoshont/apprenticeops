@@ -1,1 +1,1 @@
-[2026-07-04T20:20:25+00:00] model hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M -> COMMITTED (12 judge rows)
+[2026-07-04T20:20:27+00:00] EXPECT=2 models committed — consumer exiting cleanly
