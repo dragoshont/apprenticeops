@@ -24,6 +24,7 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 VOLATILE = ["env.cpu_no_turbo", "env.cpu_governor", "env.cpu_min_perf_pct",
             "env.cpu_max_perf_pct", "env.rapl_domain", "env.perf_event_paranoid"]
@@ -64,11 +65,37 @@ def normalize_version(value):
     return match.group(0) if match else str(value or "").strip()
 
 
+def load_run_meta_for_results(results_path):
+    """Find run.meta for normal collected paths: data/runs/<run>/_mirror/results.<run>.jsonl."""
+    path = Path(results_path)
+    candidates = [path.parent / "run.meta"]
+    if path.parent.name == "_mirror":
+        candidates.append(path.parent.parent / "run.meta")
+    for candidate in candidates:
+        if candidate.exists():
+            try:
+                return json.loads(candidate.read_text())
+            except (OSError, json.JSONDecodeError):
+                return None
+    return None
+
+
+def expected_repeats(args, manifest):
+    if args.expected_repeats is not None:
+        return int(args.expected_repeats), "--expected-repeats"
+    meta = load_run_meta_for_results(args.results)
+    if meta and meta.get("reps") is not None:
+        return int(meta["reps"]), "run.meta"
+    return int(manifest.get("protocol", {}).get("repeats", 5)), "manifest"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("results")
     ap.add_argument("--manifest", default="data/run-manifest.json")
     ap.add_argument("--scenarios", default="data/scenarios.json")
+    ap.add_argument("--expected-repeats", type=int, default=None,
+                    help="override repeat count for validation runs; defaults to run.meta reps when available, otherwise manifest protocol.repeats")
     args = ap.parse_args()
 
     rows = load(args.results)
@@ -174,9 +201,9 @@ def main():
         problems.append(f"temperature in rows = {temps} (manifest {man.get('protocol', {}).get('temperature')})")
     if thinks and thinks != {man.get("protocol", {}).get("think", False)}:
         problems.append(f"think in rows = {thinks} (manifest {man.get('protocol', {}).get('think')})")
-    want_repeats = int(man.get("protocol", {}).get("repeats", 5))
+    want_repeats, repeats_source = expected_repeats(args, man)
     if reps and reps != set(range(want_repeats)):
-        problems.append(f"reps in rows = {sorted(reps)} (manifest requires 0..{want_repeats - 1})")
+        problems.append(f"reps in rows = {sorted(reps)} ({repeats_source} requires 0..{want_repeats - 1})")
 
     # finish-reason mix (informational)
     notes.append("finish: " + ", ".join(f"{k}={v}" for k, v in
