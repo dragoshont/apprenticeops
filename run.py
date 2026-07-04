@@ -3,10 +3,10 @@
 run.py — node-side small-model eval runner (stdlib only, runs ON home-ai).
 
 Runs against the configured local inference runtime: Ollama for legacy/service
-evidence, or llama.cpp direct-GGUF subprocesses for the experiment runtime. It
+evidence, llama.cpp direct-GGUF subprocesses for the experiment runtime, or the
+diagnostic llama.cpp server adapter for token/logprob/metrics capture. It
 must run on the node:
-    scp -r scripts/ai-node/small-model-eval dragos@home-ai.home.domain:/tmp/sme
-    ssh dragos@home-ai.home.domain 'cd /tmp/sme && python3 run.py --models models.txt'
+    ssh dragos@home-ai.hont.ro 'cd /home/dragos/apprenticeops-runtime-agent && python3 run.py --models data/models.dryrun.txt'
 
 For each (model x scenario) it:
   - warms up the model (cold-load timing) once per model,

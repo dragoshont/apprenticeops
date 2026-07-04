@@ -1,0 +1,6 @@
+# AI-node-only local-roster validation set.
+# Purpose: exercise pull -> infer -> emit -> rm-after without home/Mac dependency.
+# Keep this small enough for repeated smoke tests.
+smollm2:135m
+qwen2.5:0.5b
+granite4:micro

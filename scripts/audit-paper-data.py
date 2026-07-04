@@ -97,7 +97,7 @@ def audit_snapshots() -> None:
         if "adapter" not in (rows[0].keys() if rows else []):
             fail(f"{relative_path} is missing required adapter column")
         adapters = {row.get("adapter") for row in rows}
-        if not adapters <= {"ollama", "llama_cpp"}:
+        if not adapters <= {"ollama", "llama_cpp", "llama_cpp_server"}:
             fail(f"{relative_path} has invalid adapter values: {sorted(adapters)}")
     print(f"snapshot audit passed: results={result_rows} judged={judged_rows} det={det_rows}")
 

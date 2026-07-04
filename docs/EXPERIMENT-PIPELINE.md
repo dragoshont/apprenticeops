@@ -18,7 +18,7 @@ list, run once, resumable at model granularity.
 
 | Role | Node | Identity | Does | Has |
 |---|---|---|---|---|
-| **AI node** (producer) | `home-ai.home.domain` (hostname `ai`) | i5‑8350U, 4C/8T, 24 GB, **ollama 0.30.8** | **inference only**, locked + offline | ollama, the locked power state |
+| **AI node** (producer) | `home-ai.hont.ro` (hostname `ai`) | i5‑8350U, 4C/8T, 24 GB, **ollama 0.30.8** | **inference only**, locked + offline | ollama, llama.cpp, the locked power state |
 | **Home node** (consumer/orchestrator) | hostname `home`, user `dragos` | x86_64 | **judge + git + orchestration** | git, gh (authed `dragoshont`, ssh), python 3.12, **GitHub Copilot CLI 1.0.36**, rsync, jq |
 
 `home → ai` is **passwordless SSH** (key authorized, host key trusted). The home
@@ -103,6 +103,15 @@ checks and persists results per model. The two stages communicate through a
 per-model completion event, making the pipeline streaming, resumable, and
 idempotent."* The per-model **pipeline ledger** (§4d) is the reproducibility
 appendix: it shows every model traversed the identical S1→S7 sequence.
+
+### AI-only inference mode
+
+For long inference-only validation, `ai` can run without the home-side consumer:
+`python3 scripts/run-memory-batch.py launch --runner local-roster ...` calls
+`run-roster.sh` on the current node, writes `judge_expected=false` run metadata,
+and mirrors rows/logs/outputs under `data/runs/<RUN_ID>/`. This exercises S1-S4
+only. It is the correct autonomy test for download/run/delete cycling, but it is
+not judged evidence until a consumer later scores the rows.
 
 ### 4a. Producer — inference scheduler, stages S1–S4 (runs ON `ai`)
 `scripts/run-roster.sh` → `run.py`. Locks the node, preflight must pass, then runs

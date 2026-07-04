@@ -51,8 +51,14 @@ Every request emits a structured record aligned with [OpenTelemetry GenAI semant
 | **Memory** | RSS start→peak · peak swap (MB) · minor/major page faults · context switches |
 | **CPU microarchitecture** | IPC · LLC miss rate · branch miss count — a low IPC + high LLC-miss is the fingerprint of memory-bandwidth-bound decode |
 | **DRAM bandwidth** | IMC requestor split: IA (CPU) / GT (iGPU) / IO — confirms the bottleneck is memory, not compute |
-| **Model internals** | Parameter count · quantisation · MoE expert count/active · native context length (from Ollama `/api/show` and `/api/ps`) |
+| **Model internals** | Parameter count · quantisation · MoE expert count/active · native context length (from Ollama `/api/show` and `/api/ps`) · GGUF artifact checksum/license for direct llama.cpp runs |
 | **Ollama runtime** | `load` / `eval` / `total` durations from the response payload — authoritative, not inferred |
+| **llama.cpp runtime** | direct `llama_cpp` subprocess timings/process resources/`llama-bench`; optional `llama_cpp_server` token IDs, top-logprob summaries, `/props`, `/slots`, `/metrics`, and sidecar hashes |
+
+Observed raw-row widths now depend on runtime. Recent artifacts show ~276 fields
+for direct `llama_cpp`, ~244 for Ollama, and ~233 plus per-row server sidecars for
+`llama_cpp_server`; every runtime also carries the 23-field `samples[]` series and
+17-field judge rows when judged.
 
 This telemetry depth is unusual for LLM evaluation. The reason is simple: on CPU-only inference, "why is this model slower?" is a non-trivial question. The numbers above let you answer it.
 

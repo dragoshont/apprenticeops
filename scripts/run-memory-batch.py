@@ -265,6 +265,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         "inference_strategy": run.get("inference_strategy") or "baseline",
         "inference_runtime": run.get("inference_runtime") or state.get("inference_runtime") or os.environ.get("INFERENCE_RUNTIME") or "ollama",
         "llama_cpp_model_map": state.get("paths", {}).get("llama_cpp_model_map") or os.environ.get("LLAMA_CPP_MODEL_MAP") or None,
+        "llama_cpp_artifacts": state.get("paths", {}).get("llama_cpp_artifacts") or os.environ.get("LLAMA_CPP_ARTIFACTS") or None,
         "llama_cpp_extra_args": state.get("runtime", {}).get("llama_cpp_extra_args") or os.environ.get("LLAMA_CPP_EXTRA_ARGS") or None,
         "max_tokens_cap": state.get("runtime", {}).get("max_tokens_cap"),
         "run_repeats_override": state.get("runtime", {}).get("run_repeats"),
@@ -315,6 +316,12 @@ def mirror_local_run(run_id: str) -> None:
         e2e_log = RUNS / run_id / "e2e.log"
         if not e2e_log.exists():
             e2e_log.write_text(f"[{iso_now()}] local-roster run {run_id}\n")
+    log_dir = REPO / "logs" / run_id
+    if log_dir.exists():
+        shutil.copytree(log_dir, RUNS / run_id / "logs", dirs_exist_ok=True)
+    output_dir = REPO / "outputs" / run_id
+    if output_dir.exists():
+        shutil.copytree(output_dir, mirror_dir / "outputs", dirs_exist_ok=True)
 
 
 def local_roster_done(state: dict, run_id: str) -> bool:

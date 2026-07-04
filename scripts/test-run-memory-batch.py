@@ -93,6 +93,59 @@ def test_run_meta_creation_is_portable():
             module.RUNS = old_runs
 
 
+def test_run_meta_records_llama_cpp_artifacts() -> None:
+    module = load_module()
+    model_set, scenario_set, memories, strategy, runtime = module.resolve_selection(
+        "llama-cpp-server-smoke-1", "strategy-pilot-6", ["none"], "baseline", "llama_cpp_server"
+    )
+    args = argparse.Namespace(
+        batch_id="batch-cpp-server-test",
+        model_set="llama-cpp-server-smoke-1",
+        scenario_set="strategy-pilot-6",
+        inference_strategy="baseline",
+        inference_runtime="llama_cpp_server",
+        runner="local-roster",
+        stall_timeout_s=7200,
+        user="test",
+    )
+    state = module.build_state(args, model_set, scenario_set, memories, strategy, runtime)
+    with tempfile.TemporaryDirectory() as tmp:
+        old_runs = module.RUNS
+        module.RUNS = Path(tmp) / "runs"
+        try:
+            module.ensure_run_meta(state, state["runs"][0])
+            meta = json.loads((module.RUNS / state["runs"][0]["run_id"] / "run.meta").read_text())
+            assert meta["inference_runtime"] == "llama_cpp_server"
+            assert meta["llama_cpp_model_map"] == "data/llama-cpp-smoke-5.model-map.json"
+            assert meta["llama_cpp_artifacts"] == "data/llama-cpp-smoke-5.artifacts.json"
+        finally:
+            module.RUNS = old_runs
+
+
+def test_mirror_local_run_copies_run_scoped_outputs_and_logs() -> None:
+    module = load_module()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        old_repo = module.REPO
+        old_runs = module.RUNS
+        module.REPO = tmp_path
+        module.RUNS = tmp_path / "data" / "runs"
+        run_id = "local-roster-test"
+        try:
+            (tmp_path / "logs" / run_id).mkdir(parents=True)
+            (tmp_path / "logs" / run_id / "driver.log").write_text("driver\n")
+            (tmp_path / "outputs" / run_id).mkdir(parents=True)
+            (tmp_path / "outputs" / run_id / "answer.txt").write_text("answer\n")
+            (tmp_path / f"results.{run_id}.jsonl").write_text('{"ok":true}\n')
+            module.mirror_local_run(run_id)
+            assert (module.RUNS / run_id / "_mirror" / f"results.{run_id}.jsonl").exists()
+            assert (module.RUNS / run_id / "logs" / "driver.log").read_text() == "driver\n"
+            assert (module.RUNS / run_id / "_mirror" / "outputs" / "answer.txt").read_text() == "answer\n"
+        finally:
+            module.REPO = old_repo
+            module.RUNS = old_runs
+
+
 def test_existing_run_meta_must_match_selection():
     module = load_module()
     model_set, scenario_set, memories, strategy, runtime = module.resolve_selection(
@@ -340,6 +393,8 @@ def test_launch_run_local_roster_rejects_marker_only_done():
 def main():
     test_resolve_and_state()
     test_run_meta_creation_is_portable()
+    test_run_meta_records_llama_cpp_artifacts()
+    test_mirror_local_run_copies_run_scoped_outputs_and_logs()
     test_existing_run_meta_must_match_selection()
     test_pipeline_status_marks_local_roster_done_from_done_markers()
     test_local_roster_done_requires_result_rows()

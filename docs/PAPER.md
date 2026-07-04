@@ -19,6 +19,9 @@ Target: workshop paper + arXiv preprint.
 >
 > **Intent memo:** peer-alignment scope and claims are tracked in
 > [`PAPER_INTENT.md`](./PAPER_INTENT.md).
+>
+> **Runtime readiness:** the current weeks-long inference readiness gate is tracked
+> in [`WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md`](./WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md).
 
 ## Abstract (Draft)
 

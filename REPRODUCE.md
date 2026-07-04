@@ -10,7 +10,7 @@
 | Requirement | Why | Notes |
 |---|---|---|
 | **Ollama** ≥ 0.30 | reproduces the committed legacy/paper-era runs and serves LAN/API clients | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
-| **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role; the adapter uses a non-interactive llama.cpp subprocess backend, defaulting to `llama-completion`, with direct local GGUF files. |
+| **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role. Current adapters are `llama_cpp` (non-interactive `llama-completion` subprocess) and `llama_cpp_server` (diagnostic token/logprob/metrics sidecar capture), both for direct local GGUF files. |
 | **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models |
 | **Linux host** for full telemetry | `run.py` reads `/proc` for RAM/swap | macOS/Windows run fine but **RAM/swap series will be empty** (documented limitation) |
 | **~60–120 GB free disk** | model weights (pulled then freed per model) | 95 models, q4 |
@@ -168,6 +168,46 @@ python3 scripts/audit-run.py data/collected/<RUN_ID>/results.<RUN_ID>.jsonl   # 
 ./scripts/run-from-homelab.sh status          # tail the node-side driver log
 ./scripts/run-from-homelab.sh collect         # pull results + logs + outputs back to homelab
 ```
+
+## 3c.1. AI-only inference cycle (no `home` judge, no Mac dependency)
+
+When the goal is to prove the experiment node can run by itself, launch the
+file-backed local-roster worker **from `ai`**. This mode performs inference only:
+it creates `run.meta` with `judge_expected=false`, runs the same locked
+`run-roster.sh` path, mirrors rows/logs/outputs into `data/runs/<RUN_ID>/`, and
+does not call the Copilot judge.
+
+```bash
+BATCH_ID=ai-local-small-$(date -u +%Y%m%d-%H%M%S)
+setsid nohup python3 scripts/run-memory-batch.py launch \
+  --batch-id "$BATCH_ID" \
+  --model-set ai-local-small-3 \
+  --scenario-set strategy-pilot-6 \
+  --memory-context none \
+  --inference-runtime ollama \
+  --runner local-roster \
+  >/tmp/${BATCH_ID}.boot 2>&1 </dev/null &
+```
+
+This exercises the model lifecycle we need for long inference runs:
+
+1. if a model is missing, `run.py` pulls it;
+2. if the model was already present before the run, it is kept as a prepared
+   local model;
+3. if the run pulled the model, `--rm-after` removes it after that model's rows
+   are complete;
+4. a relaunch with the same `RUN_ID` resumes at complete-model granularity.
+
+Interpret the output with:
+
+```bash
+python3 scripts/report-run-quality.py --strict data/runs/<RUN_ID>
+python3 scripts/audit-run.py data/runs/<RUN_ID>/_mirror/results.<RUN_ID>.jsonl \
+  --scenarios data/scenario_sets/strategy-pilot-6.json
+```
+
+`report-run-quality.py --strict` accepts this mode without judged rows because
+`run.meta` records `judge_expected=false`.
 
 The node-side `run-roster.sh` guarantees per run:
 - **Locked + verified:** `node-power.sh setup`, then `run.py --preflight-only` must pass

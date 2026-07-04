@@ -107,6 +107,17 @@
       "description": "End-to-end smoke test using the two tiny validation models."
     },
     {
+      "id": "ai-local-small-3",
+      "label": "AI-local smoke - 3 small models",
+      "path": "data/models.ai-local-small-3.txt",
+      "kind": "validation",
+      "runtime": "ollama",
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Three-small-model AI-node-only local-roster smoke for pull/run/delete cycling. Intended for --runner local-roster validation; not canonical thesis scoring."
+    },
+    {
       "id": "spread10",
       "label": "Spread 10 - 2 per bracket",
       "path": "data/models.spread10.txt",

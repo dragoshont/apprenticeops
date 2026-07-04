@@ -97,6 +97,28 @@ the locked preflight, model download, per-model reset/quiesce, telemetry, and
 `--rm-after` behavior. It does **not** run the home-side Copilot judge/commit
 scheduler; use `--runner e2e` when judged results and commits are required.
 
+## AI-node-only inference smoke
+
+Use this when the requirement is: prove `ai` can run autonomously with no Mac and
+no `home` scheduler after launch. It is inference-only; no Copilot judging or
+experiment-branch commits happen in this mode.
+
+```bash
+BATCH_ID=ai-local-small-$(date -u +%Y%m%d-%H%M%S)
+setsid nohup python3 scripts/run-memory-batch.py launch \
+  --batch-id "$BATCH_ID" \
+  --model-set ai-local-small-3 \
+  --scenario-set strategy-pilot-6 \
+  --memory-context none \
+  --inference-runtime ollama \
+  --runner local-roster \
+  >/tmp/${BATCH_ID}.boot 2>&1 </dev/null &
+```
+
+`run-roster.sh` pulls missing models, keeps models already present at run start,
+and removes only models it pulled for this run after that model completes.
+Artifacts are mirrored under `data/runs/<RUN_ID>/` with `judge_expected=false`.
+
 ## Run the inference-strategy axis
 
 Strategy is separate from memory. Use it when the question is whether extra
