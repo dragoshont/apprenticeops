@@ -1,9 +1,8 @@
 # CEOps `llama.cpp` / MLX Capture Research
 
-Status: source-backed research note, created 2026-07-04. This is a **stop-and-
-think gate** for the `llama_cpp` long run. It records what the runtime ecosystem,
-frontier APIs, and established eval/training tools expose that ApprenticeOps does
-not yet fully capture.
+Status: source-backed research note, created 2026-07-04; implementation updated
+2026-07-05. This was a **stop-and-think gate** for the `llama_cpp` long run. It
+now also records the first implemented `llama_cpp_server` capture slice.
 
 ## Current Run State
 
@@ -38,13 +37,18 @@ signals are mostly available through `llama-server`, not `llama-completion`:
   calls, busy slots, and deferred/processing requests;
 - `/slots` and slot save/restore if we later test prompt/KV cache persistence.
 
-Therefore the next canonical implementation should be either:
+Implementation update: option 1 now exists as a separate
+`INFERENCE_RUNTIME=llama_cpp_server` adapter. It is intentionally a **separate
+runtime regime** from the subprocess path, not a silent replacement for existing
+`llama_cpp` rows.
 
-1. a `llama_cpp_server` adapter for scenario rows; or
-2. a required `llama-server` sidecar/probe per model and prompt-shape, with the
-   current subprocess path marked **not exhaustive**.
-
-For the long run we want option 1 unless it proves unstable in smoke.
+Smoke result: `llama-server-smoke-20260704-232755` ran one staged LFM2 GGUF over
+six `strategy-pilot-6` scenarios. `report-run-quality.py --strict` passed
+(`6/6` rows, `12/12` judged rows), `audit-run.py` passed, and every row had
+server sidecar hashes, prompt token counts, logprob summaries, metrics deltas,
+and GGUF artifact fields. The smoke used `MAX_TOKENS_CAP=64`, so all six rows
+finished as `length`; that is an expected adapter-smoke artifact, not quality
+evidence.
 
 ## Sources Reviewed
 
@@ -62,7 +66,7 @@ For the long run we want option 1 unless it proves unstable in smoke.
 | TRL SFT/DPO docs | SFT expects `messages` or `(prompt, completion)`; DPO expects `(prompt, chosen, rejected)` and logs logps/rewards/margins. Tool calling examples need `tools` columns. |
 | SmolLM / SmolLM3 posts and discussions | SLM progress depends heavily on public data mixtures, synthetic data, reasoning traces, preference pairs, configs, training logs, intermediate checkpoints, and exact chat templates. Community questions focus on released datasets, W&B logs, tokenizer details, and chat template/mode formatting. |
 
-## `llama-server` Probe
+## `llama-server` Probe And Adapter
 
 We ran a temporary `llama-server` probe against the staged LFM2 GGUF. The
 non-streaming `/completion` response with `n_probs=5`, `return_tokens=true`,
@@ -85,10 +89,16 @@ non-streaming `/completion` response with `n_probs=5`, `return_tokens=true`,
 - `/props` with model path, `build_info=b9871-ef2d77011`, total slots, default
   generation settings, and sampler defaults.
 
-This is stronger than the current subprocess row. The subprocess path gets
-timings, process resources, prompt/distillation fields, and parsed `llama-bench`
-calibration summaries now, but it cannot see token alternatives, `tokens_cached`,
-normalized generation settings, or server slot/cache state.
+This is stronger than the subprocess row for token-level introspection. The
+implemented server adapter now writes row summaries plus a
+`*.llama-server.json` sidecar per answer containing the full server response,
+prompt token ids, `/props`, `/slots`, and `/metrics` before/after. The row keeps
+bounded summary fields such as token counts, logprob mean/min, top-1 margin,
+metrics deltas, and sidecar SHA, so the main JSONL does not explode in size.
+
+The subprocess path remains valuable for one-shot CLI comparability, streamed
+stdout timing/jitter, `os.wait4()` child resources, and `llama-bench` calibration.
+The server path is the richer diagnostic/training-data capture path.
 
 ## Caching Findings
 

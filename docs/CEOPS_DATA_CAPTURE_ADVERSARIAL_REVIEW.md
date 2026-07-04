@@ -80,6 +80,18 @@ normalized generation settings, `tokens_cached`, `tokens_evaluated`,
 `tokens_predicted`, `truncated`, `stop_type`, `/props`, `/metrics`, and slot/cache
 state. These matter for optimization, cache analysis, and future distillation.
 
+Implementation update: commit `fcf1f44` adds `INFERENCE_RUNTIME=llama_cpp_server`
+as a distinct adapter. It starts `llama-server` per model, captures `/tokenize`,
+`/props`, `/slots`, `/metrics`, and native `/completion` probability data, stores
+the full payload in `*.llama-server.json` sidecars, and stamps row summaries plus
+sidecar hashes.
+
+Smoke validation: `llama-server-smoke-20260704-232755` passed strict run-quality
+and `audit-run` (`6/6` rows, `12/12` judged rows, no DNF, no zero-output stalls).
+Every row had server sidecar hashes, prompt token counts, logprob summaries,
+metrics deltas, and GGUF artifact metadata. The run used a `64` token cap and all
+rows ended as `length`, so it validates capture plumbing rather than task quality.
+
 The canceled R=5 run
 `llama-cpp-evidence-5-strategy-pilot-6-none-baseline-llama_cpp-20260704-194603`
 stopped at `3/150` inference rows and must remain diagnostic only.

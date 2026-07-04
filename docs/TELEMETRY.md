@@ -56,9 +56,9 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 |---|---|---|---|
 | `ts` | float (epoch s) | `run.py` | Row write time |
 | `model` | str | models.txt | Ollama model tag under test |
-| `adapter` | str | `run.py`; snapshots / dataset exports | Runtime adapter label (`ollama` or `llama_cpp`). Existing paper-era snapshots are backfilled as `ollama`; current raw rows stamp this directly. |
+| `adapter` | str | `run.py`; snapshots / dataset exports | Runtime adapter label (`ollama`, `llama_cpp`, or `llama_cpp_server`). Existing paper-era snapshots are backfilled as `ollama`; current raw rows stamp this directly. |
 | `bracket` | str | models.txt | Legacy roster bracket (`0-1B`…`4-5GB` footprint). Current thesis eligibility is defined by `data/models.lock.jsonl` tiers T1-T5 up to 5B parameters. |
-| `env.inference_runtime` | str | run.py env | Raw-row runtime adapter (`ollama` or `llama_cpp`). |
+| `env.inference_runtime` | str | run.py env | Raw-row runtime adapter (`ollama`, `llama_cpp`, or `llama_cpp_server`). |
 | `env.memory_context` | str | run.py env | Run-level memory/context condition (`none`, `homelab-okf-v1`, …). This is an experimental comparison axis, not a scenario label. |
 | `env.memory_context_file` | str\|null | run.py args | Markdown memory file injected into prompts for memory-conditioned runs; null for `none`. |
 | `env.memory_context_sha` | str\|null | run.py | SHA256 of the injected memory file, so reruns can prove the memory bytes did not drift. |
@@ -174,6 +174,30 @@ teacher/evaluator signal.
 `llama-bench` sidecars are calibration artifacts, not substitutes for scenario
 rows. They capture runtime/backend settings and prompt/decode throughput under a
 fixed synthetic shape, while scenario rows capture task-conditioned behavior.
+
+### llama.cpp server internals and sidecars
+
+`INFERENCE_RUNTIME=llama_cpp_server` is a separate measured runtime regime. It
+starts a local `llama-server` for each model, reuses it across that model's
+scenario rows, and stops it before the next model reset. It is not mixed with the
+subprocess `llama_cpp` adapter in analysis.
+
+| Field | Source | Meaning |
+|---|---|---|
+| `llama_cpp.server.sidecar_path` / `sidecar_sha256` / `sidecar_bytes` | run.py | Per-row sidecar path/hash/size for the full server payload. |
+| `llama_cpp.server.prompt_token_ids` / `prompt_token_count` | `/tokenize` | Exact prompt token ids and count for the serialized prompt. |
+| `llama_cpp.server.output_token_ids` | `/completion` | Generated token ids from `completion_probabilities`. |
+| `llama_cpp.server.completion_probabilities_count` | `/completion` | Number of generated tokens with probability records. |
+| `llama_cpp.server.logprob.*` | `/completion` | Bounded summaries of generated-token logprobs and top-1 margin. |
+| `llama_cpp.server.top_logprobs_n` | `/completion` | Top alternative count requested/observed per generated token. |
+| `llama_cpp.server.metrics.*_delta` | `/metrics` before/after | Prompt/generation token/time/decode counter deltas for the request. |
+| `llama_cpp.server.slots_before` / `slots_after` | `/slots` | Slot count, processing count, and context sizes around the request. |
+| `llama_cpp.server.props.*` | `/props` | Server build, slot count, and chat-template hash. |
+
+The full sidecar contains `/props`, `/slots` before/after, `/metrics` before/after,
+prompt token ids, and the native `/completion` response including
+`completion_probabilities`. Rows retain summaries and hashes; analyses that need
+full per-token alternatives should join against the sidecar.
 
 ### Ollama-native internals (from `/api/show`, `/api/ps`, and the response)
 | Field | Source | Meaning |
