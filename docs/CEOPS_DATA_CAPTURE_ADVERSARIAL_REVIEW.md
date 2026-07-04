@@ -69,6 +69,21 @@ validated the implementation from `origin/main`:
 | Bench sidecar | PASS: `llama_cpp.bench.returncode=0`, `llama_cpp.bench.rows=2`, and bench SHA present. |
 | Persistence | PASS: clean persistence; experiment branch pushed and finalized at `b8146c3`. |
 
+## Deep Runtime-Capture Addendum
+
+The first telemetry slice fixed the subprocess adapter, but a later source review
+found that `llama-server` exposes more data than `llama-completion`. See
+`docs/CEOPS_CPP_MLX_CAPTURE_RESEARCH.md` for the source-backed comparison.
+
+The key additional fields are token IDs, per-token top logprobs/probabilities,
+normalized generation settings, `tokens_cached`, `tokens_evaluated`,
+`tokens_predicted`, `truncated`, `stop_type`, `/props`, `/metrics`, and slot/cache
+state. These matter for optimization, cache analysis, and future distillation.
+
+The canceled R=5 run
+`llama-cpp-evidence-5-strategy-pilot-6-none-baseline-llama_cpp-20260704-194603`
+stopped at `3/150` inference rows and must remain diagnostic only.
+
 Commit `8641e33` implements the second remediation slice for reproducibility and
 future fine-tuning/distillation data:
 
@@ -294,6 +309,8 @@ pass these gates:
 | Token accounting | Token counts are runtime/tokenizer-derived, or reports explicitly label them approximate and use character-normalized metrics for runtime comparison. |
 | `llama.cpp` provenance | Row or sidecar records `LLAMA_CPP_GIT_COMMIT`, build/version, model path, GGUF size/hash, cache/context/thread/offload settings. |
 | Structured bench sidecar | Per-run or per-model `llama-bench -o jsonl` sidecar exists for the staged GGUFs. |
+| Server capture | For canonical long-run data, row-level `llama-server` fields are captured or the run is explicitly labelled subprocess-only. |
+| Cache axis | A separate cache micro-benchmark records cache hit/read/write tokens, prefix hashes, `tokens_cached`, prompt time, TTFT, and output equivalence. |
 | Prompt and distillation capture | `prompt.full`, `prompt.sha256`, structured input/output messages, reference answer/hash, and `distill.messages` are populated for every successful row. |
 | Existing integrity gates | `report-run-quality.py --strict` passes, reset state is clean, persistence is clean, and `audit-run.py` passes for R=5 evidence runs. |
 

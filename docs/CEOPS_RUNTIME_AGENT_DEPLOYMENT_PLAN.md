@@ -115,11 +115,14 @@ result is promoted beyond diagnostic runtime evidence.
 ## Remaining Work Before Canonical llama.cpp Evidence
 
 The data-capture gate is reviewed in
-`docs/CEOPS_DATA_CAPTURE_ADVERSARIAL_REVIEW.md`. That review is now the source
-of truth for what must be fixed before a weeks-long all-model `llama_cpp` run.
+`docs/CEOPS_DATA_CAPTURE_ADVERSARIAL_REVIEW.md` and deepened in
+`docs/CEOPS_CPP_MLX_CAPTURE_RESEARCH.md`. Those documents are now the source of
+truth for what must be fixed before a weeks-long all-model `llama_cpp` run.
 
 | Task | Gate |
 |---|---|
+| Decide and implement row-level `llama-server` capture. | Scenario rows capture token IDs, top logprobs/probs, normalized generation settings, cache fields, `/props`/`/metrics` evidence, or the run is explicitly labelled subprocess-only. |
+| Add cache measurement axis. | Cache-on/off or repeated-prefix micro-benchmark records `tokens_cached`, cache read/write/evaluated tokens, prefix hashes, prompt time, TTFT, and output-equivalence checks. |
 | Fill `llama_cpp` telemetry gaps. | Streaming timing, child-process RSS/faults/threads, runtime/tokenizer token counts or explicit approximation labels, and `llama-bench -o jsonl` sidecars are present. |
 | Fill prompt/distillation capture gaps. | Exact serialized prompt, structured input/output messages, reference answer hashes, and distillation message triples are present. |
 | Re-run the locked mini-wave with clean producer source provenance. | `env.harness_source_dirty=false` on every row, plus strict quality and audit gates. |
