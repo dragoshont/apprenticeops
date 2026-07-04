@@ -1,0 +1,5 @@
+# Bracket 5 / 4-5GB pair from data/models.spread10.txt.
+# Purpose: two-model upper-footprint validation/gauge run.
+# bracket: 4-5GB
+granite4:tiny-h
+mistral:7b-instruct-q4_K_M

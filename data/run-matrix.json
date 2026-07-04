@@ -93,6 +93,17 @@
       "description": "Ten-model spread across the locked size/footprint brackets: two models each from 0-1B, 1-2B, 2-3B, 3-4B, and 4-5GB."
     },
     {
+      "id": "bracket5-2",
+      "label": "Bracket 5 - 2 upper-footprint models",
+      "path": "data/models.bracket5-2.txt",
+      "kind": "validation",
+      "runtime": "ollama",
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Canonical spread bracket 5 / 4-5GB pair: granite4:tiny-h and mistral:7b-instruct-q4_K_M. R=1 validation/gauge run; not canonical thesis scoring."
+    },
+    {
       "id": "strategy-pilot-2",
       "label": "Strategy pilot - 2 models",
       "path": "data/models.strategy-pilot-2.txt",
