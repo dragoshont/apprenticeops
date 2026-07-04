@@ -287,6 +287,7 @@ def test_launch_run_local_roster_observes_running_then_done():
         {"state": "running", "progress": {"units_done": 1, "pct": 10}},
         {"state": "stopped", "progress": {"units_done": 2, "pct": 50}},
     ]
+    captured_env = {}
     old_popen = module.subprocess.Popen
     old_ensure = module.ensure_run_meta
     old_mirror = module.mirror_local_run
@@ -294,7 +295,11 @@ def test_launch_run_local_roster_observes_running_then_done():
     old_status = module.load_status
     old_sleep = module.time.sleep
     try:
-        module.subprocess.Popen = lambda *args, **kwargs: FakeProc()
+        def fake_popen(*args, **kwargs):
+            captured_env.update(kwargs.get("env") or {})
+            return FakeProc()
+
+        module.subprocess.Popen = fake_popen
         module.ensure_run_meta = lambda state, run: None
         module.mirror_local_run = lambda run_id: None
         module.local_roster_done = lambda state, run_id: True
@@ -321,6 +326,8 @@ def test_launch_run_local_roster_observes_running_then_done():
             module.launch_run(state, 0, Path(tmp), 0)
         assert state["runs"][0]["status"] == "done"
         assert state["runs"][0]["progress_pct"] == 100.0
+        assert isinstance(captured_env["RUN_REPEATS"], str)
+        assert isinstance(captured_env["RUN_TEMP"], str)
     finally:
         module.subprocess.Popen = old_popen
         module.ensure_run_meta = old_ensure

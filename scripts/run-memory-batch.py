@@ -228,6 +228,10 @@ def sha256(path: Path | None) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def env_value(value: object) -> str:
+    return "" if value is None else str(value)
+
+
 def model_count(path: Path) -> int:
     return sum(1 for line in path.read_text().splitlines() if line.strip() and not line.lstrip().startswith("#"))
 
@@ -423,9 +427,9 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
         "LLAMA_CPP_MODEL_MAP": state.get("paths", {}).get("llama_cpp_model_map") or os.environ.get("LLAMA_CPP_MODEL_MAP", ""),
         "LLAMA_CPP_ARTIFACTS": state.get("paths", {}).get("llama_cpp_artifacts") or os.environ.get("LLAMA_CPP_ARTIFACTS", ""),
         "LLAMA_CPP_EXTRA_ARGS": state.get("runtime", {}).get("llama_cpp_extra_args") or os.environ.get("LLAMA_CPP_EXTRA_ARGS", ""),
-        "MAX_TOKENS_CAP": state.get("runtime", {}).get("max_tokens_cap") or os.environ.get("MAX_TOKENS_CAP", ""),
-        "RUN_REPEATS": state.get("runtime", {}).get("run_repeats") or os.environ.get("RUN_REPEATS", ""),
-        "RUN_TEMP": state.get("runtime", {}).get("run_temp") or os.environ.get("RUN_TEMP", ""),
+        "MAX_TOKENS_CAP": env_value(state.get("runtime", {}).get("max_tokens_cap") or os.environ.get("MAX_TOKENS_CAP", "")),
+        "RUN_REPEATS": env_value(state.get("runtime", {}).get("run_repeats") or os.environ.get("RUN_REPEATS", "")),
+        "RUN_TEMP": env_value(state.get("runtime", {}).get("run_temp") or os.environ.get("RUN_TEMP", "")),
         "RUN_ALLOW_UNLOCKED": "1" if state.get("runtime", {}).get("run_allow_unlocked") else os.environ.get("RUN_ALLOW_UNLOCKED", ""),
         "STRATEGY_PROMPT_FILE": run.get("strategy_prompt_file") or state.get("paths", {}).get("strategy_prompt") or "",
         "RUN_USER": state.get("user") or "user",
