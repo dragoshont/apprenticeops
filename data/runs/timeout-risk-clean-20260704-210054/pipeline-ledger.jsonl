@@ -18,3 +18,14 @@
 {"model":"*","stage":"judge","ts":1783200880,"ok":1,"detail":"judged 34->36"}
 {"model":"*","stage":"judge","ts":1783201014,"ok":1,"detail":"judged 36->38"}
 {"model":"*","stage":"judge","ts":1783201153,"ok":1,"detail":"judged 38->40"}
+{"model":"hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M","stage":"persist","ts":1783201155,"ok":1,"detail":"e1251f0"}
+{"model":"*","stage":"judge","ts":1783201199,"ok":1,"detail":"judged 40->44"}
+{"model":"*","stage":"judge","ts":1783201246,"ok":1,"detail":"judged 44->48"}
+{"model":"*","stage":"judge","ts":1783201294,"ok":1,"detail":"judged 48->54"}
+{"model":"*","stage":"judge","ts":1783201337,"ok":1,"detail":"judged 54->56"}
+{"model":"*","stage":"judge","ts":1783201388,"ok":1,"detail":"judged 56->62"}
+{"model":"*","stage":"judge","ts":1783201433,"ok":1,"detail":"judged 62->68"}
+{"model":"*","stage":"judge","ts":1783201485,"ok":1,"detail":"judged 68->72"}
+{"model":"*","stage":"judge","ts":1783201533,"ok":1,"detail":"judged 72->76"}
+{"model":"*","stage":"judge","ts":1783201585,"ok":1,"detail":"judged 76->78"}
+{"model":"*","stage":"judge","ts":1783201630,"ok":1,"detail":"judged 78->80"}
