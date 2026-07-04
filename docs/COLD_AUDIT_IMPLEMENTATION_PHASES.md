@@ -39,9 +39,9 @@ quality: verify licenses, source URLs, Ollama digests, and GGUF hashes.
 
 ## Remaining Open Gaps After This Pass
 
-1. Model `source_url` is now populated for included rows and audited. Model
-  `license`, `ollama_digest`, and `gguf_sha256` still require verification before
-  serious review.
+1. Model `source_url` and `license` metadata are now populated for included rows
+  and audited by rule table. Model `ollama_digest` and `gguf_sha256` still
+  require verification before serious review.
 2. Human-vs-judge validation remains open, but a committed 45-item blind packet
   now exists for the v1 dev run.
 3. Privacy scan reports intentional disclosure classes; a human must decide which
@@ -59,6 +59,15 @@ tiers={'T1': 30, 'T2': 41, 'T3': 39, 'T4': 30, 'T5': 15}
 target_150_status=met
 ```
 
-The added rows are verified as existing Ollama/Hugging Face tags, but several
-licenses remain `unknown` or coarse (`other`) until source cards are reviewed in
-detail.
+The added rows are verified as existing Ollama/Hugging Face tags. The license
+rule table now reports `license_unknown=0` for included rows: 86 permissive, 64
+custom, and 5 noncommercial. Runtime support is also explicit: 27 included rows
+are direct GGUFs suitable for llama.cpp, while 128 remain Ollama-wrapped GGUFs
+until their exact upstream GGUF/digest is locked.
+
+## Phase 9 Finding
+
+The license gap is closed at the **family-policy** level, not at the per-artifact
+legal-review level. `data/model-license-rules.json` records the evidence URL and
+license class used to populate `data/models.lock.jsonl`. The remaining provenance
+gap is digest/hash validation for each included artifact.

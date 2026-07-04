@@ -11,6 +11,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 ROSTER = REPO / "data" / "models.txt"
 SNAPSHOT = REPO / "data" / "snapshots" / "results_snapshot.csv"
+LICENSE_RULES = REPO / "data" / "model-license-rules.json"
 OUT = REPO / "data" / "models.lock.jsonl"
 
 SPECIAL_PARAMS_B = {
@@ -30,63 +31,48 @@ SPECIAL_PARAMS_B = {
 MANUAL_OVERRIDES = {
     "qwen2.5-coder:0.5b": {
         "source_url": "https://ollama.com/library/qwen2.5-coder:0.5b",
-        "license": "Apache-2.0",
     },
     "llama3.2:1b-instruct-q4_K_M": {
         "source_url": "https://ollama.com/library/llama3.2:1b-instruct-q4_K_M",
-        "license": "Llama-3.2",
     },
     "hf.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF:Q4_K_M": {
         "source_url": "https://huggingface.co/tiiuae/Falcon-H1-0.5B-Instruct-GGUF",
-        "license": "other",
     },
     "gemma:2b-instruct-q4_K_M": {
         "source_url": "https://ollama.com/library/gemma:2b-instruct-q4_K_M",
-        "license": "Gemma",
     },
     "gemma2:2b-instruct-q4_K_M": {
         "source_url": "https://ollama.com/library/gemma2:2b-instruct-q4_K_M",
-        "license": "Gemma",
     },
     "qwen3.5:2b": {
         "source_url": "https://ollama.com/library/qwen3.5:2b",
-        "license": "unknown",
     },
     "stable-code:3b": {
         "source_url": "https://ollama.com/library/stable-code:3b",
-        "license": "unknown",
     },
     "granite4.1:3b": {
         "source_url": "https://ollama.com/library/granite4.1:3b",
-        "license": "Apache-2.0",
     },
     "hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M": {
         "source_url": "https://huggingface.co/tiiuae/Falcon-H1-3B-Instruct-GGUF",
-        "license": "other",
     },
     "phi3:mini": {
         "source_url": "https://ollama.com/library/phi3:mini",
-        "license": "MIT",
     },
     "phi3:mini-4k": {
         "source_url": "https://ollama.com/library/phi3:mini-4k",
-        "license": "MIT",
     },
     "phi3:mini-128k": {
         "source_url": "https://ollama.com/library/phi3:mini-128k",
-        "license": "MIT",
     },
     "llama3.2:3b-instruct-q4_K_M": {
         "source_url": "https://ollama.com/library/llama3.2:3b-instruct-q4_K_M",
-        "license": "Llama-3.2",
     },
     "gemma4:e2b-it-qat": {
         "source_url": "https://ollama.com/library/gemma4:e2b-it-qat",
-        "license": "Gemma",
     },
     "gemma3n:e2b": {
         "source_url": "https://ollama.com/library/gemma3n:e2b",
-        "license": "Gemma",
     },
 }
 
@@ -138,6 +124,10 @@ def load_snapshot() -> dict[str, dict]:
         for row in csv.DictReader(handle):
             measured.setdefault(row["model"], row)
     return measured
+
+
+def load_license_rules() -> list[dict]:
+    return json.loads(LICENSE_RULES.read_text())["rules"]
 
 
 def parse_float(value: str | None) -> float | None:
@@ -225,6 +215,39 @@ def infer_source_url(model_id: str) -> str:
     return f"https://ollama.com/library/{model_id}"
 
 
+def license_for(model_id: str, rules: list[dict]) -> dict:
+    low = model_id.lower()
+    for rule in rules:
+        pattern = rule["pattern"]
+        match = rule.get("match", "contains")
+        hit = False
+        if match == "exact":
+            hit = model_id == pattern
+        elif match == "prefix":
+            hit = model_id.startswith(pattern)
+        else:
+            hit = pattern.lower() in low
+        if hit:
+            return {
+                "license": rule["license"],
+                "license_url": rule["license_url"],
+                "license_status": rule["license_status"],
+                "license_class": rule["license_class"],
+            }
+    return {
+        "license": "unknown",
+        "license_url": "unknown",
+        "license_status": "unknown",
+        "license_class": "unknown",
+    }
+
+
+def runtime_options_for(model_id: str) -> tuple[list[str], str]:
+    if model_id.startswith("hf.co/") and "gguf" in model_id.lower():
+        return ["ollama", "llama.cpp"], "direct_gguf"
+    return ["ollama"], "ollama_wrapped_gguf_unverified"
+
+
 def infer_training_type(model_id: str) -> str:
     text = model_id.lower()
     if "coder" in text or "code" in text or "starcoder" in text or "opencoder" in text:
@@ -251,6 +274,7 @@ def infer_architecture(model_id: str, row: dict | None) -> str:
 
 def build_rows() -> list[dict]:
     measured = load_snapshot()
+    license_rules = load_license_rules()
     rows: list[dict] = []
     for roster_bracket, model_id in load_roster():
         row = measured.get(model_id)
@@ -264,11 +288,13 @@ def build_rows() -> list[dict]:
             exclusion_reason = "above_5b_parameters"
         publisher, family = infer_publisher_family(model_id)
         override = MANUAL_OVERRIDES.get(model_id, {})
+        license_meta = license_for(model_id, license_rules)
         size_bytes = parse_float(row.get("size_bytes") if row else None)
         artifact_size_gb = round(size_bytes / 1_000_000_000, 3) if size_bytes else None
         track = ["legacy_footprint_snapshot"] if roster_bracket == "4-5GB" else []
         if included:
             track.append("thesis_5b_candidate")
+        runtime_options, llama_cpp_status = runtime_options_for(model_id)
         rows.append({
             "model_id": model_id,
             "publisher": publisher,
@@ -279,9 +305,14 @@ def build_rows() -> list[dict]:
             "training_type": infer_training_type(model_id),
             "quantization": infer_quantization(model_id, row),
             "runtime": "ollama",
+            "runtime_options": runtime_options,
+            "llama_cpp_status": llama_cpp_status,
             "artifact_size_gb": artifact_size_gb,
             "source_url": override.get("source_url", infer_source_url(model_id)),
-            "license": override.get("license", "unknown"),
+            "license": override.get("license", license_meta["license"]),
+            "license_url": license_meta["license_url"],
+            "license_status": license_meta["license_status"],
+            "license_class": license_meta["license_class"],
             "ollama_digest": None,
             "gguf_sha256": None,
             "context_length": None,

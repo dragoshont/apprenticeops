@@ -68,12 +68,22 @@ memory footprint, latency, or energy. The model lock records:
 - `quantization`
 - `artifact_size_gb`
 - `runtime`
+- `runtime_options`
+- `llama_cpp_status`
+- `license`, `license_url`, `license_status`, and `license_class`
 - `ollama_digest` / `gguf_sha256` when verified
 - `metadata_status`
 
 The analysis must not compare a q4 and q8 variant as if they were the same
 deployment. Parameter count determines tier; quantization and footprint are
 reported separately.
+
+`llama.cpp` support is first-class in the lockfile. Direct Hugging Face GGUF rows
+are marked `llama_cpp_status="direct_gguf"` and include `llama.cpp` in
+`runtime_options`. Ollama-native rows are marked
+`ollama_wrapped_gguf_unverified` until their exact GGUF artifact or digest is
+locked. This lets us consider a lighter llama.cpp runtime without pretending the
+current Ollama measurements were produced by llama.cpp.
 
 ## 5. Scenario Sets
 

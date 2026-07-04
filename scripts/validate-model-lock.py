@@ -26,6 +26,9 @@ REQUIRED = {
     "artifact_size_gb",
     "source_url",
     "license",
+    "license_url",
+    "license_status",
+    "license_class",
     "ollama_digest",
     "gguf_sha256",
     "context_length",
@@ -37,6 +40,8 @@ REQUIRED = {
     "roster_bracket",
     "legacy_bracket",
     "measured_snapshot",
+    "runtime_options",
+    "llama_cpp_status",
     "notes",
 }
 
@@ -136,6 +141,14 @@ def validate() -> None:
                 fail(f"{model_id} is included but has exclusion_reason={row['exclusion_reason']}")
             if "thesis_5b_candidate" not in row["track"]:
                 fail(f"{model_id} is included but missing thesis_5b_candidate track")
+            if row["source_url"] == "unknown":
+                fail(f"{model_id} is included but source_url is unknown")
+            if row["license"] == "unknown" or row["license_url"] == "unknown" or row["license_status"] == "unknown":
+                fail(f"{model_id} is included but license metadata is incomplete")
+            if "ollama" not in row["runtime_options"]:
+                fail(f"{model_id} must include ollama in runtime_options")
+            if row["llama_cpp_status"] == "direct_gguf" and "llama.cpp" not in row["runtime_options"]:
+                fail(f"{model_id} direct_gguf rows must include llama.cpp runtime option")
             by_tier[row["tier"]] += 1
         else:
             excluded += 1

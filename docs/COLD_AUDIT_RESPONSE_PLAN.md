@@ -302,11 +302,11 @@ scenario gates, strict run-quality reporting, and the current two-node pipeline.
 What is weak: the public research boundary, model eligibility metadata, privacy
 gate, single-path protocol, and human validation status.
 
-What to fix first next: **verify the <=5B model metadata.** The model lock now
-enforces the boundary and includes 155 current thesis-track candidates, and
-`source_url` coverage is audited. License and digest/hash coverage remain
-incomplete. The v1 external dev run is useful scenario-pack learning, but it does
-not solve the model-provenance problem.
+What to fix first next: **lock artifact digests/hashes.** The model lock now
+enforces the boundary and includes 155 current thesis-track candidates; `source_url`
+and license coverage are audited through `data/model-license-rules.json`. Digest
+and GGUF hash coverage remains incomplete. The v1 external dev run is useful
+scenario-pack learning, but it does not solve the artifact-provenance problem.
 
 Current suitability:
 

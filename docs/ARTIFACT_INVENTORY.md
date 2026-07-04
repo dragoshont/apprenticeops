@@ -24,7 +24,8 @@ doctoral <=5B-parameter roster is complete.
 | `data/models.txt` | Legacy/full roster source tags. | Covered by `data/models.lock.jsonl`. |
 | `data/models.lock.jsonl` | Current model eligibility lock. | `scripts/validate-model-lock.py`. |
 | `data/model.schema.json` | Model lock schema shell. | Checked by the validator. |
-| `scripts/audit-model-metadata.py` | Model metadata coverage report. | Fails if included rows lack `source_url`; reports unknown licenses and missing digests/hashes until verified. |
+| `data/model-license-rules.json` | License rule table with evidence URLs/classes. | Consumed by `scripts/build-model-lock.py`; included rows must not have unknown license metadata. |
+| `scripts/audit-model-metadata.py` | Model metadata coverage report. | Fails if included rows lack `source_url` or license metadata; reports missing digests/hashes and llama.cpp compatibility. |
 | `data/run-manifest.json` | Locked run environment and scenario-set hashes. | `scripts/validate-scenarios.py`. |
 | `data/run-matrix.json` | Approved model/scenario/memory/strategy launch matrix. | `scripts/validate-scenarios.py`. |
 | `data/scenario-lifecycle.schema.json` | Future candidate scenario lifecycle schema. | `scripts/validate-scenarios.py`. |
