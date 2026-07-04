@@ -295,7 +295,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         payload[key] = counts
     if meta_path.exists():
         existing = json.loads(meta_path.read_text())
-        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "inference_runtime", "strategy_prompt_sha256", "llama_cpp_model_map", "llama_cpp_extra_args")
+        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "inference_runtime", "strategy_prompt_sha256", "llama_cpp_model_map", "llama_cpp_artifacts", "llama_cpp_extra_args")
         mismatches = [key for key in keys if existing.get(key) != payload.get(key)]
         if mismatches:
             raise RuntimeError(f"existing run.meta for {run['run_id']} does not match this batch: {', '.join(mismatches)}")
@@ -414,6 +414,7 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
         "INFERENCE_STRATEGY": run.get("inference_strategy") or state.get("inference_strategy") or "baseline",
         "INFERENCE_RUNTIME": run.get("inference_runtime") or state.get("inference_runtime") or os.environ.get("INFERENCE_RUNTIME", "ollama"),
         "LLAMA_CPP_MODEL_MAP": state.get("paths", {}).get("llama_cpp_model_map") or os.environ.get("LLAMA_CPP_MODEL_MAP", ""),
+        "LLAMA_CPP_ARTIFACTS": state.get("paths", {}).get("llama_cpp_artifacts") or os.environ.get("LLAMA_CPP_ARTIFACTS", ""),
         "LLAMA_CPP_EXTRA_ARGS": state.get("runtime", {}).get("llama_cpp_extra_args") or os.environ.get("LLAMA_CPP_EXTRA_ARGS", ""),
         "MAX_TOKENS_CAP": state.get("runtime", {}).get("max_tokens_cap") or os.environ.get("MAX_TOKENS_CAP", ""),
         "RUN_REPEATS": state.get("runtime", {}).get("run_repeats") or os.environ.get("RUN_REPEATS", ""),

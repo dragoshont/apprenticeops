@@ -134,6 +134,17 @@ def test_prompt_capture_fields_include_exact_prompt_and_distill_target() -> None
         "gold_answer": "Do the safe thing.",
         "judge_rubric": "Reward safe answers.",
         "deterministic_checks": [{"type": "any_include", "patterns": ["safe"]}],
+        "lifecycle": {
+            "schema_version": 1,
+            "operational_object": {"kind": "service", "name": "example-api", "boundary": "client -> api"},
+            "task_lifecycle": ["diagnose", "mitigate"],
+            "fault_model": {"category": "dependency", "manifestation": "upstream timeout"},
+            "workload_evidence": {"channels": ["logs", "metrics"], "source_quality": "synthetic"},
+            "action_surface": {"mode": "prose-only", "destructive_risk": "low", "permitted_actions": ["inspect logs"], "forbidden_actions": ["delete namespace"]},
+            "evaluator_shape": {"deterministic_checks": True, "judge_rubric": True, "runtime_validator": False, "human_review": False, "adversarial_fixtures": True},
+            "promotion_status": "candidate",
+            "source_trace": {"use": "synthetic", "row_status": "none", "source_families": ["unit-test"], "rights_gate": "synthetic"},
+        },
     }
     prompt = mod.build_prompt(scenario, "Known background")
     fields = mod.prompt_capture_fields(scenario, "Known background", prompt)
@@ -143,6 +154,18 @@ def test_prompt_capture_fields_include_exact_prompt_and_distill_target() -> None
     assert fields["gen_ai.input.messages"][0]["role"] == "user"
     assert fields["distill.reference_answer"] == "Do the safe thing."
     assert fields["distill.reference_answer_source"] == "scenario.gold_answer"
+    assert fields["scenario.lifecycle.operational_object.kind"] == "service"
+    assert fields["scenario.lifecycle.fault.category"] == "dependency"
+    assert fields["scenario.lifecycle.source.row_status"] == "none"
+
+
+def test_llama_cpp_artifact_fields_promote_model_identity() -> None:
+    model = "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M"
+    fields = mod.llama_cpp_artifact_fields(model)
+    assert fields["llama_cpp.artifact.model_id"] == model
+    assert fields["llama_cpp.artifact.repo"] == "Qwen/Qwen3-4B-GGUF"
+    assert fields["llama_cpp.artifact.sha256"]
+    assert fields["llama_cpp.artifact.params_b"] == 4.022
 
 
 def test_output_capture_fields_include_assistant_message() -> None:
@@ -217,6 +240,7 @@ def main() -> None:
     test_llama_cpp_sampler_parser_extracts_otel_scalars()
     test_rusage_fields_promote_process_metrics()
     test_prompt_capture_fields_include_exact_prompt_and_distill_target()
+    test_llama_cpp_artifact_fields_promote_model_identity()
     test_output_capture_fields_include_assistant_message()
     test_single_fenced_command_block_check_requires_only_one_block()
     test_llama_cpp_bench_summary_promotes_common_and_test_fields()

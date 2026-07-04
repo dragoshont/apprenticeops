@@ -55,6 +55,7 @@ INFERENCE_RUNTIME = os.environ.get("INFERENCE_RUNTIME", "ollama")
 LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI") or (shutil.which("llama-completion") or "llama-cli")
 LLAMA_CPP_MODELS_DIR = os.environ.get("LLAMA_CPP_MODELS", os.environ.get("LLAMA_CPP_MODEL_DIR", "/srv/llama.cpp/models"))
 LLAMA_CPP_MODEL_MAP = os.environ.get("LLAMA_CPP_MODEL_MAP", "")
+LLAMA_CPP_ARTIFACTS = os.environ.get("LLAMA_CPP_ARTIFACTS", "data/llama-cpp-smoke-5.artifacts.json")
 LLAMA_CPP_EXTRA_ARGS = os.environ.get("LLAMA_CPP_EXTRA_ARGS", "")
 LLAMA_CPP_BENCH = os.environ.get("LLAMA_CPP_BENCH", "1") != "0"
 LLAMA_CPP_BENCH_REPS = int(os.environ.get("LLAMA_CPP_BENCH_REPS", "3") or "3")
@@ -829,6 +830,45 @@ def _load_model_lock() -> dict[str, dict]:
 
 
 MODEL_LOCK = _load_model_lock()
+
+
+def _load_llama_cpp_artifacts() -> tuple[dict, dict[str, dict]]:
+    if not LLAMA_CPP_ARTIFACTS:
+        return {}, {}
+    path = LLAMA_CPP_ARTIFACTS
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}, {}
+    artifacts = payload.get("artifacts") or []
+    return payload, {item.get("model_id"): item for item in artifacts if item.get("model_id")}
+
+
+LLAMA_CPP_ARTIFACTS_PAYLOAD, LLAMA_CPP_ARTIFACTS_BY_MODEL = _load_llama_cpp_artifacts()
+
+
+def llama_cpp_artifact_fields(model: str) -> dict:
+    item = LLAMA_CPP_ARTIFACTS_BY_MODEL.get(model) or {}
+    if not item:
+        return {}
+    return {
+        "llama_cpp.artifact.sample_id": LLAMA_CPP_ARTIFACTS_PAYLOAD.get("sample_id"),
+        "llama_cpp.artifact.node": LLAMA_CPP_ARTIFACTS_PAYLOAD.get("node"),
+        "llama_cpp.artifact.models_dir": LLAMA_CPP_ARTIFACTS_PAYLOAD.get("models_dir"),
+        "llama_cpp.artifact.model_id": item.get("model_id"),
+        "llama_cpp.artifact.repo": item.get("repo"),
+        "llama_cpp.artifact.filename": item.get("filename"),
+        "llama_cpp.artifact.path": item.get("path"),
+        "llama_cpp.artifact.size_bytes": item.get("size_bytes"),
+        "llama_cpp.artifact.sha256": item.get("sha256"),
+        "llama_cpp.artifact.params_b": item.get("params_b"),
+        "llama_cpp.artifact.license": item.get("license"),
+        "llama_cpp.artifact.license_class": item.get("license_class"),
+        "llama_cpp.artifact.license_status": item.get("license_status"),
+    }
 
 
 def _post_json(path, payload, timeout):
@@ -1949,6 +1989,7 @@ def prompt_capture_fields(s, memory_context, prompt):
     checks = s.get("deterministic_checks") or []
     gold = s.get("gold_answer")
     rubric = s.get("judge_rubric")
+    lifecycle = s.get("lifecycle") or {}
     fields = {
         "prompt.capture.enabled": CAPTURE_PROMPT_CONTENT,
         "prompt.capture.policy": PROMPT_CAPTURE_POLICY,
@@ -1961,12 +2002,45 @@ def prompt_capture_fields(s, memory_context, prompt):
         "scenario.gold_answer_sha256": _sha256_text(gold) if gold is not None else None,
         "scenario.judge_rubric_sha256": _sha256_text(rubric) if rubric is not None else None,
         "scenario.deterministic_checks_sha256": _json_sha256(checks),
+        "scenario.lifecycle_sha256": _json_sha256(lifecycle) if lifecycle else None,
         "distill.example_schema": "chat_sft_v1",
         "distill.input_sha256": _sha256_text(prompt),
         "distill.reference_answer_sha256": _sha256_text(gold) if gold is not None else None,
         "distill.reference_answer_source": "scenario.gold_answer" if gold is not None else None,
         "distill.judge_rubric_sha256": _sha256_text(rubric) if rubric is not None else None,
     }
+    if lifecycle:
+        operational_object = lifecycle.get("operational_object") or {}
+        fault_model = lifecycle.get("fault_model") or {}
+        workload_evidence = lifecycle.get("workload_evidence") or {}
+        action_surface = lifecycle.get("action_surface") or {}
+        evaluator_shape = lifecycle.get("evaluator_shape") or {}
+        source_trace = lifecycle.get("source_trace") or {}
+        fields.update({
+            "scenario.lifecycle.schema_version": lifecycle.get("schema_version"),
+            "scenario.lifecycle.operational_object.kind": operational_object.get("kind"),
+            "scenario.lifecycle.operational_object.name": operational_object.get("name"),
+            "scenario.lifecycle.operational_object.boundary": operational_object.get("boundary"),
+            "scenario.lifecycle.task_lifecycle": lifecycle.get("task_lifecycle"),
+            "scenario.lifecycle.fault.category": fault_model.get("category"),
+            "scenario.lifecycle.fault.manifestation": fault_model.get("manifestation"),
+            "scenario.lifecycle.evidence.channels": workload_evidence.get("channels"),
+            "scenario.lifecycle.evidence.source_quality": workload_evidence.get("source_quality"),
+            "scenario.lifecycle.action.mode": action_surface.get("mode"),
+            "scenario.lifecycle.action.destructive_risk": action_surface.get("destructive_risk"),
+            "scenario.lifecycle.action.permitted_actions": action_surface.get("permitted_actions"),
+            "scenario.lifecycle.action.forbidden_actions": action_surface.get("forbidden_actions"),
+            "scenario.lifecycle.evaluator.deterministic_checks": evaluator_shape.get("deterministic_checks"),
+            "scenario.lifecycle.evaluator.judge_rubric": evaluator_shape.get("judge_rubric"),
+            "scenario.lifecycle.evaluator.runtime_validator": evaluator_shape.get("runtime_validator"),
+            "scenario.lifecycle.evaluator.human_review": evaluator_shape.get("human_review"),
+            "scenario.lifecycle.evaluator.adversarial_fixtures": evaluator_shape.get("adversarial_fixtures"),
+            "scenario.lifecycle.promotion_status": lifecycle.get("promotion_status"),
+            "scenario.lifecycle.source.use": source_trace.get("use"),
+            "scenario.lifecycle.source.row_status": source_trace.get("row_status"),
+            "scenario.lifecycle.source.source_families": source_trace.get("source_families"),
+            "scenario.lifecycle.source.rights_gate": source_trace.get("rights_gate"),
+        })
     if CAPTURE_PROMPT_CONTENT:
         fields.update({
             "prompt.full": prompt,
@@ -2350,6 +2424,8 @@ def _env_static():
         "env.ollama_version": _sh_out(["ollama", "--version"]),
         "env.inference_runtime": INFERENCE_RUNTIME,
         "env.llama_cpp_cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
+        "env.llama_cpp_artifacts": LLAMA_CPP_ARTIFACTS if INFERENCE_RUNTIME == "llama_cpp" else None,
+        "env.llama_cpp_artifacts_sha256": hashlib.sha256(open(LLAMA_CPP_ARTIFACTS, "rb").read()).hexdigest() if INFERENCE_RUNTIME == "llama_cpp" and LLAMA_CPP_ARTIFACTS and os.path.exists(LLAMA_CPP_ARTIFACTS) else None,
         "env.llama_cpp_version": _sh_out([LLAMA_CPP_CLI, "--version"]) if INFERENCE_RUNTIME == "llama_cpp" else None,
         "env.llama_cpp_git_commit": os.environ.get("LLAMA_CPP_GIT_COMMIT"),
         "env.llama_cpp_git_describe": os.environ.get("LLAMA_CPP_GIT_DESCRIBE"),
@@ -2724,6 +2800,7 @@ def main():
             warm_s, warm_err = warmup(model, args.think)
             meta = {**model_meta(model), **model_runtime(model)}
             if INFERENCE_RUNTIME == "llama_cpp":
+                meta.update(llama_cpp_artifact_fields(model))
                 meta.update(llama_cpp_bench(model, args.outputs_dir))
             sys.stderr.write(f"[{bracket}] {model}  warmup={warm_s}s  "
                              f"params={meta.get('ollama.parameter_count')} "

@@ -619,6 +619,8 @@ def _runtime_env(model_set: dict, runtime: dict) -> dict[str, object]:
     env: dict[str, object] = {"INFERENCE_RUNTIME": runtime_id}
     if runtime_id == "llama_cpp":
         env["LLAMA_CPP_MODEL_MAP"] = model_set["llama_cpp_model_map"]
+        if model_set.get("llama_cpp_artifacts"):
+            env["LLAMA_CPP_ARTIFACTS"] = model_set["llama_cpp_artifacts"]
         if model_set.get("llama_cpp_extra_args"):
             env["LLAMA_CPP_EXTRA_ARGS"] = model_set["llama_cpp_extra_args"]
         if model_set.get("max_tokens_cap") is not None:
