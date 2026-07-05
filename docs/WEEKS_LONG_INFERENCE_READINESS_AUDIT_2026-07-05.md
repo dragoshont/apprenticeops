@@ -53,18 +53,28 @@ sidecars so the main JSONL stays bounded.
 
 ## 4. Readiness Verdict
 
-Current verdict: **not yet ready to launch the weeks-long run** until the
-AI-node-only three-model smoke passes. The remaining gate is operational, not
-conceptual: prove the `ai`-only local-roster path can run, mirror artifacts,
-delete transient models, and report cleanly without `home` judging or Mac state.
+Current verdict: **ready for a longer AI-node-only inference run**, with the
+judged/full-evidence path still requiring the two-node `home + ai` pipeline.
 
-If the three-model smoke passes, the harness is ready for a longer **inference**
-run on `ai` under the same mode. A weeks-long **judged** run still uses the
+The AI-only gate passed after fixing two local-roster metadata bugs:
+
+- environment values passed to `subprocess.Popen(env=...)` are now stringified;
+- `run.meta` now honors the selected model-set repeat override instead of
+  defaulting validation runs to the canonical R=5.
+
+The successful smoke was `ai-local-small-20260704-235715-m1`: `3` models × `6`
+scenarios × `R=1`, all on `ai` with `runner=local-roster`, no home-side scheduler,
+and no Mac dependency after launch. `report-run-quality.py --strict` passed
+(`18/18` rows, no judged rows expected), and `audit-run.py` passed. The run
+mirrored `18` answer files plus logs under `data/runs/<RUN_ID>/`, and wrote `3`
+model completion markers.
+
+This proves the inference cycle. A weeks-long **judged** run still uses the
 two-node e2e path because the judge and GitHub persistence live on `home`.
 
-## 5. Required AI-Only Smoke
+## 5. AI-Only Smoke Result
 
-Planned smoke:
+Smoke command shape:
 
 ```text
 runner=local-roster
@@ -76,16 +86,25 @@ inference_runtime=ollama
 repeats=1
 ```
 
-Acceptance gate:
+Observed result:
 
-- `run.meta` exists and has `judge_expected=false`.
-- `results.<RUN_ID>.jsonl` has `models_count × scenario_count × reps` rows.
-- `results.<RUN_ID>.jsonl.done` contains all three models.
-- `data/runs/<RUN_ID>/_mirror/outputs/` contains answer files.
-- `report-run-quality.py --strict` passes without judged rows.
-- `audit-run.py` passes.
-- Transient models pulled by the run are removed by `--rm-after`; pre-existing
-  prepared models remain.
+- Run id: `ai-local-small-20260704-235715-m1`.
+- Rows: `18/18`.
+- Judged rows: `0`, expected because `judge_expected=false`.
+- Strict report: PASS.
+- Audit: PASS.
+- Reliability: `0` DNF, `1` length finish, `0` zero-output stalls.
+- Mirrored artifacts: `18` answer files and driver logs.
+- Done markers: `3`, one per model.
+- Prepared-model behavior: all three models were already present on disk and
+  remained present after the run, which is the correct `--rm-after` behavior for
+  pre-existing prepared models.
+
+This smoke did **not** prove deletion of newly pulled transient models, because
+the selected models were already prepared locally. That delete path is already in
+`run.py` (`was_present` + `--rm-after`) and has been used in prior roster work,
+but a future disk-pressure smoke should include one deliberately absent tiny model
+if we want an explicit fresh-pull deletion proof.
 
 ## 6. Deferred Work
 
