@@ -164,8 +164,8 @@ export function RunProgress({
                 <ReliabilityChip
                   label="Judge gaps"
                   value={`${reliability.judge_empty}`}
-                  sub={`${reliability.empty_answer_judgements ?? 0} no-answer rows · ${reliability.judge_evidence_missing} evidence gaps`}
-                  tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"}
+                  sub={`${reliability.empty_answer_judgements ?? 0} no-answer rows · ${reliability.judge_response_parse_failures ?? 0} parse failures`}
+                  tone={reliability.judge_empty || reliability.judge_response_parse_failures || reliability.judge_evidence_missing ? "text-warn" : "text-good"}
                   help="Actual judge-output gaps. No-answer inference rows are counted separately because the judge did not fail; the model produced no answer to grade."
                 />
                 <ReliabilityChip

@@ -556,6 +556,8 @@ def reliability_report(run_id):
                             (by_strategy, row.get("env.inference_strategy") or "baseline")):
             bucket.setdefault(key, {"dnf": 0, "rows": 0})["rows"] += 1
     def is_deterministic_no_answer_judge(row):
+        if row.get("deterministic_no_answer") is True:
+            return True
         verdict = str(row.get("verdict") or "")
         if verdict not in {"empty", "no_answer"} or row.get("score") != 1:
             return False
@@ -568,7 +570,7 @@ def reliability_report(run_id):
             or "answer was empty or unavailable" in missed
         )
 
-    judge_empty = empty_answer_judgements = evidence_missing = criteria_missing = 0
+    judge_empty = empty_answer_judgements = judge_response_parse_failures = evidence_missing = criteria_missing = 0
     usage_by_judge = {}
     for row in judged:
         no_answer = is_deterministic_no_answer_judge(row)
@@ -576,6 +578,11 @@ def reliability_report(run_id):
             empty_answer_judgements += 1
         if row.get("verdict") == "empty" and not no_answer:
             judge_empty += 1
+        if row.get("score") is None and (
+            row.get("evidence") == "parse_error"
+            or "judge response could not be parsed" in (row.get("criteria_missed") or [])
+        ):
+            judge_response_parse_failures += 1
         if not row.get("evidence"):
             evidence_missing += 1
         if "criteria_met" not in row or "criteria_missed" not in row:
@@ -622,6 +629,7 @@ def reliability_report(run_id):
         "dnf_by_inference_strategy": compact(by_strategy),
         "judge_empty": judge_empty,
         "empty_answer_judgements": empty_answer_judgements,
+        "judge_response_parse_failures": judge_response_parse_failures,
         "judge_evidence_missing": evidence_missing,
         "judge_criteria_missing": criteria_missing,
         "usage_by_judge": {judge: usage_with_rates(usage) for judge, usage in usage_by_judge.items()},

@@ -153,6 +153,7 @@ export const reliability: ReliabilityReport = {
   zero_output_stall_rate: 0,
   judge_empty: 0,
   empty_answer_judgements: 0,
+  judge_response_parse_failures: 0,
   judge_evidence_missing: 0,
   judge_criteria_missing: 0,
   usage_by_judge: {

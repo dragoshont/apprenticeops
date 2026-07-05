@@ -60,6 +60,7 @@ def test_report_flags_reliability_and_strategy():
     assert report["zero_output_stalls"] == 1
     assert report["judge_empty"] == 0
     assert report["empty_answer_judgements"] == 1
+    assert report["judge_response_parse_failures"] == 0
     assert report["judge_duplicate_tuples"] == 0
     assert report["dnf_by_inference_strategy"][0]["id"] == "best_of_3_detcheck"
     assert report["usage_by_judge"]["claude"]["tokens_in"] == 10
@@ -89,6 +90,56 @@ def test_report_keeps_actual_empty_judge_as_strict_failure():
     assert report["judge_empty"] == 1
     assert report["empty_answer_judgements"] == 0
     assert "empty-judge-rows" in {item["code"] for item in report["strict_failures"]}
+
+
+def test_report_accepts_machine_readable_no_answer_marker():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-no-answer-marker"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v0",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 1,
+        }))
+        write_jsonl(run_dir / "_mirror" / "results.run-no-answer-marker.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "env.memory_context": "none", "env.inference_strategy": "baseline", "gen_ai.response.finish_reasons": ["DNF:error"], "dnf": True},
+        ])
+        write_jsonl(run_dir / "judged.run-no-answer-marker.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": 1, "verdict": "empty", "deterministic_no_answer": True, "evidence": "stable marker", "criteria_met": [], "criteria_missed": []},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["judge_empty"] == 0
+    assert report["empty_answer_judgements"] == 1
+
+
+def test_report_flags_judge_response_parse_failures():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-judge-parse-fail"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v0",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 1,
+        }))
+        write_jsonl(run_dir / "_mirror" / "results.run-judge-parse-fail.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "env.memory_context": "none", "env.inference_strategy": "baseline", "gen_ai.response.finish_reasons": ["stop"], "dnf": False},
+        ])
+        write_jsonl(run_dir / "judged.run-judge-parse-fail.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": None, "verdict": "garbled", "evidence": "parse_error", "criteria_met": [], "criteria_missed": ["judge response could not be parsed"]},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["judge_response_parse_failures"] == 1
+    assert "judge-response-parse-failures" in {item["code"] for item in report["strict_failures"]}
 
 
 def test_report_flags_duplicate_judge_tuples():
@@ -241,6 +292,8 @@ def test_report_reads_committed_gz_result_artifacts():
 def main() -> None:
     test_report_flags_reliability_and_strategy()
     test_report_keeps_actual_empty_judge_as_strict_failure()
+    test_report_accepts_machine_readable_no_answer_marker()
+    test_report_flags_judge_response_parse_failures()
     test_report_flags_duplicate_judge_tuples()
     test_strict_gate_passes_clean_structural_run()
     test_markdown_output_includes_gate_and_duplicate_examples()

@@ -77,6 +77,8 @@ def compact_bucket(bucket: dict[str, dict]) -> list[dict]:
 
 
 def is_deterministic_no_answer_judge(row: dict) -> bool:
+    if row.get("deterministic_no_answer") is True:
+        return True
     verdict = str(row.get("verdict") or "")
     if verdict not in {"empty", "no_answer"} or row.get("score") != 1:
         return False
@@ -159,6 +161,7 @@ def evaluate_interpretation(report: dict) -> dict:
         ("duplicate_result_tuples", "duplicate-result-tuples", "duplicate inference tuples were found"),
         ("judge_duplicate_tuples", "duplicate-judge-tuples", "duplicate judged tuples were found"),
         ("judge_empty", "empty-judge-rows", "judge backend produced empty verdict rows"),
+        ("judge_response_parse_failures", "judge-response-parse-failures", "judge responses could not be parsed"),
         ("judge_evidence_missing", "judge-evidence-missing", "judge rows are missing evidence"),
         ("judge_criteria_missing", "judge-criteria-missing", "judge rows are missing criteria fields"),
     ):
@@ -264,6 +267,14 @@ def summarize_run(run_dir: Path) -> dict:
         inc_bucket(by_memory, row.get("env.memory_context") or "none", dnf=is_dnf)
         inc_bucket(by_strategy, row.get("env.inference_strategy") or "baseline", dnf=is_dnf)
     no_answer_judgements = [row for row in judged if is_deterministic_no_answer_judge(row)]
+    judge_response_parse_failures = [
+        row for row in judged
+        if row.get("score") is None
+        and (
+            row.get("evidence") == "parse_error"
+            or "judge response could not be parsed" in (row.get("criteria_missed") or [])
+        )
+    ]
     judge_missing_evidence = [row for row in judged if not row.get("evidence")]
     judge_missing_criteria = [row for row in judged if "criteria_met" not in row or "criteria_missed" not in row]
     judge_empty = [row for row in judged if row.get("verdict") == "empty" and not is_deterministic_no_answer_judge(row)]
@@ -318,6 +329,7 @@ def summarize_run(run_dir: Path) -> dict:
         "dnf_by_inference_strategy": compact_bucket(by_strategy),
         "judge_empty": len(judge_empty),
         "empty_answer_judgements": len(no_answer_judgements),
+        "judge_response_parse_failures": len(judge_response_parse_failures),
         "judge_evidence_missing": len(judge_missing_evidence),
         "judge_criteria_missing": len(judge_missing_criteria),
         "usage_by_judge": {judge: finalize_usage(dict(usage)) for judge, usage in usage_by_judge.items()},
@@ -349,6 +361,8 @@ def print_text(reports: list[dict]) -> None:
         print(f"reliability: DNF {report['dnf']}/{report['rows']} ({report['dnf_rate']}%) · length {report['length']} ({report['length_rate']}%) · zero-output stalls {report['zero_output_stalls']} ({report['zero_output_stall_rate']}%)")
         print(
             f"judge: empty={report['judge_empty']} "
+            f"no_answer={report.get('empty_answer_judgements', 0)} "
+            f"parse_failures={report.get('judge_response_parse_failures', 0)} "
             f"evidence_missing={report['judge_evidence_missing']} "
             f"criteria_missing={report['judge_criteria_missing']} "
             f"duplicate_tuples={report['judge_duplicate_tuples']}"
@@ -416,6 +430,8 @@ def print_markdown(reports: list[dict]) -> None:
         print(f"| Duplicate inference tuples | {report['duplicate_result_tuples']} |")
         print(f"| Duplicate judge tuples | {report['judge_duplicate_tuples']} |")
         print(f"| Judge empty rows | {report['judge_empty']} |")
+        print(f"| No-answer judgements | {report.get('empty_answer_judgements', 0)} |")
+        print(f"| Judge response parse failures | {report.get('judge_response_parse_failures', 0)} |")
         print(f"| Judge evidence missing | {report['judge_evidence_missing']} |")
         print(f"| Judge criteria missing | {report['judge_criteria_missing']} |")
         print(f"| Push pending markers | {report['persistence']['push_pending']} |")

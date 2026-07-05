@@ -534,7 +534,7 @@ def main():
                     fallback_verdict="no_answer",
                     fallback_evidence="No answer text was available for judging; the inference row did not produce a completion.",
                     fallback_criteria_missed=["answer was empty or unavailable"],
-                ), None)
+                ) | {"deterministic_no_answer": True}, None)
             jg = Judge(backend=be, model=mo)   # fresh per task -> thread-safe usage
             for attempt in range(4):
                 try:
