@@ -571,3 +571,14 @@
 {"model":"*","stage":"judge","ts":1783243384,"ok":1,"detail":"judged 1706->1754"}
 {"model":"*","stage":"judge","ts":1783243486,"ok":1,"detail":"judged 1754->1786"}
 {"model":"*","stage":"judge","ts":1783243546,"ok":1,"detail":"judged 1786->1808"}
+{"model":"smollm2:135m","stage":"persist","ts":1783243550,"ok":1,"detail":"ef89305"}
+{"model":"*","stage":"judge","ts":1783243568,"ok":1,"detail":"judged 1808->1866"}
+{"model":"*","stage":"judge","ts":1783243586,"ok":1,"detail":"judged 1866->1882"}
+{"model":"*","stage":"judge","ts":1783243604,"ok":1,"detail":"judged 1882->1898"}
+{"model":"*","stage":"judge","ts":1783243621,"ok":1,"detail":"judged 1898->1914"}
+{"model":"*","stage":"judge","ts":1783243639,"ok":1,"detail":"judged 1914->1930"}
+{"model":"*","stage":"judge","ts":1783243657,"ok":1,"detail":"judged 1930->1946"}
+{"model":"*","stage":"judge","ts":1783243675,"ok":1,"detail":"judged 1946->1962"}
+{"model":"*","stage":"judge","ts":1783243693,"ok":1,"detail":"judged 1962->1978"}
+{"model":"*","stage":"judge","ts":1783243711,"ok":1,"detail":"judged 1978->1994"}
+{"model":"*","stage":"judge","ts":1783243729,"ok":1,"detail":"judged 1994->2000"}
