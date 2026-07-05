@@ -301,7 +301,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         payload[key] = counts
     if meta_path.exists():
         existing = json.loads(meta_path.read_text())
-        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "inference_runtime", "strategy_prompt_sha256", "llama_cpp_model_map", "llama_cpp_artifacts", "llama_cpp_extra_args")
+        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "inference_runtime", "strategy_prompt_sha256", "llama_cpp_model_map", "llama_cpp_artifacts", "llama_cpp_extra_args", "reps", "judge_expected")
         mismatches = [key for key in keys if existing.get(key) != payload.get(key)]
         if mismatches:
             raise RuntimeError(f"existing run.meta for {run['run_id']} does not match this batch: {', '.join(mismatches)}")

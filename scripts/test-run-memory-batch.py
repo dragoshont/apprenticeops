@@ -177,6 +177,8 @@ def test_existing_run_meta_must_match_selection():
                 "scenarios_sha256": "wrong",
                 "memory_context": "none",
                 "memory_context_sha256": None,
+                "reps": 5,
+                "judge_expected": True,
             }))
             try:
                 module.ensure_run_meta(state, run)
