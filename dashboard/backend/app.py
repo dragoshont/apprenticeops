@@ -332,7 +332,7 @@ def resolve_runtime_option(raw):
     rid = raw.get("id") if isinstance(raw, dict) else None
     if not ID_RE.match(str(rid or "")):
         fail(f"invalid runtime id: {rid!r}")
-    if rid not in {"ollama", "llama_cpp"}:
+    if rid not in {"ollama", "llama_cpp", "llama_cpp_server"}:
         fail(f"unsupported runtime id: {rid!r}")
     return dict(raw)
 
