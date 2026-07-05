@@ -563,3 +563,11 @@
 {"model":"*","stage":"judge","ts":1783242764,"ok":1,"detail":"judged 1594->1596"}
 {"model":"*","stage":"judge","ts":1783242808,"ok":1,"detail":"judged 1596->1598"}
 {"model":"*","stage":"judge","ts":1783242914,"ok":1,"detail":"judged 1598->1600"}
+{"model":"phi3:mini-128k","stage":"persist","ts":1783242919,"ok":1,"detail":"d4217e2"}
+{"model":"*","stage":"judge","ts":1783242973,"ok":1,"detail":"judged 1600->1614"}
+{"model":"*","stage":"judge","ts":1783243051,"ok":1,"detail":"judged 1614->1638"}
+{"model":"*","stage":"judge","ts":1783243137,"ok":1,"detail":"judged 1638->1664"}
+{"model":"*","stage":"judge","ts":1783243251,"ok":1,"detail":"judged 1664->1706"}
+{"model":"*","stage":"judge","ts":1783243384,"ok":1,"detail":"judged 1706->1754"}
+{"model":"*","stage":"judge","ts":1783243486,"ok":1,"detail":"judged 1754->1786"}
+{"model":"*","stage":"judge","ts":1783243546,"ok":1,"detail":"judged 1786->1808"}
