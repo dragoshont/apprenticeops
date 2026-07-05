@@ -168,6 +168,14 @@
       "description": "The complete locked roster. Use with care; this can run for days."
     },
     {
+      "id": "full-ollama-chat-ok",
+      "label": "Full Ollama chat-ok roster - 152 validated models",
+      "path": "data/models.ollama-chat-ok.txt",
+      "kind": "experiment",
+      "runtime": "ollama",
+      "description": "Reduced canonical Ollama /api/chat roster generated from roster-validate-20260705-104107. Excludes served-failures, pull failures, and chat-empty warning tags listed in data/models.ollama-chat-faults.json while preserving data/models.txt as the full audit universe."
+    },
+    {
       "id": "doodle",
       "label": "Doodling - 5 small SVG models",
       "path": "data/models.doodle.txt",

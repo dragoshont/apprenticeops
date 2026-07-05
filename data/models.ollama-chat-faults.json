@@ -1,0 +1,342 @@
+{
+  "counts": {
+    "excluded": 21,
+    "fail": 19,
+    "ok": 152,
+    "total": 173,
+    "warn": 2
+  },
+  "excluded_models": [
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "granite3.1-moe:1b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "0-1B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "granite3.1-moe:1b-instruct-q8_0",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "0-1B"
+    },
+    {
+      "chat_output_chars": null,
+      "chat_status": null,
+      "findings": [
+        "ollama pull failed or was disabled for a missing model"
+      ],
+      "generate_output_chars": null,
+      "generate_status": null,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "hf.co/google/gemma-3-1b-it-qat-q4_0-gguf:Q4_0",
+      "overall_reason": "pull_failed",
+      "overall_status": "fail",
+      "roster_bracket": "0-1B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "both chat and generate returned empty visible text",
+        "historical high length rate 60.0%"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 200,
+      "historical_dnf_rate": 0.0,
+      "historical_length_rate": 0.6,
+      "model": "deepseek-r1:1.5b",
+      "overall_reason": "empty_completion",
+      "overall_status": "fail",
+      "roster_bracket": "1-2B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "both chat and generate returned empty visible text",
+        "historical high length rate 59.0%"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 200,
+      "historical_dnf_rate": 0.0,
+      "historical_length_rate": 0.5895,
+      "model": "deepseek-r1:1.5b-qwen-distill-q8_0",
+      "overall_reason": "empty_completion",
+      "overall_status": "fail",
+      "roster_bracket": "1-2B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "chat returned empty text but generate returned visible text",
+        "historical high length rate 54.7%"
+      ],
+      "generate_output_chars": 63,
+      "generate_status": 200,
+      "historical_dnf_rate": 0.0,
+      "historical_length_rate": 0.5474,
+      "model": "hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M",
+      "overall_reason": "chat_empty_generate_nonempty",
+      "overall_status": "warn",
+      "roster_bracket": "1-2B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "chat returned empty text but generate returned visible text"
+      ],
+      "generate_output_chars": 56,
+      "generate_status": 200,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "deepscaler:1.5b",
+      "overall_reason": "chat_empty_generate_nonempty",
+      "overall_status": "warn",
+      "roster_bracket": "1-2B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text",
+        "historical high DNF rate 100.0%"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": 1.0,
+      "historical_length_rate": 0.0,
+      "model": "phi:2.7b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "exaone3.5:2.4b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "exaone3.5:2.4b-instruct-q8_0",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "exaone3.5:2.4b-instruct-q4_K_M",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "exaone-deep:2.4b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "stablelm-zephyr:3b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "stable-code:3b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "2-3B"
+    },
+    {
+      "chat_output_chars": null,
+      "chat_status": null,
+      "findings": [
+        "ollama pull failed or was disabled for a missing model"
+      ],
+      "generate_output_chars": null,
+      "generate_status": null,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0",
+      "overall_reason": "pull_failed",
+      "overall_status": "fail",
+      "roster_bracket": "3-4B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "granite-code:3b",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "3-4B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "granite-code:3b-instruct-q6_K",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "3-4B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 500,
+      "findings": [
+        "no canary path produced visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 500,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "granite-code:3b-instruct-q8_0",
+      "overall_reason": "served_failure",
+      "overall_status": "fail",
+      "roster_bracket": "3-4B"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "both chat and generate returned empty visible text",
+        "historical high DNF rate 74.7%"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 200,
+      "historical_dnf_rate": 0.7474,
+      "historical_length_rate": 0.1474,
+      "model": "deepseek-r1:7b",
+      "overall_reason": "empty_completion",
+      "overall_status": "fail",
+      "roster_bracket": "4-5GB"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "both chat and generate returned empty visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 200,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "deepseek-r1:8b",
+      "overall_reason": "empty_completion",
+      "overall_status": "fail",
+      "roster_bracket": "4-5GB"
+    },
+    {
+      "chat_output_chars": 0,
+      "chat_status": 200,
+      "findings": [
+        "both chat and generate returned empty visible text"
+      ],
+      "generate_output_chars": 0,
+      "generate_status": 200,
+      "historical_dnf_rate": null,
+      "historical_length_rate": null,
+      "model": "deepseek-r1:8b-0528-qwen3-q4_K_M",
+      "overall_reason": "empty_completion",
+      "overall_status": "fail",
+      "roster_bracket": "4-5GB"
+    }
+  ],
+  "ok_roster": "data/models.ollama-chat-ok.txt",
+  "policy": "Keep only rows with overall_status == ok for Ollama /api/chat canonical runs; exclude fail and warn rows.",
+  "reason_counts": {
+    "chat_empty_generate_nonempty": 2,
+    "chat_nonempty": 152,
+    "empty_completion": 5,
+    "pull_failed": 2,
+    "served_failure": 12
+  },
+  "source_roster": "data/models.txt",
+  "validation_id": "roster-validate-20260705-104107"
+}
