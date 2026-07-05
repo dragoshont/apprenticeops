@@ -253,6 +253,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
     memory_path = REPO / run["memory_context_file"] if run.get("memory_context_file") else None
     strategy_path = REPO / run["strategy_prompt_file"] if run.get("strategy_prompt_file") else None
     scenarios = scenario_items(scenarios_path)
+    repeats = int(state.get("runtime", {}).get("run_repeats") or os.environ.get("RUN_REPEATS") or os.environ.get("REPS", "5"))
     payload = {
         "schema_version": 2,
         "run_id": run["run_id"],
@@ -284,7 +285,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         "class_counts": {},
         "difficulty_counts": {},
         "grounding_counts": {},
-        "reps": int(os.environ.get("RUN_REPEATS") or os.environ.get("REPS", "5")),
+        "reps": repeats,
         "judges": int(os.environ.get("NJUDGES", "2")),
         "expect": model_count(models_path),
         "user": state.get("user") or "user",

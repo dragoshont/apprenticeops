@@ -118,6 +118,7 @@ def test_run_meta_records_llama_cpp_artifacts() -> None:
             assert meta["inference_runtime"] == "llama_cpp_server"
             assert meta["llama_cpp_model_map"] == "data/llama-cpp-smoke-5.model-map.json"
             assert meta["llama_cpp_artifacts"] == "data/llama-cpp-smoke-5.artifacts.json"
+            assert meta["reps"] == 1
         finally:
             module.RUNS = old_runs
 
