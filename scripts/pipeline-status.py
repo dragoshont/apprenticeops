@@ -555,10 +555,26 @@ def reliability_report(run_id):
         for bucket, key in ((by_memory, row.get("env.memory_context") or "none"),
                             (by_strategy, row.get("env.inference_strategy") or "baseline")):
             bucket.setdefault(key, {"dnf": 0, "rows": 0})["rows"] += 1
-    judge_empty = evidence_missing = criteria_missing = 0
+    def is_deterministic_no_answer_judge(row):
+        verdict = str(row.get("verdict") or "")
+        if verdict not in {"empty", "no_answer"} or row.get("score") != 1:
+            return False
+        evidence = str(row.get("evidence") or "")
+        missed = row.get("criteria_missed") or []
+        if not isinstance(missed, list):
+            missed = [str(missed)]
+        return (
+            "No answer text was available" in evidence
+            or "answer was empty or unavailable" in missed
+        )
+
+    judge_empty = empty_answer_judgements = evidence_missing = criteria_missing = 0
     usage_by_judge = {}
     for row in judged:
-        if row.get("verdict") == "empty":
+        no_answer = is_deterministic_no_answer_judge(row)
+        if no_answer:
+            empty_answer_judgements += 1
+        if row.get("verdict") == "empty" and not no_answer:
             judge_empty += 1
         if not row.get("evidence"):
             evidence_missing += 1
@@ -605,6 +621,7 @@ def reliability_report(run_id):
         "dnf_by_memory_context": compact(by_memory),
         "dnf_by_inference_strategy": compact(by_strategy),
         "judge_empty": judge_empty,
+        "empty_answer_judgements": empty_answer_judgements,
         "judge_evidence_missing": evidence_missing,
         "judge_criteria_missing": criteria_missing,
         "usage_by_judge": {judge: usage_with_rates(usage) for judge, usage in usage_by_judge.items()},

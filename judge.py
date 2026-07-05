@@ -305,6 +305,42 @@ def judge_one(judge, scen, answer):
         )
 
 
+def _message_text(message):
+    if not isinstance(message, dict):
+        return str(message or "")
+    parts = message.get("parts")
+    if isinstance(parts, list):
+        return "\n".join(
+            str(part.get("content") or part.get("text") or "") if isinstance(part, dict) else str(part)
+            for part in parts
+        )
+    content = message.get("content")
+    if isinstance(content, list):
+        return "\n".join(
+            str(part.get("text") or part.get("content") or "") if isinstance(part, dict) else str(part)
+            for part in content
+        )
+    return str(content or message.get("text") or message.get("message") or "")
+
+
+def answer_from_result_row(row):
+    for key in ("gen_ai.completion", "answer", "response_text", "text", "output"):
+        value = row.get(key)
+        if value:
+            return str(value)
+    messages = row.get("gen_ai.output.messages")
+    if isinstance(messages, list):
+        answer = "\n".join(_message_text(message) for message in messages).strip()
+        if answer:
+            return answer
+    output_message = row.get("distill.output_message")
+    if isinstance(output_message, dict):
+        answer = str(output_message.get("content") or "").strip()
+        if answer:
+            return answer
+    return ""
+
+
 def reference_one(judge, scen):
     user = (f"--- CONTEXT ---\n{scen['context']}\n\n--- TASK ---\n{scen['question']}\n\n"
             "Answer as the ideal homelab operator would: correct, concise, actionable, safe.")
@@ -474,7 +510,7 @@ def main():
             if all((row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done for _, mo in specs):
                 continue
             base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
-            answer = row.get("gen_ai.completion") or ""
+            answer = answer_from_result_row(row)
             if not answer:
                 # run.py suffixes __r{rep} only when repeats>1; try both. This is
                 # legacy fallback only; embedded completions avoid filename
@@ -495,7 +531,7 @@ def main():
                 return (model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, normalize_judgement(
                     {},
                     fallback_score=1,
-                    fallback_verdict="empty",
+                    fallback_verdict="no_answer",
                     fallback_evidence="No answer text was available for judging; the inference row did not produce a completion.",
                     fallback_criteria_missed=["answer was empty or unavailable"],
                 ), None)

@@ -52,16 +52,43 @@ def test_report_flags_reliability_and_strategy():
         ])
         write_jsonl(run_dir / "judged.run-a.jsonl", [
             {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "best_of_3_detcheck", "judge_model": "claude", "score": 5, "evidence": "ok", "criteria_met": [], "criteria_missed": [], "usage": {"tokens_in": 10, "tokens_out": 2, "ai_credits": 1.5}},
-            {"model": "m", "scenario": "s2", "rep": 0, "memory_context": "none", "inference_strategy": "best_of_3_detcheck", "judge_model": "gpt", "score": 1, "verdict": "empty", "criteria_met": [], "criteria_missed": []},
+            {"model": "m", "scenario": "s2", "rep": 0, "memory_context": "none", "inference_strategy": "best_of_3_detcheck", "judge_model": "gpt", "score": 1, "verdict": "empty", "evidence": "No answer text was available for judging; the inference row did not produce a completion.", "criteria_met": [], "criteria_missed": ["answer was empty or unavailable"]},
         ])
         report = mod.summarize_run(run_dir)
     assert report["rows"] == 2
     assert report["dnf"] == 1
     assert report["zero_output_stalls"] == 1
-    assert report["judge_empty"] == 1
+    assert report["judge_empty"] == 0
+    assert report["empty_answer_judgements"] == 1
     assert report["judge_duplicate_tuples"] == 0
     assert report["dnf_by_inference_strategy"][0]["id"] == "best_of_3_detcheck"
     assert report["usage_by_judge"]["claude"]["tokens_in"] == 10
+
+
+def test_report_keeps_actual_empty_judge_as_strict_failure():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-empty-judge"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v0",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 1,
+        }))
+        write_jsonl(run_dir / "_mirror" / "results.run-empty-judge.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "env.memory_context": "none", "env.inference_strategy": "baseline", "gen_ai.response.finish_reasons": ["stop"], "dnf": False},
+        ])
+        write_jsonl(run_dir / "judged.run-empty-judge.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0, "memory_context": "none", "inference_strategy": "baseline", "judge_model": "claude", "score": None, "verdict": "empty", "evidence": "", "criteria_met": [], "criteria_missed": []},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["judge_empty"] == 1
+    assert report["empty_answer_judgements"] == 0
+    assert "empty-judge-rows" in {item["code"] for item in report["strict_failures"]}
 
 
 def test_report_flags_duplicate_judge_tuples():
@@ -213,6 +240,7 @@ def test_report_reads_committed_gz_result_artifacts():
 
 def main() -> None:
     test_report_flags_reliability_and_strategy()
+    test_report_keeps_actual_empty_judge_as_strict_failure()
     test_report_flags_duplicate_judge_tuples()
     test_strict_gate_passes_clean_structural_run()
     test_markdown_output_includes_gate_and_duplicate_examples()

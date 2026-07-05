@@ -162,11 +162,11 @@ export function RunProgress({
                   help="The worst DNF subtype: Ollama accepted the request path but the model returned no answer text before the stall timeout. In plain terms: nothing useful came back."
                 />
                 <ReliabilityChip
-                  label="Judge empty"
+                  label="Judge gaps"
                   value={`${reliability.judge_empty}`}
-                  sub={`${reliability.judge_evidence_missing} evidence gaps`}
+                  sub={`${reliability.empty_answer_judgements ?? 0} no-answer rows · ${reliability.judge_evidence_missing} evidence gaps`}
                   tone={reliability.judge_empty || reliability.judge_evidence_missing ? "text-warn" : "text-good"}
-                  help="Judge calls that could not score a meaningful answer. This often follows DNF/zero-stall rows because there is no model answer for the judge to evaluate."
+                  help="Actual judge-output gaps. No-answer inference rows are counted separately because the judge did not fail; the model produced no answer to grade."
                 />
                 <ReliabilityChip
                   label="Frontier input"

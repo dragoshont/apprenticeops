@@ -76,6 +76,20 @@ def compact_bucket(bucket: dict[str, dict]) -> list[dict]:
     ]
 
 
+def is_deterministic_no_answer_judge(row: dict) -> bool:
+    verdict = str(row.get("verdict") or "")
+    if verdict not in {"empty", "no_answer"} or row.get("score") != 1:
+        return False
+    evidence = str(row.get("evidence") or "")
+    missed = row.get("criteria_missed") or []
+    if not isinstance(missed, list):
+        missed = [str(missed)]
+    return (
+        "No answer text was available" in evidence
+        or "answer was empty or unavailable" in missed
+    )
+
+
 def finalize_usage(entry: dict) -> dict:
     tokens_in = int(entry.get("tokens_in") or 0)
     cache_read = int(entry.get("cache_read") or 0)
@@ -144,7 +158,7 @@ def evaluate_interpretation(report: dict) -> dict:
         ("judge_parse_errors", "judge-parse-errors", "judged JSONL contains parse errors"),
         ("duplicate_result_tuples", "duplicate-result-tuples", "duplicate inference tuples were found"),
         ("judge_duplicate_tuples", "duplicate-judge-tuples", "duplicate judged tuples were found"),
-        ("judge_empty", "empty-judge-rows", "judge produced empty verdict rows"),
+        ("judge_empty", "empty-judge-rows", "judge backend produced empty verdict rows"),
         ("judge_evidence_missing", "judge-evidence-missing", "judge rows are missing evidence"),
         ("judge_criteria_missing", "judge-criteria-missing", "judge rows are missing criteria fields"),
     ):
@@ -249,9 +263,10 @@ def summarize_run(run_dir: Path) -> dict:
         inc_bucket(by_scenario, row.get("scenario"), dnf=is_dnf)
         inc_bucket(by_memory, row.get("env.memory_context") or "none", dnf=is_dnf)
         inc_bucket(by_strategy, row.get("env.inference_strategy") or "baseline", dnf=is_dnf)
+    no_answer_judgements = [row for row in judged if is_deterministic_no_answer_judge(row)]
     judge_missing_evidence = [row for row in judged if not row.get("evidence")]
     judge_missing_criteria = [row for row in judged if "criteria_met" not in row or "criteria_missed" not in row]
-    judge_empty = [row for row in judged if row.get("verdict") == "empty"]
+    judge_empty = [row for row in judged if row.get("verdict") == "empty" and not is_deterministic_no_answer_judge(row)]
     usage_by_judge: dict[str, dict] = defaultdict(lambda: {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cache_read": 0, "cache_write": 0, "ai_credits": 0.0})
     for row in judged:
         usage = row.get("usage") or {}
@@ -302,6 +317,7 @@ def summarize_run(run_dir: Path) -> dict:
         "dnf_by_memory_context": compact_bucket(by_memory),
         "dnf_by_inference_strategy": compact_bucket(by_strategy),
         "judge_empty": len(judge_empty),
+        "empty_answer_judgements": len(no_answer_judgements),
         "judge_evidence_missing": len(judge_missing_evidence),
         "judge_criteria_missing": len(judge_missing_criteria),
         "usage_by_judge": {judge: finalize_usage(dict(usage)) for judge, usage in usage_by_judge.items()},

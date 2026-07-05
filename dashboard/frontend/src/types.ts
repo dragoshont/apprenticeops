@@ -422,6 +422,7 @@ export interface ReliabilityReport {
   zero_output_stalls: number;
   zero_output_stall_rate: number;
   judge_empty: number;
+  empty_answer_judgements?: number;
   judge_evidence_missing: number;
   judge_criteria_missing: number;
   finish_reasons?: Record<string, number>;
