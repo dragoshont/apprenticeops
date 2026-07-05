@@ -118,6 +118,17 @@
       "description": "Three-small-model AI-node-only local-roster smoke for pull/run/delete cycling. Intended for --runner local-roster validation; not canonical thesis scoring."
     },
     {
+      "id": "e2e-pull-5",
+      "label": "E2E pull/delete validation - 5 models",
+      "path": "data/models.e2e-pull-5.txt",
+      "kind": "validation",
+      "runtime": "ollama",
+      "run_repeats": 1,
+      "run_temp": 0.7,
+      "run_allow_unlocked": true,
+      "description": "Five-model full e2e validation of pull -> infer -> judge -> persist -> rm-after. Keep granite4:tiny-h prepared; the remaining models should be transient when the AI cache is cleared before launch."
+    },
+    {
       "id": "spread10",
       "label": "Spread 10 - 2 per bracket",
       "path": "data/models.spread10.txt",

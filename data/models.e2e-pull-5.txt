@@ -1,0 +1,9 @@
+# Full e2e pull/delete validation set.
+# Purpose: start with an empty-ish AI cache except the prepared agent model, pull missing models,
+# run/judge/persist, and delete only models pulled by this run.
+# Keep granite4:tiny-h prepared on disk; the other four should be transient.
+granite4:tiny-h
+smollm2:135m
+qwen2.5:0.5b
+qwen2.5:1.5b
+granite4:micro
