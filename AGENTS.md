@@ -180,7 +180,7 @@ When verifying the dashboard in a browser — screenshots or the Playwright MCP 
 **Microsoft Edge** (`--browser msedge`), **not Chrome** (Chrome isn't installed on this
 Mac). The Playwright MCP is pinned to Edge in `sideport/.vscode/mcp.json`. The dev
 backend serves the built UI at `http://127.0.0.1:8770` (`uvicorn app:app` from
-`dashboard/backend`); the durable copy is `https://ceops.home.domain`.
+`dashboard/backend`); the durable copy is `https://ceops.hont.ro`.
 
 ## Gotchas (learned the hard way — do not relearn them)
 

@@ -104,6 +104,36 @@ export default function App() {
       ? "The newest completed, stopped, or canceled run."
       : "A historical run selected from Run History below.";
   const runDetailLabel = viewingActive ? "Current Run" : "Run Detail";
+  const currentRunSection = hasRun ? (
+    <CurrentRunSection
+      title={runViewTitle}
+      description={runViewDescription}
+      state={state}
+      live={live}
+      displayBatch={displayBatch}
+      selectedRunId={status?.run_id ?? null}
+      selectedRunInBatch={selectedRunInBatch}
+      batchNotice={batchNotice}
+      selectedScope={selectedScope}
+      analyticsScope={analyticsScope}
+      persistence={status?.persistence}
+      user={status?.user ?? selected?.user ?? "user"}
+      progress={status?.progress}
+      reliability={status?.reliability ?? null}
+      inputSelection={selectedInputSelection}
+      consumer={status?.consumer}
+      producerAlive={status?.producer?.run_py_alive ?? false}
+      models={models}
+      modelProgress={modelProgress}
+      nodes={status?.nodes}
+      summary={status?.summary}
+      pareto={status?.pareto ?? []}
+      scores={status?.scores}
+      backToLatestRunId={!viewingLatest ? latestSession?.run_id ?? null : null}
+      onBackToLatest={refresh}
+      onSelectRun={refresh}
+    />
+  ) : null;
 
   useEffect(() => {
     if (!selectedRunId) {
@@ -225,6 +255,8 @@ export default function App() {
         <div className="py-24 text-center text-sm text-faint">Connecting to home…</div>
       ) : (
         <div className="space-y-4">
+          {viewingActive && currentRunSection}
+
           <section id="start" className="scroll-mt-24">
             <RunControlCenter
               runMatrix={runMatrix}
@@ -235,36 +267,7 @@ export default function App() {
             />
           </section>
 
-          {hasRun && (
-            <CurrentRunSection
-              title={runViewTitle}
-              description={runViewDescription}
-              state={state}
-              live={live}
-              displayBatch={displayBatch}
-              selectedRunId={status?.run_id ?? null}
-              selectedRunInBatch={selectedRunInBatch}
-              batchNotice={batchNotice}
-              selectedScope={selectedScope}
-              analyticsScope={analyticsScope}
-              persistence={status?.persistence}
-              user={status?.user ?? selected?.user ?? "user"}
-              progress={status?.progress}
-              reliability={status?.reliability ?? null}
-              inputSelection={selectedInputSelection}
-              consumer={status?.consumer}
-              producerAlive={status?.producer?.run_py_alive ?? false}
-              models={models}
-              modelProgress={modelProgress}
-              nodes={status?.nodes}
-              summary={status?.summary}
-              pareto={status?.pareto ?? []}
-              scores={status?.scores}
-              backToLatestRunId={!viewingLatest ? latestSession?.run_id ?? null : null}
-              onBackToLatest={refresh}
-              onSelectRun={refresh}
-            />
-          )}
+          {!viewingActive && currentRunSection}
 
           <RunLibrary
             sessions={visibleSessions}

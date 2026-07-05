@@ -203,7 +203,7 @@ export function RunControlCenter({
       <div className="space-y-4">
         {runLocked && (
           <div className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
-            A run is already active. This panel only prepares the next launch; use the Current Run controls below to pause or cancel the active job.
+            A run is already active. This panel only prepares the next launch; use the Current Run controls to pause or cancel the active job.
           </div>
         )}
 
@@ -321,7 +321,7 @@ export function RunControlCenter({
           <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
             {runLocked && (
               <span className="rounded bg-panel px-2 py-1 text-[11px] text-muted">
-                Run already active - use Current Run controls below.
+                Run already active - use Current Run controls.
               </span>
             )}
             {runtimeMismatch && <span className="rounded bg-bad/10 px-2 py-1 text-[11px] text-bad">Model set requires {requiredRuntime}</span>}

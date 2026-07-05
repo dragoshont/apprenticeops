@@ -107,7 +107,7 @@ Two terminals. The backend SSHes to home via your `homelab` alias.
 cd dashboard/backend
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-HOME_SSH=homelab AI_SSH=home-ai.home.domain REPO_DIR='~/apprenticeops' \
+HOME_SSH=homelab AI_SSH=home-ai.hont.ro REPO_DIR='~/apprenticeops' \
   python -m uvicorn app:app --reload --port 8770
 
 # 2) frontend (proxies /api + /ws to :8770)

@@ -19,7 +19,7 @@ maintain giant field tables in README-like docs.
 
 ```mermaid
 flowchart TD
-    subgraph node["home-ai.home.domain — quiet CPU node (i5-8350U, 23 GiB)"]
+    subgraph node["home-ai.hont.ro — quiet CPU node (i5-8350U, 23 GiB)"]
         sc[scenarios.json<br/>19 real-incident tasks] --> rc
         rc["run.py · run_chat()<br/>Ollama /api/chat (localhost)"]
         rc -- token stream --> gen["gen_ai.* telemetry<br/>TTFT · tok/s · jitter · think/answer split"]
