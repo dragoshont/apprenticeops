@@ -17,3 +17,5 @@
 {"model":"*","stage":"judge","ts":1783211742,"ok":1,"detail":"judged 38->44"}
 {"model":"*","stage":"judge","ts":1783211789,"ok":1,"detail":"judged 44->46"}
 {"model":"*","stage":"judge","ts":1783211835,"ok":1,"detail":"judged 46->54"}
+{"model":"granite4:tiny-h","stage":"persist","ts":1783211837,"ok":1,"detail":"9c46324"}
+{"model":"*","stage":"judge","ts":1783211880,"ok":1,"detail":"judged 54->60"}
