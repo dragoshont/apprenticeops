@@ -353,3 +353,7 @@
 {"model":"*","stage":"judge","ts":1783280271,"ok":1,"detail":"judged 994->996"}
 {"model":"*","stage":"judge","ts":1783280309,"ok":1,"detail":"judged 996->998"}
 {"model":"*","stage":"judge","ts":1783280377,"ok":1,"detail":"judged 998->1000"}
+{"model":"qwen2.5:3b-instruct-q4_K_M","stage":"persist","ts":1783280379,"ok":0,"detail":"push failed"}
+{"model":"*","stage":"judge","ts":1783280474,"ok":1,"detail":"judged 1000->1032"}
+{"model":"*","stage":"judge","ts":1783280622,"ok":1,"detail":"judged 1032->1090"}
+{"model":"*","stage":"judge","ts":1783280889,"ok":1,"detail":"judged 1090->1200"}
