@@ -3064,3 +3064,10 @@
 {"model":"*","stage":"judge","ts":1783441760,"ok":1,"detail":"judged 10397->10399"}
 {"model":"*","stage":"judge","ts":1783441808,"ok":1,"detail":"judged 10399->10401"}
 {"model":"*","stage":"judge","ts":1783441868,"ok":1,"detail":"judged 10401->10403"}
+{"model":"qwen2.5:1.5b-instruct-q8_0","stage":"persist","ts":1783441882,"ok":1,"detail":"a77eff2"}
+{"model":"*","stage":"judge","ts":1783441968,"ok":1,"detail":"judged 10403->10427"}
+{"model":"*","stage":"judge","ts":1783442058,"ok":1,"detail":"judged 10427->10449"}
+{"model":"*","stage":"judge","ts":1783442143,"ok":1,"detail":"judged 10449->10473"}
+{"model":"*","stage":"judge","ts":1783442356,"ok":1,"detail":"judged 10473->10505"}
+{"model":"*","stage":"judge","ts":1783442576,"ok":1,"detail":"judged 10505->10587"}
+{"model":"*","stage":"judge","ts":1783442671,"ok":1,"detail":"judged 10587->10609"}
