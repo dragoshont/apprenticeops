@@ -229,6 +229,7 @@ export interface Producer {
   run_py_alive: boolean;
   done_models: string[];
   driver_tail: string[];
+  latest_result?: { model?: string | null; scenario?: string | null; rep?: number | string | null; finish?: string | null } | null;
 }
 
 export interface LedgerEvent {

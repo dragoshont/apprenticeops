@@ -339,10 +339,29 @@ def producer_state(run_id):
     wd = os.path.join(RUNS, run_id)
     mres = os.path.join(wd, "_mirror", f"results.{run_id}.jsonl")
     rows = 0
+    latest_result = None
     if os.path.exists(mres):
         try:
             with open(mres, errors="ignore") as f:
-                rows = sum(1 for ln in f if ln.strip())
+                for ln in f:
+                    if not ln.strip():
+                        continue
+                    rows += 1
+                    try:
+                        row = json.loads(ln)
+                    except json.JSONDecodeError:
+                        continue
+                    reasons = row.get("gen_ai.response.finish_reasons")
+                    if isinstance(reasons, list) and reasons:
+                        finish = reasons[0]
+                    else:
+                        finish = reasons or row.get("finish_reason")
+                    latest_result = {
+                        "model": row.get("model"),
+                        "scenario": row.get("scenario"),
+                        "rep": row.get("rep"),
+                        "finish": finish,
+                    }
         except OSError:
             rows = 0
     done_models = [d.get("model") for d in
@@ -373,7 +392,8 @@ def producer_state(run_id):
             driver_text = ""
     driver = [l for l in driver_text.splitlines() if l]
     return {"rows": rows, "models_emitted": len(done_models),
-            "run_py_alive": alive, "done_models": done_models, "driver_tail": driver}
+            "run_py_alive": alive, "done_models": done_models,
+            "driver_tail": driver, "latest_result": latest_result}
 
 
 def consumer_state(run_id):

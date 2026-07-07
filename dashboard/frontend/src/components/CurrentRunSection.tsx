@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { AlertTriangle, Loader2, Pause, RotateCw, Square, Terminal } from "lucide-react";
+import { AlertTriangle, CheckCircle2, GitBranch, Loader2, Pause, RotateCw, Server, Square, Terminal } from "lucide-react";
 import { control } from "../api";
-import type { AnalyticsScope, Consumer, ModelProgress, ModelStage, PersistenceStatus, Progress, ReliabilityReport, RunBatch, RunBatchItem, RunSummary, Scores, SelectedScope, NodeInfo, ParetoPoint } from "../types";
+import type { AnalyticsScope, Consumer, ModelProgress, ModelStage, PersistenceStatus, Producer, Progress, ReliabilityReport, RunBatch, RunBatchItem, RunSummary, Scores, SelectedScope, NodeInfo, ParetoPoint } from "../types";
 import { ActivityFeed, SkipsFeed } from "./Feed";
 import { ClassQuality, ParetoLeaderboard, PowerLeaderboard, QualityLeaderboard, RunSummaryCard, ScoreDistribution } from "./Charts";
 import { InputInspector } from "./InputInspector";
@@ -29,6 +29,7 @@ export function CurrentRunSection({
   reliability,
   inputSelection,
   consumer,
+  producer,
   producerAlive,
   models,
   modelProgress,
@@ -56,6 +57,7 @@ export function CurrentRunSection({
   reliability?: ReliabilityReport | null;
   inputSelection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string; inferenceRuntime?: string };
   consumer?: Consumer;
+  producer?: Producer;
   producerAlive: boolean;
   models: ModelStage[];
   modelProgress: ModelProgress[];
@@ -176,6 +178,16 @@ export function CurrentRunSection({
 
       <ScopeHeader scope={selectedScope} analyticsScope={analyticsScope} persistence={persistence} user={user} selectedRunStatus={state} selectedBatchRun={selectedRunInBatch} batchNotice={batchNotice} />
 
+      <RunAtAGlance
+        state={state}
+        progress={progress}
+        persistence={persistence}
+        reliability={reliability ?? null}
+        producer={producer}
+        producerAlive={producerAlive}
+        consumer={consumer}
+      />
+
       <RunProgress progress={progress} live={live} scope={analyticsScope} persistence={persistence} batchNotice={batchNotice} reliability={reliability ?? null} />
 
       <InputInspector selection={inputSelection} title={`${title} inputs`} />
@@ -231,6 +243,137 @@ export function CurrentRunSection({
       )}
     </section>
   );
+}
+
+function RunAtAGlance({
+  state,
+  progress,
+  persistence,
+  reliability,
+  producer,
+  producerAlive,
+  consumer,
+}: {
+  state: string;
+  progress?: Progress;
+  persistence?: PersistenceStatus;
+  reliability?: ReliabilityReport | null;
+  producer?: Producer;
+  producerAlive: boolean;
+  consumer?: Consumer;
+}) {
+  const latest = producer?.latest_result;
+  const gitHealthy = (persistence?.push_pending_count ?? 0) === 0;
+  return (
+    <div className="card card-pad space-y-4 border-accent/20 bg-panel/70">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="label flex items-center gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-good" /> Run at a glance
+          </div>
+          <div className="mt-1 text-xs text-muted">
+            Live operational truth for this run: work done, reliability, process health, and latest answer row.
+          </div>
+        </div>
+        <StatePill state={state} size="sm" />
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <GlanceItem label="Progress" value={formatPct(progress?.pct)} sub="inference + judging work" />
+        <GlanceItem label="Inference" value={formatRatio(progress?.inf_done, progress?.inf_total)} sub="AI answer rows" />
+        <GlanceItem label="Judging" value={formatRatio(progress?.judge_done, progress?.judge_total)} sub="frontier judge rows" />
+        <GlanceItem label="Models persisted" value={formatRatio(persistence?.committed_count, persistence?.committed_total)} sub="committed and pushed" />
+        <GlanceItem label="Push pending" value={formatCount(persistence?.push_pending_count)} sub={gitHealthy ? "Git persistence healthy" : "waiting on git push"} tone={gitHealthy ? "text-good" : "text-warn"} />
+        <GlanceItem label="ETA" value={progress?.eta_human ? `about ${progress.eta_human}` : "calculating"} sub="current run-rate estimate" />
+        <GlanceItem label="Rate" value={progress?.rate_per_min != null ? `${progress.rate_per_min} units/min` : "—"} sub="recent throughput" />
+        <GlanceItem label="State" value={state || "unknown"} sub="pipeline state" tone={state === "running" ? "text-good" : "text-muted"} />
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr_1.2fr]">
+        <div className="rounded-xl border border-line/60 bg-panel/50 p-3">
+          <div className="label mb-2">Reliability so far</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+            <InlineMetric label="DNF" value={formatCount(reliability?.dnf)} tone={reliability?.dnf ? "text-warn" : "text-good"} />
+            <InlineMetric label="Length" value={formatCount(reliability?.length)} tone={reliability?.length ? "text-warn" : "text-good"} />
+            <InlineMetric label="Zero stalls" value={formatCount(reliability?.zero_output_stalls)} tone={reliability?.zero_output_stalls ? "text-bad" : "text-good"} />
+            <InlineMetric label="Judge empty" value={formatCount(reliability?.judge_empty)} tone={reliability?.judge_empty ? "text-bad" : "text-good"} />
+            <InlineMetric label="No-answer judgements" value={formatCount(reliability?.empty_answer_judgements)} tone={reliability?.empty_answer_judgements ? "text-warn" : "text-good"} />
+            <InlineMetric label="Judge parse failures" value={formatCount(reliability?.judge_response_parse_failures)} tone={reliability?.judge_response_parse_failures ? "text-bad" : "text-good"} />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-line/60 bg-panel/50 p-3">
+          <div className="label mb-2">Both sides</div>
+          <div className="space-y-2 text-xs">
+            <ProcessLine icon={<Server className="h-3.5 w-3.5" />} label="AI producer" detail="run-roster.sh + run.py" alive={producerAlive} />
+            <ProcessLine icon={<GitBranch className="h-3.5 w-3.5" />} label="Home consumer" detail="judge-scheduler.sh" alive={consumer?.alive ?? false} />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-line/60 bg-panel/50 p-3">
+          <div className="label mb-2">Latest row</div>
+          {latest ? (
+            <div className="grid gap-2 text-xs sm:grid-cols-2">
+              <InlineMetric label="Model" value={latest.model || "—"} wide />
+              <InlineMetric label="Scenario" value={latest.scenario || "—"} wide />
+              <InlineMetric label="Repeat" value={latest.rep == null ? "—" : String(latest.rep)} />
+              <InlineMetric label="Finish" value={latest.finish || "—"} tone={latest.finish === "stop" ? "text-good" : "text-warn"} />
+            </div>
+          ) : (
+            <div className="text-xs text-faint">Waiting for the first mirrored answer row.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GlanceItem({ label, value, sub, tone = "text-fg" }: { label: string; value: string; sub: string; tone?: string }) {
+  return (
+    <div className="rounded-xl border border-line/60 bg-panel/50 px-3 py-2.5">
+      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">{label}</div>
+      <div className={`mt-1 font-mono text-base font-semibold tabular-nums ${tone}`}>{value}</div>
+      <div className="mt-0.5 truncate text-[10px] text-muted" title={sub}>{sub}</div>
+    </div>
+  );
+}
+
+function InlineMetric({ label, value, tone = "text-fg", wide = false }: { label: string; value: string; tone?: string; wide?: boolean }) {
+  return (
+    <div className={wide ? "sm:col-span-2" : undefined}>
+      <div className="text-[10px] uppercase tracking-[0.12em] text-faint">{label}</div>
+      <div className={`mt-0.5 truncate font-mono text-xs font-semibold ${tone}`} title={value}>{value}</div>
+    </div>
+  );
+}
+
+function ProcessLine({ icon, label, detail, alive }: { icon: React.ReactNode; label: string; detail: string; alive: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-lg border border-line/50 bg-bg/30 px-2.5 py-2">
+      <div className="flex min-w-0 gap-2">
+        <span className={alive ? "text-good" : "text-warn"}>{icon}</span>
+        <div className="min-w-0">
+          <div className="font-medium text-fg">{label}</div>
+          <div className="truncate font-mono text-[10px] text-faint" title={detail}>{detail}</div>
+        </div>
+      </div>
+      <span className={`shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] ${alive ? "text-good" : "text-warn"}`}>
+        {alive ? "alive" : "down"}
+      </span>
+    </div>
+  );
+}
+
+function formatRatio(done?: number, total?: number) {
+  return `${formatCount(done)} / ${formatCount(total)}`;
+}
+
+function formatCount(value?: number | null) {
+  return value == null ? "—" : value.toLocaleString();
+}
+
+function formatPct(value?: number | null) {
+  return value == null ? "—" : `${value.toFixed(value >= 10 ? 1 : 2)}%`;
 }
 
 function ConfirmDialog({

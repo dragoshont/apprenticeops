@@ -122,6 +122,7 @@ export default function App() {
       reliability={status?.reliability ?? null}
       inputSelection={selectedInputSelection}
       consumer={status?.consumer}
+      producer={status?.producer}
       producerAlive={status?.producer?.run_py_alive ?? false}
       models={models}
       modelProgress={modelProgress}
