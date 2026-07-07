@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from functools import lru_cache
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS = os.path.join(REPO, "data", "runs")
@@ -300,7 +301,8 @@ def _tail(path, n=40):
         return []
 
 
-def _read_jsonl(path, limit=None):
+@lru_cache(maxsize=64)
+def _read_jsonl_all(path):
     rows = []
     try:
         with open(path, errors="ignore") as f:
@@ -314,6 +316,11 @@ def _read_jsonl(path, limit=None):
                     continue
     except OSError:
         return []
+    return rows
+
+
+def _read_jsonl(path, limit=None):
+    rows = _read_jsonl_all(path)
     return rows[-limit:] if limit else rows
 
 
