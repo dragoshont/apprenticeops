@@ -2995,3 +2995,10 @@
 {"model":"*","stage":"judge","ts":1783437963,"ok":1,"detail":"judged 9991->9995"}
 {"model":"*","stage":"judge","ts":1783438014,"ok":1,"detail":"judged 9995->10001"}
 {"model":"*","stage":"judge","ts":1783438063,"ok":1,"detail":"judged 10001->10007"}
+{"model":"gemma4:e2b-it-qat","stage":"persist","ts":1783438075,"ok":1,"detail":"78fc01c"}
+{"model":"*","stage":"judge","ts":1783438157,"ok":1,"detail":"judged 10007->10031"}
+{"model":"*","stage":"judge","ts":1783438251,"ok":1,"detail":"judged 10031->10061"}
+{"model":"*","stage":"judge","ts":1783438374,"ok":1,"detail":"judged 10061->10103"}
+{"model":"*","stage":"judge","ts":1783438522,"ok":1,"detail":"judged 10103->10155"}
+{"model":"*","stage":"judge","ts":1783438642,"ok":1,"detail":"judged 10155->10191"}
+{"model":"*","stage":"judge","ts":1783438706,"ok":1,"detail":"judged 10191->10203"}
