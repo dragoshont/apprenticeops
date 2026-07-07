@@ -2334,3 +2334,25 @@
 {"model":"*","stage":"judge","ts":1783398481,"ok":1,"detail":"judged 7397->7399"}
 {"model":"*","stage":"judge","ts":1783398531,"ok":1,"detail":"judged 7399->7401"}
 {"model":"*","stage":"judge","ts":1783398602,"ok":1,"detail":"judged 7401->7403"}
+{"model":"mistral:7b-instruct-q4_K_M","stage":"persist","ts":1783398612,"ok":1,"detail":"2c01370"}
+{"model":"*","stage":"judge","ts":1783398675,"ok":1,"detail":"judged 7403->7413"}
+{"model":"*","stage":"judge","ts":1783398749,"ok":1,"detail":"judged 7413->7429"}
+{"model":"*","stage":"judge","ts":1783398805,"ok":1,"detail":"judged 7429->7437"}
+{"model":"*","stage":"judge","ts":1783398859,"ok":1,"detail":"judged 7437->7445"}
+{"model":"*","stage":"judge","ts":1783398933,"ok":1,"detail":"judged 7445->7455"}
+{"model":"*","stage":"judge","ts":1783398999,"ok":1,"detail":"judged 7455->7465"}
+{"model":"*","stage":"judge","ts":1783399057,"ok":1,"detail":"judged 7465->7471"}
+{"model":"*","stage":"judge","ts":1783399125,"ok":1,"detail":"judged 7471->7483"}
+{"model":"*","stage":"judge","ts":1783399180,"ok":1,"detail":"judged 7483->7489"}
+{"model":"*","stage":"judge","ts":1783399232,"ok":1,"detail":"judged 7489->7495"}
+{"model":"*","stage":"judge","ts":1783399282,"ok":1,"detail":"judged 7495->7503"}
+{"model":"*","stage":"judge","ts":1783399331,"ok":1,"detail":"judged 7503->7513"}
+{"model":"*","stage":"judge","ts":1783399393,"ok":1,"detail":"judged 7513->7523"}
+{"model":"*","stage":"judge","ts":1783399466,"ok":1,"detail":"judged 7523->7541"}
+{"model":"*","stage":"judge","ts":1783399538,"ok":1,"detail":"judged 7541->7553"}
+{"model":"*","stage":"judge","ts":1783399606,"ok":1,"detail":"judged 7553->7563"}
+{"model":"*","stage":"judge","ts":1783399674,"ok":1,"detail":"judged 7563->7575"}
+{"model":"*","stage":"judge","ts":1783399725,"ok":1,"detail":"judged 7575->7583"}
+{"model":"*","stage":"judge","ts":1783399786,"ok":1,"detail":"judged 7583->7589"}
+{"model":"*","stage":"judge","ts":1783399843,"ok":1,"detail":"judged 7589->7597"}
+{"model":"*","stage":"judge","ts":1783399897,"ok":1,"detail":"judged 7597->7603"}
