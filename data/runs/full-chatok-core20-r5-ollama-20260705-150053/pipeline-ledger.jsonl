@@ -2908,3 +2908,19 @@
 {"model":"*","stage":"judge","ts":1783433171,"ok":1,"detail":"judged 9397->9399"}
 {"model":"*","stage":"judge","ts":1783433222,"ok":1,"detail":"judged 9399->9401"}
 {"model":"*","stage":"judge","ts":1783433267,"ok":1,"detail":"judged 9401->9403"}
+{"model":"granite4:tiny-h","stage":"persist","ts":1783433278,"ok":1,"detail":"d7d3756"}
+{"model":"*","stage":"judge","ts":1783433345,"ok":1,"detail":"judged 9403->9419"}
+{"model":"*","stage":"judge","ts":1783433421,"ok":1,"detail":"judged 9419->9431"}
+{"model":"*","stage":"judge","ts":1783433493,"ok":1,"detail":"judged 9431->9447"}
+{"model":"*","stage":"judge","ts":1783433567,"ok":1,"detail":"judged 9447->9461"}
+{"model":"*","stage":"judge","ts":1783433622,"ok":1,"detail":"judged 9461->9469"}
+{"model":"*","stage":"judge","ts":1783433678,"ok":1,"detail":"judged 9469->9473"}
+{"model":"*","stage":"judge","ts":1783433744,"ok":1,"detail":"judged 9473->9485"}
+{"model":"*","stage":"judge","ts":1783433814,"ok":1,"detail":"judged 9485->9497"}
+{"model":"*","stage":"judge","ts":1783433878,"ok":1,"detail":"judged 9497->9513"}
+{"model":"*","stage":"judge","ts":1783433958,"ok":1,"detail":"judged 9513->9527"}
+{"model":"*","stage":"judge","ts":1783434051,"ok":1,"detail":"judged 9527->9551"}
+{"model":"*","stage":"judge","ts":1783434143,"ok":1,"detail":"judged 9551->9573"}
+{"model":"*","stage":"judge","ts":1783434212,"ok":1,"detail":"judged 9573->9587"}
+{"model":"*","stage":"judge","ts":1783434276,"ok":1,"detail":"judged 9587->9597"}
+{"model":"*","stage":"judge","ts":1783434329,"ok":1,"detail":"judged 9597->9603"}
