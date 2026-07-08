@@ -4346,3 +4346,12 @@
 {"model":"*","stage":"judge","ts":1783529793,"ok":1,"detail":"judged 15789->15795"}
 {"model":"*","stage":"judge","ts":1783529851,"ok":1,"detail":"judged 15795->15799"}
 {"model":"*","stage":"judge","ts":1783529913,"ok":1,"detail":"judged 15799->15805"}
+{"model":"yi-coder:1.5b","stage":"persist","ts":1783529934,"ok":1,"detail":"93d1780"}
+{"model":"*","stage":"judge","ts":1783530023,"ok":1,"detail":"judged 15805->15823"}
+{"model":"*","stage":"judge","ts":1783530143,"ok":1,"detail":"judged 15823->15851"}
+{"model":"*","stage":"judge","ts":1783530223,"ok":1,"detail":"judged 15851->15863"}
+{"model":"*","stage":"judge","ts":1783530329,"ok":1,"detail":"judged 15863->15873"}
+{"model":"*","stage":"judge","ts":1783530431,"ok":1,"detail":"judged 15873->15895"}
+{"model":"*","stage":"judge","ts":1783530600,"ok":1,"detail":"judged 15895->15943"}
+{"model":"*","stage":"judge","ts":1783530768,"ok":1,"detail":"judged 15943->15991"}
+{"model":"*","stage":"judge","ts":1783530864,"ok":1,"detail":"judged 15991->16007"}
