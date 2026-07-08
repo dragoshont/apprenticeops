@@ -3799,3 +3799,25 @@
 {"model":"*","stage":"judge","ts":1783489317,"ok":1,"detail":"judged 13325->13357"}
 {"model":"*","stage":"judge","ts":1783489415,"ok":1,"detail":"judged 13357->13383"}
 {"model":"*","stage":"judge","ts":1783489502,"ok":1,"detail":"judged 13383->13403"}
+{"model":"hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783489517,"ok":1,"detail":"a71f5f5"}
+{"model":"*","stage":"judge","ts":1783489574,"ok":1,"detail":"judged 13403->13417"}
+{"model":"*","stage":"judge","ts":1783489635,"ok":1,"detail":"judged 13417->13429"}
+{"model":"*","stage":"judge","ts":1783489690,"ok":1,"detail":"judged 13429->13439"}
+{"model":"*","stage":"judge","ts":1783489743,"ok":1,"detail":"judged 13439->13451"}
+{"model":"*","stage":"judge","ts":1783489792,"ok":1,"detail":"judged 13451->13457"}
+{"model":"*","stage":"judge","ts":1783489843,"ok":1,"detail":"judged 13457->13463"}
+{"model":"*","stage":"judge","ts":1783489888,"ok":1,"detail":"judged 13463->13471"}
+{"model":"*","stage":"judge","ts":1783489928,"ok":1,"detail":"judged 13471->13477"}
+{"model":"*","stage":"judge","ts":1783489984,"ok":1,"detail":"judged 13477->13487"}
+{"model":"*","stage":"judge","ts":1783490049,"ok":1,"detail":"judged 13487->13503"}
+{"model":"*","stage":"judge","ts":1783490118,"ok":1,"detail":"judged 13503->13513"}
+{"model":"*","stage":"judge","ts":1783490182,"ok":1,"detail":"judged 13513->13525"}
+{"model":"*","stage":"judge","ts":1783490256,"ok":1,"detail":"judged 13525->13545"}
+{"model":"*","stage":"judge","ts":1783490325,"ok":1,"detail":"judged 13545->13557"}
+{"model":"*","stage":"judge","ts":1783490386,"ok":1,"detail":"judged 13557->13567"}
+{"model":"*","stage":"judge","ts":1783490436,"ok":1,"detail":"judged 13567->13573"}
+{"model":"*","stage":"judge","ts":1783490479,"ok":1,"detail":"judged 13573->13581"}
+{"model":"*","stage":"judge","ts":1783490527,"ok":1,"detail":"judged 13581->13587"}
+{"model":"*","stage":"judge","ts":1783490570,"ok":1,"detail":"judged 13587->13591"}
+{"model":"*","stage":"judge","ts":1783490615,"ok":1,"detail":"judged 13591->13599"}
+{"model":"*","stage":"judge","ts":1783490670,"ok":1,"detail":"judged 13599->13603"}
