@@ -3984,3 +3984,8 @@
 {"model":"*","stage":"judge","ts":1783499759,"ok":1,"detail":"judged 13997->13999"}
 {"model":"*","stage":"judge","ts":1783499811,"ok":1,"detail":"judged 13999->14001"}
 {"model":"*","stage":"judge","ts":1783499900,"ok":1,"detail":"judged 14001->14003"}
+{"model":"hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M","stage":"persist","ts":1783499916,"ok":1,"detail":"7543e21"}
+{"model":"*","stage":"judge","ts":1783500012,"ok":1,"detail":"judged 14003->14031"}
+{"model":"*","stage":"judge","ts":1783500129,"ok":1,"detail":"judged 14031->14069"}
+{"model":"*","stage":"judge","ts":1783500365,"ok":1,"detail":"judged 14069->14155"}
+{"model":"*","stage":"judge","ts":1783500521,"ok":1,"detail":"judged 14155->14205"}
