@@ -4186,3 +4186,8 @@
 {"model":"*","stage":"judge","ts":1783520723,"ok":1,"detail":"judged 14795->14799"}
 {"model":"*","stage":"judge","ts":1783520776,"ok":1,"detail":"judged 14799->14801"}
 {"model":"*","stage":"judge","ts":1783520853,"ok":1,"detail":"judged 14801->14819"}
+{"model":"qwen3:1.7b-fp16","stage":"persist","ts":1783520871,"ok":1,"detail":"be5cdb5"}
+{"model":"*","stage":"judge","ts":1783520987,"ok":1,"detail":"judged 14819->14857"}
+{"model":"*","stage":"judge","ts":1783521141,"ok":1,"detail":"judged 14857->14907"}
+{"model":"*","stage":"judge","ts":1783521335,"ok":1,"detail":"judged 14907->14981"}
+{"model":"*","stage":"judge","ts":1783521444,"ok":1,"detail":"judged 14981->15013"}
