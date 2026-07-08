@@ -3505,3 +3505,12 @@
 {"model":"*","stage":"judge","ts":1783471272,"ok":1,"detail":"judged 12197->12199"}
 {"model":"*","stage":"judge","ts":1783471404,"ok":1,"detail":"judged 12199->12201"}
 {"model":"*","stage":"judge","ts":1783471549,"ok":1,"detail":"judged 12201->12203"}
+{"model":"internlm2:7b","stage":"persist","ts":1783471563,"ok":1,"detail":"1ebcdc6"}
+{"model":"*","stage":"judge","ts":1783471630,"ok":1,"detail":"judged 12203->12217"}
+{"model":"*","stage":"judge","ts":1783471736,"ok":1,"detail":"judged 12217->12247"}
+{"model":"*","stage":"judge","ts":1783471836,"ok":1,"detail":"judged 12247->12267"}
+{"model":"*","stage":"judge","ts":1783471927,"ok":1,"detail":"judged 12267->12291"}
+{"model":"*","stage":"judge","ts":1783472045,"ok":1,"detail":"judged 12291->12327"}
+{"model":"*","stage":"judge","ts":1783472164,"ok":1,"detail":"judged 12327->12363"}
+{"model":"*","stage":"judge","ts":1783472292,"ok":1,"detail":"judged 12363->12393"}
+{"model":"*","stage":"judge","ts":1783472360,"ok":1,"detail":"judged 12393->12407"}
