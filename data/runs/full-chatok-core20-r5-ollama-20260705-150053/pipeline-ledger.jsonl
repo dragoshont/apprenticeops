@@ -5310,3 +5310,15 @@
 {"model":"*","stage":"judge","ts":1783589679,"ok":1,"detail":"judged 18995->18997"}
 {"model":"*","stage":"judge","ts":1783589750,"ok":1,"detail":"judged 18997->19001"}
 {"model":"*","stage":"judge","ts":1783589810,"ok":1,"detail":"judged 19001->19005"}
+{"model":"qwen2.5:1.5b-instruct-q4_K_M","stage":"persist","ts":1783589831,"ok":1,"detail":"d71a285"}
+{"model":"*","stage":"judge","ts":1783589920,"ok":1,"detail":"judged 19005->19023"}
+{"model":"*","stage":"judge","ts":1783590005,"ok":1,"detail":"judged 19023->19041"}
+{"model":"*","stage":"judge","ts":1783590094,"ok":1,"detail":"judged 19041->19059"}
+{"model":"*","stage":"judge","ts":1783590167,"ok":1,"detail":"judged 19059->19073"}
+{"model":"*","stage":"judge","ts":1783590251,"ok":1,"detail":"judged 19073->19089"}
+{"model":"*","stage":"judge","ts":1783590336,"ok":1,"detail":"judged 19089->19109"}
+{"model":"*","stage":"judge","ts":1783590429,"ok":1,"detail":"judged 19109->19131"}
+{"model":"*","stage":"judge","ts":1783590535,"ok":1,"detail":"judged 19131->19159"}
+{"model":"*","stage":"judge","ts":1783590641,"ok":1,"detail":"judged 19159->19185"}
+{"model":"*","stage":"judge","ts":1783590727,"ok":1,"detail":"judged 19185->19201"}
+{"model":"*","stage":"judge","ts":1783590781,"ok":1,"detail":"judged 19201->19203"}
