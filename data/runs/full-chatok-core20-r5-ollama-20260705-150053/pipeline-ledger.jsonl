@@ -5545,3 +5545,7 @@
 {"model":"*","stage":"judge","ts":1783606328,"ok":1,"detail":"judged 19877->19921"}
 {"model":"*","stage":"judge","ts":1783606506,"ok":1,"detail":"judged 19921->19977"}
 {"model":"*","stage":"judge","ts":1783606672,"ok":1,"detail":"judged 19977->20027"}
+{"model":"granite4:350m","stage":"persist","ts":1783606694,"ok":1,"detail":"df1eb53"}
+{"model":"*","stage":"judge","ts":1783606833,"ok":1,"detail":"judged 20027->20069"}
+{"model":"*","stage":"judge","ts":1783607004,"ok":1,"detail":"judged 20069->20125"}
+{"model":"*","stage":"judge","ts":1783607245,"ok":1,"detail":"judged 20125->20203"}
