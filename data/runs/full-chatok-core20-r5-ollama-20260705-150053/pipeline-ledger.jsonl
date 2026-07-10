@@ -6869,3 +6869,15 @@
 {"model":"*","stage":"judge","ts":1783704061,"ok":1,"detail":"judged 24326->24366"}
 {"model":"*","stage":"judge","ts":1783704194,"ok":1,"detail":"judged 24366->24398"}
 {"model":"*","stage":"judge","ts":1783704321,"ok":1,"detail":"judged 24398->24426"}
+{"model":"hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M","stage":"persist","ts":1783704348,"ok":1,"detail":"c169eab"}
+{"model":"*","stage":"judge","ts":1783704471,"ok":1,"detail":"judged 24426->24460"}
+{"model":"*","stage":"judge","ts":1783704562,"ok":1,"detail":"judged 24460->24482"}
+{"model":"*","stage":"judge","ts":1783704644,"ok":1,"detail":"judged 24482->24494"}
+{"model":"*","stage":"judge","ts":1783704729,"ok":1,"detail":"judged 24494->24508"}
+{"model":"*","stage":"judge","ts":1783704805,"ok":1,"detail":"judged 24508->24524"}
+{"model":"*","stage":"judge","ts":1783704891,"ok":1,"detail":"judged 24524->24546"}
+{"model":"*","stage":"judge","ts":1783705005,"ok":1,"detail":"judged 24546->24572"}
+{"model":"*","stage":"judge","ts":1783705101,"ok":1,"detail":"judged 24572->24592"}
+{"model":"*","stage":"judge","ts":1783705191,"ok":1,"detail":"judged 24592->24612"}
+{"model":"*","stage":"judge","ts":1783705266,"ok":1,"detail":"judged 24612->24624"}
+{"model":"*","stage":"judge","ts":1783705316,"ok":1,"detail":"judged 24624->24626"}
