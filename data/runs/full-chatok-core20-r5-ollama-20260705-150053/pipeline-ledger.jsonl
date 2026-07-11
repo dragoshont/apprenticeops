@@ -7243,3 +7243,26 @@
 {"model":"*","stage":"judge","ts":1783734182,"ok":1,"detail":"judged 25605->25613"}
 {"model":"*","stage":"judge","ts":1783734247,"ok":1,"detail":"judged 25613->25621"}
 {"model":"*","stage":"judge","ts":1783734306,"ok":1,"detail":"judged 25621->25629"}
+{"model":"llama3.2:1b","stage":"persist","ts":1783734335,"ok":1,"detail":"afa4240"}
+{"model":"*","stage":"judge","ts":1783734409,"ok":1,"detail":"judged 25629->25641"}
+{"model":"*","stage":"judge","ts":1783734481,"ok":1,"detail":"judged 25641->25651"}
+{"model":"*","stage":"judge","ts":1783734548,"ok":1,"detail":"judged 25651->25663"}
+{"model":"*","stage":"judge","ts":1783734620,"ok":1,"detail":"judged 25663->25673"}
+{"model":"*","stage":"judge","ts":1783734689,"ok":1,"detail":"judged 25673->25685"}
+{"model":"*","stage":"judge","ts":1783734749,"ok":1,"detail":"judged 25685->25693"}
+{"model":"*","stage":"judge","ts":1783734809,"ok":1,"detail":"judged 25693->25701"}
+{"model":"*","stage":"judge","ts":1783734866,"ok":1,"detail":"judged 25701->25709"}
+{"model":"*","stage":"judge","ts":1783734929,"ok":1,"detail":"judged 25709->25715"}
+{"model":"*","stage":"judge","ts":1783734994,"ok":1,"detail":"judged 25715->25725"}
+{"model":"*","stage":"judge","ts":1783735054,"ok":1,"detail":"judged 25725->25735"}
+{"model":"*","stage":"judge","ts":1783735120,"ok":1,"detail":"judged 25735->25745"}
+{"model":"*","stage":"judge","ts":1783735176,"ok":1,"detail":"judged 25745->25751"}
+{"model":"*","stage":"judge","ts":1783735256,"ok":1,"detail":"judged 25751->25763"}
+{"model":"*","stage":"judge","ts":1783735342,"ok":1,"detail":"judged 25763->25779"}
+{"model":"*","stage":"judge","ts":1783735422,"ok":1,"detail":"judged 25779->25789"}
+{"model":"*","stage":"judge","ts":1783735489,"ok":1,"detail":"judged 25789->25797"}
+{"model":"*","stage":"judge","ts":1783735553,"ok":1,"detail":"judged 25797->25807"}
+{"model":"*","stage":"judge","ts":1783735618,"ok":1,"detail":"judged 25807->25815"}
+{"model":"*","stage":"judge","ts":1783735683,"ok":1,"detail":"judged 25815->25821"}
+{"model":"*","stage":"judge","ts":1783735746,"ok":1,"detail":"judged 25821->25827"}
+{"model":"*","stage":"judge","ts":1783735799,"ok":1,"detail":"judged 25827->25833"}
