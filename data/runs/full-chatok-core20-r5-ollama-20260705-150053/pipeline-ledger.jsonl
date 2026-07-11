@@ -7844,3 +7844,7 @@
 {"model":"*","stage":"judge","ts":1783774235,"ok":1,"detail":"judged 28229->28231"}
 {"model":"*","stage":"judge","ts":1783774292,"ok":1,"detail":"judged 28231->28235"}
 {"model":"*","stage":"judge","ts":1783774366,"ok":1,"detail":"judged 28235->28247"}
+{"model":"hf.co/ggml-org/SmolLM3-3B-GGUF:Q8_0","stage":"persist","ts":1783774395,"ok":1,"detail":"a6f1c7c"}
+{"model":"*","stage":"judge","ts":1783774570,"ok":1,"detail":"judged 28247->28299"}
+{"model":"*","stage":"judge","ts":1783774839,"ok":1,"detail":"judged 28299->28397"}
+{"model":"*","stage":"judge","ts":1783775035,"ok":1,"detail":"judged 28397->28463"}
