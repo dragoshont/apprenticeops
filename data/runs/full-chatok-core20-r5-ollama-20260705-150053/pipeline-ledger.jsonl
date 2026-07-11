@@ -7750,3 +7750,14 @@
 {"model":"*","stage":"judge","ts":1783767803,"ok":1,"detail":"judged 27830->27832"}
 {"model":"*","stage":"judge","ts":1783767853,"ok":1,"detail":"judged 27832->27834"}
 {"model":"*","stage":"judge","ts":1783767917,"ok":1,"detail":"judged 27834->27838"}
+{"model":"falcon3:3b-instruct-q8_0","stage":"persist","ts":1783767946,"ok":1,"detail":"8571dc0"}
+{"model":"*","stage":"judge","ts":1783768023,"ok":1,"detail":"judged 27838->27856"}
+{"model":"*","stage":"judge","ts":1783768101,"ok":1,"detail":"judged 27856->27872"}
+{"model":"*","stage":"judge","ts":1783768188,"ok":1,"detail":"judged 27872->27890"}
+{"model":"*","stage":"judge","ts":1783768267,"ok":1,"detail":"judged 27890->27904"}
+{"model":"*","stage":"judge","ts":1783768355,"ok":1,"detail":"judged 27904->27926"}
+{"model":"*","stage":"judge","ts":1783768450,"ok":1,"detail":"judged 27926->27952"}
+{"model":"*","stage":"judge","ts":1783768569,"ok":1,"detail":"judged 27952->27986"}
+{"model":"*","stage":"judge","ts":1783768654,"ok":1,"detail":"judged 27986->28004"}
+{"model":"*","stage":"judge","ts":1783768745,"ok":1,"detail":"judged 28004->28022"}
+{"model":"*","stage":"judge","ts":1783768829,"ok":1,"detail":"judged 28022->28036"}
