@@ -7453,3 +7453,9 @@
 {"model":"*","stage":"judge","ts":1783747619,"ok":1,"detail":"judged 26428->26430"}
 {"model":"*","stage":"judge","ts":1783747663,"ok":1,"detail":"judged 26430->26432"}
 {"model":"*","stage":"judge","ts":1783747744,"ok":1,"detail":"judged 26432->26436"}
+{"model":"codegemma:2b","stage":"persist","ts":1783747772,"ok":1,"detail":"2345378"}
+{"model":"*","stage":"judge","ts":1783747889,"ok":1,"detail":"judged 26436->26470"}
+{"model":"*","stage":"judge","ts":1783748013,"ok":1,"detail":"judged 26470->26506"}
+{"model":"*","stage":"judge","ts":1783748201,"ok":1,"detail":"judged 26506->26572"}
+{"model":"*","stage":"judge","ts":1783748392,"ok":1,"detail":"judged 26572->26628"}
+{"model":"*","stage":"judge","ts":1783748482,"ok":1,"detail":"judged 26628->26646"}
