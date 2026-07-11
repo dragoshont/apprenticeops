@@ -14,8 +14,8 @@ If you read nothing else, read **§1 (the claim)**, **§4 (what to check)**, and
 >
 > - **Live paper + figures:** <https://dragoshont.github.io/apprenticeops/paper.html>
 >   · **compact reviewer page:** <https://dragoshont.github.io/apprenticeops/reviewers.html>
-> - **The claim:** a quality × safety × energy benchmark for choosing a small,
->   offline, CPU-only ops LLM. The contribution is the *integration*; the safety
+> - **The claim:** 94-model quality/safety breadth plus a controlled 24-model
+>   quality/safety/energy selection for a small, offline, CPU-only ops LLM. The contribution is the *comparability-aware integration*; the safety
 >   result is **corroboration, not discovery** — hold us to that.
 > - **Most useful feedback:** the *single change that would raise your score* —
 >   file it in one click via the **[structured form](https://github.com/dragoshont/apprenticeops/issues/new?template=reviewer-feedback.yml)**.
@@ -29,17 +29,18 @@ If you read nothing else, read **§1 (the claim)**, **§4 (what to check)**, and
 **One sentence.** A reproducible benchmark + CPU-telemetry method that profiles
 small open-weight local LLM deployments — with the doctoral track targeting
 models up to **5B parameters** — as homelab/edge ops
-assistants on **quality × safety × energy together**, and reduces model choice
-to a **measured Pareto front** that the usual proxies (parameter count, benchmark
-score, a "reasoning" badge, perplexity) get wrong.
+assistants. It separates **94-model quality/safety breadth** from a **24-model
+controlled quality/safety/energy** decision rather than pooling unlike systems
+regimes.
 
 - **The contribution is the integration, not any single axis.** No prior
   benchmark measures judged quality *beside* destructive-action refusal *beside*
   energy (Wh/answer, tok/s-per-watt) for the **offline, CPU-only**
   deployment-selection decision on commodity hardware and real GitOps incidents. The
-  headline result is the **energy × safety × quality Pareto**: 12 of 94 models are
-  non-dominated; the "biggest" and "reasoning" picks come out **dominated**.
-  That 94-model result is a committed legacy footprint-bounded snapshot; the
+  headline results are a **7-of-24 controlled three-axis front** and a **2-of-94
+  quality-safety front**. The earlier 12-of-94 energy-coupled front is withdrawn
+  because it mixed CPU-frequency and RAPL regimes. The 94-model result remains a
+  committed legacy footprint-bounded snapshot; the
   current thesis protocol is being re-locked around ≤5B parameters.
 - **Safety is axis #2, framed as corroboration — not discovery.** That
   reasoning-distillation and quantization degrade destructive-action refusal, and
@@ -110,7 +111,7 @@ the intended venue. For each, the specific thing to scrutinise here:
 
 | Dimension | What to check in *this* work |
 |---|---|
-| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks actually judge-free and correct? Do the bootstrap CIs support the bracket/arm claims? Is the quality axis — now the **5-rep × 2-judge ensemble** (cross-judge κ_quad ≈ 0.91) — honest about the *residual* judge↔human uncertainty? |
+| **Quality** (sound? claims supported? honest about strengths *and* weaknesses?) | Are the deterministic checks judge-free and correct? Do scenario-cluster intervals and paired contrasts support the claims? Does the 94/24 scope split prevent invalid systems comparisons? Is the two-judge axis honest about residual judge↔human uncertainty? |
 | **Clarity** (can an expert reproduce from the text?) | Is the sovereign constraint defined unambiguously (offline = no external *model* API, not information-poverty)? Are the Pareto/dominance definitions precise? |
 | **Significance** (will others use or build on it?) | Is the offline/CPU/commodity regime + energy-coupled selection useful to practitioners and researchers? Is the released harness reusable? |
 | **Originality** (new insight, clearly differentiated, well-cited?) | Is the *integration* genuinely unoccupied by prior work, and is the safety axis honestly scoped as **replication**? Note: per NeurIPS, *"originality does not necessarily require introducing an entirely new method… novel insights by evaluating existing methods… is equally valuable."* Please judge the contribution as an integration/evaluation, and tell us if that integration is **not** novel enough. |
@@ -119,21 +120,19 @@ the intended venue. For each, the specific thing to scrutinise here:
 
 **The most useful review** states, concretely, *what single result or change
 would raise your score* — that is the feedback we can act on. Vague "needs more
-experiments" is hard to use; "the safety arm is n=60 on two models, deepen it or
+experiments" is hard to use; "the safety arm is four models, deepen it or
 soften the claim" is gold.
 
 ---
 
 ## 5. Reproducibility & artifacts (how to verify, safely)
 
-> **Pre-submission verification (2026-06-22).** Every quantitative claim in the
-> paper was **re-derived from the committed snapshot** (`data/snapshots/`) by an
-> independent clean-room audit, and **every reference was resolved against
-> arXiv / CrossRef / Semantic Scholar**. The audit reproduced the quality knee,
-> the safety arms, the cross-judge κ_quad = 0.91, and the full 12-of-94 Pareto
-> front *exactly*; it also corrected one over-stated safety superlative and
-> surfaced an undisclosed served-failure (both fixed). You can repeat it from a
-> clean checkout — the figures on the site are generated from the same exports.
+> **Correction-locked verification (2026-07-10).** The analysis is regenerated
+> from committed snapshots bound to both raw result batches. The audit retained
+> 94-model quality/safety breadth, restricted systems claims to 24 controlled
+> models, and withdrew the invalid pooled 12-of-94 energy front. The paired
+> contrasts, $\kappa_{quad}=0.906$, 7-of-24 controlled front, and 2-of-94
+> quality-safety front reproduce from one command.
 
 The relevant standard is **ACM's Artifact Review & Badging** (Available /
 Functional / Reusable / Results Reproduced / Replicated). Where we stand:
@@ -153,9 +152,9 @@ Functional / Reusable / Results Reproduced / Replicated). Where we stand:
   also exports machine-readable result tables to [`data/site/`](data/site) and
   builds a static site via `scripts/build-analysis-site.sh` (see
   [`docs/analysis/`](docs/analysis)).
-- **Results Reproduced** — the systems telemetry (energy, tok/s, memory bandwidth)
-  requires the specific Linux node (RAPL/`/proc`/IMC counters); quality and safety
-  scores reproduce anywhere. We disclose exactly which numbers are node-bound.
+- **Results Reproduced** — quality/safety scores reproduce anywhere. Systems
+  telemetry requires the specific Linux node and is claim-bearing only for the
+  controlled first batch; row-level provenance identifies that scope.
 
 **Running our code safely.** Following NeurIPS reviewer guidance, treat any
 research code as untrusted: run it in a **container, VM, or network-isolated
@@ -202,9 +201,10 @@ differ by context:
   axis is the **5-rep × 2-judge ensemble** (Claude + GPT-5.5; 8,909 jointly-scored
   judgements; cross-judge agreement κ_quad ≈ 0.91, 77.3 % exact, 99.8 % within-1).
   Consolidating the two collection batches into one **94-model** dataset moved the
-  quality knee to **2–3B** (the 2–3B→3–4B step is flat; the legacy 4–5 GB footprint bracket then
-  adds +4.6 pts) and set the Pareto front at **12 of 94 non-dominated** — without
-  changing the structure. What remains open is **judge↔human** agreement and an optional third
+  quality knee to **2–3B** (the 2–3B→3–4B step is flat; the legacy 4–5 GB group
+  adds +4.6 points [1.9, 7.4]). Energy is excluded from that breadth comparison.
+  The controlled three-axis front is **7 of 24** and the breadth quality-safety
+  front is **2 of 94**. What remains open is **judge↔human** agreement and an optional third
   judge for a Fleiss pass.
 - **n = 1 environment.** One operator, one cluster, one node (i5-8350U). We frame
   this as a **single-environment case study plus a released harness**, and invite
@@ -214,9 +214,13 @@ differ by context:
   scrubbed/anonymised; the egress is disclosed.
 - **Telemetry is Linux/Intel-specific** (RAPL, `/proc`, IMC counters); quality and
   safety scores reproduce on any OS, the systems numbers do not.
-- **Open items toward camera-ready:** Croissant dataset metadata + archival
-  hosting (DOI); a judge↔human agreement κ; an optional third judge for a Fleiss
-  pass.
+- **Collection regimes differ.** The first batch was base-clock/Turbo-off and
+  package-0; the second used dynamic frequencies and mixed RAPL domains. Public
+  systems comparisons use only the first batch.
+- **Open items toward camera-ready:** Croissant 1.0 metadata and deterministic
+  archive tooling now validate; publishing the selected Zenodo dataset DOI is
+  still an operator gate. Judge↔human agreement awaits the 50 blind human scores;
+  an optional third judge remains available for a Fleiss pass.
 
 ---
 
@@ -224,8 +228,8 @@ differ by context:
 
 1. Are the top contributions **differentiated enough** from existing AIOps /
    agent-safety benchmarks — i.e., is the *integration* genuinely the white space?
-2. Is **any claim over-scoped** versus the evidence (especially the safety arm at
-   n=60 / two reasoning models)?
+2. Is **any claim over-scoped** versus the evidence (especially the four-model
+  reasoning arm and six independent safety tasks)?
 3. **Which single result would you require** to consider this publishable at the
    D&B track?
 4. Is the honesty framing (safety = corroboration, not discovery) **convincing, or

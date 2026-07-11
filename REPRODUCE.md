@@ -11,13 +11,13 @@
 |---|---|---|
 | **Ollama** ≥ 0.30 | reproduces the committed legacy/paper-era runs and serves LAN/API clients | `ollama serve` on `127.0.0.1:11434` (override `OLLAMA_URL`) |
 | **llama.cpp** | preferred runtime for future locked thesis experiments | Provisioned on `home-ai` by the homelab `llama_cpp` Ansible role. Current adapters are `llama_cpp` (non-interactive `llama-completion` subprocess) and `llama_cpp_server` (diagnostic token/logprob/metrics sidecar capture), both for direct local GGUF files. |
-| **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models |
+| **Python ≥ 3.10** | the harness (stdlib only for `run.py`/`baselines.py`) | no pip deps to *run* models; **claim-bearing analysis is separately locked to Python 3.14.5 and `requirements-lock.txt`** |
 | **Linux host** for full telemetry | `run.py` reads `/proc` for RAM/swap | macOS/Windows run fine but **RAM/swap series will be empty** (documented limitation) |
 | **~60–120 GB free disk** | model weights (pulled then freed per model) | 95 models, q4 |
 | **Time** | CPU inference | hours→days for the full R=5 × 94-model run |
 | *(judge only)* a frontier judge | scoring (NOT the system-under-test) | default `copilot` backend = official Copilot CLI (`npm i -g @github/copilot`, authenticated); or `github`/`anthropic`. judge.py is stdlib-only |
 | *(energy, optional)* Intel RAPL (preferred) or a metered smart plug | measured energy-per-task | **RAPL** (Intel): on-die joule counters, auto-used if present (root-only → run.py reads via passwordless sudo; tune `RAPL_DOMAIN=psys\|package-0`, disable with `RAPL_DISABLE=1`). **Plug alt:** Home Assistant `HA_URL`/`HA_TOKEN`/`HA_POWER_ENTITY`, **or** IKEA DIRIGERA `DIRIGERA_URL`/`DIRIGERA_TOKEN`/`DIRIGERA_DEVICE_ID`. LAN/SoC operator telemetry (not a model egress); RAPL wins, then HA, then DIRIGERA |
-| *(stats only)* `numpy`, `scipy` | CIs, Wilcoxon, κ in the analysis | off the node, optional |
+| *(analysis/release only)* locked Python environment | notebooks, figures, claims, Croissant, and archival packaging | Python 3.14.5 plus all hash-pinned dependencies in `requirements-lock.txt`; install with `pip --require-hashes` |
 
 ## 0a. Node topology (this homelab's setup)
 
@@ -345,6 +345,15 @@ python3 judge.py --judge --ensemble copilot:gpt-5.5 \
 > **eval scaffolding** — the system-under-test (the small local model) never calls
 > it. "Offline" describes the *deployed system*, not the grading rig.
 
+Each new judged row stores the exact requested `evaluation_policy` and canonical
+condition hash before judging starts. Resume requires that hash plus the judge
+backend/model. Historical hashless rows do not suppress work unless
+`--allow-legacy-resume` is explicitly supplied and the selected results prove a
+unique condition match. Rows with incomplete condition provenance are rejected
+before judge calls begin. Report, dataset, and snapshot exports emit consensus
+only for a complete requested backend/model ensemble; partial judge failures stay
+unscored for a later resume.
+
 ## 5. Report
 
 ```bash
@@ -353,6 +362,12 @@ python3 report.py --results all.jsonl --judged judged.jsonl --out-md RESULTS.md 
 # ML-ready table (one row per task: features + labels) for sklearn/Kaggle modelling:
 python3 dataset.py --results all.jsonl --judged judged.jsonl --out dataset.csv
 ```
+Canonical judged rows require no compatibility flags. To analyze a frozen
+historical `judged.jsonl` that predates condition hashes, add
+`--allow-legacy-judge-join --evaluation-policy '<locked-policy-id>'` to
+`report.py` or `dataset.py`; the command still fails if one legacy key can
+identify multiple conditions. The policy is mandatory because surviving legacy
+rows cannot prove which judge families were originally requested.
 `RESULTS.md` includes: the headline table (det + 95% CI, % frontier, tok/s, swap,
 DNF), the **per-task-taxonomy matrix** (model × class), the **task-class
 difficulty** table, the **paired RAG lift** table (within-pair, the clean
@@ -363,29 +378,92 @@ When multiple memory conditions are present, the headline and systems tables are
 faceted by `memory_context`; compare rows with the same model and different memory
 conditions for the memory-context effect.
 
-## 5a. Notebook dependencies + setup (captured for reproducibility)
+## 5a. Reproduce the canonical analysis v1 bundle
 
-Notebook dependencies are versioned in:
+Claim-bearing analysis uses Python 3.14.5 (`.python-version`) and the complete,
+hash-pinned transitive graph in `requirements-lock.txt`. `requirements.txt` and
+`requirements-release.txt` are human-edited lock inputs; `uv` regenerates the
+lock. From the repository root:
 
-- `requirements-notebook.txt`
+### Completed-run promotion boundary
 
-Create a local notebook environment (from repo root):
+A newly completed experiment is not an analysis source merely because its
+schedulers stopped. First create and verify a provisional, content-addressed
+bundle:
 
 ```bash
-python3 -m venv .venv
+python3 scripts/lock-completed-run.py promote \
+  --run-dir data/runs/<RUN_ID> \
+  --judge copilot:claude-opus-4.6 \
+  --judge copilot:gpt-5.4
+
+python3 scripts/lock-completed-run.py verify \
+  --bundle data/completed-runs/<RUN_ID>-<FULL_BUNDLE_ID>
+```
+
+Promotion refuses partial rows, missing judge families, competing successful
+retries, incomplete condition identity, roster/scenario hash drift, paused or
+canceled runs, and unpushed models. Raw judge attempts remain intact;
+`canonical/judge-retries.jsonl.gz` records failed attempts while
+`canonical/judged.jsonl.gz` contains exactly one valid row per requested judge.
+Compressed per-model results, candidate traces, and operational logs are also
+hash-bound when present. Run `python3 scripts/privacy-scan.py` after `verify`;
+integrity verification does not itself certify privacy.
+The bundle uses analysis schema v1 with `source_kind=completed_run` and
+`claim_status=provisional`; public claims still require a reviewed analysis lock.
+
+See [`docs/sdd/completed-run-promotion.md`](docs/sdd/completed-run-promotion.md).
+
+Validate archival metadata and build the deterministic frozen-paper package:
+
+```bash
+python3 scripts/audit-release-metadata.py
+python3 scripts/build-release-package.py
+```
+
+The package is written beneath `.tmp/release/`; no DOI or external upload is
+created. See [`docs/ARCHIVAL_RELEASE.md`](docs/ARCHIVAL_RELEASE.md).
+
+```bash
+python3.14 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r scripts/ai-node/small-model-eval/requirements-notebook.txt
+python -m pip install --require-hashes -r requirements-lock.txt
+python scripts/validate-analysis-environment.py
+python scripts/audit-tool-licenses.py
 python -m ipykernel install --user --name apprenticeops --display-name "ApprenticeOps (.venv)"
 ```
 
-Open and run:
+Refresh the lock only after intentionally changing a direct input:
 
-- `docs/analysis/interim_variance_analysis.ipynb`
+```bash
+uv pip compile requirements-lock.in --python 3.14.5 \
+  --generate-hashes --universal --output-file requirements-lock.txt
+```
 
-The notebook expects interim files under `.tmp/interim/` at repo root
-(`analysis_snapshot.json`, `model_summary.csv`, `difficulty_summary.csv`,
-`scenario_hardest.csv`, `corr_summary.csv`, `bottleneck_summary.csv`).
+Intentionally refresh the correction-locked bundle:
+
+```bash
+python3 scripts/migrate-analysis-v1.py
+scripts/build-analysis-site.sh --update
+python3 scripts/audit-paper-data.py
+python3 scripts/audit-paper-claims.py
+```
+
+Then prove that all three public notebooks reproduce their cached scientific
+outputs and that `data/site/` plus paper figures regenerate byte-for-byte:
+
+```bash
+scripts/build-analysis-site.sh --verify
+```
+
+The update path writes two scopes, both under the one analysis schema `v1`:
+
+- `data/site/models.csv`: 94-model quality/safety breadth, no energy field;
+- `data/site/controlled_models.csv`: 24-model base-clock, Turbo-off,
+  `package-0` quality/safety/energy evidence.
+
+The active doctoral run cannot enter this path until completion and its strict
+data/analysis lock.
 
 ## 6. Exact pinning (for byte-reproducibility in the paper)
 
@@ -411,7 +489,7 @@ Record into `ENVIRONMENT.md` at run time:
   echo "### radios"; for r in /sys/class/rfkill/rfkill*; do echo "$(cat "$r/type")=soft$(cat "$r/soft")"; done 2>/dev/null
 } > ENVIRONMENT.md
 ```
-The prompts are **byte-frozen** in `MODEL-PROMPTS.md`; seeds are fixed
+The prompts are **byte-frozen** in `data/MODEL-PROMPTS.md`; seeds are fixed
 (`--seed-base`); temps are explicit. Same model digest + same seed + same prompt =
 same input. (CPU-nondeterminism in float reductions may still vary tokens slightly;
 that's why we report CIs, not point claims.)
@@ -420,12 +498,11 @@ that's why we report CIs, not point claims.)
 
 - **Telemetry needs Linux** (`/proc`). On other OSes, quality scores still
   reproduce; the RAM/swap series won't.
-- **Energy is optional**: the **preferred** source is Intel RAPL (`psys` =
-  on-die SoC energy, excludes display/PSU — clean compute energy, not facility
-  power); a smart plug measures wall draw instead. Either way capture the idle
-  baseline and report net-over-idle. No RAPL and unset `HA_*`/`DIRIGERA_*` →
-  power columns are blank and everything else reproduces. `power.source` in
-  results.jsonl records which source was used.
+- **Energy is optional and regime-bound**: the paper's claim-bearing systems
+  evidence uses Intel RAPL `package-0` from the 24-model controlled first batch.
+  `psys` and dynamic-frequency second-batch rows remain descriptive only and are
+  never pooled into that ranking. A smart plug measures wall draw instead. No
+  power source leaves power columns blank; `power.source` records what was used.
 - **CPU nondeterminism**: identical seed can still differ token-for-token across
   CPUs/threads → we publish CIs and bracket-level claims, not exact per-model ranks.
 - **Ollama packaging changes**: a re-pushed tag can change weights; **pin the

@@ -33,12 +33,12 @@ Pareto-model paper claim.
 | Phase | Name | Status | Scope | Gate | Result |
 |---|---|---|---|---|---|
 | 0 | Decision and boundary | completed | Use external datasets for scenario/taxonomy improvement first; defer Pareto fine-tuning. | User accepted direction after adversarial discussion. | Proceed with safeguards. |
-| 1 | Inventory and schema profile | completed | Read local downloaded datasets under `downloads/external-datasets/`; emit manifest, schema summaries, label distributions, and source risk notes. | `scripts/analyze-external-datasets.py` completes and writes `manifest.json`, `schema-summary.md`, and `candidate-map.md`. | Completed; durable summary in `docs/EXTERNAL_DATASET_PHASE1_SUMMARY.md`. |
+| 1 | Inventory and schema profile | completed | Read local downloaded datasets under `downloads/external-datasets/`; emit manifest, schema summaries, label distributions, and source risk notes. | `scripts/analyze-external-datasets.py` completes and writes `manifest.json`, `schema-summary.md`, and `candidate-map.md`. | Completed; evidence archived at `docs/archive/EXTERNAL_DATASET_PHASE1_SUMMARY.md`. |
 | 2 | Rights and contamination ledger | completed | Classify every source as training/dev allowed, scenario-inspiration-only, judge-calibration-only, literature-only, or do-not-use. | Human-readable ledger exists; proprietary/non-redistributable sources are blocked from data import. | Completed at source level in `docs/EXTERNAL_DATASET_RIGHTS_LEDGER.md`; raw redistribution blocked, training deferred, pattern-level candidate design conditionally allowed. |
 | 3 | Candidate scenario generation | completed | Convert selected source patterns into ApprenticeOps candidate scenarios, not Core. | Every candidate has source trace, class, difficulty, grounding, gold answer, deterministic checks, and judge rubric. | Completed in `data/scenarios.external-candidates-v0.json`; validator `scripts/validate-external-candidates.py` passes. |
 | 4 | Scenario adversarial review | completed | Attack candidate scenarios for leakage, easy checks, unsafe gold answers, low operational value, and class imbalance. | High/medium findings resolved; promoted set has a versioned name such as `api-rca-v1` or `core-external-derived-v1`. | Completed as an unpromoted candidate gate: first review returned REVISE, repairs were applied, and follow-up leakage/safety plus quality reviews returned PASS. No candidate has been promoted. |
 | 5 | Dev evaluation | completed | Run selected off-the-shelf Pareto models on candidate/dev scenario sets after Phase 4 candidate-gate review. | Reliability report clean enough to interpret; results reported separately from Core v1. | Dryrun smoke, `strategy-pilot-2`, and `spread10` completed for `external-candidates-v0`; v0 remains dev-only. Judge calibration remains blocked. |
-| 6 | Candidate-v1 repair | completed | Convert Phase 5 error review into a repaired candidate pack with lifecycle metadata. | v1 validates separately, is wired as `kind: dev`, and does not mutate v0 or Core. | Completed in `data/scenarios.external-candidates-v1.json`; repair review in `docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md`. |
+| 6 | Candidate-v1 repair | completed | Convert Phase 5 error review into a repaired candidate pack with lifecycle metadata. | v1 validates separately, is wired as `kind: dev`, and does not mutate v0 or Core. | Completed in `data/scenarios.external-candidates-v1.json`; evidence archived at `docs/archive/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md`. |
 | 7 | Optional tuned-model track | blocked | Fine-tune/LoRA/RAG experiments only if the user later approves a separate tuned-model project. | Model card, training data manifest, held-out hash exclusions, and separate tuned-vs-base reporting. | Blocked; no training or RAG data use is approved by this plan. |
 
 ## Source classes and intended use
@@ -159,7 +159,7 @@ It is still not Core, not paper scoring, not judge calibration, and not training
 data. `spread10` remains unapproved until a separate adversarial go/no-go review.
 
 The subsequent `spread10` dev run also completed cleanly; see
-`docs/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`.
+`docs/archive/EXTERNAL_DATASET_PHASE5_SPREAD10_REVIEW.md`.
 
 ## Phase 6 candidate-v1 repair
 
@@ -172,7 +172,7 @@ set in `data/run-matrix.json` and `data/run-manifest.json`.
 Review artifact:
 
 ```text
-docs/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md
+docs/archive/EXTERNAL_DATASET_CANDIDATE_V1_REPAIR_REVIEW.md
 ```
 
 No v1 experiment has been run yet. Any future v1 run must be labeled dev-only and

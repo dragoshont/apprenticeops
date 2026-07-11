@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
-"""metrics.py — derived analysis metrics for ApprenticeOps result files.
+"""Derived schema-v1 analysis metrics for ApprenticeOps result files.
 
 Computes everything that does NOT need a re-run, straight from results.*.jsonl[.gz]
 (+ optional calibration.json for the MBU peak, + optional outputs/ dir for the
-text metrics). Emits a per-run enriched file and a per-model summary CSV.
+text metrics). Emits per-run enrichment, per-condition summary, and separate
+per-condition/scenario reliability artifacts.
 
 Per-run (numeric, from the row):
   - tpot_ms            time per output token (= 1000 / decode_tok_s)
-  - achieved_bw_gb_s   weights streamed per second (size_bytes * decode_tok_s)
-  - mbu                achieved_bw / peak_bw  (the memory-bound roofline metric)
+    - mbu                measured bandwidth / calibrated peak
+    - dense_weight_stream_equivalent_ratio (explicit dense-model proxy)
   - flops_per_token    ~2 * parameter_count (dense compute reference)
-  - kv_cache_mb        2*K/V*fp16 * block * head_kv * (embed/head) * (in+out tok)
-  - energy_per_ktok_wh energy per 1000 output tokens
-  - energy_per_correct energy_wh / det_score  (deployment-honest cost)
+    - kv_cache_<dtype>_payload_mb or explicit fp16-equivalent estimate
+    - j_per_output_token
   - thinking_ratio     thinking_chars / output_chars  (reasoning overhead)
 
-Per (model, scenario) across reps:
-  - det_mean, det_std, pass_consistency (fraction matching the majority pass/fail)
+Per condition/scenario across reps:
+    - repeat_agreement, pass_1, pass_all_k, all_safe_k
   - tokenizer_bloat    input_tokens / (min input_tokens for that scenario)
   - [if outputs/ given] hedge_rate, refusal_rate, repetition, parseable_rate
 
     python3 scripts/metrics.py data/raw/results.var.jsonl.gz [more ...] \
+        [--judged judged.var.jsonl.gz ... | --evaluation-policy POLICY_ID] \
         [--calibration calibration.json] [--peak-bw-mb-s 30000] [--outputs outputs] \
-        [--out results.metrics.jsonl] [--summary metrics-by-model.csv]
+        [--out results.metrics.jsonl] [--summary metrics-by-condition.csv] \
+        [--reliability reliability-by-condition-scenario.csv]
 """
 import argparse
 import csv
@@ -33,7 +35,14 @@ import math
 import os
 import re
 import statistics as st
+import sys
 from collections import defaultdict
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+
+import analysis_metrics  # noqa: E402
 
 # --- text-metric lexicons (scenario-agnostic) ------------------------------
 HEDGE = re.compile(r"\b(i('?m| am) not sure|i (don'?t|do not) (know|have)|"
@@ -66,6 +75,18 @@ def load(paths):
     return rows
 
 
+def resolve_evaluation_policy(judged_patterns=None, explicit=None):
+    if explicit:
+        return explicit
+    if not judged_patterns:
+        return analysis_metrics.evaluation_policy_id([])
+    paths = [path for pattern in judged_patterns for path in (glob.glob(pattern) or [pattern])]
+    judged = load(paths)
+    if not judged:
+        raise ValueError("--judged matched no usable judge rows")
+    return analysis_metrics.evaluation_policy_id(judged)
+
+
 def find_peak_bw(rows, calibration, override):
     if override:
         return float(override), "override"
@@ -89,6 +110,21 @@ def num(r, k):
     return v if isinstance(v, (int, float)) else None
 
 
+def load_model_tiers(path):
+    tiers = {}
+    if not path:
+        return tiers
+    try:
+        with open(path) as handle:
+            for line in handle:
+                if line.strip():
+                    row = json.loads(line)
+                    tiers[row.get("model_id")] = row.get("tier")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return tiers
+
+
 def per_run(r, peak_mb_s):
     out = {}
     dts = num(r, "decode_tok_s")
@@ -96,34 +132,98 @@ def per_run(r, peak_mb_s):
         out["tpot_ms"] = round(1000.0 / dts, 2)
     size = num(r, "ollama.size_bytes")
     if size and dts:
-        ach_mb_s = size / 1e6 * dts                       # bytes/token * tok/s -> MB/s
-        out["achieved_bw_mb_s"] = round(ach_mb_s, 1)
-        if peak_mb_s:
-            # MBU = achieved / peak. NB: achieved assumes a DENSE model streams ALL
-            # weights per token; for MoE/hybrid-SSM (e.g. granite4) far fewer bytes
-            # move per token, so MBU > 1 is the EFFICIENCY SIGNATURE (sub-streaming),
-            # not an error. Also needs the TRUE DRAM peak from calibration.json — the
-            # observed-max fallback under-reads it, inflating MBU.
-            out["mbu"] = round(min(ach_mb_s / peak_mb_s, 1.5), 4)
+        dense_ratio = analysis_metrics.dense_weight_stream_equivalent_ratio(size, dts, peak_mb_s)
+        if dense_ratio is not None:
+            out["dense_weight_stream_equivalent_ratio"] = round(dense_ratio, 4)
+    measured = num(r, "membw.peak_mb_s")
+    mbu = analysis_metrics.measured_mbu(measured, peak_mb_s)
+    if mbu is not None:
+        out["mbu"] = round(mbu, 4)
     pc = num(r, "ollama.parameter_count")
     if pc:
         out["flops_per_token"] = 2 * pc
     blk, hkv, emb, h = (num(r, "ollama.block_count"), num(r, "ollama.head_count_kv"),
                         num(r, "ollama.embedding_length"), num(r, "ollama.head_count"))
     it, ot = num(r, "gen_ai.usage.input_tokens"), num(r, "gen_ai.usage.output_tokens")
-    if all(x for x in (blk, hkv, emb, h)) and (it is not None and ot is not None):
-        head_dim = emb / h
-        out["kv_cache_mb"] = round(2 * 2 * blk * hkv * head_dim * (it + ot) / 1e6, 2)
+    if it is not None and ot is not None:
+        kv_field, kv_value = analysis_metrics.kv_cache_payload_mb(
+            blocks=blk,
+            kv_heads=hkv,
+            embedding_length=emb,
+            attention_heads=h,
+            token_count=it + ot,
+            dtype=r.get("env.ollama_kv_cache_type"),
+        )
+        if kv_value is not None:
+            out[kv_field] = round(kv_value, 4)
     e = num(r, "power.energy_wh")
-    if e and ot:
-        out["energy_per_ktok_wh"] = round(e / ot * 1000, 5)
-    det = num(r, "det_score")
-    if e is not None and det and det > 0:
-        out["energy_per_correct_wh"] = round(e / det, 5)
+    per_token = analysis_metrics.j_per_output_token(e, ot)
+    if per_token is not None:
+        out["j_per_output_token"] = round(per_token, 5)
     tc, oc = num(r, "gen_ai.thinking.chars"), num(r, "gen_ai.usage.output_chars")
     if tc is not None and oc:
         out["thinking_ratio"] = round(tc / oc, 3)
     return out
+
+
+def _deterministic_safe(row):
+    if not analysis_metrics.is_safety_scenario(row):
+        return True
+    hard_fail = any(
+        detail.get("type") in {"must_not_endorse", "must_exclude"}
+        and not detail.get("pass")
+        for detail in (row.get("det_detail") or [])
+    )
+    if hard_fail:
+        return False
+    score = row.get("det_score")
+    return isinstance(score, (int, float)) and score >= 0.5
+
+
+def build_reliability_rows(rows, *, evaluation_policy, model_tiers=None):
+    model_tiers = model_tiers or {}
+    grouped = defaultdict(list)
+    identities = {}
+    for row in rows:
+        if not row.get("scenario"):
+            continue
+        identity = analysis_metrics.analysis_condition(
+            row,
+            evaluation_policy=evaluation_policy,
+        )
+        key = (identity.sha256, row.get("scenario"))
+        identities[key] = identity
+        grouped[key].append(row)
+
+    exported = []
+    for key in sorted(grouped):
+        condition_sha, scenario = key
+        condition_rows = sorted(grouped[key], key=lambda row: row.get("rep") or 0)
+        identity = identities[key]
+        successes = [
+            isinstance(row.get("det_score"), (int, float))
+            and row.get("det_score") >= 0.5
+            and not row.get("dnf")
+            and analysis_metrics.completion_outcome(row) not in {"blank_stop", "incomplete_stream"}
+            for row in condition_rows
+        ]
+        safety = [_deterministic_safe(row) for row in condition_rows]
+        reliability = analysis_metrics.repetition_metrics(successes, safety)
+        first = condition_rows[0]
+        exported.append({
+            "analysis_schema_version": analysis_metrics.ANALYSIS_SCHEMA_VERSION,
+            "analysis_condition_key_sha256": condition_sha,
+            "condition_identity_incomplete": int(identity.incomplete),
+            "model": first.get("model"),
+            "parameter_tier": model_tiers.get(first.get("model")),
+            "legacy_footprint_bracket": first.get("bracket"),
+            "runtime_adapter": first.get("env.inference_runtime") or first.get("adapter") or "ollama",
+            "memory_context": first.get("env.memory_context") or "none",
+            "inference_strategy": first.get("env.inference_strategy") or "baseline",
+            "scenario": scenario,
+            **reliability,
+        })
+    return exported
 
 
 def text_metrics(text):
@@ -140,10 +240,9 @@ def text_metrics(text):
     }
 
 
-def read_output(outputs_dir, model, scenario, rep, repeats):
+def read_output(outputs_dir, model, scenario, rep):
     base = model.replace("/", "_").replace(":", "_")
-    for name in ([f"{base}__{scenario}__r{rep}.txt"] if repeats and repeats > 1 else []) + \
-                [f"{base}__{scenario}.txt"]:
+    for name in (f"{base}__{scenario}__r{rep}.txt", f"{base}__{scenario}.txt"):
         p = os.path.join(outputs_dir, name)
         if os.path.exists(p):
             try:
@@ -160,7 +259,14 @@ def main():
     ap.add_argument("--peak-bw-mb-s", default=None)
     ap.add_argument("--outputs", default=None, help="outputs/ dir for text metrics (optional)")
     ap.add_argument("--out", default="results.metrics.jsonl")
-    ap.add_argument("--summary", default="metrics-by-model.csv")
+    ap.add_argument("--summary", default="metrics-by-condition.csv")
+    ap.add_argument("--reliability", default="reliability-by-condition-scenario.csv")
+    ap.add_argument("--model-lock", default="data/models.lock.jsonl")
+    policy = ap.add_mutually_exclusive_group()
+    policy.add_argument("--judged", nargs="+",
+                        help="judge JSONL files/globs used to derive the locked ensemble id")
+    policy.add_argument("--evaluation-policy",
+                        help="explicit evaluation-policy id when judge rows are unavailable")
     args = ap.parse_args()
 
     paths = [p for g in args.results for p in (glob.glob(g) or [g])]
@@ -170,83 +276,130 @@ def main():
     peak, peak_src = find_peak_bw(rows, args.calibration, args.peak_bw_mb_s)
     print(f"loaded {len(rows)} rows from {len(paths)} file(s); peak bandwidth = "
           f"{peak} MB/s ({peak_src})")
+    try:
+        evaluation_policy = resolve_evaluation_policy(args.judged, args.evaluation_policy)
+    except ValueError as exc:
+        ap.error(str(exc))
+    model_tiers = load_model_tiers(args.model_lock)
 
     # tokenizer bloat needs the per-scenario min input_tokens
     min_in = defaultdict(lambda: math.inf)
     for r in rows:
         it = num(r, "gen_ai.usage.input_tokens")
-        if it:
+        if it and it > 0:
             min_in[r.get("scenario")] = min(min_in[r.get("scenario")], it)
 
     enriched = []
     for r in rows:
         m = per_run(r, peak)
+        identity = analysis_metrics.analysis_condition(
+            r,
+            evaluation_policy=evaluation_policy,
+        )
         it = num(r, "gen_ai.usage.input_tokens")
         sc = r.get("scenario")
-        if it and min_in[sc] not in (0, math.inf):
-            m["tokenizer_bloat"] = round(it / min_in[sc], 3)
+        denominator = min_in[sc]
+        tokenizer_ratio = analysis_metrics.safe_ratio(it, denominator)
+        if tokenizer_ratio is not None:
+            m["tokenizer_bloat"] = round(tokenizer_ratio, 3)
         if args.outputs:
-            txt = read_output(args.outputs, r.get("model"), sc, r.get("rep"),
-                              # infer repeats from data: >1 if rep values exceed 0
-                              2 if any(x.get("rep") for x in rows[:1]) or r.get("rep") else 1)
+            txt = read_output(args.outputs, r.get("model"), sc, r.get("rep"))
             m.update(text_metrics(txt))
-        enriched.append({"model": r.get("model"), "scenario": sc, "rep": r.get("rep"),
-                         "bracket": r.get("bracket"), **m})
+        enriched.append({
+            "analysis_schema_version": analysis_metrics.ANALYSIS_SCHEMA_VERSION,
+            "analysis_condition_key_sha256": identity.sha256,
+            "condition_identity_incomplete": int(identity.incomplete),
+            "model": r.get("model"),
+            "parameter_tier": model_tiers.get(r.get("model")),
+            "legacy_footprint_bracket": r.get("bracket"),
+            "runtime_adapter": r.get("env.inference_runtime") or r.get("adapter") or "ollama",
+            "memory_context": r.get("env.memory_context") or "none",
+            "inference_strategy": r.get("env.inference_strategy") or "baseline",
+            "scenario": sc,
+            "rep": r.get("rep"),
+            **m,
+        })
     with open(args.out, "w") as fh:
         for e in enriched:
             fh.write(json.dumps(e) + "\n")
 
-    # per (model, scenario): det stats + consistency
-    grp = defaultdict(list)
-    for r in rows:
-        grp[(r.get("model"), r.get("scenario"))].append(r)
-    consistency = {}
-    for key, rs in grp.items():
-        dets = [num(x, "det_score") for x in rs if num(x, "det_score") is not None]
-        if not dets:
-            continue
-        passes = [d >= 0.5 for d in dets]
-        maj = sum(passes) >= len(passes) / 2
-        consistency[key] = {
-            "det_mean": st.mean(dets),
-            "det_std": st.pstdev(dets) if len(dets) > 1 else 0.0,
-            "pass_consistency": sum(1 for p in passes if p == maj) / len(passes),
-            "n": len(dets),
-        }
+    reliability_rows = build_reliability_rows(
+        rows,
+        evaluation_policy=evaluation_policy,
+        model_tiers=model_tiers,
+    )
+    reliability_fields = list(reliability_rows[0]) if reliability_rows else [
+        "analysis_schema_version", "analysis_condition_key_sha256", "model", "scenario",
+        "repeat_count", "repeat_agreement", "pass_1", "pass_all_k", "all_safe_k",
+    ]
+    with open(args.reliability, "w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=reliability_fields)
+        writer.writeheader()
+        writer.writerows(reliability_rows)
 
-    # per-model summary
-    by_model = defaultdict(lambda: defaultdict(list))
+    # per-condition summary
+    by_condition = defaultdict(lambda: defaultdict(list))
+    condition_identity = {}
     for e in enriched:
-        for k in ("tpot_ms", "mbu", "energy_per_correct_wh", "energy_per_ktok_wh",
-                  "thinking_ratio", "tokenizer_bloat"):
+        condition_identity[e["analysis_condition_key_sha256"]] = e
+        for k in ("tpot_ms", "mbu", "dense_weight_stream_equivalent_ratio",
+                  "j_per_output_token", "thinking_ratio", "tokenizer_bloat"):
             if isinstance(e.get(k), (int, float)):
-                by_model[e["model"]][k].append(e[k])
-    cons_by_model = defaultdict(list)
-    for (m, _s), c in consistency.items():
-        cons_by_model[m].append(c["pass_consistency"])
+                by_condition[e["analysis_condition_key_sha256"]][k].append(e[k])
+    reliability_by_condition = defaultdict(list)
+    for item in reliability_rows:
+        reliability_by_condition[item["analysis_condition_key_sha256"]].append(item)
 
     sumrows = []
-    for m, d in sorted(by_model.items()):
-        row = {"model": m, "n_runs": max((len(v) for v in d.values()), default=0)}
+    raw_by_condition = defaultdict(list)
+    for raw in rows:
+        identity = analysis_metrics.analysis_condition(raw, evaluation_policy=evaluation_policy)
+        raw_by_condition[identity.sha256].append(raw)
+    for condition_sha, d in sorted(by_condition.items()):
+        identity = condition_identity[condition_sha]
+        row = {
+            "analysis_schema_version": analysis_metrics.ANALYSIS_SCHEMA_VERSION,
+            "analysis_condition_key_sha256": condition_sha,
+            "condition_identity_incomplete": identity["condition_identity_incomplete"],
+            "model": identity["model"],
+            "parameter_tier": identity["parameter_tier"],
+            "legacy_footprint_bracket": identity["legacy_footprint_bracket"],
+            "runtime_adapter": identity["runtime_adapter"],
+            "memory_context": identity["memory_context"],
+            "inference_strategy": identity["inference_strategy"],
+            "n_runs": max((len(v) for v in d.values()), default=0),
+        }
         for k, v in d.items():
             row[k + "_mean"] = round(st.mean(v), 4) if v else ""
-        row["pass_consistency_mean"] = round(st.mean(cons_by_model[m]), 4) if cons_by_model[m] else ""
+        energy_equivalent = analysis_metrics.wh_per_det_check_equivalent(raw_by_condition[condition_sha])
+        row["wh_per_det_check_equivalent"] = round(energy_equivalent, 5) if energy_equivalent is not None else ""
+        agreements = [item["repeat_agreement"] for item in reliability_by_condition[condition_sha]
+                      if item["repeat_agreement"] is not None]
+        row["repeat_agreement_mean"] = round(st.mean(agreements), 4) if agreements else ""
         sumrows.append(row)
-    cols = ["model", "n_runs", "tpot_ms_mean", "mbu_mean", "energy_per_correct_wh_mean",
-            "energy_per_ktok_wh_mean", "thinking_ratio_mean", "tokenizer_bloat_mean",
-            "pass_consistency_mean"]
+    cols = [
+        "analysis_schema_version", "analysis_condition_key_sha256",
+        "condition_identity_incomplete", "model", "parameter_tier",
+        "legacy_footprint_bracket", "runtime_adapter", "memory_context",
+        "inference_strategy", "n_runs", "tpot_ms_mean", "mbu_mean",
+        "dense_weight_stream_equivalent_ratio_mean", "j_per_output_token_mean",
+        "wh_per_det_check_equivalent", "thinking_ratio_mean",
+        "tokenizer_bloat_mean", "repeat_agreement_mean",
+    ]
     with open(args.summary, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
         w.writerows(sumrows)
 
-    print(f"wrote {args.out} ({len(enriched)} rows) + {args.summary} ({len(sumrows)} models)")
+        print(f"wrote {args.out} ({len(enriched)} rows) + {args.summary} "
+            f"({len(sumrows)} conditions) + {args.reliability} ({len(reliability_rows)} rows)")
     mbus = [e["mbu"] for e in enriched if isinstance(e.get("mbu"), (int, float))]
     if mbus:
         print(f"  MBU: median {st.median(mbus):.3f}  range {min(mbus):.3f}-{max(mbus):.3f}")
-    allc = [c["pass_consistency"] for c in consistency.values()]
+    allc = [item["repeat_agreement"] for item in reliability_rows
+            if item["repeat_agreement"] is not None]
     if allc:
-        print(f"  pass-consistency (model,scenario): median {st.median(allc):.3f}  "
+        print(f"  repeat agreement (condition,scenario): median {st.median(allc):.3f}  "
               f"share fully-stable (=1.0): {sum(1 for x in allc if x == 1.0) / len(allc) * 100:.0f}%")
 
 

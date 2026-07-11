@@ -1,8 +1,8 @@
 # Frontier baseline prompt (manual reference run)
 
-> **Note — use [`MODEL-PROMPTS.md`](MODEL-PROMPTS.md) for a fair baseline.** That file
+> **Note — use [`MODEL-PROMPTS.md`](../data/MODEL-PROMPTS.md) for a fair baseline.** That file
 > contains the **byte-identical** prompt each tested small model receives (from
-> `build_prompt()` in [run.py](run.py)). Running the frontier model on those exact
+> `build_prompt()` in [`run.py`](../run.py)). Running the frontier model on those exact
 > prompts is the apples-to-apples reference.
 >
 > This file is the **convenience "all 8 in one paste"** wrapper. It's fine for a
@@ -19,7 +19,7 @@ small models are scored against.
 
 > Why this works: it's the `judge.py --reference` step done by hand. The
 > `### SCENARIO: <id>` delimiters let `report.py` map each answer back to the
-> frozen scenario in [`scenarios.json`](scenarios.json).
+> frozen scenario in [`scenarios.json`](../data/scenarios.json).
 
 ---
 

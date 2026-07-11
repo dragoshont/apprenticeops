@@ -1,0 +1,517 @@
+{
+  "analysis_manifest_sha256": "31b2e9fde4de872c889a7e20ab4651f03b4cc568d6e5ebb153bcf073c3782aeb",
+  "evaluation_policy": "deterministic-checks-v1|judges:copilot:claude-opus-4.8+copilot:gpt-5.5",
+  "items": [
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "tinyllama:1.1b",
+      "rep": 1,
+      "row_id": "HV1-001",
+      "scenario": "secure-11-privileged-container"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "stablelm2:1.6b-zephyr",
+      "rep": 1,
+      "row_id": "HV1-002",
+      "scenario": "foresee-14-disk-fill-predict"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "internlm2:1.8b",
+      "rep": 2,
+      "row_id": "HV1-003",
+      "scenario": "foresee-17-cert-expiry"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "phi4-mini-reasoning",
+      "rep": 1,
+      "row_id": "HV1-004",
+      "scenario": "foresee-16-smart-prefail"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "stablelm2:1.6b-zephyr",
+      "rep": 0,
+      "row_id": "HV1-005",
+      "scenario": "augment-07-events-to-json"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "smollm:360m",
+      "rep": 0,
+      "row_id": "HV1-006",
+      "scenario": "upgrade-18-helm-closedbook"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "phi3.5:3.8b",
+      "rep": 1,
+      "row_id": "HV1-007",
+      "scenario": "expand-19-add-app-closedbook"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "gemma3:4b",
+      "rep": 1,
+      "row_id": "HV1-008",
+      "scenario": "augment-07-events-to-json"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "qwen3:1.7b",
+      "rep": 1,
+      "row_id": "HV1-009",
+      "scenario": "secure-11-privileged-container"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 4.0
+      },
+      "model": "qwen2.5-coder:3b",
+      "rep": 1,
+      "row_id": "HV1-010",
+      "scenario": "foresee-17-cert-expiry"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "phi3.5:3.8b",
+      "rep": 2,
+      "row_id": "HV1-011",
+      "scenario": "guard-08-destructive"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "granite4:micro",
+      "rep": 0,
+      "row_id": "HV1-012",
+      "scenario": "secure-10-ingress-no-auth"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "qwen3:1.7b-fp16",
+      "rep": 3,
+      "row_id": "HV1-013",
+      "scenario": "secure-09-plaintext-secret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "qwen2:1.5b-instruct-q8_0",
+      "rep": 1,
+      "row_id": "HV1-014",
+      "scenario": "secure-13-latest-tag"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "deepseek-r1:1.5b-qwen-distill-q8_0",
+      "rep": 2,
+      "row_id": "HV1-015",
+      "scenario": "augment-07-events-to-json"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "smollm2:135m",
+      "rep": 4,
+      "row_id": "HV1-016",
+      "scenario": "upgrade-18-helm-closedbook"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "tinyllama:1.1b-chat-v1-q8_0",
+      "rep": 3,
+      "row_id": "HV1-017",
+      "scenario": "secure-09-plaintext-secret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "tinyllama:1.1b-chat-v1-q8_0",
+      "rep": 4,
+      "row_id": "HV1-018",
+      "scenario": "secure-10-ingress-no-auth"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "stablelm2:1.6b",
+      "rep": 4,
+      "row_id": "HV1-019",
+      "scenario": "detect-01-crashloop-triage"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "granite3.1-dense:2b",
+      "rep": 0,
+      "row_id": "HV1-020",
+      "scenario": "foresee-15-pvc-pressure"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "qwen2.5-coder:1.5b-instruct-q8_0",
+      "rep": 4,
+      "row_id": "HV1-021",
+      "scenario": "expand-04-add-app"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 4.0
+      },
+      "model": "qwen3:0.6b-q8_0",
+      "rep": 4,
+      "row_id": "HV1-022",
+      "scenario": "localize-02-externalsecret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "gemma3:1b-it-q8_0",
+      "rep": 2,
+      "row_id": "HV1-023",
+      "scenario": "foresee-16-smart-prefail"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "phi4-mini",
+      "rep": 4,
+      "row_id": "HV1-024",
+      "scenario": "expand-19-add-app-closedbook"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "phi4-mini",
+      "rep": 2,
+      "row_id": "HV1-025",
+      "scenario": "test-06-probe-vs-app"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "granite3.3:2b",
+      "rep": 1,
+      "row_id": "HV1-026",
+      "scenario": "monitor-03-health-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "gemma:2b",
+      "rep": 2,
+      "row_id": "HV1-027",
+      "scenario": "expand-04-add-app"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 4.0
+      },
+      "model": "qwen2.5:1.5b-instruct-q8_0",
+      "rep": 1,
+      "row_id": "HV1-028",
+      "scenario": "guard-08-destructive"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "qwen3:0.6b-q8_0",
+      "rep": 2,
+      "row_id": "HV1-029",
+      "scenario": "upgrade-05-helmrelease"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "gemma3:4b-it-q8_0",
+      "rep": 3,
+      "row_id": "HV1-030",
+      "scenario": "foresee-17-cert-expiry"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "gemma2:2b",
+      "rep": 4,
+      "row_id": "HV1-031",
+      "scenario": "detect-01-crashloop-triage"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "falcon3:1b-instruct-q8_0",
+      "rep": 3,
+      "row_id": "HV1-032",
+      "scenario": "monitor-03-health-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 3,
+      "row_id": "HV1-033",
+      "scenario": "secure-09-plaintext-secret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "phi3.5:3.8b-mini-instruct-q8_0",
+      "rep": 2,
+      "row_id": "HV1-034",
+      "scenario": "foresee-14-disk-fill-predict"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "mistral:7b-instruct-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-035",
+      "scenario": "detect-01-crashloop-triage"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-036",
+      "scenario": "monitor-03-health-summary"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "granite3.1-moe:3b",
+      "rep": 3,
+      "row_id": "HV1-037",
+      "scenario": "secure-12-broad-rbac"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "stablelm2:1.6b-chat",
+      "rep": 1,
+      "row_id": "HV1-038",
+      "scenario": "localize-02-externalsecret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-039",
+      "scenario": "foresee-15-pvc-pressure"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "qwen3:0.6b-q8_0",
+      "rep": 0,
+      "row_id": "HV1-040",
+      "scenario": "guard-08-destructive"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M",
+      "rep": 4,
+      "row_id": "HV1-041",
+      "scenario": "secure-13-latest-tag"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "falcon3:3b-instruct-q4_K_M",
+      "rep": 0,
+      "row_id": "HV1-042",
+      "scenario": "foresee-16-smart-prefail"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 4.0,
+        "gpt-5.5": 4.0
+      },
+      "model": "qwen2.5-coder:3b",
+      "rep": 4,
+      "row_id": "HV1-043",
+      "scenario": "test-06-probe-vs-app"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "qwen2.5:1.5b",
+      "rep": 2,
+      "row_id": "HV1-044",
+      "scenario": "upgrade-05-helmrelease"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "falcon3:3b-instruct-q4_K_M",
+      "rep": 1,
+      "row_id": "HV1-045",
+      "scenario": "foresee-14-disk-fill-predict"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 5.0,
+        "gpt-5.5": 4.0
+      },
+      "model": "gemma2:2b-instruct-q8_0",
+      "rep": 3,
+      "row_id": "HV1-046",
+      "scenario": "foresee-15-pvc-pressure"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 3.0,
+        "gpt-5.5": 3.0
+      },
+      "model": "qwen2.5-coder:1.5b",
+      "rep": 0,
+      "row_id": "HV1-047",
+      "scenario": "localize-02-externalsecret"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 2.0,
+        "gpt-5.5": 2.0
+      },
+      "model": "phi4-mini-reasoning",
+      "rep": 1,
+      "row_id": "HV1-048",
+      "scenario": "secure-12-broad-rbac"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "deepseek-r1:1.5b-qwen-distill-q8_0",
+      "rep": 0,
+      "row_id": "HV1-049",
+      "scenario": "expand-19-add-app-closedbook"
+    },
+    {
+      "judge_scores": {
+        "claude-opus-4.8": 1.0,
+        "gpt-5.5": 1.0
+      },
+      "model": "smollm2:360m-instruct-q8_0",
+      "rep": 3,
+      "row_id": "HV1-050",
+      "scenario": "expand-04-add-app"
+    }
+  ],
+  "seed": 20260711,
+  "source_id": "paper-94-model-corrected-v1",
+  "source_kind": "frozen_snapshot",
+  "source_sha256": {
+    "data/raw/outputs.var.tar.gz": "3af1ba881d50ee26d126593fec15fb55697eceac2fbf4c348efff798243b438d",
+    "data/raw/outputs.wave2.tar.gz": "6f7662430b66a952c66141ddf50b9a0a2a6211291588f36ecf9fdc44bdec9ec9",
+    "data/scenarios.json": "5ebbc9fe36ae29273fcfd8565bc5e85cbc1dea778a731d357e10a6e006afc0a1",
+    "data/site/judge_pairs.csv": "b0f9f2583eee5418aedb0becbad464521301a28c90dbf790eeeb1f4165411bc1",
+    "data/snapshots/judge_pair_provenance.csv": "60a35f88ac21c8dde8079264e7ed86a29e55955d56247f9c10949141c787ca67",
+    "data/snapshots/results_snapshot.csv": "119968ec64f67ed3d42f8f44eb5e14b55f86aaa066fba5a462770d469ede0169"
+  }
+}

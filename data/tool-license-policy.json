@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "metadata_overrides": {
+    "mlcroissant": {
+      "license": "Apache-2.0",
+      "reason": "The mlcroissant 1.0.22 wheel omits license metadata; the canonical upstream repository declares Apache-2.0.",
+      "source": "https://github.com/mlcommons/croissant/blob/720ab63cc9a646085d9f4b3e0a94c125254c683a/LICENSE.md"
+    }
+  },
+  "load_bearing_tools": {
+    "mlcroissant": {
+      "license": "Apache-2.0",
+      "source": "https://github.com/mlcommons/croissant/blob/720ab63cc9a646085d9f4b3e0a94c125254c683a/LICENSE.md"
+    },
+    "pillow": {
+      "license": "MIT-CMU",
+      "source": "https://github.com/python-pillow/Pillow/blob/bb1d8e8ab8d29048624d96e3ee53cecf7c13d13d/LICENSE"
+    },
+    "uv": {
+      "license": "MIT OR Apache-2.0",
+      "sources": [
+        "https://github.com/astral-sh/uv/blob/a33a629d66753e9722a0040212c004ba66ad04b4/LICENSE-APACHE",
+        "https://github.com/astral-sh/uv/blob/a33a629d66753e9722a0040212c004ba66ad04b4/LICENSE-MIT"
+      ]
+    }
+  },
+  "universal_marker_dependencies": {
+    "appnope": {
+      "version": "0.1.4",
+      "license": "BSD-2-Clause",
+      "metadata_source": "https://pypi.org/pypi/appnope/0.1.4/json",
+      "license_source": "https://github.com/minrk/appnope/blob/15d8c441ef444660655396b7159c92658982441e/LICENSE"
+    },
+    "cffi": {
+      "version": "2.1.0",
+      "license": "MIT-0",
+      "metadata_source": "https://pypi.org/pypi/cffi/2.1.0/json",
+      "license_source": "https://github.com/python-cffi/cffi/blob/d9f6f70adac5ca9f260abf5405cf4d0373767b65/LICENSE"
+    },
+    "colorama": {
+      "version": "0.4.6",
+      "license": "BSD-3-Clause",
+      "metadata_source": "https://pypi.org/pypi/colorama/0.4.6/json",
+      "license_source": "https://github.com/tartley/colorama/blob/3de9f013df4b470069d03d250224062e8cf15c49/LICENSE.txt"
+    },
+    "pexpect": {
+      "version": "4.9.0",
+      "license": "ISC",
+      "metadata_source": "https://pypi.org/pypi/pexpect/4.9.0/json",
+      "license_source": "https://github.com/pexpect/pexpect/blob/aa989594e1e413f45c18b26ded1783f7d5990fe5/LICENSE"
+    },
+    "ptyprocess": {
+      "version": "0.7.0",
+      "license": "ISC",
+      "metadata_source": "https://pypi.org/pypi/ptyprocess/0.7.0/json",
+      "license_source": "https://github.com/pexpect/ptyprocess/blob/ee54ae2ee6bdd1e9f040dac79d799ae5b178e8fe/LICENSE"
+    },
+    "pycparser": {
+      "version": "3.0",
+      "license": "BSD-3-Clause",
+      "metadata_source": "https://pypi.org/pypi/pycparser/3.0/json",
+      "license_source": "https://github.com/eliben/pycparser/blob/77de509f0268f44ee587b5a4d9f0d680e269fcae/LICENSE"
+    },
+    "tzdata": {
+      "version": "2026.3",
+      "license": "Apache-2.0",
+      "metadata_source": "https://pypi.org/pypi/tzdata/2026.3/json",
+      "license_source": "https://github.com/python/tzdata/blob/a44279419071b7aa41ebe7eca301ebb2e759571a/LICENSE"
+    }
+  }
+}

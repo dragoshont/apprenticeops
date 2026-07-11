@@ -21,6 +21,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+
+import analysis_metrics  # noqa: E402
+
 RUNS = REPO / "data" / "runs"
 
 
@@ -226,6 +230,7 @@ def summarize_run(run_dir: Path) -> dict:
             row.get("rep"),
             row.get("memory_context") or row.get("env.memory_context") or "none",
             row.get("inference_strategy") or row.get("env.inference_strategy") or "baseline",
+            row.get("judge_backend") or "unknown",
             row.get("judge_model"),
         )
         for row in judged
@@ -238,7 +243,8 @@ def summarize_run(run_dir: Path) -> dict:
             "rep": key[2],
             "memory_context": key[3],
             "inference_strategy": key[4],
-            "judge_model": key[5],
+            "judge_backend": key[5],
+            "judge_model": key[6],
         }
         for key, count in sorted(judge_tuple_counts.items())
         if count > 1
@@ -281,7 +287,7 @@ def summarize_run(run_dir: Path) -> dict:
     usage_by_judge: dict[str, dict] = defaultdict(lambda: {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cache_read": 0, "cache_write": 0, "ai_credits": 0.0})
     for row in judged:
         usage = row.get("usage") or {}
-        entry = usage_by_judge[row.get("judge_model") or "unknown"]
+        entry = usage_by_judge[analysis_metrics.judge_identity_label(row)]
         entry["calls"] += 1
         for key in ("tokens_in", "tokens_out", "cache_read", "cache_write"):
             entry[key] += int(usage.get(key) or 0)

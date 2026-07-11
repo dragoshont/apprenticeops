@@ -2764,6 +2764,8 @@ def _env_static():
         "env.host": socket.gethostname(),
         "env.kernel": kernel,
         "env.ollama_version": _sh_out(["ollama", "--version"]),
+        "env.ollama_kv_cache_type": os.environ.get("OLLAMA_KV_CACHE_TYPE"),
+        "env.ollama_flash_attention": os.environ.get("OLLAMA_FLASH_ATTENTION"),
         "env.inference_runtime": INFERENCE_RUNTIME,
         "env.llama_cpp_cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
         "env.llama_cpp_server": shutil.which(LLAMA_CPP_SERVER) or LLAMA_CPP_SERVER if INFERENCE_RUNTIME == "llama_cpp_server" else None,

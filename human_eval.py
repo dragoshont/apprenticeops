@@ -23,9 +23,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import random
+from pathlib import Path
 
 from judge_agreement import cohen_kappa, label, spearman
 
@@ -35,6 +37,74 @@ JUDGES = {  # name -> judged jsonl (any that exist are folded into the key)
     "gpt55": ".tmp/judge/judged.det.gpt55.jsonl",
     "gemini": ".tmp/judge/judged.det.gemini.jsonl",
 }
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def packet_agreement(key, score_rows):
+    items = key.get("items") or []
+    by_id = {item["row_id"]: item for item in items}
+    if len(by_id) != len(items):
+        raise ValueError("packet contains duplicate row ids")
+    human = {}
+    for row in score_rows:
+        row_id = row.get("row_id")
+        value = str(row.get("human_score") or "").strip()
+        if row_id not in by_id:
+            raise ValueError(f"score row is not in packet: {row_id}")
+        if not value:
+            continue
+        if value not in {"1", "2", "3", "4", "5"}:
+            raise ValueError(f"invalid human score for {row_id}: {value!r}")
+        human[row_id] = int(value)
+    missing = sorted(set(by_id) - set(human))
+    if missing:
+        raise ValueError(f"packet is not fully scored: {len(missing)} missing ({missing[:5]})")
+    judge_names = sorted({
+        name
+        for item in items
+        for name in (item.get("judge_scores") or {})
+    })
+    if not judge_names:
+        raise ValueError("packet contains no hidden judge scores")
+    reports = {}
+    for judge in judge_names:
+        pairs = []
+        for row_id in sorted(by_id):
+            judge_score = (by_id[row_id].get("judge_scores") or {}).get(judge)
+            if judge_score is None:
+                raise ValueError(f"packet item {row_id} has no score from {judge}")
+            pairs.append((human[row_id], int(round(float(judge_score)))))
+        kappa_quadratic = cohen_kappa(pairs, [1, 2, 3, 4, 5], "quadratic")
+        reports[judge] = {
+            "exact_agreement": sum(left == right for left, right in pairs) / len(pairs),
+            "human_mean": sum(left for left, _right in pairs) / len(pairs),
+            "judge_mean": sum(right for _left, right in pairs) / len(pairs),
+            "kappa": cohen_kappa(pairs, [1, 2, 3, 4, 5]),
+            "kappa_quadratic": kappa_quadratic,
+            "meets_preregistered_bar": kappa_quadratic is not None and kappa_quadratic >= 0.6,
+            "n": len(pairs),
+            "spearman_rho": spearman(pairs),
+        }
+    return {
+        "analysis_schema_version": 1,
+        "all_judges_meet_preregistered_bar": all(
+            report["meets_preregistered_bar"] for report in reports.values()
+        ),
+        "human_raters": 1,
+        "items_scored": len(human),
+        "items_total": len(items),
+        "judge_reports": reports,
+        "preregistered_kappa_quadratic_bar": 0.6,
+        "single_rater_limitation": True,
+        "source_id": key.get("source_id") or key.get("run_id"),
+    }
 
 
 def _answer_path(outputs_dir, model, scenario, rep, repeats_gt1=False):
@@ -178,6 +248,24 @@ def cmd_score(args):
           "not just another LLM.")
 
 
+def cmd_score_packet(args):
+    packet = Path(args.packet)
+    key_path = packet / "key.json"
+    scores_path = packet / "scores.csv"
+    key = json.loads(key_path.read_text())
+    with scores_path.open(newline="") as handle:
+        score_rows = list(csv.DictReader(handle))
+    try:
+        report = packet_agreement(key, score_rows)
+    except ValueError as exc:
+        raise SystemExit(f"ERROR: {exc}") from exc
+    report["key_sha256"] = _sha256(key_path)
+    report["scores_sha256"] = _sha256(scores_path)
+    output = packet / "agreement.json"
+    output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    print(f"wrote {output}: {report['items_scored']} scored items")
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -192,6 +280,12 @@ def main():
     s.add_argument("--scores", default=os.path.join(OUT_DIR, "scores.csv"))
     s.add_argument("--key", default=os.path.join(OUT_DIR, "key.json"))
     s.set_defaults(func=cmd_score)
+    p = sub.add_parser("score-packet", help="score a committed blind packet after every human row is filled")
+    p.add_argument(
+        "--packet",
+        default="data/human_eval/paper-94-model-corrected-v1",
+    )
+    p.set_defaults(func=cmd_score_packet)
     args = ap.parse_args()
     args.func(args)
 

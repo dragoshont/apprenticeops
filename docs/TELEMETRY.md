@@ -92,6 +92,47 @@ candidate sidecars so the selected answer is auditable. Reliability reports grou
 DNF/stall/length by strategy; strategy rows must not be averaged into baseline
 rows unless the analysis explicitly facets by strategy.
 
+### Judge-row condition identity (`judged.jsonl`)
+
+New judge rows copy the exact derived-analysis identity of their source inference
+condition:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `analysis_schema_version` | int | Canonical derived-analysis schema, currently `1`. |
+| `analysis_condition_key_sha256` | str | Hash of model/runtime/artifact/quantization/hardware/prompt/memory/strategy/sampler/scenario-set/evaluation-policy identity. |
+| `condition_identity_incomplete` | bool | The source row lacked one or more identity fields and cannot support cross-run or paired-condition joins. |
+| `evaluation_policy` | str | Exact requested deterministic-check and judge-ensemble policy; it includes requested families even if one call fails to emit a row. |
+
+Historical judge rows predate these fields and contain only model, scenario,
+repetition, memory, strategy, and runtime. Analysis adapters reject them by
+default. An operator may enable an explicit legacy-compatibility mode only when
+that key maps to exactly one canonical condition in the selected result artifact.
+If it maps to multiple hardware, quantization, artifact, or prompt conditions,
+the join **fails closed** even in compatibility mode and the affected rows must be
+rejudged with the exact condition hash. It must never choose the last matching
+condition.
+
+Rows with `condition_identity_incomplete=true` are not indexed for judge joins,
+and `judge.py` refuses to create new verdict rows for them. Judge identity always
+uses both `judge_backend` and `judge_model`; an analysis consensus exists only
+when every identity declared by `evaluation_policy` is present for that exact
+condition, scenario, and repetition.
+
+Completed-run promotion may add two derived fields to the **canonical copy only**
+when older raw rows used pinned runtime defaults:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `analysis.sampler_policy` | object | Explicit `runtime_defaults` marker binding temperature/think to the recorded runtime adapter and version when no model/request sampler override was captured. |
+| `analysis.artifact_identity` | str | `ollama-ps-sha256:<digest>` recovered only when `ollama.ps.before` names exactly one matching loaded model with one 64-character digest. |
+| `analysis.artifact_identity_source` | str | Provenance of the derived artifact identity, currently `ollama.ps.before`. |
+
+Raw run and judge bytes are preserved inside deterministic gzip framing;
+compressed per-model results, candidate traces, and logs are copied byte-for-byte.
+Ambiguous or missing derived provenance still fails promotion; these markers are
+not guesses and are never written back into `data/runs/`.
+
 Timeout-policy and stall-forensics fields (`effective.*`, `prompt.*`,
 `stall_phase`, `http.*`, and compact `ollama.ps.*` snapshots) are evidence about
 completion reliability. They are not quality scores; they make zero-output stalls

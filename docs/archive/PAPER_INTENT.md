@@ -15,7 +15,7 @@ reason safely and usefully on real operations tasks without cloud fallback.
 ## Core claim (the thesis the paper proves) — reframed 2026-06-19
 
 > Supersedes the safety-led claim locked 2026-06-18; see
-> [`PAPER_POSITIONING.md`](PAPER_POSITIONING.md) for the decision and the
+> [`PAPER_POSITIONING.md`](../PAPER_POSITIONING.md) for the decision and the
 > competing-work scan that motivated it (the safety finding is saturated in the
 > literature, so it cannot lead).
 
@@ -127,7 +127,7 @@ refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality 
 
 - Primary readers: systems/ML practitioners evaluating local LLM operations use.
 - First release: arXiv preprint (moderated, **not** peer-reviewed — see
-  [`REVIEWER.md`](../REVIEWER.md) for what that means and how to review this work).
+   [`REVIEWER.md`](../../REVIEWER.md) for what that means and how to review this work).
 - Submission targets: **NeurIPS Datasets & Benchmarks track** (single-blind
   allowed; code + data must be accessible to reviewers at submission; Croissant
   metadata) as the natural venue; MLSys / on-device & efficiency workshops as alternates.

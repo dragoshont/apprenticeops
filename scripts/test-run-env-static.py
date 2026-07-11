@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import pathlib
 import tempfile
 
@@ -83,6 +84,26 @@ def test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed() -> None:
 
 def test_runtime_name_is_snapshot_adapter_name() -> None:
     assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp", "llama_cpp_server"}
+
+
+def test_env_static_captures_ollama_kv_policy() -> None:
+    old_kv = os.environ.get("OLLAMA_KV_CACHE_TYPE")
+    old_flash = os.environ.get("OLLAMA_FLASH_ATTENTION")
+    try:
+        os.environ["OLLAMA_KV_CACHE_TYPE"] = "q8_0"
+        os.environ["OLLAMA_FLASH_ATTENTION"] = "1"
+        fields = mod._env_static()
+    finally:
+        if old_kv is None:
+            os.environ.pop("OLLAMA_KV_CACHE_TYPE", None)
+        else:
+            os.environ["OLLAMA_KV_CACHE_TYPE"] = old_kv
+        if old_flash is None:
+            os.environ.pop("OLLAMA_FLASH_ATTENTION", None)
+        else:
+            os.environ["OLLAMA_FLASH_ATTENTION"] = old_flash
+    assert fields["env.ollama_kv_cache_type"] == "q8_0"
+    assert fields["env.ollama_flash_attention"] == "1"
 
 
 def test_llama_cpp_timing_parser_extracts_counts_and_rates() -> None:
@@ -257,6 +278,7 @@ def main() -> None:
     test_llama_cpp_rejects_ollama_wrapped_model_without_mapping()
     test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed()
     test_runtime_name_is_snapshot_adapter_name()
+    test_env_static_captures_ollama_kv_policy()
     test_llama_cpp_timing_parser_extracts_counts_and_rates()
     test_llama_cpp_sampler_parser_extracts_otel_scalars()
     test_rusage_fields_promote_process_metrics()

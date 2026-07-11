@@ -1,0 +1,25 @@
+{
+  "analysis_schema_version": 1,
+  "source_kind": "frozen_snapshot",
+  "source_id": "paper-94-model-corrected-v1",
+  "source_sha256": {
+    "data/raw/outputs.var.tar.gz": "3af1ba881d50ee26d126593fec15fb55697eceac2fbf4c348efff798243b438d",
+    "data/raw/outputs.wave2.tar.gz": "6f7662430b66a952c66141ddf50b9a0a2a6211291588f36ecf9fdc44bdec9ec9",
+    "data/raw/results.var.jsonl.gz": "cff2928b63fd0533ef18379223077d25c887a6cc635892fbd0cad7c6d60dcb93",
+    "data/raw/results.wave2.jsonl.gz": "cbfb146335a7f36450ea7d1ec75108f7a7ea78bc755cd5cc95b5d27bfd6a2bf6",
+    "data/raw/judged.var.claude.jsonl.gz": "9d9827f8d26d3e1da4c59db38d09631ffe8364612259d2520058dbdbbe8d16c6",
+    "data/raw/judged.var.gpt55.jsonl.gz": "84e2447d7497b4f7c4b20e7379f917ca40b2e78f8b5e997083c0149a8d90d991",
+    "data/raw/judged.det.jsonl.gz": "ee5c55bb4ddd8f5bf8f1ed9f204efd000053f9bacec8347eab62d325e3648da0",
+    "data/raw/judged.det.gpt55.jsonl.gz": "4c42bac64ba8137a31ac03be42676ba5bb4e08153729756ac0de484e3d02c78f",
+    "data/raw/judged.wave2.jsonl.gz": "d7a97620fa124740b3022b46ce5479ec0ecf83e8c5c19087941d853e859caea6",
+    "data/scenarios.json": "5ebbc9fe36ae29273fcfd8565bc5e85cbc1dea778a731d357e10a6e006afc0a1",
+    "data/models.lock.jsonl": "c4a96fed7354bc6bc762a93bc0ce0b4bd25d3f4ebc5bd0dfcb64dcd6f203fcb8",
+    "data/snapshots/results_snapshot.csv": "119968ec64f67ed3d42f8f44eb5e14b55f86aaa066fba5a462770d469ede0169",
+    "data/snapshots/judged_snapshot.csv": "c00b6cbfc857a76e90211be6bd028a32bb4d457cf3cbc29c12bee7e7bed09f6e",
+    "data/snapshots/judged_snapshot.det.csv": "af28abf7a0de84694bc945021496e56d5afac12a180d3dbce66b6718341ccdd4",
+    "data/site/judge_pairs.csv": "b0f9f2583eee5418aedb0becbad464521301a28c90dbf790eeeb1f4165411bc1",
+    "data/snapshots/judge_pair_provenance.csv": "60a35f88ac21c8dde8079264e7ed86a29e55955d56247f9c10949141c787ca67"
+  },
+  "claim_status": "locked",
+  "provenance_note": "Raw result rows, answer archives, scenario semantics, and per-judge verdict rows for both collection batches are committed and hash-bound. The paper-era rows predate complete canonical condition identity, so judge_pair_provenance.csv marks condition_identity_incomplete=1 and supplies a frozen provenance key; it must not be reused for cross-run joins."
+}

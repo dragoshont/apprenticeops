@@ -6,9 +6,12 @@ asserted**. The data was collected in **two batches** for operational reasons (t
 broader roster was added after the first batch, and Ollama's intermittent `hf.co`
 pulls forced a resume sweep); **together they form the single 94-model analysis
 dataset** in [`data/snapshots/`](../snapshots/). The raw files below stay
-**batch-labelled** for audit — `results.var.*` is the first batch, `results.wave2.*`
-the second. Same protocol throughout: 19 scenarios, deterministic (temp 0) and
-variance (temp 0.7, R=5), one commodity node.
+**batch-labelled** for audit — `results.var.*` is the first batch,
+`results.wave2.*` the second. They share 19 scenarios, temperature 0.7, five
+repetitions, and one commodity node, but **not the same systems regime**: the
+first batch was base-clock/Turbo-off with RAPL `package-0`; the second used
+dynamic frequencies and mixed `package-0`/`psys`. Quality and safety use both;
+claim-bearing systems and three-axis analysis use the first batch only.
 
 ## First batch — `results.var.*` (core)
 
@@ -57,6 +60,7 @@ bracket; run on the node 2026-06-19/20.
 | File | What | Rows / notes |
 |---|---|---|
 | `results.wave2.jsonl.gz` | Variance run, raw. Same schema as Wave 1. | 7543 lines = 7410 result rows + 133 `pull_failed` stubs |
+| `judged.wave2.jsonl.gz` | Raw off-node per-judge verdict rows (`claude-opus-4.8` + `gpt-5.5`), including partial-family rows retained for audit. | 13,490 rows; 6,725 complete pairs and 20 partial pairs before functional/overlap filtering |
 | `outputs.wave2.tar.gz` | Raw **answer texts** (`outputs/<model>__<scenario>__r<rep>.txt`). | 9728 files |
 | `experiment.wave2.log.gz` / `driver.wave2.out` | Run log + driver output. | — |
 
@@ -66,16 +70,13 @@ stubs and deduping `(model, scenario, rep)` on best det_score: **71 complete**
 intermittent `hf.co` redirect bug
 [#15661](https://github.com/ollama/ollama/issues/15661) + registry blips), not
 model failures. Those 9 (plus a further 7 all-DNF served-failures and the first
-batch's `phi:2.7b`) are **excluded** from the analysis and named in the paper's
-excluded appendix. The second batch *does* carry the systems telemetry: raw
-`membw_peak_mb_s` / perf-core are present for **~94%** of rows (safety + energy
-are 100%). The STREAM calibration did not complete on the node, so the **MBU%**
-normalization uses the node's **datasheet** peak bandwidth (38.4 GB/s, dual-channel
-DDR4-2400) and is read as a relative efficiency; **6 of the 94 functional models
-lack per-run bandwidth telemetry** entirely (a perf-counter capture gap, missing at
-random), so MBU is reported on the **88-of-94** covered subset. Privacy: scanned
-(same synthetic fixtures as the first batch — `SuperSecret123`, `eso-verify-*`,
-example JWT — no new secrets).
+batch's `phi:2.7b`) are **excluded** from the functional-model analysis and named
+in the paper's excluded appendix. The second batch carries systems telemetry, but
+its dynamic CPU frequency and mixed RAPL domains make cross-batch energy/speed
+ranking invalid. Canonical v1 retains those rows as
+`energy_analysis_scope=descriptive_only`; it does not discard or silently
+normalize them. Privacy: scanned (same synthetic fixtures as the first batch —
+`SuperSecret123`, `eso-verify-*`, example JWT — no new secrets).
 
 **Quality (judged):** the second batch's 2-judge pass (`claude-opus-4.8` + `gpt-5.5`)
 ran off-node post-hoc on the answer texts above. Consolidated across both batches,
@@ -85,5 +86,11 @@ reps (77.3% exact, 99.8% within-1).
 ## Reproducing the snapshots
 
 `data/snapshots/*.csv` are derived from these raw files by
-[`../../scripts/merge-wave.py`](../../scripts/merge-wave.py). Field dictionary:
+[`../../scripts/merge-wave.py`](../../scripts/merge-wave.py) and normalized with
+exact raw lineage by
+[`../../scripts/migrate-analysis-v1.py`](../../scripts/migrate-analysis-v1.py).
+`data/analysis-manifest.json` binds both raw result archives, all raw per-judge
+verdict files, the frozen pair/provenance artifacts, and all normalized snapshots
+by SHA-256. `scripts/export-judge-pairs.py --check` reconstructs the locked 8,909
+complete functional-model pairs from those committed verdict rows. Field dictionary:
 [`docs/TELEMETRY.md`](../../docs/TELEMETRY.md).

@@ -2,7 +2,7 @@
 
 > The job of this doc is to make us *distrust* the model marketing before we
 > spend hours testing, so the eval is designed to catch the lies. Pairs with
-> [`PLAN.md`](PLAN.md) (which bakes these defenses in) and [`MODELS.md`](MODELS.md).
+> [`PROTOCOL.md`](PROTOCOL.md) (which owns the current gates) and [`MODELS.md`](MODELS.md).
 
 ## 1. The central hype pattern: "our 3B beats GPT-4"
 

@@ -1,0 +1,3 @@
+analysis_schema_version,model,parameter_tier,legacy_footprint_bracket,judge_score_fraction,safety_fraction
+1,hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M,T5,3-4B,0.7136842105263158,0.8028333333333334
+1,qwen3:4b-instruct-2507-q8_0,T5,4-5GB,0.7126315789473685,0.9083333333333333

@@ -42,16 +42,19 @@ started narrower; the live corpus now includes `secure` and `capacity` cases.
 ## 3. Original coverage seed and current audit
 
 The table below records the original seed coverage. It is historically useful,
-but no longer describes the live corpus: `data/scenarios.json` now has 27
+but no longer describes the live corpus: `data/scenarios.json` now has **33**
 scenarios, including `secure`, `capacity`, and private app/device-ops incident
-cases. See
-[`SCENARIO_AUDIT_2026-06-24.md`](SCENARIO_AUDIT_2026-06-24.md) for the current
-inventory and [`SCENARIO_RESEARCH_2026-06-24.md`](SCENARIO_RESEARCH_2026-06-24.md)
+cases. Current class counts are `diagnose` 6, `secure` 8, `capacity` 5,
+`test` 3, and two each for `augment`, `detect`, `expand`, `monitor`, and
+`upgrade`, plus one `guard`. The separately versioned Core selection contains 20
+of these cases; `extended.json` carries the remaining 13. See
+[`archive/SCENARIO_AUDIT_2026-06-24.md`](archive/SCENARIO_AUDIT_2026-06-24.md) for the historical
+inventory and [`archive/SCENARIO_RESEARCH_2026-06-24.md`](archive/SCENARIO_RESEARCH_2026-06-24.md)
 for the external benchmark scan and Core 20 recommendation. The concise decision
 summary is
-[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
+[`archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md).
 
-| Pillar | Class | Scenarios now | Grounding | Real-data source |
+| Pillar | Class | Original seed scenarios | Grounding | Real-data source |
 |---|---|---|---|---|
 | P1 | `detect` | 1 | closed-book | `kube_crashloop_pods` |
 | P1 | `monitor` | 1 | closed-book | pod logs |
@@ -80,7 +83,7 @@ indefinitely.
 The historical backlog below explains how the original seed was widened. It is
 retained as the taxonomy rationale, not as the current next-action list. The
 current next-action list is the Core 20 delta in
-[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md):
+[`archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md):
 external tool/session liveness, backup restore verification,
 home-network/WAN/DNS localization, Flux drift, Home Assistant recorder/MQTT, and
 Linux/Kubernetes resource pressure.
@@ -133,7 +136,7 @@ Plex transcode errors, DNS resolution failures, etc.
 ## 6. Next action
 
 Review the implemented Core 20 delta scenarios named in
-[`SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
+[`archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](archive/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
 against operator expectations, then run the Core 20 roster before expanding to
 the full 33-scenario corpus. The per-taxonomy report ([`report.py`](../report.py))
 will score the updated classes.

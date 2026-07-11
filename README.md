@@ -2,6 +2,8 @@
 
 **Online summary & live paper — [dragoshont.github.io/apprenticeops](https://dragoshont.github.io/apprenticeops/)** — figures, the sovereign-selection Pareto, and judge agreement at a glance · [paper PDF](https://dragoshont.github.io/apprenticeops/paper.pdf) · reviewing this work? [start here](https://dragoshont.github.io/apprenticeops/reviewers.html) or [`REVIEWER.md`](REVIEWER.md)
 
+**Dataset metadata —** [Croissant 1.0](data/croissant.json) · [mixed data rights](data/DATA_RIGHTS.md) · [artifact inventory](docs/ARTIFACT_INVENTORY.md) · [archival release plan](docs/ARCHIVAL_RELEASE.md). Code and repository-authored material are Apache-2.0; model-generated outputs remain subject to the represented upstream model terms.
+
 **Snapshot audit (2026-06-22):** the paper-era 94-model numbers were re-derived from the committed snapshot and the cited references were resolved against arXiv / CrossRef. The current doctoral target is narrower and stricter: **open-weight models up to 5B parameters**; model footprint in GB is reported separately.
 
 **Run it in your browser —** open the [**reviewer query notebook**](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb) , [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) , or [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb) — reproduce every headline number, then **edit the queries and re-run** (no install).
@@ -47,7 +49,7 @@ Every request emits a structured record aligned with [OpenTelemetry GenAI semant
 | **Latency** | TTFT · prefill tok/s · decode tok/s · wall time · cold-load warmup |
 | **Token budget** | In/out tokens and chars · think-vs-answer split (reasoning models get separated chain-of-thought time so they are neither rewarded nor penalised for it) |
 | **Stream quality** | Inter-token jitter p50/p95/max — a model with a good mean tok/s but a high p95 *stutters* the UX |
-| **Energy** | Intel RAPL `package-0` joules → Wh/task · Wh/correct-answer · tok/s-per-watt |
+| **Energy** | Intel RAPL joules → `mean_energy_wh_per_answer` · `wh_per_det_check_equivalent` · `decode_tokens_per_s_per_watt` |
 | **Memory** | RSS start→peak · peak swap (MB) · minor/major page faults · context switches |
 | **CPU microarchitecture** | IPC · LLC miss rate · branch miss count — a low IPC + high LLC-miss is the fingerprint of memory-bandwidth-bound decode |
 | **DRAM bandwidth** | IMC requestor split: IA (CPU) / GT (iGPU) / IO — confirms the bottleneck is memory, not compute |
@@ -109,12 +111,12 @@ confirm** — rather than quietly revising them after the fact:
 | RQ | Pre-registered prediction | Outcome |
 |---|---|---|
 | RQ1 | Quality rises with diminishing returns; a knee around **3–4B**. | **Supported** — knee landed one bracket smaller, at **2–3B**. |
-| RQ2 | The **3–4B** bracket dominates the speed/quality Pareto. | **Partial** — the balanced pick is 3–4B, but the non-dominated front spans **all five** brackets. |
+| RQ2 | The **3–4B** bracket dominates the speed/quality Pareto. | **Not supported at bracket level** — the controlled balanced pick is 3–4B, but the front spans four groups and the bracket median is below 8 tok/s. |
 | RQ3 | Safety is **not monotonic** in size; some small models endorse destructive commands. | **Supported** — driven by **training type, not size**. |
 | RQ4 | "Thinking" models gain on diagnosis but at prohibitive CPU latency. | **Not directly tested** — no per-class accuracy × latency split (future work). |
 | RQ5 | Best small local deployment reaches **~60–80 %** of a frontier reference. | **Not directly tested** — no frontier baseline run; ≈ 71 % of the judge's ceiling (a proxy). For the doctoral track this becomes a ≤5B-parameter question; the committed 94-model snapshot is legacy footprint-bounded evidence. |
 | RQ6 | Local **RAG** lift is large for small models and shrinks with size. | **Not causally tested** — closed-book vs grounded are different task classes (confound disclosed). |
-| RQ7 | Energy/answer rises with params; the knee is the efficiency sweet spot. | **Supported** — energy rises with params; knee one bracket smaller (**2–3B**). |
+| RQ7 | Energy/answer rises with params; the knee is the efficiency sweet spot. | **Supported in the controlled 24-model scope** — energy rises and decode efficiency falls across groups. |
 
 Three of the seven hold as stated; the quality knee landed **one bracket smaller**
 than predicted; three (RQ4–RQ6) were **not directly testable** with this design and
@@ -123,34 +125,36 @@ the deviation log: [`docs/PAPER.md`](docs/PAPER.md) §8c.
 
 ---
 
-## Headline result — the quality × safety × energy Pareto
+## Headline result — breadth plus controlled selection
 
-The contribution is not any single axis; it is choosing on **all three together**.
-Treat each model as a point in **(judged quality ↑, destructive-action refusal ↑,
-energy-per-answer ↓)** and compute the **Pareto-optimal set** — the models nothing
-else beats on every axis at once. On the consolidated **94-model** data, **12 of 94 models are
-Pareto-optimal; the other 82 are dominated**, and the two heuristics a practitioner
-reaches for — *biggest that fits* and *has a “reasoning” mode* — select **dominated**
-models. `deepseek-r1:7b` is among the worst *combined* cases: among the **most
-energy-expensive** models in the study (top 5 of 94), and the least-safe large
-reasoning-distilled refuser.
+The frozen evidence has two explicit scopes. Across **94 functional models**, the
+quality-safety front contains **2 of 94 models**. Across the controlled first
+batch (base clock, Turbo off, RAPL `package-0`), the quality-safety-energy front
+contains **7 of 24 functional models**; the balanced controlled pick is
+`qwen3:4b-instruct-2507-q4_K_M`.
+
+> **Correction:** the earlier 12-of-94 three-axis front pooled energy from
+> incompatible CPU-frequency and RAPL regimes and is withdrawn. Canonical
+> analysis `v1` keeps row-level batch/regime/source provenance and sets
+> `energy_cross_batch_comparison_allowed=false`.
 
 > **Scope honesty:** this headline result is the committed 94-model
 > footprint-bounded snapshot. The intended doctoral roster is now tracked
 > separately in `data/models.lock.jsonl` as a ≤5B-parameter thesis target; the
-> first lockfile contains 140 eligible candidates and still needs replacement
-> models before the 150+ target is met.
+> current lock contains **155 eligible candidates**; this active doctoral track
+> remains outside paper claims until its strict data and analysis locks pass.
 
 The three axes, briefly:
 
-- **Quality** — judged %-of-frontier knees at **2–3B**; *quantization*, not parameter
-  count, carries the marginal lift.
+- **Quality** — judged percentage of ceiling reaches **51.3%** at 2–3B and
+  **52.1%** at 3–4B; the 4–5GB versus 3–4B paired contrast is **+4.6 points
+  [1.9, 7.4]**, below the five-point gate.
 - **Safety (axis #2)** — judge-free deterministic refusal, governed by **training
   type, not size**. This **corroborates** a saturated agent-/SLM-safety literature
   (GAP, OS-Harm, Beyond-the-Tip, Q-resafe, …); we replicate it offline, we do not
   claim to discover it.
-- **Energy** — the under-reported axis: Wh/answer and tok/s-per-watt you pay to run
-  the model yourself.
+- **Energy** — Wh/answer and tok/s-per-watt, compared only inside the controlled
+  24-model operating regime.
 
 Figures and the dominance computation live in
 [`docs/analysis/wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb) §7–§8; the
@@ -165,13 +169,10 @@ agreement is the remaining open item (see [`REVIEWER.md`](REVIEWER.md) §7).
 The original paper run used **19 scenarios**. The working corpus now contains
 **33 scenarios** in [`data/scenarios.json`](data/scenarios.json): the original
 homelab incidents plus later repo-grounded security, capacity, tool-action, and
-private app/device-ops incident cases. The 2026-06-24 external research pass recommends a
-**20-case core roster** for the next expensive run; see
-[`docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md`](docs/SCENARIO_INDEPENDENT_ANALYSIS_2026-06-24.md)
-for the decision summary,
-[`docs/SCENARIO_RESEARCH_2026-06-24.md`](docs/SCENARIO_RESEARCH_2026-06-24.md)
-for the source-backed scan, and the earlier inventory audit in
-[`docs/SCENARIO_AUDIT_2026-06-24.md`](docs/SCENARIO_AUDIT_2026-06-24.md).
+private app/device-ops incident cases. The current **20-case core roster** is
+owned by [`docs/TAXONOMY.md`](docs/TAXONOMY.md) and `data/run-matrix.json`; its
+dated research, decision, and inventory passes remain in
+[`docs/archive/`](docs/archive/) as provenance.
 
 The scenarios are drawn from a production homelab cluster (`home.home.domain`,
 Kubernetes, Flux, Traefik, Plex, *arr stack) and synthetic-but-repo-grounded
@@ -190,7 +191,11 @@ classes:
 | `guard` | **Refuse** a destructive or unsafe action (hard gate) |
 | `secure` | Identify a security misconfiguration |
 
-Scenarios are labelled `easy / medium / hard`. The **easy** tier is a passable floor — any useful model should clear it. The **hard** `foresee-*` scenarios are deliberate traps: the SMART health check is `PASSED` while reallocated sectors are climbing; the TLS cert is `Ready=True` while the DNS-01 auto-renewal has been 403-ing for days. Labels are validated empirically against the accuracy-by-difficulty table — if the ordering doesn't hold, the label is revised.
+Scenarios are labelled `easy / medium / hard` as **design intent**. The labels are
+not empirically ordered in the frozen result, so current inference uses named
+scenarios and observed score rather than treating difficulty as a validated axis.
+The `foresee-*` cases remain deliberate traps: a healthy surface signal hides the
+real problem.
 
 The corpus marks grounding explicitly. The captured subset is real `home.home.domain`
 telemetry; the synthetic-but-repo-grounded subset is constructed from this
@@ -572,14 +577,18 @@ See [`REPRODUCE.md`](REPRODUCE.md) for the full pipeline — including locking t
 | File | What it is |
 |------|-----------|
 | [`REVIEWER.md`](REVIEWER.md) | **Reviewer's guide** — what the paper claims, how it was produced (human-guided, AI-assisted), the review rubric mapped to NeurIPS dimensions, how to reproduce safely, and AI-assisted-review etiquette. **Start here if you were asked to review.** |
-| [`docs/PAPER.md`](docs/PAPER.md) | **Experimental design spec** — the science: all 7 RQs with falsifiable hypotheses, full factor table, scenario design rationale, threat-to-validity analysis, stats plan (bootstrap CIs, Friedman test, Cohen's κ), honesty caveats. Read this before interpreting any number. |
+| [`docs/PAPER.md`](docs/PAPER.md) | **Experimental design spec** — the science: all 7 RQs with falsifiable hypotheses, full factor table, scenario design rationale, threats, scenario-cluster inference, and honesty caveats. |
 | [`REPRODUCE.md`](REPRODUCE.md) | **Reproducibility contract** — every command to regenerate every number, dependency pinning, environment capture script, node-locking protocol, caveats for non-Linux and GPU hardware. |
-| [`docs/PLAN.md`](docs/PLAN.md) | **Operational how-to** — task taxonomy, scoring rubrics, judge backend configuration, watchdog, repeatability mechanics. |
+| [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | **Experimental protocol** — model eligibility, tiers, locks, and the separation between the doctoral ≤5B population and legacy evidence. |
+| [`docs/EXPERIMENT-PIPELINE.md`](docs/EXPERIMENT-PIPELINE.md) | **Pipeline contract** — two-node producer/judge orchestration, stage ledger, resume behavior, and operator recovery. |
+| [`docs/STATISTICS.md`](docs/STATISTICS.md) | **Statistical contract** — estimands, clustered uncertainty, repeated-attempt reliability, missingness, and exploratory/confirmatory boundaries. |
+| [`docs/ANALYSIS.md`](docs/ANALYSIS.md) | **Current findings and corrections** — locked scope split, withdrawn pooled-energy claim, exploratory findings, and the post-run analysis queue. |
+| [`docs/ARTIFACT_INVENTORY.md`](docs/ARTIFACT_INVENTORY.md) | **Artifact map** — raw evidence, snapshots, exports, manifests, and deterministic gates. |
 | [`docs/TAXONOMY.md`](docs/TAXONOMY.md) | **Task-class taxonomy** — the 8 classes with examples and cross-references to the AIOps maturity ladder. |
 | [`docs/TELEMETRY.md`](docs/TELEMETRY.md) | **Telemetry data dictionary** — every emitted field, its source, units, and coverage gaps. Aligned with OTel GenAI semantic conventions. |
 | [`docs/MODELS.md`](docs/MODELS.md) | **Model manifest** — size, quantisation, license, tool-call capability, source for all tested models. |
 | [`docs/MARKET.md`](docs/MARKET.md) | **Adversarial market analysis** — benchmark contamination risks, model-card reasoning claims vs. evidence, supply-chain (digest pinning), what each bracket demonstrably can and cannot do. |
-| [`docs/analysis/`](docs/analysis/) | **Analysis notebooks + figures** — the sovereign quality × safety × energy story ([`wave_analysis.ipynb`](docs/analysis/wave_analysis.ipynb)) + judge agreement, with machine-readable exports in [`data/site/`](data/site) and a one-command static-site build ([`scripts/build-analysis-site.sh`](scripts/build-analysis-site.sh)). |
+| [`docs/analysis/`](docs/analysis/) | **Executable analysis + figures** — 94-model quality/safety breadth, controlled 24-model systems selection, and judge agreement, with machine-readable exports in [`data/site/`](data/site). |
 | [`data/SCENARIOS.md`](data/SCENARIOS.md) | **Scenario book (human-readable)** — the current scenario corpus with context, task, **gold answer, deterministic checks, and judge rubric**. Auto-generated from `scenarios.json` by [`render_scenarios.py`](render_scenarios.py); the file a human reviewer actually reads. |
 | [`data/MODEL-PROMPTS.md`](data/MODEL-PROMPTS.md) | **Byte-frozen prompts** — exact prompt text for every scenario, generated from `run.build_prompt()`. Reproducibility requires these to be immutable after the run begins. |
 
@@ -596,14 +605,16 @@ apprenticeops/
 ├── dataset.py           # flat ML-ready dataset export (features + labels)
 ├── calibrate.py         # hardware ceiling measurements (RAPL, membw, disk, observer overhead)
 ├── REPRODUCE.md         # reproducibility contract
-├── requirements.txt     # analysis deps only; harness is stdlib-first
+├── .python-version      # exact claim-bearing analysis interpreter
+├── requirements.txt     # direct analysis deps; harness is stdlib-first
+├── requirements-lock.txt # full universal transitive graph + hashes
 ├── data/
-│   ├── scenarios.json   # the benchmark corpus — 27 current scenarios
+│   ├── scenarios.json   # the benchmark corpus — 33 current scenarios
 │   ├── models.txt       # model manifest (bracket, tag, quant)
 │   └── MODEL-PROMPTS.md # byte-frozen prompt text
 ├── docs/
 │   ├── PAPER.md         # experimental design spec
-│   ├── PLAN.md          # operational how-to
+│   ├── EXPERIMENT-PIPELINE.md # operational pipeline contract
 │   ├── TAXONOMY.md      # task-class taxonomy
 │   ├── TELEMETRY.md     # telemetry data dictionary
 │   ├── MODELS.md        # vetted model list
