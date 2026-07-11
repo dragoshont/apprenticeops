@@ -6,9 +6,9 @@ Target: workshop paper + arXiv preprint.
 >
 > **Study phase:** active spec for the powered study (Pass 2).
 >
-> **Relationship to pilot:** supersedes the Pass-1 pilot framing in
-> [`PLAN.md`](./PLAN.md) for publication purposes; [`PLAN.md`](./PLAN.md)
-> remains the operational how-to.
+> **Relationship to pilot:** supersedes the archived Pass-1 framing in
+> [`archive/PLAN.md`](archive/PLAN.md). Current operator and protocol contracts
+> are `REPRODUCE.md`, `PROTOCOL.md`, and `EXPERIMENT-PIPELINE.md`.
 >
 > **Pass split:** Pass-1 (n=1/class) is the pilot that de-risks the harness and
 > yields the speed/RAM/safety profile; Pass-2 is the study that produces the
@@ -17,11 +17,13 @@ Target: workshop paper + arXiv preprint.
 > **Submission workflow:** phase gates and pre-submit checklist are tracked in
 > [`PAPER_PHASES.md`](./PAPER_PHASES.md).
 >
-> **Intent memo:** peer-alignment scope and claims are tracked in
-> [`PAPER_INTENT.md`](./PAPER_INTENT.md).
+> **Intent and readiness:** scope, non-claims, submission gates, and open items
+> are tracked in [`PAPER_PHASES.md`](./PAPER_PHASES.md); current findings and
+> corrections are in [`ANALYSIS.md`](./ANALYSIS.md).
 >
-> **Runtime readiness:** the current weeks-long inference readiness gate is tracked
-> in [`WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md`](./WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md).
+> **Runtime readiness:** current behavior is owned by `EXPERIMENT-PIPELINE.md` and
+> `REPRODUCE.md`; the completed audit is archived at
+> [`archive/WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md`](archive/WEEKS_LONG_INFERENCE_READINESS_AUDIT_2026-07-05.md).
 
 ## Abstract (Draft)
 
@@ -49,29 +51,29 @@ one of them orders the choice. We profile three axes at once in a single
 offline, CPU-only harness. The committed paper-era evidence is a **94-model** legacy footprint-bounded sweep (0.36–8B); the current doctoral protocol is being re-locked around open-weight models up to **5B parameters**. **Quality:** across that snapshot,
 judged ops-reasoning climbs steeply with size to a usable floor by **2–3B** — one
 bracket below our **pre-registered 3–4B** prediction — then returns flatten (the
-2–3B→3–4B step adds **<1 point**, the 4–5GB bracket a further **+4.6**), and
+2–3B→3–4B step adds **<1 point**, the 4–5GB group a further **+4.6 points
+[1.9, 7.4]**, below the pre-registered five-point gate), and
 **quantization largely preserves it** — so "biggest that fits" buys
 little above the knee. **Safety:** on **deterministic** refusal-of-destructive-action
 checks (no LLM judge, our most robust numbers) the safest size bracket still plateaus
 near **80 %** — one destructive prompt in five survives — and the dominant driver
 of refusal is **training type, not size**: **reasoning-distilled ("thinking",
-R1-style)** models refuse at **47.2 %** [41.3, 53.3] versus **71.4 %** [70.3,
-72.4] for instruct, a gap wide enough that a **0.36 B** instruct model out-refuses
+R1-style)** models refuse at **47.2 %** versus **71.4 %** for instruct; the
+paired task contrast is **24.2 points [15.2, 32.5]**, wide enough that a
+**0.36 B** instruct model out-refuses
 a **7.6 B** reasoning model and the **three lowest refusers in the study are all
 reasoning-distilled**. We are explicit that this safety result **corroborates** a
 fast-growing agent-/SLM-safety literature (reasoning-distillation and
 quantization degrade safety; text-refusal ≠ action-refusal) rather than
 discovering it — its weight here is that it **replicates offline, on CPU, at
 homelab scale**, where the unsafe model is also the one the size heuristic picks.
-**Energy:** we meter **Wh per answer, tokens/s-per-watt, and thermal headroom** on
-owned hardware, so the bigger model's bill for capability *above* the knee is
-counted in watts, not adjectives. The contribution is the **integration** —
-quality × safety × energy measured **together** for the
-offline/CPU/locally-sovereign model-selection decision, a regime no prior
-benchmark targets whole — released as a reproducible artifact (harness +
-real-incident scenarios + telemetry schema). The model ranking is the
-demonstration; the artifact, and the three-axis selection method, are the
-contribution.
+**Energy:** claim-bearing systems evidence uses **24 functional first-batch
+models** measured at base clock, Turbo off, and RAPL `package-0`. Its three-axis
+front contains **7 of 24 models**; the 94-model quality-safety front contains
+**2 models**. The contribution is **comparability-aware integration** for the
+offline/CPU/locally-sovereign selection decision. An earlier 12-of-94 three-axis
+front is withdrawn because it pooled incompatible energy regimes; canonical
+`v1` retains row-level regime provenance so that join cannot recur silently.
 
 ## 1. Introduction and Scope
 
@@ -294,9 +296,10 @@ thesis track from legacy footprint-bounded rows above 5B.
   the real problem (SMART `PASSED` while reallocated/pending sectors climb; cert
   `Ready=True` while DNS-01 auto-renewal has 403'd for days), and the closed-book
   upgrade/expand variants withhold the reference doc — hard-but-passable, not
-  impossible. The labels are **validated empirically** by the accuracy-by-difficulty
-  table (report.py): if mean score doesn't fall easy→hard, the label is wrong and
-  gets revised. This shows the benchmark is neither saturated nor trivial.
+  impossible. These labels record **design intent**, not a validated empirical
+  axis: in the frozen result, mean deterministic score does not fall easy→hard.
+  Current analysis therefore uses named scenarios and observed score; label
+  recalibration requires held-out evidence.
 
 ## 6. Metrics and Instrumentation
 
@@ -559,6 +562,62 @@ implementation-status appendix).
   size (RQ3 — the naive size ranking even inverts) and the signal is cheap to keep. *(Gate logic lives in
   [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb).)*
 
+  ## 8a. Post-lock analysis amendment for the current doctoral track
+
+  > **Status honesty:** this amendment was written on 2026-07-10 after inspecting
+  > part of the active 152-tag run. It does **not** alter H1-H7, the model roster,
+  > scenarios, sampling policy, token/time budgets, judges, or any inference row.
+  > Its analyses are **exploratory for the active run** and become confirmatory only
+  > on an independent future run or held-out scenario pack. No live partial number
+  > is eligible for the manuscript's results section.
+
+  The amendment strengthens the *analysis of already captured data*. Its primary
+  population is the ≤5B doctoral roster (`data/models.lock.jsonl`,
+  `included=true`); above-5B rows remain a separately labelled legacy comparison.
+  The full contract is [`STATISTICS.md`](STATISTICS.md); current findings,
+  corrections, rejected analyses, and the post-run queue are consolidated in
+  [`ANALYSIS.md`](ANALYSIS.md).
+  The additions are:
+
+  1. **Conditional and unconditional quality.** Report quality among usable
+    completions and again with DNF/blank outcomes included under a locked failure
+    policy. Keep `length`, blank-stop, timeout, and stream-finalization failures
+    separate rather than collapsing them into one error count.
+  2. **Repeated-attempt reliability.** Add scenario-specific `pass_1`, all-five
+    `pass^5`, `all_safe^5`, worst-repetition, and lower-tail outcomes. Majority
+    agreement remains a repeatability measure; it is not success because a model
+    can fail consistently.
+  3. **Correct sampling units.** Use scenario-cluster intervals for per-model task
+    generalization, paired cluster resampling for contrasts, and model clustering
+    for tier/family summaries. Classes with fewer than three independent scenarios
+    remain descriptive named-scenario evidence.
+  4. **Crossed SLM effects.** Estimate associations among parameter count,
+    verified same-lineage quantization, training regime, architecture, family, and
+    task while retaining scenario/model dependence. These are observational
+    associations, never causal effects of size or architecture.
+  5. **Task-sensitive quantization.** Compare only verified lineage pairs, paired
+    by scenario and repetition, including quality, `det_detail` failure families,
+    safety, completion reliability, latency, memory, and energy.
+  6. **Black-box uncertainty.** Test whether repeat disagreement in check vectors,
+    judge scores, action/refusal decisions, or structured output predicts held-out
+    error. Report out-of-fold risk-coverage; do not select and evaluate a threshold
+    on the same scenarios.
+  7. **Rank/Pareto stability.** Resample scenarios and report Kendall rank
+    agreement, top-k inclusion, and Pareto membership frequency under judge,
+    failure-policy, and energy-metric sensitivity.
+  8. **Tokenizer/budget fairness and lower-tail risk.** Relate input-token bloat,
+    characters/token, and effective character budget to TTFT/truncation under
+    model/scenario controls; report worst safety/action scenarios beside means.
+
+  Before any of these become claim-bearing, a **metric-contract gate** must make
+  `report.py`, `scripts/metrics.py`, the telemetry dictionary, and dashboard
+  exports agree. The 2026-07-10 audit specifically requires correcting the
+  Friedman matrix orientation, canonicalising MBU and energy-per-success,
+  calculating KV-cache estimates from the configured dtype, expanding the report
+  safety gate beyond a single class string, and freezing a reviewed model dimension
+  from runtime metadata plus lineage/training annotations. These are analysis
+  repairs; they do not require rerunning or altering the active experiment.
+
 ## 8b. Results (quality: 2-judge × 5-rep ensemble; safety/energy: deterministic)
 
 > **Status (state up front):** two kinds of number appear below, with different
@@ -577,23 +636,23 @@ implementation-status appendix).
 > safety as the **most robust** (judge-free) and a **replication** of the
 > agent-/SLM-safety literature (§11), not a discovery.
 
-**Quality scales with size, with the knee at 2-3B.** Judged **% of frontier** per
-bracket (consensus judge score ÷ 5; bootstrap 95 % CI over 19 scenarios × 5 reps ×
-the bracket's models — the **5-rep × 2-judge** ensemble):
+**Quality scales with size, with the knee at 2-3B.** Judged **% of ceiling** per
+historical group (consensus judge score ÷ 5; scenario-cluster 95% interval over
+19 tasks, retaining all models and repetitions within each sampled task):
 
 | Bracket | judged % of frontier | 95 % CI |
 |---|---|---|
-| 0-1B | 32.2 % | [31.5, 32.9] |
-| 1-2B | 38.3 % | [37.5, 39.1] |
-| 2-3B | 51.3 % | [50.3, 52.2] |
-| **3-4B** | **52.1 %** | [51.3, 53.1] |
-| legacy 4-5GB footprint | 56.8 % | [54.6, 58.9] |
+| 0-1B | 32.2 % | [29.2, 35.4] |
+| 1-2B | 38.3 % | [34.3, 42.4] |
+| 2-3B | 51.3 % | [45.4, 57.3] |
+| **3-4B** | **52.1 %** | [46.5, 57.7] |
+| legacy 4-5GB footprint | 56.8 % | [50.6, 62.8] |
 
 The curve rises **steeply** through 2-3B (+13 points), then the 2-3B→3-4B step is
 **flat** (+0.8 points): the diminishing-returns **knee is at 2-3B**. The legacy 4-5GB footprint
-bracket then adds a **further +4.6 points** (non-overlapping CIs) — a real but
-**small** lift relative to the early climb, and it costs ~3× the per-model
-wall-clock of the 1-2B bracket (§4 hardware). The decision-relevant shape is
+bracket then adds **+4.6 points [1.9, 7.4]** under a paired scenario bootstrap.
+The marginal intervals overlap and the point estimate misses the five-point
+gate. The decision-relevant shape is
 unchanged: **the capability you need arrives small, and paying for the top bracket
 buys a few points, not a tier.**
 
@@ -603,12 +662,10 @@ legacy 4-5GB footprint bracket. The load-bearing comparison is the per-model **f
 (best-in-bracket — the best 3-4B q4 matches the best 4-5GB-footprint q8), not the bracket
 average.*
 
-**Pre-registered gate verdict → marginal HOLD on the legacy 4-5GB footprint bracket.** Applying the §8
-cost/value gate (expand that footprint bracket only if it beats 3-4B by **≥ 5 pts with
-non-overlapping CIs**): the consolidated lift is **+4.6 pts** with
-**non-overlapping** CIs — directionally a pass, but **just under** the 5-pt bar, so
-the verdict is a **marginal HOLD**. "**Larger quantized footprint buys a small,
-sub-threshold judged lift on this CPU**" is the **finding**, not a gap.
+**Pre-registered gate verdict: HOLD on the legacy 4-5GB footprint group.** The
+observed paired lift is **+4.6 points [1.9, 7.4]**; the marginal intervals overlap
+and the point estimate is below five points. The behavioral breadth result is a
+small, sub-threshold lift; systems cost is assessed only in the controlled batch.
 
 **The win is the quant, not the bracket.** The best 3-4B model
 (`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`, 71.4 %) **edges the best legacy 4-5GB-footprint entry**
@@ -634,11 +691,11 @@ shape as quality:
 
 | Bracket (instruct only) | det. refusal rate | 95 % CI |
 |---|---|---|
-| 0-1B | 61.6 % | [59.2, 63.9] |
-| 1-2B | 70.3 % | [68.2, 72.4] |
-| 2-3B | 76.7 % | [74.6, 78.7] |
-| 3-4B | 75.4 % | [73.5, 77.4] |
-| legacy **4-5GB footprint** | **79.8 %** | [75.3, 84.0] |
+| 0-1B | 61.6 % | [47.0, 75.9] |
+| 1-2B | 70.3 % | [55.3, 84.6] |
+| 2-3B | 76.7 % | [62.7, 90.1] |
+| 3-4B | 75.4 % | [62.2, 88.1] |
+| legacy **4-5GB footprint** | **79.8 %** | [65.9, 93.1] |
 
 The plateau is the point: the safest bracket still **endorses roughly one
 destructive action in five**. Behind a human, on low-stakes tasks, that is a
@@ -652,11 +709,12 @@ unsloth Qwen-1.5B repack — **4 models** run in their native thinking mode):
 
 | Arm | det. refusal rate | 95 % CI | n |
 |---|---|---|---|
-| instruct | **71.4 %** | [70.3, 72.4] | 2700 |
-| reasoning ("thinking", R1-distill) | **47.2 %** | [41.3, 53.3] | 120 |
+| instruct | **71.4 %** | [57.7, 84.7] | 2700 |
+| reasoning ("thinking", R1-distill) | **47.2 %** | [30.0, 63.3] | 120 |
 
-The CIs are nowhere near overlapping — a **~24-point** safety penalty for the
-"reasoning" training sold as an upgrade. Concretely, **`smollm2:360m` (0.36 B,
+The marginal task-cluster intervals overlap, but the paired task contrast is
+**+24.2 points [15.2, 32.5]** for instruct minus reasoning. Concretely,
+**`smollm2:360m` (0.36 B,
 instruct) refuses more often (65.6 %) than `deepseek-r1:7b` (7.6 B, reasoning,
 47.2 %)** — a 21× smaller model is the safer operator. Among the 94 functional
 models, the **three lowest refusers are all R1-distilled** (`deepseek-r1:1.5b`
@@ -682,74 +740,43 @@ diagnosis instead talks the model *into* the destructive action.
 > **refusal must be measured behaviourally, because every size / benchmark /
 > "reasoning" proxy points the wrong way.**
 
-***(3) The sovereign selection — a quality × safety × energy Pareto.*** The three
-axes earn their keep only *together*; the contribution is the selection, not any
-single column. Treat each model as a point in **(judged quality ↑, deterministic
-refusal ↑, energy-per-answer ↓)** and compute the **Pareto-optimal set**: model
-$A$ **dominates** $B$ iff $A$ is no worse on all three axes and strictly better on
-at least one; the **non-dominated** models are the short-list a practitioner
-should choose from. **12 of 94 models are Pareto-optimal; the other 82 are
-dominated** — beaten on *every* axis at once, so nothing is lost by discarding them.
+***(3) Selection under two valid scopes.*** Quality and safety are reported across
+**94 functional models**. Energy, speed, wall-clock, roofline, and the three-axis
+front use only **24 functional first-batch models** measured at base clock, Turbo
+off, and RAPL `package-0`.
 
-| Pareto-optimal model | bracket | judged % | refusal % | mWh/ans |
-|---|---|---|---|---|
-| **`qwen3:4b-instruct-2507-q4_K_M`** — sovereign pick | 3-4B | 68.6 | **90.8** | 106 |
-| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` — quality-max | 3-4B | **71.4** | 80.3 | 138 |
-| `qwen3:4b-instruct-2507-q8_0` | legacy 4-5GB footprint | 71.3 | 90.8 | 155 |
-| `granite4:tiny-h` | legacy 4-5GB footprint | 63.5 | 74.2 | 54 |
-| `qwen3:1.7b-q8_0` | 1-2B | 62.1 | 82.8 | 93 |
+Within that controlled scope, model $A$ dominates $B$ when it has at least as
+much judged quality and refusal, uses no more energy, and is strictly better on
+at least one axis. **7 of 24** models are non-dominated:
+
+| Controlled Pareto model | legacy group | judged % | refusal % | mWh/answer |
+|---|---|---:|---:|---:|
+| **`qwen3:4b-instruct-2507-q4_K_M`** — balanced pick | 3-4B | 68.6 | **90.8** | 106 |
+| `qwen3:4b-instruct-2507-q8_0` — controlled quality-max | 4-5GB | **71.3** | **90.8** | 155 |
+| `granite4:tiny-h` | 4-5GB | 63.5 | 74.2 | 54 |
 | `qwen3:1.7b` | 1-2B | 61.5 | 83.6 | 36 |
 | `granite4:1b-h` | 0-1B | 45.3 | 67.8 | 30 |
-| `qwen3:0.6b-q8_0` | 0-1B | 41.8 | 68.3 | 34 |
 | `qwen3:0.6b` | 0-1B | 36.6 | 64.7 | 15 |
-| `hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M` | 0-1B | 36.2 | 68.6 | 32 |
 | `smollm2:360m` | 0-1B | 27.8 | 65.6 | 23 |
-| `smollm2:135m-instruct-q8_0` | 0-1B | 22.8 | 48.6 | 13 |
 
-*The front is the **short-list** — all 12 are non-dominated; the table leads with the
-recommended **sovereign pick**, then sorts by quality (sorting *by* quality would lead
-with the lower-safety model, against the three-axis point). `unsloth/Qwen3-4B` is the
-**quality-max**, but it is the *original* Qwen3-4B (a hybrid-thinking release): all four
-original-Qwen3-4B packagings refuse at **80–84 %** vs **90.8 %** for the pure-instruct
-Instruct-2507 — exactly why the balanced pick is the 2507 instruct, not the top score.*
+The balanced rule chooses the safest model within five quality points of the
+controlled maximum, then the cheaper model. It selects the q4 4B instruct
+package; its q8 sibling gains 2.7 quality points at about 46% more energy.
+`deepseek-r1:7b` is the most energy-expensive controlled model (303 mWh/answer)
+and has 47.2% refusal.
 
-Two reads carry the integration. **(i) The proxies land off the front — even
-*within* the 4B cluster.** The high-quality corner is owned by **three Qwen3-4B
-variants**, and choosing among them is itself a three-axis decision. The
-**quality-max** is `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (71.4 %) — but it refuses
-only **80.3 %** of destructive prompts, while its quality-tied sibling
-`qwen3:4b-instruct-2507-q8_0` (71.3 %, a **0.1-point** gap well inside the CI)
-refuses **90.8 %**. So the **sovereign pick is `qwen3:4b-instruct-2507-q4_K_M`** —
-the **safest (90.8 %) and cheapest (106 mWh)** model within a few quality points of
-the top, mutually non-dominated with its **q8** sibling (which buys **+2.7 judged
-points for ~46 % more energy**, 155 vs 106 mWh). Taking the single-axis "just pick
-the top score" model would trade **~10 safety points for 0.1 quality points** —
-exactly the move the three-axis view declines. **(ii) The tempting upgrades are dominated.** **All four**
-reasoning-distilled models fall **off** the front; `deepseek-r1:7b` is among the
-worst *combined* cases — **one of the most energy-expensive models in the study**
-(303 mWh/answer, top 5 of 94) and the **least-safe** large model (47.2 %),
-dominated by much of the roster. So the two heuristics a practitioner reaches for —
-*biggest that fits* and *has a "reasoning" mode* — select **dominated** models; the
-front is small, spans the whole size range, and is found only by measuring all
-three axes.
+Across the **94-model breadth scope**, energy is excluded. The quality-safety
+front has **2 models**: the quality-max original
+`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (71.4% quality, 80.3% refusal) and
+`qwen3:4b-instruct-2507-q8_0` (71.3%, 90.8%).
 
-> **Honesty (state up front).** This front is computed on **point estimates**; its
-> **quality** axis is now the **5-rep × 2-judge ensemble** (κ_quad = 0.91), and
-> safety and energy are judge-free / measured. The membership is still a point
-> estimate — **CI-aware dominance** (treating near-ties as non-separable) may widen
-> the front by a model or two. Energy is `psys`-RAPL on one CPU; ranks invite re-runs. The **logic** —
-> dominance on three *measured* axes — is the contribution; the exact membership
-> would only shift under **CI-aware dominance**. Reproduced in
-> [`wave_analysis.ipynb`](analysis/wave_analysis.ipynb) §8.
-**Telemetry coverage and missing data.** The three decision axes (judged quality,
-refusal, energy) are **100 % complete across all 94 functional models**. Only the
-memory-bandwidth axis (MBU/roofline) has gaps: **6 of 94** models lack per-run
-bandwidth telemetry — a perf-counter capture shortfall on the smallest/fastest
-models, **independent of behaviour or scores (missing at random)**. MBU is therefore
-reported on the **88-of-94** covered subset (available-case analysis), every other
-axis stays at full $N$, and no otherwise-complete model is dropped to paper over an
-instrumentation gap. Models with *no* usable rows on *any* axis (`phi:2.7b` plus the
-registry pull-failures) are excluded entirely and named in the appendix.
+> **Correction lock.** The earlier 12-of-94 three-axis front pooled energy from
+> incompatible CPU-frequency and RAPL regimes and is withdrawn. Raw evidence is
+> immutable; canonical `v1` now records `collection_batch`,
+> `cpu_frequency_regime`, `power_source`, and `energy_analysis_scope`. Both
+> current fronts use point estimates; scenario-bootstrap membership stability is
+> an exploratory follow-up. Reproduced in
+> [`wave_analysis.ipynb`](analysis/wave_analysis.ipynb).
 ## 8c. Hypothesis outcomes (confirmatory) and deviations from the pre-registration
 
 Mapping each **pre-registered** hypothesis (§3, fixed before the run) to its result.
@@ -761,34 +788,32 @@ revising the hypotheses to fit the outcome.
 | # | Pre-registered prediction | Result | Verdict |
 |---|---|---|---|
 | **H1** | quality rises with params, diminishing returns, knee ~**3–4B** | steep climb to **2–3B**, flat 2–3B→3–4B (+0.8 pt), +4.6 pt to 4–5GB | **Supported** — knee one bracket *smaller* than predicted |
-| **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | the balanced pick is 3–4B (`2507-q4`), but the non-dominated front spans **all five** brackets | **Partially supported** — no single bracket dominates |
+| **H2** | the **3–4B** bracket *dominates* the quality/speed Pareto | controlled balanced pick is 3–4B, but the three-axis front spans four groups and the 3–4B median is below 8 tok/s | **Not supported at bracket level** |
 | **H3** | safety is **not monotonic** in size; some small models endorse destructive actions | non-monotonic, driven by **training type** (instruct 71.4 % vs reasoning-distill 47.2 %), not size | **Supported** |
 | **H4** | thinking models gain on *diagnose/test* but at prohibitive CPU latency | reasoning models evaluated on safety + energy; a per-class accuracy × latency breakdown is not isolated here | **Not directly tested** (future work) |
 | **H5** | best small local deployment reaches **~60–80 %** of a *frontier reference* | no frontier-model baseline was run; the best small model reaches ≈ **71 %** of the judge's 1–5 ceiling (a proxy); the doctoral track will report the <=5B-parameter version separately | **Not directly tested** (proxy only) |
 | **H6** | local **RAG** lift is large for small models, shrinks with size | closed-book vs grounded are *different task classes* — the RAG-lift confound is disclosed (§9); reported descriptively | **Not causally tested** (confound open) |
-| **H7** | energy rises with params; the knee is also the **energy-efficiency** sweet spot | energy/answer rises with params; the **2–3B** quality knee sits near the tok/s-per-watt optimum | **Supported** — knee one bracket smaller |
+| **H7** | energy rises with params; the knee is also the **energy-efficiency** sweet spot | in the controlled 24-model batch, mean energy rises and decode-rate efficiency falls across groups | **Supported in controlled scope** |
 
 **Deviations from the pre-registration (transparent changes).** Following the
 guidance to *disclose* departures rather than rewrite the plan (Lakens, *Collabra*
-2024): **(1)** the roster grew from the pre-registered **25** to **94** models — a
-second collection batch on the *same* node, scenarios, and protocol, folded into
-one dataset (per-axis / available-case reporting for the single
-bandwidth-telemetry axis with gaps, see *Telemetry coverage* above); **(2)** the
+2024): **(1)** the roster grew from the pre-registered **25** tags to **94
+functional models** — a second batch on the same node/scenarios but a different
+CPU-frequency and RAPL regime. It extends quality/safety breadth but is excluded
+from systems ranking; **(2)** the
 judged-quality axis was upgraded from a single judge to a **5-rep × 2-judge
-ensemble** (κ_quad = 0.91); **(3)** a planned third collection wave was **dropped**
-(the 94-model dataset was deemed sufficient). The H1–H7 tests above are
-**confirmatory** (pre-registered scenarios + protocol); analyses introduced *after*
-the plan — e.g. the within-`Qwen3-4B`-family safety comparison — are flagged as
-**exploratory**.
+ensemble** (κ_quad = 0.91); **(3)** a planned third collection wave was dropped;
+**(4)** canonical `v1` replaced row-bootstrap intervals with scenario-cluster
+intervals and withdrew the invalid pooled energy front. H1–H7 retain their
+original wording; later analyses and corrections are labelled explicitly.
 
-## 8d. Selecting from the front: weight-sensitivity and robustness
+## 8d. Controlled preference sensitivity
 
 A Pareto front is a **set**, not a ranking; collapsing it to one "winner" requires
 a preference. The foundational result is uncomfortable but clarifying: *absent
 stated preferences, every point on the front is equally good* (Miettinen, 1999).
-The sovereign pick of §8b is therefore **one operating point**, not a theorem — so
-we report how the choice behaves across **all** preferences rather than defend a
-single weighting.
+The controlled pick of §8b is therefore **one operating point**, not a theorem.
+This section uses only the 24-model controlled scope.
 
 **Weight-sensitivity (SMAA).** Drawing **100,000** weight vectors uniformly from
 the (quality, safety, energy) simplex and counting how often each model ranks
@@ -798,24 +823,17 @@ model wins:
 
 | Model | bracket | win-share of all weightings |
 |---|---|---|
-| `qwen3:4b-instruct-2507-q4_K_M` (**sovereign pick**) | 3–4B | **39.6 %** |
-| `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 29.4 % |
-| `qwen3:1.7b` | 1–2B | 27.0 % |
-| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` (**quality-max**) | 3–4B | 3.0 % |
+| `qwen3:4b-instruct-2507-q4_K_M` | 3–4B | **36.825 %** |
+| `qwen3:1.7b` | 1–2B | **36.125 %** |
+| `qwen3:4b-instruct-2507-q8_0` | 4–5GB | 25.097 % |
+| `qwen3:0.6b` | 0–1B | 1.934 % |
+| `granite4:tiny-h` | 4–5GB | 0.019 % |
 
-Two facts make the choice **robust, not arbitrary**: only **7 of 94** models win
-under *any* weighting, and just **three split 96 %** of the weight space. The same
-**`Qwen3-4B-Instruct-2507`** family wins the *balanced*, *safety-first*, and
-*quality-first* weightings; it is displaced only by the cheaper **`qwen3:1.7b`**
-when energy dominates. Crucially, the model the size heuristic would pick (the
-quality-max `unsloth-Qwen3-4B`) wins only **3 %** of weightings — a
-preference-independent restatement of the paper's thesis that *"biggest that fits"*
-mis-selects.
-
-**Cross-check (TOPSIS).** An independent standard method — ranking by distance to
-the ideal point (Hwang & Yoon, 1981), equal weights — places
-`qwen3:4b-instruct-2507-q4_K_M` **first of 94**. Two unrelated decision rules
-(plurality over the simplex, and distance-to-ideal) agree on the pick.
+Only **5 of 24** controlled models win under any sampled weighting; the top three
+cover about **98%** of the simplex. Equal-weight **TOPSIS** places
+`qwen3:1.7b` first and the q4 4B package second. The named balanced pick uses a
+different explicit rule — safest within five quality points of the controlled
+maximum, then cheapest. The disagreement is preference sensitivity, not noise.
 
 **What else the three axes admit.** Selecting from a front is a Multi-Criteria
 Decision Analysis (MCDA) problem with a menu of methods, each encoding a different
@@ -828,7 +846,7 @@ roster into preference-ordered tiers (*deploy-grade / conditional / reject*, e.g
 ELECTRE-Tri). We report SMAA + TOPSIS because they are preference-*robust*
 summaries; we flag the known caveat that distance- and pairwise-based methods
 (TOPSIS, AHP) can exhibit **rank reversal** when the candidate set changes, whereas
-the SMAA acceptability is computed over the fixed 94-model roster.
+the SMAA acceptability is computed over the fixed controlled roster.
 
 ## 8e. Per-model SWOT: the deployment-decision synthesis
 
@@ -881,21 +899,28 @@ so the synthesis is reproducible rather than editorial.
 | Quant vs architecture confound | Internal | q4 held constant for headline; q8/QAT as sensitivity |
 | Grounding leak (gold answer derivable only from supplied context vs needs in-weights knowledge) | Construct | Explicit `closed-book`/`grounded` label per scenario; report the two separately so neither masks the other |
 | Thinking-model unfairness | Internal | Separate track + token/latency budget |
-| Multiple comparisons → false winners | Conclusion | Holm–Bonferroni; pre-registered analysis |
+| Multiple comparisons → false winners | Conclusion | Declare test families before running them; Holm–Bonferroni for small locked families, FDR only for labelled exploratory batteries; effect sizes and intervals beside adjusted p-values |
+| **Crossed/repeated observations treated as independent** — rows share models, scenarios, repetitions, and judges | Conclusion | Scenario-cluster intervals for per-model task generalization; model clustering for tier/family summaries; paired cluster resampling for contrasts; two judges on one answer are not two task observations |
+| **Post-lock analysis after partial inspection** — the 2026-07-10 SLM amendment could be mistaken for pre-registration | Conclusion | Label every added analysis exploratory for the active run; preserve H1-H7 verbatim; prohibit live partial numbers from results; require an independent run or held-out pack for confirmation |
+| **Packaged-policy confound** — Ollama tags carry model-specific chat templates, `top_p`/`top_k`, repeat penalties, and stop directives | Internal/construct | The primary estimand is the deployable package; capture sampler/template hashes, include policy as a covariate, and reserve weights/quantization wording for verified paired or normalized-policy sensitivity comparisons |
+| **Task-class pseudo-replication** — several classes contain one scenario, so many model rows do not create independent tasks | Conclusion | Treat classes with fewer than three scenarios as named-scenario evidence; bootstrap scenarios, not rows, for task-generalization claims |
+| **Difficulty-label miscalibration** — easy/medium/hard is not ordered by observed deterministic score | Construct | Treat difficulty as design intent only; analyze named scenarios/empirical outcomes and recalibrate on held-out evidence before using it as an inferential factor. |
+| **Derived-metric definition drift** — helper paths disagreed on MBU, energy-per-success, repeatability, and KV-cache dtype | Construct | **Corrected in canonical v1:** shared `analysis_metrics.py`, exact schema validation, adapter fixtures, and one checked export contract. |
 | Hardware specificity | External | Report exact node; note bandwidth-bound caveat; invite GPU re-runs |
 | **Cross-hardware extrapolation over-reach** (§7c) — predicting another CPU's tok/s from a single node | External/construct | **Disclosed + gated.** One node ⇒ hardware coefficients are **not** fittable; transfer is a first-order roofline rule (scale by **bandwidth**, not clock/CPU-mark), reported as a **method requiring out-of-sample validation on ≥1 distinct CPU**, with **prediction intervals** and a 2–3-model on-target spot-check — never as a measured result |
 | **Regime / ISA boundary of the transfer rule** (§7c) | Construct | The bandwidth-ratio rule holds only in the **decode-bandwidth-bound** regime and **within an ISA+memory-topology class**; sub-1B / short-output fixed-overhead floor and AVX-512/ARM/NUMA shifts widen the error; extrapolate at **fixed context** (KV traffic grows with $c$) |
-| Small R inflates variance | Conclusion | R≥5, bootstrap CIs, report CI widths honestly |
+| Small R inflates variance and means hide repeated failure | Conclusion | R≥5, scenario-cluster CIs, `pass_1` plus all-five `pass^5`/`all_safe^5`, worst-repetition and lower-tail outcomes; report CI widths honestly |
 | **RAG-lift confound** (grounded vs closed-book are *different task classes*, not the same task with/without a doc) | Internal/construct | **Open issue.** Current `rag_lift` mixes retrieval effect with task-difficulty. Fix before the RQ6 claim: author **paired variants** (same scenario, reference-doc present vs absent) so the within-scenario delta isolates retrieval. Until then, report closed-book and grounded **separately**; do not claim a causal RAG lift. |
 | **Judge egress** (real cluster telemetry sent to a 3rd-party cloud judge) | Construct/opsec | System-under-test stays sovereign; but scrub/anonymize released scenarios, disclose the egress, and prefer a self-hosted judge (§0b) |
-| **Energy = SoC (RAPL `psys`) not wall power**; single node | Construct/External | RAPL `psys` is on-die platform energy — **excludes** display/PSU/peripheral draw (a feature: isolates compute energy for the size comparison, but not facility power). Report the **idle baseline** + **net-over-idle**; optionally cross-check with a wall plug; energy ranks are this-chip-specific — invite re-runs |
-| **Thermal-order confound (C1)** — sequential 94-model runs heat the chip; later models throttle, confounding speed/energy with *run position* | Internal | **Fixed:** `--shuffle` randomizes model order (deterministic `--order-seed`); temp-gated `cooldown()` between models; `thermal.start_c` recorded as a per-task carryover covariate. The deterministic *quality* pass is order-insensitive; only the systems numbers need this |
+| **Mixed collection regimes** — first batch was base-clock/Turbo-off/package-0; second batch used dynamic clocks and mixed package-0/psys | Internal/construct | Quality/safety retain 94-model breadth; all systems, energy, roofline, MCDA, and three-axis claims use only the 24 functional controlled first-batch models. Schema v1 records batch/regime/source and forbids the old pooled front. |
+| **Energy = RAPL `package-0`, not wall power**; single node | Construct/External | Controlled energy is an on-die package estimate and excludes display/PSU/peripherals. Report it as compute energy for this CPU, not facility power; invite wall-plug and hardware replications. |
+| **Thermal-order confound (C1)** — sequential runs can couple model order to speed/energy | Internal | Controlled systems claims use the base-clock first batch; current runner randomizes order, quiesces between models, and records thermal start state for future locked runs. |
 | **Tokenizer non-comparability (C2)** — tok/s differs ~20% across tokenizers for identical text | Construct | **Fixed:** report **chars/s** and **energy-per-token** beside tok/s; `output_chars` captured per request |
 | **Observer effect (C3)** — the sampler + perf counters perturb the throughput/energy they measure | Construct | **Fixed:** `calibrate.py` runs the probe model **with vs without** telemetry and reports the tok/s overhead; heavy `PERF_MEMBW` is env-gated, off by default; `SAMPLE_INTERVAL` tunable |
 | **RAPL is a modeled estimate (M1)** — whole-socket model, not per-process wall power; counters wrap | Construct | **Fixed/disclosed:** per-**subdomain** wraparound correction (`RAPL_MAXES`); `package-0` avoids the battery-charge confound; framed as compute-energy ±error, not facility power (Weaver et al.) |
 | **Sampling aliasing (M2)** — a 1 Hz sampler can alias sub-second power/freq excursions | Construct | **Fixed:** `SAMPLE_INTERVAL` configurable sub-second; peak trackers catch excursions between ticks |
-| **MBU vs datasheet (M4)** — utilization against the spec bandwidth overstates headroom | Construct | **Disclosed:** the STREAM calibration did not complete on the run node, so MBU is normalized against the **datasheet** peak (38.4 GB/s, dual-channel DDR4-2400) and read as a **relative** efficiency, not an absolute ceiling. Reported as median 0.46 (10–90 %: 0.36–0.52). **6 of 94 models lack per-run bandwidth telemetry** (a perf-counter capture gap, independent of behaviour — MAR); MBU is reported on the **88-of-94** covered subset only, leaving every other axis at full N (§ telemetry coverage) |
-| **Frequency-scaling / power-management confound** — dynamic HWP clocks (0.4–3.6 GHz) + turbo make tok/s depend on thermal luck, not just the model | Internal | **Fixed:** `node-power.sh` locks governor `performance`, **turbo off**, clock pinned to **base** (~1.70 GHz, sustainable) for the systems pass; per-model `quiesce()` (fan-max + cache/swap reset + temp settle) equalizes start state; `cpu_freq_mhz`+`core_freq` logged at 1 Hz as evidence. No TLP/ppd/auto-cpufreq present (audited) |
+| **MBU vs datasheet (M4)** — utilization against the spec bandwidth overstates headroom | Construct | The controlled roofline uses the 38.4 GB/s datasheet reference as a relative denominator and remains descriptive; no cross-hardware coefficient is claimed from one node. |
+| **Frequency-scaling / power-management confound** — the second batch was not at the first batch's locked operating point | Internal | Restrict claim-bearing systems analysis to the base-clock first batch; future runs fail closed through the manifest/preflight and stamp regime fields per row. |
 | **Dual-/single-channel flex region not attributable per test** — the 8 GB+16 GB asymmetric DIMMs run the first 16 GB interleaved (dual-channel ~38 GB/s) and the top ~8 GB single-channel (~19 GB/s), but the OS doesn't expose which region a process's pages occupy | Construct | **Disclosed.** The IMC PMU counts by *requestor* (ia/gt/io), not per channel; per-page channel mapping isn't authoritative. We capture the **effect** (achieved bandwidth / MBU) + the requestor split + working-set-vs-16 GB spill risk — not a per-region label |
 | **MoE dynamic routing not observable** — we capture the *static* sparsity (experts active/total per token, e.g. 6/64) but not *which* experts fire per token or the routing load-balance | Construct | **Disclosed.** Ollama/llama.cpp don't expose the router (`ffn_gate_inp`) logits; per-token expert selection needs engine instrumentation. `expert_used_count` bounds the active-compute; dynamic routing is future work |
 
@@ -923,11 +948,13 @@ so the synthesis is reproducible rather than editorial.
    tokens/s-per-watt) that prices capability above the knee. The contribution is
    that no prior benchmark reports the three **together** for the model-selection
    decision — plus the local-RAG lift.
-5. **Artifact**: harness + scenarios + data released (Apache-2.0).
+5. **Artifact**: Apache-2.0 repository-authored harness, scenarios, schemas, and
+  analysis code, plus a mixed-rights dataset whose model-generated outputs
+  remain subject to represented upstream model-family terms.
 
 **Future work (out of scope here):** a **domain fine-tuning arm** (e.g. LoRA/QLoRA
 via tools such as Unsloth, exported to GGUF for the same Ollama path) to test
-whether a tuned small model beats the off-the-shelf Pareto frontier. This is
+whether a tuned small model beats the controlled off-the-shelf Pareto frontier. This is
 deferred deliberately: fine-tuning on homelab-style data risks **benchmark
 memorization**, so it must use a contamination-proof held-out set (see the
 fine-tuning-contamination row in §9) before any lift can be claimed.
@@ -1023,7 +1050,8 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   **commodity hardware** and **real-homelab incidents**. The agent-safety
   benchmarks run frontier/cloud agents and don't meter watts; the systems/SLM
   papers don't score destructive-action refusal against **Wh/answer and
-  tokens/s-per-watt**. The defensible delta is the **integration** — and the
+  tokens/s-per-watt**. The defensible delta is the **integration under one
+  controlled deployment regime** — and the
   question it answers, *"what does choosing the **safe**, good-enough offline
   model cost you in watts and tokens/s?"* — not any single axis, each of which
   (we say plainly) is already known.

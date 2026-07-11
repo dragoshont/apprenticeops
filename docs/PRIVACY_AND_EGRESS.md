@@ -45,7 +45,12 @@ python3 scripts/privacy-scan.py
 ```
 
 The scan fails on live-looking secret patterns and reports disclosure counts for
-known infrastructure terms. To inspect examples:
+known infrastructure terms. It streams every released `data/raw` and locked
+`data/completed-runs` plain, gzip, and tar text artifact without extracting
+archives. An unreadable or corrupt released archive fails the scan rather than
+being skipped. Ellipsis-only PEM examples
+(`BEGIN ...`, `...`, `END ...`) are treated as synthetic placeholders; any
+non-placeholder private-key body fails. To inspect examples:
 
 ```bash
 python3 scripts/privacy-scan.py --show-disclosures

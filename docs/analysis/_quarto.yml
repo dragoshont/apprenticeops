@@ -40,7 +40,7 @@ website:
       - icon: github
         href: https://github.com/dragoshont/apprenticeops
   page-footer:
-    center: "Apache-2.0 · human-guided, AI-assisted · arXiv preprint → NeurIPS D&B"
+    center: "Code Apache-2.0 · dataset mixed rights · human-guided, AI-assisted · arXiv preprint → NeurIPS D&B"
 
 format:
   html:

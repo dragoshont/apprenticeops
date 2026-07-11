@@ -29,6 +29,8 @@ outputs/
 logs/
 data/collected/
 data/run-batches/
+data/completed-runs/.staging/
+data/completed-runs/.state/
 .tmp/
 
 # Released evidence artifacts — tracked despite the broad *.jsonl ignore above.
@@ -36,6 +38,8 @@ data/run-batches/
 !data/pilot/results.pilot.jsonl
 !docs/gold-review.jsonl
 !docs/gold-review-recheck.jsonl
+!data/completed-runs/**/pipeline-ledger.jsonl
+!data/completed-runs/**/promotion-ledger.jsonl
 
 .venv/
 venv/

@@ -1,16 +1,13 @@
 name: Publish analysis site
 
 # Render the Quarto analysis site (docs/analysis) and publish it to GitHub Pages.
-# Rendering uses the COMMITTED cell outputs — `_quarto.yml` sets
-# `execute: enabled: false`, so CI never runs the notebooks (and never needs the
-# gitignored raw judge/run data). Quarto-only; no Python kernel required.
+# The verification job executes isolated notebook copies against manifest-bound
+# evidence. The Pages render then uses committed outputs because `_quarto.yml`
+# sets `execute: enabled: false`.
 
 on:
   push:
     branches: [main]
-    paths:
-      - 'docs/analysis/**'
-      - '.github/workflows/publish-analysis.yml'
   workflow_dispatch:
 
 # Least-privilege token + the OIDC/Pages perms the deploy needs.
@@ -25,7 +22,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-analysis-v1:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.5'
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install locked analysis dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --require-hashes -r requirements-lock.txt
+
+      - name: Audit analysis contracts, claims, links, and privacy
+        run: |
+          .venv/bin/python scripts/validate-analysis-environment.py
+          .venv/bin/python scripts/audit-tool-licenses.py
+          .venv/bin/python scripts/audit-paper-data.py
+          .venv/bin/python scripts/audit-paper-claims.py
+          .venv/bin/python scripts/check-doc-links.py
+          .venv/bin/python scripts/privacy-scan.py
+          .venv/bin/python scripts/validate-croissant.py --official
+
+      - name: Reproduce analysis v1 without mutation
+        run: PY=.venv/bin/python scripts/build-analysis-site.sh --verify
+
   build:
+    needs: verify-analysis-v1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,7 +73,7 @@ jobs:
           path: docs/analysis/_site
 
   deploy:
-    needs: build
+    needs: [verify-analysis-v1, build]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

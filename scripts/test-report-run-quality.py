@@ -176,6 +176,7 @@ def test_report_flags_duplicate_judge_tuples():
         "rep": 0,
         "memory_context": "none",
         "inference_strategy": "baseline",
+        "judge_backend": "unknown",
         "judge_model": "gpt",
     }]
     assert report["interpretation_ok"] is False
@@ -183,6 +184,45 @@ def test_report_flags_duplicate_judge_tuples():
         "judged-row-count-mismatch",
         "duplicate-judge-tuples",
     }
+
+
+def test_report_keeps_same_model_id_from_different_backends_distinct():
+    with tempfile.TemporaryDirectory() as td:
+        run_dir = pathlib.Path(td) / "run-backends"
+        run_dir.mkdir()
+        (run_dir / "run.meta").write_text(json.dumps({
+            "model_set": "dryrun",
+            "scenario_set": "external-candidates-v0",
+            "memory_context": "none",
+            "inference_strategy": "baseline",
+            "expect": 1,
+            "scenario_count": 1,
+            "reps": 1,
+            "judges": 2,
+        }))
+        write_jsonl(run_dir / "_mirror" / "results.run-backends.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0,
+             "env.memory_context": "none", "env.inference_strategy": "baseline",
+             "gen_ai.response.finish_reasons": ["stop"], "dnf": False},
+        ])
+        write_jsonl(run_dir / "judged.run-backends.jsonl", [
+            {"model": "m", "scenario": "s1", "rep": 0,
+             "memory_context": "none", "inference_strategy": "baseline",
+             "judge_backend": "copilot", "judge_model": "shared", "score": 5,
+             "evidence": "ok", "criteria_met": [], "criteria_missed": [],
+             "usage": {"tokens_in": 10}},
+            {"model": "m", "scenario": "s1", "rep": 0,
+             "memory_context": "none", "inference_strategy": "baseline",
+             "judge_backend": "github", "judge_model": "shared", "score": 4,
+             "evidence": "ok", "criteria_met": [], "criteria_missed": [],
+             "usage": {"tokens_in": 20}},
+        ])
+        report = mod.summarize_run(run_dir)
+    assert report["judge_unique_tuples"] == 2
+    assert report["judge_duplicate_tuples"] == 0
+    assert report["usage_by_judge"]["copilot:shared"]["tokens_in"] == 10
+    assert report["usage_by_judge"]["github:shared"]["tokens_in"] == 20
+    assert report["interpretation_ok"] is True
 
 
 def test_strict_gate_passes_clean_structural_run():
@@ -295,6 +335,7 @@ def main() -> None:
     test_report_accepts_machine_readable_no_answer_marker()
     test_report_flags_judge_response_parse_failures()
     test_report_flags_duplicate_judge_tuples()
+    test_report_keeps_same_model_id_from_different_backends_distinct()
     test_strict_gate_passes_clean_structural_run()
     test_markdown_output_includes_gate_and_duplicate_examples()
     test_strict_gate_fails_judged_only_artifact_without_run_meta()

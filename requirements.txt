@@ -4,12 +4,15 @@
 # judge.py: stdlib only (default backend is Copilot CLI; Anthropic backend needs ANTHROPIC_API_KEY).
 # report.py, dataset.py: stdlib only.
 #
-# Optional dependencies (analysis/plotting):
-pandas>=2.2,<3  # report.py advanced aggregations (optional for basic CSV)
-scipy>=1.14,<2  # report.py stats (Friedman test, bootstrap CIs)
-numpy>=2.1,<3   # dataset.py ML export
-matplotlib>=3.9,<4  # plotting
-ipykernel>=6.29,<7  # notebook kernels (if running analysis notebooks)
+# Correction-lock analysis environment. Exact pins make cached notebook outputs
+# reproducible from a clean checkout; stdlib-only harness paths remain unaffected.
+pandas==3.0.3  # report.py advanced aggregations (optional for basic CSV)
+scipy==1.17.1  # report.py stats (Friedman test, bootstrap CIs)
+numpy==2.4.6  # dataset.py ML export
+matplotlib==3.11.0  # plotting
+pillow==12.3.0  # decoded PNG verification in notebook comparator
+ipykernel==7.3.0  # notebook kernels (if running analysis notebooks)
+nbconvert==7.17.1  # deterministic notebook execution and verification
 
 # Development/optional:
 # pytest  # if you add tests

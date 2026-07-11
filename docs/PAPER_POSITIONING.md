@@ -3,7 +3,7 @@
 > **Status:** Accepted 2026-06-19. Supersedes the implicit "safety is the spine"
 > framing introduced in the [`PAPER.md`](./PAPER.md) Abstract/§1 rewrite (commit
 > `1d4845f`) and the "two-paper" idea. This is a positioning ADR; it tells
-> [`PAPER_INTENT.md`](./PAPER_INTENT.md) and `PAPER.md` how to frame the claim.
+> [`PAPER_PHASES.md`](./PAPER_PHASES.md) and `PAPER.md` how to frame the claim.
 
 ## Context
 

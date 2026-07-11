@@ -1,0 +1,4 @@
+# Release, archival metadata, and reproducible lock tooling only.
+mlcroissant==1.0.22
+pip==26.1.1
+uv==0.11.17

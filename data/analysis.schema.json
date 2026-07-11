@@ -1,0 +1,349 @@
+{
+  "schema_version": 1,
+  "title": "ApprenticeOps canonical derived-analysis contract",
+  "status": "corrected-final",
+  "scope": "Derived analysis artifacts only; raw result, run, scenario, and lifecycle schemas remain independent operational contracts.",
+  "manifest": {
+    "required": {
+      "analysis_schema_version": "integer:1",
+      "source_kind": "enum:frozen_snapshot|completed_run",
+      "source_id": "string",
+      "source_sha256": "object:string-to-sha256",
+      "claim_status": "enum:locked|provisional"
+    },
+    "claim_rule": "Public claim-bearing artifacts require claim_status=locked."
+  },
+  "analysis_condition_key": {
+    "ordered_fields": [
+      "model",
+      "runtime_adapter",
+      "artifact_identity",
+      "quantization",
+      "hardware_condition",
+      "prompt_template_sha256",
+      "memory_context",
+      "memory_context_sha",
+      "inference_strategy",
+      "strategy_prompt_sha",
+      "sampling_policy",
+      "scenario_set",
+      "scenarios_sha256",
+      "evaluation_policy"
+    ],
+    "incomplete_rule": "Missing identity fields set condition_identity_incomplete=1 and prohibit cross-run or paired-deployment joins."
+  },
+  "global_forbidden_columns": [
+    "bracket",
+    "wh_per_correct",
+    "energy_per_correct_wh",
+    "energy_per_ktok_wh",
+    "j_per_tok",
+    "pass_consistency",
+    "kv_cache_mb",
+    "pareto",
+    "n_models",
+    "n_pareto",
+    "n_dominated",
+    "sovereign_pick",
+    "quality_max_model",
+    "worst_case_model"
+  ],
+  "artifacts": {
+    "report_conditions_csv": {
+      "grain": "one row per analysis_condition_key",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_condition_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "runtime_adapter",
+        "memory_context",
+        "inference_strategy",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "det_mean",
+        "judge_mean",
+        "judge_pct_ceiling",
+        "median_decode_tokens_per_s",
+        "median_power_w",
+        "mean_energy_wh_per_answer",
+        "mean_net_energy_wh_per_answer",
+        "decode_tokens_per_s_per_watt",
+        "j_per_output_token",
+        "wh_per_det_check_equivalent",
+        "repeat_agreement",
+        "mbu",
+        "dnf",
+        "verdict"
+      ]
+    },
+    "ml_dataset_csv": {
+      "grain": "one row per analysis_condition_key, scenario, repetition",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_condition_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "runtime_adapter",
+        "memory_context",
+        "inference_strategy",
+        "scenario",
+        "class",
+        "rep",
+        "parameter_count",
+        "quantization",
+        "decode_tokens_per_s",
+        "output_tokens",
+        "output_chars",
+        "energy_wh",
+        "det_score",
+        "judge_score",
+        "completion_outcome",
+        "dnf",
+        "dnf_type"
+      ],
+      "forbidden_columns": ["pass_1", "pass_all_k", "all_safe_k", "repeat_agreement"]
+    },
+    "enriched_metrics_jsonl": {
+      "grain": "one row per analysis_condition_key, scenario, repetition",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_condition_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "runtime_adapter",
+        "memory_context",
+        "inference_strategy",
+        "scenario",
+        "rep"
+      ],
+      "conditional_columns": [
+        "mbu",
+        "dense_weight_stream_equivalent_ratio",
+        "j_per_output_token",
+        "kv_cache_q8_0_payload_mb",
+        "kv_cache_q4_0_payload_mb",
+        "kv_cache_f16_payload_mb",
+        "kv_cache_fp16_equivalent_mb"
+      ]
+    },
+    "condition_summary_csv": {
+      "grain": "one row per analysis_condition_key",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_condition_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "runtime_adapter",
+        "memory_context",
+        "inference_strategy",
+        "n_runs",
+        "wh_per_det_check_equivalent",
+        "repeat_agreement_mean"
+      ]
+    },
+    "condition_scenario_reliability_csv": {
+      "grain": "one row per analysis_condition_key, scenario",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_condition_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "runtime_adapter",
+        "memory_context",
+        "inference_strategy",
+        "scenario",
+        "repeat_count",
+        "repeat_agreement",
+        "pass_1",
+        "pass_all_k",
+        "all_safe_k"
+      ]
+    },
+    "paper_results_snapshot_csv": {
+      "grain": "one row per runtime_adapter, model, scenario, repetition",
+      "required_columns": [
+        "analysis_schema_version",
+        "model",
+        "runtime_adapter",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "collection_batch",
+        "cpu_frequency_regime",
+        "power_source",
+        "energy_analysis_scope",
+        "scenario",
+        "rep",
+        "det_score",
+        "decode_tokens_per_s",
+        "prefill_tokens_per_s",
+        "wall_s",
+        "membw_peak_mb_s",
+        "energy_wh",
+        "parameter_count",
+        "quantization",
+        "artifact_size_bytes",
+        "dnf",
+        "finish_reason"
+      ]
+    },
+    "paper_judged_snapshot_csv": {
+      "grain": "one row per runtime_adapter, model, scenario, repetition",
+      "join_rule": "Every row must match exactly one paper_results_snapshot_csv row on runtime_adapter, model, scenario, and rep; collection_batch and cpu_frequency_regime must agree. Power provenance and energy scope come only from that matched result row.",
+      "required_columns": [
+        "analysis_schema_version",
+        "model",
+        "runtime_adapter",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "collection_batch",
+        "cpu_frequency_regime",
+        "scenario",
+        "rep",
+        "judge_score"
+      ]
+    },
+    "site_models_csv": {
+      "grain": "one row per functional model in the 94-model breadth scope; quality and safety only",
+      "required_columns": [
+        "analysis_schema_version",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "judge_score_fraction",
+        "safety_fraction",
+        "quality_safety_pareto"
+      ]
+    },
+    "site_controlled_models_csv": {
+      "grain": "one row per functional model in the controlled var/package-0/base-clock scope",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_scope",
+        "collection_batch",
+        "cpu_frequency_regime",
+        "power_source",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "judge_score_fraction",
+        "safety_fraction",
+        "mean_energy_wh_per_answer",
+        "three_axis_pareto"
+      ]
+    },
+    "site_pareto_csv": {
+      "grain": "one row per three-axis Pareto-optimal model in the controlled scope",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_scope",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "judge_score_fraction",
+        "safety_fraction",
+        "mean_energy_wh_per_answer"
+      ]
+    },
+    "site_quality_safety_pareto_csv": {
+      "grain": "one row per quality-safety Pareto-optimal model in the 94-model breadth scope",
+      "required_columns": [
+        "analysis_schema_version",
+        "model",
+        "parameter_tier",
+        "legacy_footprint_bracket",
+        "judge_score_fraction",
+        "safety_fraction"
+      ]
+    },
+    "site_axis_quality_csv": {
+      "grain": "one row per explicit grouping",
+      "required_columns": ["analysis_schema_version", "grouping_kind", "grouping_value", "n", "mean", "lo", "hi"]
+    },
+    "site_axis_safety_csv": {
+      "grain": "one row per explicit grouping",
+      "required_columns": ["analysis_schema_version", "grouping_kind", "grouping_value", "n", "mean", "lo", "hi"]
+    },
+    "site_axis_energy_csv": {
+      "grain": "one row per explicit grouping",
+      "required_columns": [
+        "analysis_schema_version",
+        "analysis_scope",
+        "grouping_kind",
+        "grouping_value",
+        "mean_energy_wh_per_answer",
+        "decode_tokens_per_s_per_watt"
+      ]
+    },
+    "site_judge_pairs_csv": {
+      "grain": "one row per model, scenario, repetition",
+      "required_columns": ["analysis_schema_version", "model", "scenario", "rep", "claude_score", "gpt_score"]
+    },
+    "judge_pair_provenance_csv": {
+      "grain": "one row per frozen_pair_key_sha256; one-to-one with site_judge_pairs_csv",
+      "required_columns": [
+        "analysis_schema_version",
+        "frozen_pair_key_sha256",
+        "condition_identity_incomplete",
+        "model",
+        "runtime_adapter",
+        "collection_batch",
+        "cpu_frequency_regime",
+        "power_source",
+        "energy_analysis_scope",
+        "scenario",
+        "rep",
+        "evaluation_policy",
+        "judge_source_batch",
+        "claude_backend",
+        "claude_model",
+        "gpt_backend",
+        "gpt_model"
+      ]
+    },
+    "site_summary_json": {
+      "grain": "one object per locked analysis bundle",
+      "required_keys": [
+        "analysis_schema_version",
+        "source_id",
+        "claim_status",
+        "breadth_analysis_scope",
+        "breadth_model_count",
+        "breadth_quality_safety_pareto_count",
+        "controlled_analysis_scope",
+        "controlled_model_count",
+        "controlled_three_axis_pareto_count",
+        "controlled_three_axis_dominated_count",
+        "energy_cross_batch_comparison_allowed",
+        "quality_knee_grouping_kind",
+        "quality_knee_grouping_value",
+        "quality_2_3B_pct",
+        "quality_3_4B_pct",
+        "quality_4_5GB_pct",
+        "quality_4_5gb_minus_3_4b_points",
+        "quality_4_5gb_minus_3_4b_ci_low_points",
+        "quality_4_5gb_minus_3_4b_ci_high_points",
+        "safety_instruct_pct",
+        "safety_reasoning_pct",
+        "safety_instruct_minus_reasoning_points",
+        "safety_instruct_minus_reasoning_ci_low_points",
+        "safety_instruct_minus_reasoning_ci_high_points",
+        "contrast_interval_method",
+        "controlled_three_axis_pick",
+        "controlled_quality_max_model",
+        "breadth_quality_max_model",
+        "quality_axis",
+        "cross_judge_kappa_quad",
+        "data_node"
+      ]
+    }
+  }
+}

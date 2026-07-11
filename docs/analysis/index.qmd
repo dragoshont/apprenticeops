@@ -5,53 +5,52 @@ subtitle: "Which small, offline LLM do you actually run? Choose on quality × sa
 
 ## The question
 
-For a **locally-sovereign** ops assistant — offline (no frontier to escalate to),
-CPU-only, ≤ 5 GB, the last line — every proxy a practitioner reaches for
-(parameter count, benchmark score, a "reasoning" badge, perplexity) misleads on a
-*different* axis. So we measure three axes directly and choose on the **Pareto
-front**.
+For a **locally-sovereign** ops assistant — offline, CPU-only, and capped at
+**5B parameters** for the doctoral track — every proxy a practitioner reaches for
+misses part of the deployment decision. The frozen evidence therefore has two
+explicit scopes: **94-model quality/safety breadth** and a **24-model controlled
+quality/safety/energy selection**.
 
 ::: {.callout-note appearance="simple"}
 ### Headline
 
-- **12 of 94 models are Pareto-optimal** on (quality ↑, safety ↑, energy ↓); the
-  other **82** are dominated.
-- Judged quality knees at **2–3B** (51.3% at 2–3B, 52.1% at 3–4B, then 56.8% at 4–5GB — a small **+4.6 pts**);
+- **7 of 24 controlled models are three-axis Pareto-optimal**; the other **17**
+  are dominated under one base-clock, Turbo-off, `package-0` regime.
+- Across all **94 functional models**, the quality-safety front contains **2**.
+- Judged quality reaches **51.3%** at 2–3B and **52.1%** at 3–4B. The legacy
+  4–5GB group adds **+4.6 points [1.9, 7.4]**, below the five-point gate;
   the marginal lift is *quantization*, not parameter count.
-- Safety tracks **training type, not size**: **71.4%** instruct vs **47.2%**
-  reasoning-distilled destructive-action refusal.
+- Safety tracks **training type more than size in this roster**: **71.4%**
+  instruct vs **47.2%** reasoning-distilled; paired task contrast **24.2 points
+  [15.2, 32.5]**.
 - The sovereign pick is **`qwen3:4b-instruct-2507-q4_K_M`** — a q4 4B instruct: the
   **safest and cheapest** of the near-top-quality front (90.8% refusal, 106 mWh).
-  The quality-max sibling trades **~10 safety points for 0.1 quality**. Worst
-  *combined* case: **`deepseek-r1:7b`** — among the most energy-expensive models in
-  the study (top 5 of 94), and the least-safe large reasoning-distilled refuser.
+  Its controlled q8 sibling gains 2.7 quality points for about 46% more energy.
+  `deepseek-r1:7b` is the most energy-expensive controlled model and a low
+  refuser.
 :::
 
-![The sovereign selection: of the 94 functional models, 12 are Pareto-optimal on quality × safety × energy (filled markers); the other 82 are dominated (hollow). Marker area is energy per answer. The "biggest that fits" and "reasoning" picks fall off the front.](figures/fig-pareto.png){#fig-landing-pareto fig-alt="Scatter of 94 models by quality and refusal; twelve filled Pareto points; deepseek models sit low with large markers."}
+![Controlled sovereign selection: 24 functional first-batch models, with seven Pareto-optimal points ringed and colour representing package-0 energy.](figures/fig-pareto.png){#fig-landing-pareto fig-alt="Scatter of 24 controlled models by quality and refusal, coloured by energy; seven Pareto points are ringed."}
 
 ## The Pareto front {#pareto}
 
-The short-list a practitioner should actually choose from — non-dominated on all
-three axes. The *biggest* and *"reasoning"* picks are **not** here.
+The controlled short-list — non-dominated on all three axes under one comparable
+power regime.
 
 <!-- mirrors data/site/pareto.csv -->
 
-| model | bracket | quality | safety | mWh / answer |
+| model | legacy group | quality | safety | mWh / answer |
 |:--|:-:|--:|--:|--:|
 | **`qwen3:4b-instruct-2507-q4_K_M`** · pick | 3-4B | 68.6% | 90.8% | 106 |
-| `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` · q-max | 3-4B | 71.4% | 80.3% | 138 |
 | `qwen3:4b-instruct-2507-q8_0` | 4-5GB | 71.3% | 90.8% | 155 |
 | `granite4:tiny-h` | 4-5GB | 63.5% | 74.2% | 54 |
-| `qwen3:1.7b-q8_0` | 1-2B | 62.1% | 82.8% | 93 |
 | `qwen3:1.7b` | 1-2B | 61.5% | 83.6% | 36 |
 | `granite4:1b-h` | 0-1B | 45.3% | 67.8% | 30 |
-| `qwen3:0.6b-q8_0` | 0-1B | 41.8% | 68.3% | 34 |
 | `qwen3:0.6b` | 0-1B | 36.6% | 64.7% | 15 |
-| `hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M` | 0-1B | 36.2% | 68.6% | 32 |
 | `smollm2:360m` | 0-1B | 27.8% | 65.6% | 23 |
-| `smollm2:135m-instruct-q8_0` | 0-1B | 22.8% | 48.6% | 13 |
 
-: Ordered by the **sovereign pick** first, not by quality. The quality-max `unsloth/Qwen3-4B` is the *original* Qwen3-4B and refuses ~10 points less than the Instruct-2507 (80.3% vs 90.8%) — which is why the pick is the 2507 instruct.
+: Ordered by the controlled balanced pick first. The 94-model quality-safety
+front is separate: `unsloth/Qwen3-4B` and `qwen3:4b-instruct-2507-q8_0`.
 
 ## Read it
 
@@ -71,13 +70,15 @@ three axes. The *biggest* and *"reasoning"* picks are **not** here.
   one-click way to send structured feedback.
 
 Machine-readable exports live in [`data/site/`](https://github.com/dragoshont/apprenticeops/tree/main/data/site);
+the dataset has [Croissant 1.0 metadata](https://github.com/dragoshont/apprenticeops/blob/main/data/croissant.json)
+and an explicit [mixed-rights statement](https://github.com/dragoshont/apprenticeops/blob/main/data/DATA_RIGHTS.md);
 the pre-registration and full threats-to-validity table are in
 [`docs/PAPER.md`](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
 
 ::: {.callout-tip appearance="simple"}
-**Every number and figure here was verified.** Each value was re-derived from the
-committed snapshot (`data/snapshots/`) on 2026-06-22, and every reference resolved
-against arXiv / CrossRef. See the paper's [verification statement](paper.html#sec-verification).
+**Every current number and figure is regenerated under analysis schema v1.** The
+2026-07-10 correction bound snapshots to raw batches and withdrew the old pooled
+12-of-94 energy front. See the paper's [verification statement](paper.html#sec-verification).
 :::
 
 ::: {.callout-warning appearance="simple"}
@@ -85,6 +86,6 @@ against arXiv / CrossRef. See the paper's [verification statement](paper.html#se
 (`claude-opus-4.8` + `gpt-5.5`; the two judges agree at **κ_quad = 0.91** on 8,909
 pairs). **Safety** and **energy** are judge-free / measured. Everything is one
 commodity node (**n = 1**, i5-8350U, 24 GB DDR4-2400, fully offline) — a case
-study plus a released harness, not a population claim. The Pareto front is on
-point estimates; CI-aware dominance could widen it by a model.
+study plus a released harness, not a population claim. Energy and systems
+rankings are controlled-first-batch only; both fronts use point estimates.
 :::

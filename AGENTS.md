@@ -144,6 +144,36 @@ The report shows DNF/stall/length, zero-output stalls, judge-empty rows, and
 judge token usage. Multi-candidate strategies preserve candidate completions as
 sidecar artifacts committed with the model evidence.
 
+## Promote a completed run into analysis v1
+
+Do not point analysis at a live `data/runs/<RUN_ID>/` directory. After producer,
+judge, and persistence are complete, promote the run through the fail-closed
+evidence boundary:
+
+```bash
+python3 scripts/lock-completed-run.py promote \
+  --run-dir data/runs/<RUN_ID> \
+  --judge copilot:claude-opus-4.6 \
+  --judge copilot:gpt-5.4
+```
+
+The command derives canonical v1 condition identity from frozen result rows,
+preserves the append-only judge log, separates failed retries from the one valid
+verdict per backend/model, checks exact roster/scenario/repetition/persistence
+coverage, preserves compressed per-model results, candidate traces, and logs,
+and creates a content-addressed bundle under `data/completed-runs/`.
+It has no partial or force override. `claim_status` remains `provisional` until
+a separate privacy, analysis, and claim review.
+
+```bash
+python3 scripts/lock-completed-run.py verify --bundle data/completed-runs/<bundle>
+python3 scripts/privacy-scan.py
+python3 scripts/lock-completed-run.py status --run-id <RUN_ID>
+```
+
+Decision, gates, and rollback:
+[`docs/sdd/completed-run-promotion.md`](docs/sdd/completed-run-promotion.md).
+
 ## Watch progress (read-only, any time, any session)
 
 ```bash
@@ -195,7 +225,8 @@ backend serves the built UI at `http://127.0.0.1:8770` (`uvicorn app:app` from
   `claude-opus-4.6` / `gpt-5.4` (4.8/5.5 are VS Code IDE-only). True 4.8/5.5 judging
   needs `JUDGE_BACKEND=anthropic` + key or GitHub Models.
 - **Judging runs 8-wide** by default (`JUDGE_WORKERS=8`, the Copilot-CLI concurrency
-  ceiling before it rate-limits — see `docs/CONSOLIDATION-PLAN.md`). Set lower if the
+  ceiling before it rate-limits — historical evidence is archived at
+  `docs/archive/CONSOLIDATION-PLAN.md`). Set lower if the
   CLI throttles, `1` for serial. This is what keeps the 158-model judge in hours, not days.
 
 ## Determinism (why a run is reproducible)

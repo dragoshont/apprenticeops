@@ -51,6 +51,8 @@ import sys
 import time
 import urllib.request
 
+import analysis_metrics
+
 GITHUB_ENDPOINT = os.environ.get("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference")
 GITHUB_CATALOG = os.environ.get("GITHUB_MODELS_CATALOG", "https://models.github.ai/catalog/models")
 ANTHROPIC_ENDPOINT = os.environ.get("ANTHROPIC_ENDPOINT", "https://api.anthropic.com")
@@ -62,6 +64,76 @@ DEFAULT_MODEL = {"copilot": "claude-opus-4.8", "github": "openai/gpt-5",
 BACKENDS = ("copilot", "github", "anthropic")
 _FOOTER_RE = re.compile(r"^(Changes|AI Credits|Tokens)\b")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def analysis_condition_fields(result_row, evaluation_policy):
+    """Canonical condition provenance copied from an inference row."""
+
+    identity = analysis_metrics.analysis_condition(
+        result_row,
+        evaluation_policy=evaluation_policy,
+    )
+    if identity.incomplete:
+        raise ValueError(
+            "cannot judge an incomplete analysis condition: "
+            + ", ".join(identity.missing_fields)
+        )
+    return {
+        "analysis_schema_version": analysis_metrics.ANALYSIS_SCHEMA_VERSION,
+        "analysis_condition_key_sha256": identity.sha256,
+        "condition_identity_incomplete": identity.incomplete,
+        "evaluation_policy": evaluation_policy,
+    }
+
+
+def judgement_resume_keys(
+    row,
+    *,
+    condition_sha=None,
+    judge_backend=None,
+    judge_model=None,
+):
+    """Exact and historical resume keys for one result/judgement pair."""
+
+    condition_sha = condition_sha or row.get("analysis_condition_key_sha256")
+    judge_backend = judge_backend or row.get("judge_backend")
+    judge_model = judge_model or row.get("judge_model")
+    scenario = row.get("scenario")
+    rep = str(row.get("rep", 0))
+    exact = (
+        str(condition_sha) if condition_sha else None,
+        scenario,
+        rep,
+        judge_backend,
+        judge_model,
+    )
+    legacy_base = list(analysis_metrics.legacy_judge_join_key(row))
+    legacy_base[2] = rep
+    return exact, (*legacy_base, judge_backend, judge_model)
+
+
+def judgement_is_done(
+    row,
+    *,
+    condition_sha,
+    judge_backend,
+    judge_model,
+    done_exact,
+    done_legacy,
+    legacy_resume_safe,
+    allow_legacy_resume,
+):
+    exact, legacy = judgement_resume_keys(
+        row,
+        condition_sha=condition_sha,
+        judge_backend=judge_backend,
+        judge_model=judge_model,
+    )
+    return exact in done_exact or (
+        allow_legacy_resume
+        and legacy_resume_safe
+        and legacy in done_legacy
+    )
 
 
 def _http_json(url, *, headers, data=None, timeout=180, method=None):
@@ -399,6 +471,9 @@ def main():
     ap.add_argument("--ensemble",
                     help="comma list of extra judges as backend:model for bias control, "
                          "e.g. 'copilot:gpt-5.5'. Each answer is scored by every judge.")
+    ap.add_argument("--allow-legacy-resume", action="store_true",
+                    help="explicitly reuse unique historical judged rows without "
+                         "canonical condition hashes")
     ap.add_argument("--outputs-dir", default="outputs", help="where run.py wrote model answers")
     ap.add_argument("--workers", type=int, default=int(os.environ.get("JUDGE_WORKERS", "8")),
                     help="parallel judge calls (default 8 = the Copilot-CLI concurrency ceiling; "
@@ -413,6 +488,11 @@ def main():
                 continue
             be, _, mo = spec.partition(":")
             judges.append(Judge(backend=be or None, model=mo or None))
+    specs = [(judge.backend, judge.model) for judge in judges]
+    evaluation_policy = analysis_metrics.evaluation_policy_id([
+        {"judge_backend": backend, "judge_model": model}
+        for backend, model in specs
+    ])
 
     if args.list_models:
         for mid, who in sorted(primary.list_models(), key=lambda x: (x[0] or "")):
@@ -453,14 +533,13 @@ def main():
     if args.judge:
         if not args.out:
             sys.exit("--judge needs --out")
-        memory_context_by_unit = {}
-        runtime_by_unit = {}
         # resume: skip (model, scenario, rep, memory_context, inference_strategy, judge_model) already
         # written to --out, so paired no-memory/memory runs can be judged together
         # without one condition suppressing the other.
         # so a long ensemble run that dies (sleep/network) continues instead of
         # re-judging from scratch. Output is opened in APPEND mode.
-        done = set()
+        done_exact = set()
+        done_legacy = set()
         if os.path.exists(args.out):
             for line in open(args.out):
                 try:
@@ -472,20 +551,25 @@ def main():
                 # re-judges it. DNF-legit empties keep score=1 and stay done.
                 if d.get("score") is None:
                     continue
-                done.add((d.get("model"), d.get("scenario"), str(d.get("rep")),
-                          d.get("memory_context") or "none",
-                          d.get("inference_strategy") or "baseline",
-                          d.get("judge_model")))
-            if done:
-                sys.stderr.write(f"resume: {len(done)} judged rows already in {args.out}; skipping them\n")
+                condition_sha = d.get("analysis_condition_key_sha256")
+                exact_key, legacy_key = judgement_resume_keys(d)
+                if condition_sha:
+                    done_exact.add(exact_key)
+                else:
+                    done_legacy.add(legacy_key)
+            if done_exact or done_legacy:
+                legacy_mode = "eligible" if args.allow_legacy_resume else "ignored (no opt-in)"
+                sys.stderr.write(
+                    f"resume: {len(done_exact)} exact + {len(done_legacy)} legacy judged rows "
+                    f"({legacy_mode}) already in {args.out}\n"
+                )
         cost = {"calls": 0, "ai_credits": 0.0, "tokens_in": 0, "tokens_out": 0,
                 "cache_read": 0, "cache_write": 0}
         # Build the task list (one per pending model x judge), then run them through a
         # bounded pool. 8 parallel Copilot agents is the historical ceiling before the
-        # CLI rate-limits (docs/CONSOLIDATION-PLAN.md). Each task builds its OWN Judge
+        # CLI rate-limits (docs/archive/CONSOLIDATION-PLAN.md). Each task builds its OWN Judge
         # so the per-call `last_usage` is never shared across threads.
-        specs = [(jg.backend, jg.model) for jg in judges]
-        tasks = []
+        result_rows = []
         for line in open(args.results):
             line = line.strip()
             if not line:
@@ -501,13 +585,44 @@ def main():
             if row_sha != scen_sha:
                 sys.stderr.write(f"skip {row.get('model')} {sid}: result scenario hash {row_sha!r} != selected {scen_sha[:12]}…\n")
                 continue
+            result_rows.append(row)
+        identities = {
+            id(row): analysis_metrics.analysis_condition(
+                row,
+                evaluation_policy=evaluation_policy,
+            )
+            for row in result_rows
+        }
+        _, legacy_conditions = analysis_metrics.judge_condition_index(
+            (identities[id(row)], row) for row in result_rows
+        )
+        tasks = []
+        for row in result_rows:
+            sid = row.get("scenario")
             rep = row.get("rep", 0)
             memory_context = row.get("env.memory_context") or "none"
             inference_strategy = row.get("env.inference_strategy") or row.get("strategy.id") or "baseline"
             inference_runtime = row.get("env.inference_runtime") or row.get("adapter") or "ollama"
-            memory_context_by_unit[(row["model"], sid, str(rep), memory_context, inference_strategy)] = memory_context
-            runtime_by_unit[(row["model"], sid, str(rep), memory_context, inference_strategy)] = inference_runtime
-            if all((row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done for _, mo in specs):
+            identity = identities[id(row)]
+            try:
+                condition_fields = analysis_condition_fields(row, evaluation_policy)
+            except ValueError as exc:
+                sys.exit(f"cannot judge {row.get('model')} {sid} r{rep}: {exc}")
+            legacy_key = analysis_metrics.legacy_judge_join_key(row)
+            legacy_resume_safe = len(legacy_conditions.get(legacy_key, frozenset())) == 1
+            if all(
+                judgement_is_done(
+                    row,
+                    condition_sha=identity.sha256,
+                    judge_backend=backend,
+                    judge_model=model,
+                    done_exact=done_exact,
+                    done_legacy=done_legacy,
+                    legacy_resume_safe=legacy_resume_safe,
+                    allow_legacy_resume=args.allow_legacy_resume,
+                )
+                for backend, model in specs
+            ):
                 continue
             base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
             answer = answer_from_result_row(row)
@@ -521,14 +636,26 @@ def main():
                         answer = open(fp).read()
                         break
             for be, mo in specs:
-                if (row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done:
+                if judgement_is_done(
+                    row,
+                    condition_sha=identity.sha256,
+                    judge_backend=be,
+                    judge_model=mo,
+                    done_exact=done_exact,
+                    done_legacy=done_legacy,
+                    legacy_resume_safe=legacy_resume_safe,
+                    allow_legacy_resume=args.allow_legacy_resume,
+                ):
                     continue
-                tasks.append((row["model"], sid, rep, memory_context, inference_strategy, inference_runtime, answer, be, mo))
+                tasks.append((row["model"], sid, rep, memory_context, inference_strategy,
+                              inference_runtime, condition_fields, answer, be, mo))
 
         def _judge_task(t):
-            model, sid, rep, memory_context, inference_strategy, inference_runtime, answer, be, mo = t
+            (model, sid, rep, memory_context, inference_strategy, inference_runtime,
+             condition_fields, answer, be, mo) = t
             if not answer:
-                return (model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, normalize_judgement(
+                return (model, sid, rep, memory_context, inference_strategy, inference_runtime,
+                        condition_fields, be, mo, normalize_judgement(
                     {},
                     fallback_score=1,
                     fallback_verdict="no_answer",
@@ -539,7 +666,8 @@ def main():
             for attempt in range(4):
                 try:
                     j = normalize_judgement(judge_one(jg, scen[sid], answer))
-                    return (model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, j, jg.last_usage)
+                    return (model, sid, rep, memory_context, inference_strategy, inference_runtime,
+                            condition_fields, be, mo, j, jg.last_usage)
                 except Exception as e:  # noqa: BLE001
                     if attempt == 3:
                         sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} "
@@ -556,14 +684,14 @@ def main():
                 res = fut.result()
                 if res is None:
                     continue
-                model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, j, u = res
+                (model, sid, rep, memory_context, inference_strategy, inference_runtime,
+                 condition_fields, be, mo, j, u) = res
                 if u:
                     cost["calls"] += 1
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
-                memory_context = memory_context_by_unit.get((model, sid, str(rep), memory_context, inference_strategy), memory_context)
-                inference_runtime = runtime_by_unit.get((model, sid, str(rep), memory_context, inference_strategy), inference_runtime)
                 f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
+                                    **condition_fields,
                                     "memory_context": memory_context,
                                     "inference_strategy": inference_strategy,
                                     "inference_runtime": inference_runtime,

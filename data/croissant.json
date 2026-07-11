@@ -1,0 +1,1923 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "citeAs": "cr:citeAs",
+    "column": "cr:column",
+    "conformsTo": "dct:conformsTo",
+    "cr": "http://mlcommons.org/croissant/",
+    "data": {
+      "@id": "cr:data",
+      "@type": "@json"
+    },
+    "dataType": {
+      "@id": "cr:dataType",
+      "@type": "@vocab"
+    },
+    "dct": "http://purl.org/dc/terms/",
+    "examples": {
+      "@id": "cr:examples",
+      "@type": "@json"
+    },
+    "extract": "cr:extract",
+    "field": "cr:field",
+    "fileObject": "cr:fileObject",
+    "fileProperty": "cr:fileProperty",
+    "fileSet": "cr:fileSet",
+    "format": "cr:format",
+    "includes": "cr:includes",
+    "isLiveDataset": "cr:isLiveDataset",
+    "jsonPath": "cr:jsonPath",
+    "key": "cr:key",
+    "md5": "cr:md5",
+    "parentField": "cr:parentField",
+    "path": "cr:path",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "recordSet": "cr:recordSet",
+    "references": "cr:references",
+    "regex": "cr:regex",
+    "repeated": "cr:repeated",
+    "replace": "cr:replace",
+    "samplingRate": "cr:samplingRate",
+    "sc": "https://schema.org/",
+    "separator": "cr:separator",
+    "source": "cr:source",
+    "subField": "cr:subField",
+    "transform": "cr:transform"
+  },
+  "@type": "sc:Dataset",
+  "citeAs": "@dataset{hont2026apprenticeops, author={Dragos Hont}, title={ApprenticeOps frozen 94-model benchmark dataset}, year={2026}, url={https://github.com/dragoshont/apprenticeops}}",
+  "conditionsOfAccess": "Public; reuse is subject to the mixed rights documented in data/DATA_RIGHTS.md.",
+  "conformsTo": "http://mlcommons.org/croissant/1.0",
+  "creator": {
+    "@type": "sc:Person",
+    "name": "Dragos Hont"
+  },
+  "dateCreated": "2026-06-18",
+  "dateModified": "2026-07-11",
+  "datePublished": "2026-06-21",
+  "description": "Frozen inference, judge, safety, and CPU telemetry evidence for 94 functional small local-language-model deployments evaluated as homelab operations assistants. Quality and safety span two batches; claim-bearing energy and speed use only the controlled first batch.",
+  "distribution": [
+    {
+      "@id": "models.lock.jsonl",
+      "@type": "cr:FileObject",
+      "contentSize": "185938 B",
+      "contentUrl": "models.lock.jsonl",
+      "encodingFormat": "application/x-ndjson",
+      "name": "models.lock.jsonl",
+      "sha256": "c4a96fed7354bc6bc762a93bc0ce0b4bd25d3f4ebc5bd0dfcb64dcd6f203fcb8"
+    },
+    {
+      "@id": "raw/judged.det.gpt55.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "115074 B",
+      "contentUrl": "raw/judged.det.gpt55.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "judged.det.gpt55.jsonl.gz",
+      "sha256": "4c42bac64ba8137a31ac03be42676ba5bb4e08153729756ac0de484e3d02c78f"
+    },
+    {
+      "@id": "raw/judged.det.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "136544 B",
+      "contentUrl": "raw/judged.det.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "judged.det.jsonl.gz",
+      "sha256": "ee5c55bb4ddd8f5bf8f1ed9f204efd000053f9bacec8347eab62d325e3648da0"
+    },
+    {
+      "@id": "raw/judged.var.claude.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "625521 B",
+      "contentUrl": "raw/judged.var.claude.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "judged.var.claude.jsonl.gz",
+      "sha256": "9d9827f8d26d3e1da4c59db38d09631ffe8364612259d2520058dbdbbe8d16c6"
+    },
+    {
+      "@id": "raw/judged.var.gpt55.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "533089 B",
+      "contentUrl": "raw/judged.var.gpt55.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "judged.var.gpt55.jsonl.gz",
+      "sha256": "84e2447d7497b4f7c4b20e7379f917ca40b2e78f8b5e997083c0149a8d90d991"
+    },
+    {
+      "@id": "raw/judged.wave2.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "3928219 B",
+      "contentUrl": "raw/judged.wave2.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "judged.wave2.jsonl.gz",
+      "sha256": "d7a97620fa124740b3022b46ce5479ec0ecf83e8c5c19087941d853e859caea6"
+    },
+    {
+      "@id": "raw/outputs.var.tar.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "686545 B",
+      "contentUrl": "raw/outputs.var.tar.gz",
+      "encodingFormat": "application/gzip",
+      "name": "outputs.var.tar.gz",
+      "sha256": "3af1ba881d50ee26d126593fec15fb55697eceac2fbf4c348efff798243b438d"
+    },
+    {
+      "@id": "raw/outputs.wave2.tar.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "4422368 B",
+      "contentUrl": "raw/outputs.wave2.tar.gz",
+      "encodingFormat": "application/gzip",
+      "name": "outputs.wave2.tar.gz",
+      "sha256": "6f7662430b66a952c66141ddf50b9a0a2a6211291588f36ecf9fdc44bdec9ec9"
+    },
+    {
+      "@id": "raw/results.var.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "13404306 B",
+      "contentUrl": "raw/results.var.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "results.var.jsonl.gz",
+      "sha256": "cff2928b63fd0533ef18379223077d25c887a6cc635892fbd0cad7c6d60dcb93"
+    },
+    {
+      "@id": "raw/results.wave2.jsonl.gz",
+      "@type": "cr:FileObject",
+      "contentSize": "21382915 B",
+      "contentUrl": "raw/results.wave2.jsonl.gz",
+      "encodingFormat": "application/gzip",
+      "name": "results.wave2.jsonl.gz",
+      "sha256": "cbfb146335a7f36450ea7d1ec75108f7a7ea78bc755cd5cc95b5d27bfd6a2bf6"
+    },
+    {
+      "@id": "scenarios.json",
+      "@type": "cr:FileObject",
+      "contentSize": "134001 B",
+      "contentUrl": "scenarios.json",
+      "encodingFormat": "application/json",
+      "name": "scenarios.json",
+      "sha256": "5ebbc9fe36ae29273fcfd8565bc5e85cbc1dea778a731d357e10a6e006afc0a1"
+    },
+    {
+      "@id": "site/judge_pairs.csv",
+      "@type": "cr:FileObject",
+      "contentSize": "484362 B",
+      "contentUrl": "site/judge_pairs.csv",
+      "encodingFormat": "text/csv",
+      "name": "judge_pairs.csv",
+      "sha256": "b0f9f2583eee5418aedb0becbad464521301a28c90dbf790eeeb1f4165411bc1"
+    },
+    {
+      "@id": "snapshots/judge_pair_provenance.csv",
+      "@type": "cr:FileObject",
+      "contentSize": "2733606 B",
+      "contentUrl": "snapshots/judge_pair_provenance.csv",
+      "encodingFormat": "text/csv",
+      "name": "judge_pair_provenance.csv",
+      "sha256": "60a35f88ac21c8dde8079264e7ed86a29e55955d56247f9c10949141c787ca67"
+    },
+    {
+      "@id": "snapshots/judged_snapshot.csv",
+      "@type": "cr:FileObject",
+      "contentSize": "922124 B",
+      "contentUrl": "snapshots/judged_snapshot.csv",
+      "encodingFormat": "text/csv",
+      "name": "judged_snapshot.csv",
+      "sha256": "c00b6cbfc857a76e90211be6bd028a32bb4d457cf3cbc29c12bee7e7bed09f6e"
+    },
+    {
+      "@id": "snapshots/judged_snapshot.det.csv",
+      "@type": "cr:FileObject",
+      "contentSize": "43090 B",
+      "contentUrl": "snapshots/judged_snapshot.det.csv",
+      "encodingFormat": "text/csv",
+      "name": "judged_snapshot.det.csv",
+      "sha256": "af28abf7a0de84694bc945021496e56d5afac12a180d3dbce66b6718341ccdd4"
+    },
+    {
+      "@id": "snapshots/results_snapshot.csv",
+      "@type": "cr:FileObject",
+      "contentSize": "1944029 B",
+      "contentUrl": "snapshots/results_snapshot.csv",
+      "encodingFormat": "text/csv",
+      "name": "results_snapshot.csv",
+      "sha256": "119968ec64f67ed3d42f8f44eb5e14b55f86aaa066fba5a462770d469ede0169"
+    }
+  ],
+  "inLanguage": "en",
+  "isLiveDataset": false,
+  "keywords": [
+    "AIOps",
+    "CPU inference",
+    "energy efficiency",
+    "homelab",
+    "LLM safety",
+    "local LLM",
+    "small language models"
+  ],
+  "license": [
+    "https://www.apache.org/licenses/LICENSE-2.0",
+    "https://ai.google.dev/gemma/terms",
+    "https://developer.nvidia.com/",
+    "https://falconllm.tii.ae/",
+    "https://huggingface.co/HuggingFaceTB",
+    "https://huggingface.co/Qwen",
+    "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "https://huggingface.co/deepseek-ai",
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+    "https://huggingface.co/ibm-granite",
+    "https://huggingface.co/internlm",
+    "https://huggingface.co/microsoft",
+    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3",
+    "https://huggingface.co/stabilityai",
+    "https://mistral.ai/",
+    "https://www.llama.com/llama3_2/license/"
+  ],
+  "name": "ApprenticeOps frozen 94-model benchmark dataset",
+  "publisher": {
+    "@type": "sc:Person",
+    "name": "Dragos Hont"
+  },
+  "recordSet": [
+    {
+      "@id": "model_rights",
+      "@type": "cr:RecordSet",
+      "data": [
+        {
+          "model_rights/license": "DeepSeek License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://huggingface.co/deepseek-ai",
+          "model_rights/model": "deepseek-coder:1.3b"
+        },
+        {
+          "model_rights/license": "DeepSeek License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://huggingface.co/deepseek-ai",
+          "model_rights/model": "deepseek-coder:1.3b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+          "model_rights/model": "deepseek-r1:1.5b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "deepseek-r1:1.5b-qwen-distill-q8_0"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+          "model_rights/model": "deepseek-r1:7b"
+        },
+        {
+          "model_rights/license": "Falcon-LLM License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://falconllm.tii.ae/",
+          "model_rights/model": "falcon3:1b"
+        },
+        {
+          "model_rights/license": "Falcon-LLM License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://falconllm.tii.ae/",
+          "model_rights/model": "falcon3:1b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Falcon-LLM License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://falconllm.tii.ae/",
+          "model_rights/model": "falcon3:3b"
+        },
+        {
+          "model_rights/license": "Falcon-LLM License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://falconllm.tii.ae/",
+          "model_rights/model": "falcon3:3b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Falcon-LLM License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://falconllm.tii.ae/",
+          "model_rights/model": "falcon3:3b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma2:2b"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma2:2b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:1b"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:1b-it-q8_0"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:1b-it-qat"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:4b"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:4b-it-q4_K_M"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:4b-it-q8_0"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma3:4b-it-qat"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma:2b"
+        },
+        {
+          "model_rights/license": "Gemma Terms of Use",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://ai.google.dev/gemma/terms",
+          "model_rights/model": "gemma:2b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.1-dense:2b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.1-dense:2b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.1-moe:3b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.2:2b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.2:2b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite3.3:2b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite4:1b-h"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite4:micro"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/ibm-granite",
+          "model_rights/model": "granite4:tiny-h"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "hf.co/Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Llama-3.2 Community License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://www.llama.com/llama3_2/license/",
+          "model_rights/model": "hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/internlm",
+          "model_rights/model": "internlm2:1.8b"
+        },
+        {
+          "model_rights/license": "Llama-3.2 Community License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://www.llama.com/llama3_2/license/",
+          "model_rights/model": "llama3.2:1b"
+        },
+        {
+          "model_rights/license": "Llama-3.2 Community License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://www.llama.com/llama3_2/license/",
+          "model_rights/model": "llama3.2:1b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Llama-3.2 Community License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://www.llama.com/llama3_2/license/",
+          "model_rights/model": "llama3.2:3b"
+        },
+        {
+          "model_rights/license": "Llama-3.2 Community License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://www.llama.com/llama3_2/license/",
+          "model_rights/model": "llama3.2:3b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Mistral Research License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://mistral.ai/",
+          "model_rights/model": "ministral-3:3b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3",
+          "model_rights/model": "mistral:7b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "NVIDIA Open Model License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://developer.nvidia.com/",
+          "model_rights/model": "nemotron-mini:4b"
+        },
+        {
+          "model_rights/license": "NVIDIA Open Model License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://developer.nvidia.com/",
+          "model_rights/model": "nemotron-mini:4b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "NVIDIA Open Model License",
+          "model_rights/license_class": "custom",
+          "model_rights/license_url": "https://developer.nvidia.com/",
+          "model_rights/model": "nemotron-mini:4b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi3.5:3.8b"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi3.5:3.8b-mini-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi3:3.8b"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi3:3.8b-mini-128k-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi4-mini"
+        },
+        {
+          "model_rights/license": "MIT",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/microsoft",
+          "model_rights/model": "phi4-mini-reasoning"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5-coder:1.5b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5-coder:1.5b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5-coder:3b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5-coder:3b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5-coder:3b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:0.5b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:0.5b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:0.5b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:1.5b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:1.5b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:1.5b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:3b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:3b-instruct-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:3b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2.5:7b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2:0.5b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2:1.5b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen2:1.5b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:0.6b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:0.6b-fp16"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:0.6b-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:1.7b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:1.7b-fp16"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:1.7b-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:4b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:4b-instruct-2507-q4_K_M"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:4b-instruct-2507-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/Qwen",
+          "model_rights/model": "qwen3:4b-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:1.7b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:1.7b-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:135m"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:135m-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:360m"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm2:360m-instruct-q8_0"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm:1.7b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/HuggingFaceTB",
+          "model_rights/model": "smollm:360m"
+        },
+        {
+          "model_rights/license": "Stability AI Non-Commercial Research Community License",
+          "model_rights/license_class": "noncommercial",
+          "model_rights/license_url": "https://huggingface.co/stabilityai",
+          "model_rights/model": "stablelm2:1.6b"
+        },
+        {
+          "model_rights/license": "Stability AI Non-Commercial Research Community License",
+          "model_rights/license_class": "noncommercial",
+          "model_rights/license_url": "https://huggingface.co/stabilityai",
+          "model_rights/model": "stablelm2:1.6b-chat"
+        },
+        {
+          "model_rights/license": "Stability AI Non-Commercial Research Community License",
+          "model_rights/license_class": "noncommercial",
+          "model_rights/license_url": "https://huggingface.co/stabilityai",
+          "model_rights/model": "stablelm2:1.6b-zephyr"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+          "model_rights/model": "tinyllama:1.1b"
+        },
+        {
+          "model_rights/license": "Apache-2.0",
+          "model_rights/license_class": "permissive",
+          "model_rights/license_url": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+          "model_rights/model": "tinyllama:1.1b-chat-v1-q8_0"
+        }
+      ],
+      "dataType": "sc:Enumeration",
+      "description": "Per-deployment upstream model-family rights for the frozen 94-model population.",
+      "field": [
+        {
+          "@id": "model_rights/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model"
+        },
+        {
+          "@id": "model_rights/license",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "license"
+        },
+        {
+          "@id": "model_rights/license_class",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "license_class"
+        },
+        {
+          "@id": "model_rights/license_url",
+          "@type": "cr:Field",
+          "dataType": "sc:URL",
+          "name": "license_url"
+        }
+      ],
+      "key": {
+        "@id": "model_rights/model"
+      },
+      "name": "model_rights"
+    },
+    {
+      "@id": "results",
+      "@type": "cr:RecordSet",
+      "description": "One frozen inference result per runtime, model, scenario, and repetition.",
+      "field": [
+        {
+          "@id": "results/analysis_schema_version",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "analysis_schema_version",
+          "source": {
+            "extract": {
+              "column": "analysis_schema_version"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model",
+          "references": {
+            "field": {
+              "@id": "model_rights/model"
+            }
+          },
+          "source": {
+            "extract": {
+              "column": "model"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/runtime_adapter",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "runtime_adapter",
+          "source": {
+            "extract": {
+              "column": "runtime_adapter"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/parameter_tier",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "parameter_tier",
+          "source": {
+            "extract": {
+              "column": "parameter_tier"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/legacy_footprint_bracket",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "legacy_footprint_bracket",
+          "source": {
+            "extract": {
+              "column": "legacy_footprint_bracket"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/collection_batch",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "collection_batch",
+          "source": {
+            "extract": {
+              "column": "collection_batch"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/cpu_frequency_regime",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "cpu_frequency_regime",
+          "source": {
+            "extract": {
+              "column": "cpu_frequency_regime"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/power_source",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "power_source",
+          "source": {
+            "extract": {
+              "column": "power_source"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/energy_analysis_scope",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "energy_analysis_scope",
+          "source": {
+            "extract": {
+              "column": "energy_analysis_scope"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/scenario",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "scenario",
+          "source": {
+            "extract": {
+              "column": "scenario"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/rep",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "rep",
+          "source": {
+            "extract": {
+              "column": "rep"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/det_score",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "det_score",
+          "source": {
+            "extract": {
+              "column": "det_score"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/decode_tokens_per_s",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "decode_tokens_per_s",
+          "source": {
+            "extract": {
+              "column": "decode_tokens_per_s"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/prefill_tokens_per_s",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "prefill_tokens_per_s",
+          "source": {
+            "extract": {
+              "column": "prefill_tokens_per_s"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/wall_s",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "wall_s",
+          "source": {
+            "extract": {
+              "column": "wall_s"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/membw_peak_mb_s",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "membw_peak_mb_s",
+          "source": {
+            "extract": {
+              "column": "membw_peak_mb_s"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/energy_wh",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "energy_wh",
+          "source": {
+            "extract": {
+              "column": "energy_wh"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/parameter_count",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "parameter_count",
+          "source": {
+            "extract": {
+              "column": "parameter_count"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/parameter_size_label",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "parameter_size_label",
+          "source": {
+            "extract": {
+              "column": "parameter_size_label"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/quantization",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "quantization",
+          "source": {
+            "extract": {
+              "column": "quantization"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/artifact_size_bytes",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "artifact_size_bytes",
+          "source": {
+            "extract": {
+              "column": "artifact_size_bytes"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/expert_count",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "expert_count",
+          "source": {
+            "extract": {
+              "column": "expert_count"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/expert_used_count",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "expert_used_count",
+          "source": {
+            "extract": {
+              "column": "expert_used_count"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/dnf",
+          "@type": "cr:Field",
+          "dataType": "sc:Boolean",
+          "name": "dnf",
+          "source": {
+            "extract": {
+              "column": "dnf"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "results/finish_reason",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "finish_reason",
+          "source": {
+            "extract": {
+              "column": "finish_reason"
+            },
+            "fileObject": {
+              "@id": "snapshots/results_snapshot.csv"
+            }
+          }
+        }
+      ],
+      "key": [
+        {
+          "@id": "results/runtime_adapter"
+        },
+        {
+          "@id": "results/model"
+        },
+        {
+          "@id": "results/scenario"
+        },
+        {
+          "@id": "results/rep"
+        }
+      ],
+      "name": "results"
+    },
+    {
+      "@id": "judged_results",
+      "@type": "cr:RecordSet",
+      "description": "Two-judge consensus quality joined one-to-one to frozen inference results.",
+      "field": [
+        {
+          "@id": "judged_results/analysis_schema_version",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "analysis_schema_version",
+          "source": {
+            "extract": {
+              "column": "analysis_schema_version"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model",
+          "references": {
+            "field": {
+              "@id": "model_rights/model"
+            }
+          },
+          "source": {
+            "extract": {
+              "column": "model"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/runtime_adapter",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "runtime_adapter",
+          "source": {
+            "extract": {
+              "column": "runtime_adapter"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/parameter_tier",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "parameter_tier",
+          "source": {
+            "extract": {
+              "column": "parameter_tier"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/legacy_footprint_bracket",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "legacy_footprint_bracket",
+          "source": {
+            "extract": {
+              "column": "legacy_footprint_bracket"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/collection_batch",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "collection_batch",
+          "source": {
+            "extract": {
+              "column": "collection_batch"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/cpu_frequency_regime",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "cpu_frequency_regime",
+          "source": {
+            "extract": {
+              "column": "cpu_frequency_regime"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/scenario",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "scenario",
+          "source": {
+            "extract": {
+              "column": "scenario"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/rep",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "rep",
+          "source": {
+            "extract": {
+              "column": "rep"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        },
+        {
+          "@id": "judged_results/judge_score",
+          "@type": "cr:Field",
+          "dataType": "sc:Float",
+          "name": "judge_score",
+          "source": {
+            "extract": {
+              "column": "judge_score"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.csv"
+            }
+          }
+        }
+      ],
+      "key": [
+        {
+          "@id": "judged_results/runtime_adapter"
+        },
+        {
+          "@id": "judged_results/model"
+        },
+        {
+          "@id": "judged_results/scenario"
+        },
+        {
+          "@id": "judged_results/rep"
+        }
+      ],
+      "name": "judged_results"
+    },
+    {
+      "@id": "deterministic_judged_results",
+      "@type": "cr:RecordSet",
+      "description": "Historical deterministic-pass judged results.",
+      "field": [
+        {
+          "@id": "deterministic_judged_results/analysis_schema_version",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "analysis_schema_version",
+          "source": {
+            "extract": {
+              "column": "analysis_schema_version"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model",
+          "references": {
+            "field": {
+              "@id": "model_rights/model"
+            }
+          },
+          "source": {
+            "extract": {
+              "column": "model"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/runtime_adapter",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "runtime_adapter",
+          "source": {
+            "extract": {
+              "column": "runtime_adapter"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/parameter_tier",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "parameter_tier",
+          "source": {
+            "extract": {
+              "column": "parameter_tier"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/legacy_footprint_bracket",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "legacy_footprint_bracket",
+          "source": {
+            "extract": {
+              "column": "legacy_footprint_bracket"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/collection_batch",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "collection_batch",
+          "source": {
+            "extract": {
+              "column": "collection_batch"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/cpu_frequency_regime",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "cpu_frequency_regime",
+          "source": {
+            "extract": {
+              "column": "cpu_frequency_regime"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/scenario",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "scenario",
+          "source": {
+            "extract": {
+              "column": "scenario"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/rep",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "rep",
+          "source": {
+            "extract": {
+              "column": "rep"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        },
+        {
+          "@id": "deterministic_judged_results/judge_score",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "judge_score",
+          "source": {
+            "extract": {
+              "column": "judge_score"
+            },
+            "fileObject": {
+              "@id": "snapshots/judged_snapshot.det.csv"
+            }
+          }
+        }
+      ],
+      "key": [
+        {
+          "@id": "deterministic_judged_results/runtime_adapter"
+        },
+        {
+          "@id": "deterministic_judged_results/model"
+        },
+        {
+          "@id": "deterministic_judged_results/scenario"
+        },
+        {
+          "@id": "deterministic_judged_results/rep"
+        }
+      ],
+      "name": "deterministic_judged_results"
+    },
+    {
+      "@id": "judge_pairs",
+      "@type": "cr:RecordSet",
+      "description": "Complete Claude and GPT score pairs for the functional-model population.",
+      "field": [
+        {
+          "@id": "judge_pairs/analysis_schema_version",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "analysis_schema_version",
+          "source": {
+            "extract": {
+              "column": "analysis_schema_version"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pairs/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model",
+          "references": {
+            "field": {
+              "@id": "model_rights/model"
+            }
+          },
+          "source": {
+            "extract": {
+              "column": "model"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pairs/scenario",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "scenario",
+          "source": {
+            "extract": {
+              "column": "scenario"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pairs/rep",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "rep",
+          "source": {
+            "extract": {
+              "column": "rep"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pairs/claude_score",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "claude_score",
+          "source": {
+            "extract": {
+              "column": "claude_score"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pairs/gpt_score",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "gpt_score",
+          "source": {
+            "extract": {
+              "column": "gpt_score"
+            },
+            "fileObject": {
+              "@id": "site/judge_pairs.csv"
+            }
+          }
+        }
+      ],
+      "key": [
+        {
+          "@id": "judge_pairs/model"
+        },
+        {
+          "@id": "judge_pairs/scenario"
+        },
+        {
+          "@id": "judge_pairs/rep"
+        }
+      ],
+      "name": "judge_pairs"
+    },
+    {
+      "@id": "judge_pair_provenance",
+      "@type": "cr:RecordSet",
+      "description": "Frozen provenance and evaluation-policy identity for each retained judge pair.",
+      "field": [
+        {
+          "@id": "judge_pair_provenance/analysis_schema_version",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "analysis_schema_version",
+          "source": {
+            "extract": {
+              "column": "analysis_schema_version"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/frozen_pair_key_sha256",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "frozen_pair_key_sha256",
+          "source": {
+            "extract": {
+              "column": "frozen_pair_key_sha256"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/condition_identity_incomplete",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "condition_identity_incomplete",
+          "source": {
+            "extract": {
+              "column": "condition_identity_incomplete"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "model",
+          "references": {
+            "field": {
+              "@id": "model_rights/model"
+            }
+          },
+          "source": {
+            "extract": {
+              "column": "model"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/runtime_adapter",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "runtime_adapter",
+          "source": {
+            "extract": {
+              "column": "runtime_adapter"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/collection_batch",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "collection_batch",
+          "source": {
+            "extract": {
+              "column": "collection_batch"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/cpu_frequency_regime",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "cpu_frequency_regime",
+          "source": {
+            "extract": {
+              "column": "cpu_frequency_regime"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/power_source",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "power_source",
+          "source": {
+            "extract": {
+              "column": "power_source"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/energy_analysis_scope",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "energy_analysis_scope",
+          "source": {
+            "extract": {
+              "column": "energy_analysis_scope"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/scenario",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "scenario",
+          "source": {
+            "extract": {
+              "column": "scenario"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/rep",
+          "@type": "cr:Field",
+          "dataType": "sc:Integer",
+          "name": "rep",
+          "source": {
+            "extract": {
+              "column": "rep"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/evaluation_policy",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "evaluation_policy",
+          "source": {
+            "extract": {
+              "column": "evaluation_policy"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/judge_source_batch",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "judge_source_batch",
+          "source": {
+            "extract": {
+              "column": "judge_source_batch"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/claude_backend",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "claude_backend",
+          "source": {
+            "extract": {
+              "column": "claude_backend"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/claude_model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "claude_model",
+          "source": {
+            "extract": {
+              "column": "claude_model"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/gpt_backend",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "gpt_backend",
+          "source": {
+            "extract": {
+              "column": "gpt_backend"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        },
+        {
+          "@id": "judge_pair_provenance/gpt_model",
+          "@type": "cr:Field",
+          "dataType": "sc:Text",
+          "name": "gpt_model",
+          "source": {
+            "extract": {
+              "column": "gpt_model"
+            },
+            "fileObject": {
+              "@id": "snapshots/judge_pair_provenance.csv"
+            }
+          }
+        }
+      ],
+      "key": [
+        {
+          "@id": "judge_pair_provenance/frozen_pair_key_sha256"
+        }
+      ],
+      "name": "judge_pair_provenance"
+    }
+  ],
+  "sdLicense": "https://www.apache.org/licenses/LICENSE-2.0",
+  "url": "https://github.com/dragoshont/apprenticeops",
+  "usageInfo": "https://github.com/dragoshont/apprenticeops/blob/main/data/DATA_RIGHTS.md",
+  "version": "1.0.0"
+}

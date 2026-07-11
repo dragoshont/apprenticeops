@@ -1,6 +1,6 @@
 ---
 name: paper-voice
-description: "Use whenever writing or editing the ApprenticeOps paper, README, or docs (PAPER.md, README.md, REPRODUCE.md, PLAN.md, MARKET.md, TAXONOMY.md, TELEMETRY.md, MODELS.md, PAPER_INTENT.md, PAPER_PHASES.md). The house academic voice: rigorous, honesty-first, anti-overclaiming, practitioner-readable, dry-witty in framing only. Apply it without being asked. Trigger phrases: 'write the paper', 'edit PAPER.md', 'paper voice', 'academic tone', 'add a section', 'reword this', 'document this finding'."
+description: "Use whenever writing or editing the ApprenticeOps paper, README, or docs (PAPER.md, README.md, REPRODUCE.md, ANALYSIS.md, STATISTICS.md, PAPER_PHASES.md, MARKET.md, TAXONOMY.md, TELEMETRY.md, MODELS.md). The house academic voice: rigorous, honesty-first, anti-overclaiming, practitioner-readable, dry-witty in framing only. Apply it without being asked. Trigger phrases: 'write the paper', 'edit PAPER.md', 'paper voice', 'academic tone', 'add a section', 'reword this', 'document this finding'."
 argument-hint: "What part of the paper/docs are you writing or editing?"
 ---
 
@@ -95,6 +95,6 @@ Redefine ambiguous terms precisely and early, and keep the distinction visible:
 
 ## Pairs with
 
-- [`adversarial-review`](../../skills/adversarial-review/SKILL.md) — attack a new
-  section/method before shipping; fold the surviving caveats into the prose.
+- **Adversarial review** — attack a new section/method before shipping; fold the
+  surviving caveats into the prose.
 - Diátaxis for docs that mix tutorial/how-to/reference/explanation audiences.

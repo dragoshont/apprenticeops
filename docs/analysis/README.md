@@ -1,17 +1,21 @@
 # Analysis & figures
 
 Re-runnable analysis behind the paper, written to be read **top-to-bottom** and
-exported to a static site. The notebooks are the data + figures; the paper
-([`../PAPER.md`](../PAPER.md)) is the prose.
+exported to a static site. The notebooks are the data + figures;
+[`paper.qmd`](paper.qmd) is the submission manuscript, while
+[`../PAPER.md`](../PAPER.md) remains the design, pre-registration, and analysis
+plan that the manuscript cites.
 
 ## Notebooks
 
-- **[`wave_analysis.ipynb`](wave_analysis.ipynb)** — *the sovereign selection.*
-  Quality → Safety → Energy → the **quality × safety × energy Pareto** → systems
-  context (cost, deterministic precision, the bracket value gate, roofline
-  transfer) → conclusions. GitHub renders it with figures; or build the site below.
+- **[`wave_analysis.ipynb`](wave_analysis.ipynb)** — the canonical analysis
+  generator. It reports 94-model quality/safety breadth and a controlled
+  24-model quality/safety/energy selection; all systems cells enforce the
+  base-clock, Turbo-off, `package-0` scope.
 - **[`judge_comparison.ipynb`](judge_comparison.ipynb)** — inter-rater agreement
   between the two LLM judges (Cohen's κ, ICC, Bland–Altman, …).
+- **[`reviewer.ipynb`](reviewer.ipynb)** — twelve editable reviewer queries.
+  Energy/speed/roofline/MCDA queries can access controlled rows only.
 
 ## Machine-readable exports → [`../../data/site/`](../../data/site)
 
@@ -21,28 +25,29 @@ place on every run.
 
 | File | Contents |
 |---|---|
-| `summary.json` | Headline numbers: model/Pareto counts, the 3–4B knee, instruct-vs-reasoning safety, the sovereign pick. |
-| `models.csv` · `models.json` | Per-model 3-axis table — `model, bracket, quality, safety, energy_wh, mWh, pareto`. |
-| `pareto.csv` | The Pareto-optimal short-list (non-dominated on quality ↑, safety ↑, energy ↓). |
-| `axis_quality.csv` | Judged %-of-frontier per bracket (mean + 95 % CI). |
+| `summary.json` | Exact breadth/controlled populations, paired contrasts, fronts, and `energy_cross_batch_comparison_allowed=false`. |
+| `models.csv` · `models.json` | 94-model quality/safety breadth; intentionally no energy field. |
+| `controlled_models.csv` | 24-model controlled quality/safety/energy table with batch/regime/source fields. |
+| `pareto.csv` | Controlled three-axis front (7 models). |
+| `quality_safety_pareto.csv` | 94-model breadth quality/safety front (2 models). |
+| `axis_quality.csv` | Judged percentage of ceiling by historical group (scenario-cluster interval). |
 | `axis_safety_bracket.csv` · `axis_safety_arm.csv` | Deterministic refusal per instruct bracket / per training-type arm. |
-| `axis_energy.csv` | Energy-per-answer + tok/s-per-watt per bracket. |
+| `axis_energy.csv` | Controlled energy-per-answer and decode-tokens/s-per-watt by historical group. |
 
 ## Rebuild / view
 
 ```bash
-# one command: re-run the notebook, write data/site exports, render HTML (+ Quarto site if installed)
-scripts/build-analysis-site.sh
+# Explicitly refresh notebooks, exports, figures, site, and PDF.
+scripts/build-analysis-site.sh --update
 
-# or step by step:
-.venv/bin/jupyter nbconvert --to notebook --execute --inplace docs/analysis/wave_analysis.ipynb   # 1. run (needs data/snapshots/)
-.venv/bin/jupyter nbconvert --to html --embed-images docs/analysis/wave_analysis.ipynb            # 2a. standalone HTML page
-quarto render docs/analysis                                                                        # 2b. full site -> _site/  (needs: brew install --cask quarto)
+# Re-execute all public notebooks in temporary outputs and compare everything.
+scripts/build-analysis-site.sh --verify
 ```
 
 > **Honesty:** the **quality** axis is the **5-rep × 2-judge ensemble**
-> (cross-judge κ_quad ≈ 0.91); **safety** and **energy** are judge-free / measured.
-> Everything is one commodity node (n = 1). See the notebook intro for provenance.
+> (cross-judge κ_quad ≈ 0.91); **safety** is judge-free. **Energy and systems
+> rankings are controlled-first-batch only.** Everything is one commodity node
+> (n = 1). The former 12-of-94 pooled-energy front is withdrawn.
 > Render artifacts (`_site/`, `*.html`) are git-ignored; the notebook outputs and
 > `data/site/` exports are tracked.
 

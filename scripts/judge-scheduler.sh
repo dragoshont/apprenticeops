@@ -125,7 +125,7 @@ while true; do
       fi
       want=$(( ${units:-0} * NJUDGES ))
       have=$(jq -r --arg m "$m" --arg sha "$SCENARIO_SHA" \
-        'select(.model==$m and .scenarios_sha256==$sha) | [.scenario, (.rep|tostring), .judge_model] | @tsv' \
+        'select(.model==$m and .scenarios_sha256==$sha) | [.scenario, (.rep|tostring), (.judge_backend // "unknown"), .judge_model] | @tsv' \
         "$JUDGED" 2>/dev/null | sort -u | wc -l | tr -d ' ')
       if [ "$want" -le 0 ] || [ "${have:-0}" -lt "$want" ]; then
         status "model $m: judged ${have}/${want}, waiting"; continue

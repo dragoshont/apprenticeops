@@ -1,10 +1,10 @@
 # Test Plan — CEOps Small-Model Reasoning Eval
 
-> Status: **live harness / evolving study plan.** The original model-selection
-> sweep has run; this plan now describes the current CEOps premise and the next
-> controlled axes. Pairs with [`MODELS.md`](MODELS.md) (what to test),
-> [`MARKET.md`](MARKET.md) (what to distrust), and
-> [`EXPERIMENT-PIPELINE.md`](EXPERIMENT-PIPELINE.md) (how a run executes).
+> Status: **archived historical study plan.** The original model-selection sweep
+> ran; this plan described the then-current CEOps premise and controlled axes.
+> It pairs with [`MODELS.md`](../MODELS.md) (what was considered),
+> [`MARKET.md`](../MARKET.md) (what to distrust), and
+> [`EXPERIMENT-PIPELINE.md`](../EXPERIMENT-PIPELINE.md) (the current run design).
 
 ## 1. Objective & success criteria
 
@@ -113,7 +113,7 @@ context to every model (the fairness constraint). Scored two ways:
 ## 4. Task taxonomy — mapped to your verbs
 
 The taxonomy is grounded in a **6-pillar operational blueprint**
-([`TAXONOMY.md`](TAXONOMY.md)) that maps every class to **Google SRE**, **DORA**
+([`TAXONOMY.md`](../TAXONOMY.md)) that maps every class to **Google SRE**, **DORA**
 core capabilities (incl. **Pervasive security**/DevSecOps), the **observability
 three pillars**, and **ITIL** change management — and **corroborated against**
 [AIOpsLab](https://github.com/microsoft/AIOpsLab) (Microsoft, MLSys 2025), whose
@@ -124,7 +124,7 @@ ops agents* (each scenario records its `aiopslab_task`).
 
 Eight scenario classes, each tied to a homelab action. Target ≥ 3 scenarios per
 class (≥ 24 total), drawn from **real** cluster signals so the ground truth is
-known. The seed suite ([`scenarios.json`](scenarios.json)) ships **8** (one per
+known. The seed suite ([`scenarios.json`](../../data/scenarios.json)) ships **8** (one per
 class) frozen from real `kube_crashloop_pods` + `kube_events` captured
 2026-06-16; expand to ≥3/class before the full run.
 
@@ -149,7 +149,8 @@ Two distinct roles, both run **off the node** (from the Mac — does **not** tou
 the node's offline/breakglass purity; only the small models run on home-ai).
 Access uses the **GitHub Models** OpenAI-compatible endpoint with a GitHub PAT —
 the **same path the repo's existing agent already uses**
-([`agent/runner.py`](../../../agent/runner.py): `https://models.github.ai/inference`).
+(`agent/runner.py`, a historical path outside this standalone repository:
+`https://models.github.ai/inference`).
 Your **GitHub Copilot subscription** raises the rate limits; **no Anthropic key
 is needed**. Set `JUDGE_MODEL` to whatever strong model your account exposes
 (`openai/gpt-4.1` default; a Claude id if available).
@@ -260,7 +261,7 @@ its expansion instead of paying for it blindly.
 (thinking models score low on det but may recover under the judge); and the
 **`guard` (safety) class is always run** for every bracket regardless of the
 gate, because safety is non-monotonic in size and cheap to keep. The gate is
-implemented in [`docs/analysis/wave_analysis.ipynb`](analysis/wave_analysis.ipynb)
+implemented in [`docs/analysis/wave_analysis.ipynb`](../analysis/wave_analysis.ipynb)
 (it stays PENDING until a judged snapshot exists).
 
 ## 9. How to start (operator)
@@ -287,9 +288,9 @@ python3 scripts/ai-node/small-model-eval/report.py   # -> RESULTS.md + CSV
 ```
 
 > The runner/judge/report scripts are **built**:
-> [`run.py`](run.py) (node-side, stdlib-only, watchdog + OTel telemetry),
-> [`judge.py`](judge.py) (off-node, GitHub Models), [`report.py`](report.py).
-> They extend the existing [`agent-loop.py`](../agent-loop.py) watchdog +
+> [`run.py`](../../run.py) (node-side, stdlib-only, watchdog + OTel telemetry),
+> [`judge.py`](../../judge.py) (off-node, GitHub Models), [`report.py`](../../report.py).
+> They extend the historical `agent-loop.py` watchdog +
 > Ollama-native pattern. Validated locally (compile + check-engine smoke); the
 > multi-hour pull+run is the operator's to kick off.
 

@@ -24,4 +24,4 @@ repo (the "release the raw data" reproducibility requirement).
 - **Scrub before public release.** Model answers/telemetry reference this
   cluster's (mostly synthetic) scenario detail; anonymize for the standalone repo.
 
-Regenerate the powered dataset per [`../REPRODUCE.md`](../REPRODUCE.md).
+Regenerate the powered dataset per [`REPRODUCE.md`](../../REPRODUCE.md).
