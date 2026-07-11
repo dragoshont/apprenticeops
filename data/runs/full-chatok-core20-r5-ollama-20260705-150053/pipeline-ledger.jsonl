@@ -7576,3 +7576,27 @@
 {"model":"*","stage":"judge","ts":1783756138,"ok":1,"detail":"judged 27028->27030"}
 {"model":"*","stage":"judge","ts":1783756222,"ok":1,"detail":"judged 27030->27032"}
 {"model":"*","stage":"judge","ts":1783756299,"ok":1,"detail":"judged 27032->27036"}
+{"model":"granite3.2:2b-instruct-q4_K_M","stage":"persist","ts":1783756349,"ok":1,"detail":"0d3a704"}
+{"model":"*","stage":"judge","ts":1783756436,"ok":1,"detail":"judged 27036->27044"}
+{"model":"*","stage":"judge","ts":1783756587,"ok":1,"detail":"judged 27044->27058"}
+{"model":"*","stage":"judge","ts":1783756734,"ok":1,"detail":"judged 27058->27074"}
+{"model":"*","stage":"judge","ts":1783756840,"ok":1,"detail":"judged 27074->27090"}
+{"model":"*","stage":"judge","ts":1783756930,"ok":1,"detail":"judged 27090->27098"}
+{"model":"*","stage":"judge","ts":1783757030,"ok":1,"detail":"judged 27098->27106"}
+{"model":"*","stage":"judge","ts":1783757106,"ok":1,"detail":"judged 27106->27118"}
+{"model":"*","stage":"judge","ts":1783757169,"ok":1,"detail":"judged 27118->27126"}
+{"model":"*","stage":"judge","ts":1783757233,"ok":1,"detail":"judged 27126->27132"}
+{"model":"*","stage":"judge","ts":1783757295,"ok":1,"detail":"judged 27132->27140"}
+{"model":"*","stage":"judge","ts":1783757344,"ok":1,"detail":"judged 27140->27146"}
+{"model":"*","stage":"judge","ts":1783757426,"ok":1,"detail":"judged 27146->27152"}
+{"model":"*","stage":"judge","ts":1783757501,"ok":1,"detail":"judged 27152->27162"}
+{"model":"*","stage":"judge","ts":1783757593,"ok":1,"detail":"judged 27162->27178"}
+{"model":"*","stage":"judge","ts":1783757667,"ok":1,"detail":"judged 27178->27186"}
+{"model":"*","stage":"judge","ts":1783757739,"ok":1,"detail":"judged 27186->27190"}
+{"model":"*","stage":"judge","ts":1783757801,"ok":1,"detail":"judged 27190->27194"}
+{"model":"*","stage":"judge","ts":1783757866,"ok":1,"detail":"judged 27194->27200"}
+{"model":"*","stage":"judge","ts":1783757928,"ok":1,"detail":"judged 27200->27206"}
+{"model":"*","stage":"judge","ts":1783758000,"ok":1,"detail":"judged 27206->27216"}
+{"model":"*","stage":"judge","ts":1783758085,"ok":1,"detail":"judged 27216->27220"}
+{"model":"*","stage":"judge","ts":1783758169,"ok":1,"detail":"judged 27220->27226"}
+{"model":"*","stage":"judge","ts":1783758259,"ok":1,"detail":"judged 27226->27236"}
