@@ -138,6 +138,10 @@ def fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, pathlib.Pat
         "scenario_ids": ["s1", "s2"],
         "reps": 2,
         "judges": 2,
+        "judge_identities": [
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+            {"judge_backend": "copilot", "judge_model": "gpt-test"},
+        ],
         "expect": 2,
         "memory_context": "none",
         "inference_strategy": "baseline",
@@ -211,6 +215,10 @@ def full_shape_fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, 
         "scenario_ids": list(scenarios),
         "reps": 5,
         "judges": len(JUDGES),
+        "judge_identities": [
+            {"judge_backend": backend, "judge_model": model}
+            for backend, model in (value.split(":", 1) for value in JUDGES)
+        ],
         "expect": len(models),
         "memory_context": "none",
         "inference_strategy": "baseline",
@@ -573,6 +581,86 @@ def test_verify_detects_bundle_tampering() -> None:
         with (bundle / "gate-report.json").open("a") as handle:
             handle.write(" ")
         expect_failure(lambda: promotion.verify_bundle(bundle), "P7")
+
+
+def test_metadata_rejects_same_count_judge_substitution() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        substituted = promotion.build_context(
+            repo_root=repo,
+            run_dir=run,
+            output_root=output,
+            judge_values=("copilot:wrong-claude", "copilot:wrong-gpt"),
+        )
+        roster = promotion.parse_roster(substituted.inputs.roster)
+        scenarios = promotion.parse_scenarios(substituted.inputs.scenarios)
+        expect_failure(
+            lambda: promotion.validate_metadata(substituted, roster, scenarios),
+            "P2",
+        )
+
+
+def test_metadata_rejects_malformed_modern_judge_identities() -> None:
+    malformed_values = (
+        None,
+        "copilot:claude-test",
+        [],
+        [{}],
+        [{"judge_backend": "", "judge_model": "claude-test"}],
+        [
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+        ],
+        [{"judge_backend": "copilot", "judge_model": "claude-test"}],
+    )
+    for malformed in malformed_values:
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["judge_identities"] = malformed
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(
+                lambda: promotion.validate_metadata(ctx, roster, scenarios),
+                "P2",
+            )
+
+
+def test_metadata_requires_strict_positive_integer_judge_count() -> None:
+    invalid_counts = (2.5, "2", "two", {}, [], True, False, 0, -1, None)
+    for invalid in invalid_counts:
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["judges"] = invalid
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(
+                lambda: promotion.validate_metadata(ctx, roster, scenarios),
+                "P2",
+            )
+
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        meta_path = run / "run.meta"
+        meta = json.loads(meta_path.read_text())
+        del meta["judges"]
+        meta_path.write_text(json.dumps(meta) + "\n")
+        ctx = context(repo, run, output)
+        roster = promotion.parse_roster(ctx.inputs.roster)
+        scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+        expect_failure(
+            lambda: promotion.validate_metadata(ctx, roster, scenarios),
+            "P2",
+        )
+
+    assert promotion.analysis_metrics.metadata_judge_count({"judges": 2}) == 2
 
 
 def test_verify_rejects_unlisted_bundle_file() -> None:

@@ -308,6 +308,67 @@ def judge_identity_label(row: Mapping[str, Any]) -> str:
     return model if backend == "unknown" else f"{backend}:{model}"
 
 
+def metadata_judge_count(meta: Mapping[str, Any]) -> int:
+    """Return a strict positive integer judge count from run metadata."""
+
+    value = meta.get("judges")
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError("run.meta judges must be a positive integer")
+    return value
+
+
+def metadata_judge_identities(
+    meta: Mapping[str, Any],
+) -> frozenset[tuple[str, str]] | None:
+    """Parse authoritative modern judge metadata; field absence alone is legacy."""
+
+    if "judge_identities" not in meta:
+        return None
+    raw = meta.get("judge_identities")
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("run.meta judge_identities must be a non-empty list")
+    identities: list[tuple[str, str]] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, Mapping):
+            raise ValueError(f"run.meta judge_identities[{index}] must be an object")
+        backend = item.get("judge_backend")
+        model = item.get("judge_model")
+        if not isinstance(backend, str) or not backend.strip():
+            raise ValueError(
+                f"run.meta judge_identities[{index}].judge_backend must be non-empty"
+            )
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError(
+                f"run.meta judge_identities[{index}].judge_model must be non-empty"
+            )
+        identities.append((backend.strip(), model.strip()))
+    unique = frozenset(identities)
+    if len(unique) != len(identities):
+        raise ValueError("run.meta judge_identities contains duplicates")
+    count = metadata_judge_count(meta)
+    if count != len(unique):
+        raise ValueError("run.meta judge_identities cardinality differs from judges")
+    return unique
+
+
+def judgement_success(row: Mapping[str, Any]) -> bool:
+    """One structurally complete canonical judge attempt."""
+
+    score = row.get("score")
+    return (
+        isinstance(score, (int, float))
+        and not isinstance(score, bool)
+        and math.isfinite(float(score))
+        and 1 <= float(score) <= 5
+        and isinstance(row.get("verdict"), str)
+        and bool(row.get("verdict"))
+        and isinstance(row.get("evidence"), str)
+        and bool(row.get("evidence"))
+        and isinstance(row.get("criteria_met"), list)
+        and isinstance(row.get("criteria_missed"), list)
+    )
+
+
 def evaluation_policy_judges(evaluation_policy: str) -> frozenset[tuple[str, str]]:
     marker = "|judges:"
     if marker not in evaluation_policy:

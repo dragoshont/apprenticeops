@@ -151,21 +151,59 @@ def evaluate_interpretation(report: dict) -> dict:
             actual=report["rows"],
             expected=report["expected_rows"],
         )
-    if report.get("expected_judged_rows") is not None and report["judged_rows"] != report["expected_judged_rows"]:
+    if (
+        report.get("expected_judged_rows") is not None
+        and report["judge_canonical_successes"] != report["expected_judged_rows"]
+    ):
         add_strict_failure(
             failures,
-            "judged-row-count-mismatch",
-            "judged row count does not match run metadata",
-            actual=report["judged_rows"],
+            "judged-success-count-mismatch",
+            "canonical successful judgement count does not match run metadata",
+            actual=report["judge_canonical_successes"],
             expected=report["expected_judged_rows"],
+        )
+    if report.get("expected_judged_rows") is not None and not report.get("judge_domain_declared"):
+        add_strict_failure(
+            failures,
+            "judge-domain-undeclared",
+            "expected judge identities are absent; pass --judge for legacy runs",
+            actual=0,
+            expected=report.get("meta", {}).get("judges"),
+        )
+    if report.get("judge_domain_conflict"):
+        add_strict_failure(
+            failures,
+            "judge-domain-conflict",
+            "explicit judge identities differ from authoritative run metadata",
+            actual=report.get("explicit_judges"),
+            expected=report.get("metadata_judges"),
+        )
+    if report.get("judge_metadata_error"):
+        add_strict_failure(
+            failures,
+            "judge-metadata-invalid",
+            "run.meta judge identity declaration is malformed",
+            actual=report.get("judge_metadata_error"),
+            expected="non-empty unique identities matching judges",
+        )
+    if report.get("judge_count_error"):
+        add_strict_failure(
+            failures,
+            "judge-count-invalid",
+            "run.meta judge count is malformed",
+            actual=report.get("judge_count_error"),
+            expected="positive integer",
         )
     for field, code, message in (
         ("parse_errors", "result-parse-errors", "inference result JSONL contains parse errors"),
         ("judge_parse_errors", "judge-parse-errors", "judged JSONL contains parse errors"),
         ("duplicate_result_tuples", "duplicate-result-tuples", "duplicate inference tuples were found"),
-        ("judge_duplicate_tuples", "duplicate-judge-tuples", "duplicate judged tuples were found"),
+        ("judge_missing_success_tuples", "missing-successful-judge-tuples", "judge tuples lack a successful attempt"),
+        ("judge_competing_success_tuples", "competing-successful-judge-tuples", "judge tuples have multiple successful attempts"),
+        ("judge_missing_keys", "missing-judge-keys", "declared result/judge keys have no attempt"),
+        ("judge_extra_keys", "extra-judge-keys", "observed judge attempts are outside the declared result/judge domain"),
+        ("judge_unresolved_parse_failures", "unresolved-judge-response-parse-failures", "judge parse failures have no successful retry"),
         ("judge_empty", "empty-judge-rows", "judge backend produced empty verdict rows"),
-        ("judge_response_parse_failures", "judge-response-parse-failures", "judge responses could not be parsed"),
         ("judge_evidence_missing", "judge-evidence-missing", "judge rows are missing evidence"),
         ("judge_criteria_missing", "judge-criteria-missing", "judge rows are missing criteria fields"),
     ):
@@ -188,18 +226,29 @@ def evaluate_interpretation(report: dict) -> dict:
     }
 
 
-def summarize_run(run_dir: Path) -> dict:
+def summarize_run(
+    run_dir: Path,
+    *,
+    explicit_judges: frozenset[tuple[str, str]] | None = None,
+) -> dict:
     run_id = run_dir.name
     meta_path = run_dir / "run.meta"
     meta = {}
     has_run_meta = meta_path.exists()
     run_meta_parse_error = False
+    judge_count_error = None
+    judge_count = None
     if meta_path.exists():
         try:
             meta = json.loads(meta_path.read_text())
         except json.JSONDecodeError:
             run_meta_parse_error = True
             meta = {"_parse_error": True}
+    if has_run_meta and not run_meta_parse_error:
+        try:
+            judge_count = analysis_metrics.metadata_judge_count(meta)
+        except ValueError as exc:
+            judge_count_error = str(exc)
     result_paths = sorted((run_dir / "_mirror").glob("results.*.jsonl"))
     if not result_paths:
         result_paths = sorted(run_dir.glob("results.*.jsonl"))
@@ -250,6 +299,59 @@ def summarize_run(run_dir: Path) -> dict:
         if count > 1
     ]
     judge_duplicates = sum(count - 1 for count in judge_tuple_counts.values() if count > 1)
+    judge_attempts_by_key: dict[tuple, list[dict]] = defaultdict(list)
+    for row in judged:
+        key = (
+            row.get("model"),
+            row.get("scenario"),
+            row.get("rep"),
+            row.get("memory_context") or row.get("env.memory_context") or "none",
+            row.get("inference_strategy") or row.get("env.inference_strategy") or "baseline",
+            row.get("judge_backend") or "unknown",
+            row.get("judge_model"),
+        )
+        judge_attempts_by_key[key].append(row)
+    successful_attempts = {
+        key: [row for row in attempts if analysis_metrics.judgement_success(row)]
+        for key, attempts in judge_attempts_by_key.items()
+    }
+    metadata_judges = None
+    judge_metadata_error = None
+    try:
+        metadata_judges = analysis_metrics.metadata_judge_identities(meta)
+    except ValueError as exc:
+        judge_metadata_error = str(exc)
+    judge_domain_conflict = (
+        metadata_judges is not None
+        and explicit_judges is not None
+        and metadata_judges != explicit_judges
+    )
+    declared_judges = metadata_judges if metadata_judges is not None else explicit_judges
+    result_join_keys = {
+        (
+            row.get("model"), row.get("scenario"), row.get("rep"),
+            row.get("env.memory_context") or "none",
+            row.get("env.inference_strategy") or "baseline",
+        )
+        for row in rows
+    }
+    expected_judge_keys = {
+        (*result_key, backend, model)
+        for result_key in result_join_keys
+        for backend, model in (declared_judges or frozenset())
+    }
+    observed_judge_keys = set(judge_attempts_by_key)
+    extra_judge_keys = observed_judge_keys - expected_judge_keys if declared_judges else set()
+    missing_judge_keys = expected_judge_keys - observed_judge_keys if declared_judges else set()
+    domain_keys = expected_judge_keys if declared_judges else observed_judge_keys
+    judge_canonical_successes = sum(len(successful_attempts.get(key, [])) == 1 for key in domain_keys)
+    judge_missing_success_tuples = sum(not successful_attempts.get(key) for key in domain_keys)
+    judge_competing_success_tuples = sum(len(successful_attempts.get(key, [])) > 1 for key in domain_keys)
+    judge_retry_attempts = sum(
+        len(all_attempts) - 1
+        for key, all_attempts in judge_attempts_by_key.items()
+        if len(successful_attempts[key]) == 1
+    )
     keys_seen = set().union(*(row.keys() for row in rows)) if rows else set()
     missing_counts = Counter()
     for row in rows:
@@ -281,8 +383,23 @@ def summarize_run(run_dir: Path) -> dict:
             or "judge response could not be parsed" in (row.get("criteria_missed") or [])
         )
     ]
-    judge_missing_evidence = [row for row in judged if not row.get("evidence")]
-    judge_missing_criteria = [row for row in judged if "criteria_met" not in row or "criteria_missed" not in row]
+    judge_unresolved_parse_failures = [
+        row
+        for key, attempts in judge_attempts_by_key.items()
+        if not successful_attempts[key]
+        for row in attempts
+        if row in judge_response_parse_failures
+    ]
+    canonical_success_rows = [
+        attempts[0]
+        for key, attempts in successful_attempts.items()
+        if key in domain_keys and len(attempts) == 1
+    ]
+    judge_missing_evidence = [row for row in canonical_success_rows if not row.get("evidence")]
+    judge_missing_criteria = [
+        row for row in canonical_success_rows
+        if "criteria_met" not in row or "criteria_missed" not in row
+    ]
     judge_empty = [row for row in judged if row.get("verdict") == "empty" and not is_deterministic_no_answer_judge(row)]
     usage_by_judge: dict[str, dict] = defaultdict(lambda: {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cache_read": 0, "cache_write": 0, "ai_credits": 0.0})
     for row in judged:
@@ -295,9 +412,12 @@ def summarize_run(run_dir: Path) -> dict:
     expected_models = int(meta.get("expect") or meta.get("models_count") or 0)
     scenario_count = int(meta.get("scenario_count") or 0)
     reps = int(meta.get("reps") or 5)
-    judges = int(meta.get("judges") or 2)
     expected_rows = expected_models * scenario_count * reps if expected_models and scenario_count else None
-    expected_judged = expected_rows * judges if expected_rows and meta.get("judge_expected", True) is not False else None
+    expected_judged = (
+        expected_rows * judge_count
+        if expected_rows and judge_count is not None and meta.get("judge_expected", True) is not False
+        else None
+    )
     report = {
         "run_id": run_id,
         "has_run_meta": has_run_meta,
@@ -309,6 +429,7 @@ def summarize_run(run_dir: Path) -> dict:
             "memory_context": meta.get("memory_context") or "none",
             "inference_strategy": meta.get("inference_strategy") or "baseline",
             "timeout_policy_id": meta.get("timeout_policy_id"),
+            "judges": judge_count,
         },
         "rows": len(rows),
         "expected_rows": expected_rows,
@@ -319,6 +440,26 @@ def summarize_run(run_dir: Path) -> dict:
         "judge_unique_tuples": len(judge_tuple_counts),
         "judge_duplicate_tuples": judge_duplicates,
         "judge_duplicate_examples": judge_duplicate_examples[:10],
+        "judge_canonical_successes": judge_canonical_successes,
+        "judge_retry_attempts": judge_retry_attempts,
+        "judge_missing_success_tuples": judge_missing_success_tuples,
+        "judge_competing_success_tuples": judge_competing_success_tuples,
+        "judge_unresolved_parse_failures": len(judge_unresolved_parse_failures),
+        "judge_domain_declared": declared_judges is not None,
+        "judge_domain_conflict": judge_domain_conflict,
+        "judge_metadata_error": judge_metadata_error,
+        "judge_count_error": judge_count_error,
+        "metadata_judges": sorted(
+            f"{backend}:{model}" for backend, model in (metadata_judges or frozenset())
+        ),
+        "explicit_judges": sorted(
+            f"{backend}:{model}" for backend, model in (explicit_judges or frozenset())
+        ),
+        "judge_expected_identities": sorted(
+            f"{backend}:{model}" for backend, model in (declared_judges or frozenset())
+        ),
+        "judge_missing_keys": len(missing_judge_keys),
+        "judge_extra_keys": len(extra_judge_keys),
         "duplicate_result_tuples": duplicates,
         "schema_field_count": len(keys_seen),
         "schema_missing_fields": dict(missing_counts),
@@ -355,7 +496,11 @@ def print_text(reports: list[dict]) -> None:
         print(f"scope: {meta.get('model_set')} x {meta.get('scenario_set')} x {meta.get('memory_context')} x {meta.get('inference_strategy')}")
         expected = f"/{report['expected_rows']}" if report.get("expected_rows") else ""
         expected_j = f"/{report['expected_judged_rows']}" if report.get("expected_judged_rows") else ""
-        print(f"rows: {report['rows']}{expected}; judged: {report['judged_rows']}{expected_j}; fields: {report['schema_field_count']}")
+        print(
+            f"rows: {report['rows']}{expected}; "
+            f"judged: {report['judge_canonical_successes']}{expected_j} canonical "
+            f"from {report['judged_rows']} attempts; fields: {report['schema_field_count']}"
+        )
         print(f"run_meta={int(report['has_run_meta'])}; result_files={report['result_file_count']}")
         gate = "PASS" if report["interpretation_ok"] else "FAIL"
         print(f"interpretation: {gate}; strict_failures={report['strict_failure_count']}")
@@ -371,12 +516,16 @@ def print_text(reports: list[dict]) -> None:
             f"parse_failures={report.get('judge_response_parse_failures', 0)} "
             f"evidence_missing={report['judge_evidence_missing']} "
             f"criteria_missing={report['judge_criteria_missing']} "
-            f"duplicate_tuples={report['judge_duplicate_tuples']}"
+            f"retry_attempts={report['judge_retry_attempts']} "
+            f"missing_success={report['judge_missing_success_tuples']} "
+            f"competing_success={report['judge_competing_success_tuples']}"
         )
+        if not report["judge_domain_declared"]:
+            print("  judge domain: UNDECLARED (pass --judge BACKEND:MODEL for legacy runs)")
         if report["judge_duplicate_examples"]:
             for item in report["judge_duplicate_examples"][:5]:
                 print(
-                    "  duplicate judge tuple: "
+                    "  multiple judge attempts: "
                     f"count={item['count']} model={item['model']} "
                     f"scenario={item['scenario']} rep={item['rep']} "
                     f"memory={item['memory_context']} strategy={item['inference_strategy']} "
@@ -428,7 +577,11 @@ def print_markdown(reports: list[dict]) -> None:
         print("| Signal | Value |")
         print("|---|---:|")
         print(f"| Inference rows | {report['rows']}{expected} |")
-        print(f"| Judged rows | {report['judged_rows']}{expected_j} |")
+        print(f"| Raw judge attempts | {report['judged_rows']} |")
+        print(f"| Canonical successful judgements | {report['judge_canonical_successes']}{expected_j} |")
+        print(f"| Judge retry attempts | {report['judge_retry_attempts']} |")
+        print(f"| Judge tuples missing success | {report['judge_missing_success_tuples']} |")
+        print(f"| Judge tuples with competing successes | {report['judge_competing_success_tuples']} |")
         print(f"| Run metadata present | {report['has_run_meta']} |")
         print(f"| Result files | {report['result_file_count']} |")
         print(f"| Result parse errors | {report['parse_errors']} |")
@@ -451,7 +604,7 @@ def print_markdown(reports: list[dict]) -> None:
         print(f"| Zero-output stalls | {report['zero_output_stalls']} ({report['zero_output_stall_rate']}%) |")
         print()
         if report["judge_duplicate_examples"]:
-            print("### Duplicate Judge Examples")
+            print("### Multiple Judge Attempt Examples")
             print()
             print("| Count | Model | Scenario | Rep | Memory | Strategy | Judge |")
             print("|---:|---|---|---:|---|---|---|")
@@ -478,8 +631,19 @@ def main() -> None:
     output_group.add_argument("--json", action="store_true", help="emit machine-readable JSON")
     output_group.add_argument("--markdown", action="store_true", help="emit review-ready Markdown")
     parser.add_argument("--strict", action="store_true", help="exit non-zero when structural interpretation gates fail")
+    parser.add_argument("--judge", action="append", default=[], metavar="BACKEND:MODEL",
+                        help="declared judge identity for legacy run.meta without judge_identities")
     args = parser.parse_args()
-    reports = [summarize_run(resolve_run(item)) for item in args.runs]
+    explicit_judges = None
+    if args.judge:
+        parsed = set()
+        for value in args.judge:
+            backend, separator, model = value.partition(":")
+            if not separator or not backend or not model:
+                parser.error(f"invalid --judge {value!r}; expected BACKEND:MODEL")
+            parsed.add((backend, model))
+        explicit_judges = frozenset(parsed)
+    reports = [summarize_run(resolve_run(item), explicit_judges=explicit_judges) for item in args.runs]
     if args.json:
         print(json.dumps({"runs": reports}, indent=2, sort_keys=True))
     elif args.markdown:

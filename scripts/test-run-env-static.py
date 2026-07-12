@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import tempfile
+import hashlib
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "run.py"
@@ -84,6 +85,254 @@ def test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed() -> None:
 
 def test_runtime_name_is_snapshot_adapter_name() -> None:
     assert mod.INFERENCE_RUNTIME in {"ollama", "llama_cpp", "llama_cpp_server"}
+
+
+def test_sampler_can_stop_and_join() -> None:
+    sampler = mod.Sampler(interval=0.001)
+    sampler.start()
+    sampler.stop()
+    sampler.join(timeout=1)
+    assert not sampler.is_alive()
+
+
+def test_pipeline_threads_dedicated_manifest_and_timeout_policy() -> None:
+    roster = (REPO / "scripts" / "run-roster.sh").read_text()
+    control = (REPO / "scripts" / "run-from-homelab.sh").read_text()
+    e2e = (REPO / "scripts" / "run-e2e.sh").read_text()
+    assert roster.count('--manifest "$RUN_MANIFEST"') == 2
+    assert roster.count('--models "$MODELS"') == 2
+    assert '--preflight-only \\\n  --models "$MODELS"' in roster
+    assert 'TIMEOUT_POLICY_ID="$TIMEOUT_POLICY_ID"' in roster
+    assert 'ARTIFACT_LOCK_ARGS=(--artifact-lock "$MODEL_ARTIFACT_LOCK")' in roster
+    assert 'RUN_MANIFEST=$(q "$RUN_MANIFEST")' in control
+    assert 'MODEL_ARTIFACT_LOCK=$(q "$MODEL_ARTIFACT_LOCK")' in control
+    assert 'TIMEOUT_POLICY_ID=$(q "$TIMEOUT_POLICY_ID")' in control
+    assert 'PREFLIGHT_ONLY=$(q "$PREFLIGHT_ONLY")' in control
+    assert 'LIMIT=${LIMIT:-none}' in control
+    assert 'elif [ "$SYNC_MODE" = "local-commit" ]; then' in control
+    assert 'local-commit requires clean source files' in control
+    assert '"data/runs/", "data/run-batches/", "data/experiments/"' in control
+    assert 'git clone --quiet --no-hardlinks . "$SYNC_SOURCE"' in control
+    assert 'git -C "$SYNC_SOURCE" checkout --quiet --detach "$LOCAL_COMMIT"' in control
+    assert '"$SYNC_SOURCE/" "${HOME_AI}:${REMOTE_DIR}/"' in control
+    assert 'mirrored local commit is not a clean Git worktree' in control
+    assert '[ "$COMMIT" = "$LOCAL_COMMIT" ]' in control
+    assert 'PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"' in e2e
+    assert '"PREFLIGHT_ONLY=$PREFLIGHT_ONLY"' in e2e
+    assert 'if [ "$PREFLIGHT_ONLY" = "1" ]; then' in e2e
+    assert "consumer disabled" in e2e
+    assert "consumer was not launched" in e2e
+    assert 'PREFLIGHT_ONLY: PASS result_rows=0 output_files=0' in roster
+    assert '"run_manifest": str(manifest_path)' in e2e
+    assert '"run_manifest_sha256": sha256(manifest_path)' in e2e
+    assert '"model_artifact_lock_sha256": sha256(artifact_lock_path)' in e2e
+    assert '"RUN_MANIFEST=$RUN_MANIFEST"' in e2e
+    assert '"TIMEOUT_POLICY_ID=$TIMEOUT_POLICY_ID"' in e2e
+    assert '"MODEL_ARTIFACT_LOCK=$MODEL_ARTIFACT_LOCK"' in e2e
+    assert '"judge_model": os.environ.get("JUDGE_MODEL", "claude-opus-4.6")' in e2e
+    assert '"judge_ensemble": os.environ.get("ENSEMBLE", "copilot:gpt-5.4")' in e2e
+    assert '"judge_identities": judge_identities()' in e2e
+    assert '"judges": len(judge_identities())' in e2e
+
+
+def test_tracked_timeout_recovery_contracts_are_hash_consistent() -> None:
+    roster = REPO / "data/models.timeout-sensitivity-v1.txt"
+    scenarios = REPO / "data/scenario_sets/core-current-timeout-sensitivity-v1.json"
+    manifest = REPO / "data/run-manifest.timeout-sensitivity-v1.json"
+    artifact_lock = REPO / "data/model-artifacts.timeout-sensitivity-v1.json"
+    analysis_manifest = REPO / "data/timeout-recovery-sensitivity-v1.analysis-manifest.json"
+    for path in (roster, scenarios, manifest, artifact_lock, analysis_manifest):
+        assert path.is_file(), path
+    declared = json.loads(analysis_manifest.read_text())
+    tracked = {
+        "models.timeout-sensitivity-v1.txt": roster,
+        "core-current-timeout-sensitivity-v1.json": scenarios,
+        "run-manifest.timeout-sensitivity-v1.json": manifest,
+        "model-artifacts.timeout-sensitivity-v1.json": artifact_lock,
+    }
+    for generated_name, path in tracked.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == declared["output_sha256"][generated_name]
+    roster_models = {
+        line.strip()
+        for line in roster.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    lock = json.loads(artifact_lock.read_text())
+    run_manifest = json.loads(manifest.read_text())
+    scenario_contract = json.loads(scenarios.read_text())
+    scenario_entry = run_manifest["protocol"]["scenario_sets"]["core-current-timeout-sensitivity-v1"]
+    assert set(lock["models"]) == roster_models
+    assert lock["roster_sha256"] == hashlib.sha256(roster.read_bytes()).hexdigest()
+    assert lock["source_bundle_id"] == declared["source_bundle_id"]
+    assert scenario_entry["path"] == "data/scenario_sets/core-current-timeout-sensitivity-v1.json"
+    assert scenario_entry["sha256"] == hashlib.sha256(scenarios.read_bytes()).hexdigest()
+    assert scenario_entry["scenario_count"] == len(scenario_contract["scenarios"]) == 20
+    assert scenario_entry["timeout_policy_id"] == "ceops-timeout-sensitivity-v1"
+    assert run_manifest["models_pinned"]["require_all_present"] is False
+    assert scenario_contract["_meta"]["parent_bundle_id"] == declared["source_bundle_id"]
+
+
+def test_preflight_binds_scenario_hash_to_timeout_policy() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = pathlib.Path(td)
+        scenarios = root / "scenarios.json"
+        scenarios.write_text('{"scenarios":[]}\n')
+        digest = hashlib.sha256(scenarios.read_bytes()).hexdigest()
+        manifest = root / "manifest.json"
+        manifest.write_text(json.dumps({
+            "protocol": {
+                "temperature": 0.7,
+                "repeats": 5,
+                "seed_base": 1,
+                "think": False,
+                "scenario_sets": {
+                    "recovery": {
+                        "sha256": digest,
+                        "timeout_policy_id": "timeout-sensitivity-v1",
+                    },
+                },
+            },
+        }))
+        fingerprint = {
+            "env.cpu_no_turbo": None,
+            "env.cpu_governor": None,
+            "env.cpu_min_perf_pct": None,
+            "env.cpu_max_perf_pct": None,
+            "env.rapl_domain": None,
+            "env.num_ctx": mod.NUM_CTX,
+            "env.perf_event_paranoid": None,
+            "env.perf_membw": False,
+            "env.perf_core": False,
+            "env.ollama_version": None,
+        }
+        protocol = {
+            "temperature": 0.7,
+            "repeats": 5,
+            "seed_base": 1,
+            "think": False,
+            "inference_runtime": "ollama",
+            "timeout_policy_id": "wrong-policy",
+        }
+        problems = mod.preflight([], fingerprint, str(manifest), protocol=protocol, scenarios_path=str(scenarios))
+        protocol["timeout_policy_id"] = "timeout-sensitivity-v1"
+        fixed = mod.preflight([], fingerprint, str(manifest), protocol=protocol, scenarios_path=str(scenarios))
+    assert problems == ["timeout policy: scenario contract wants 'timeout-sensitivity-v1', run uses 'wrong-policy'"]
+    assert fixed == []
+
+
+def test_preflight_enforces_roster_and_artifact_digests() -> None:
+    old_runtime = mod.INFERENCE_RUNTIME
+    old_digest = mod.ollama_model_digest
+    try:
+        mod.INFERENCE_RUNTIME = "ollama"
+        mod.ollama_model_digest = lambda model: {"model-a": "a" * 64}.get(model)
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            roster = root / "models.txt"
+            roster.write_text("# bracket: test\nmodel-a\n")
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"models_pinned": {"require_all_present": False}}))
+            lock = root / "artifacts.json"
+            lock.write_text(json.dumps({
+                "roster_sha256": hashlib.sha256(roster.read_bytes()).hexdigest(),
+                "models": {"model-a": {"artifact_sha256": "a" * 64}},
+            }))
+            fingerprint = {
+                "env.cpu_no_turbo": None, "env.cpu_governor": None,
+                "env.cpu_min_perf_pct": None, "env.cpu_max_perf_pct": None,
+                "env.rapl_domain": None, "env.num_ctx": mod.NUM_CTX,
+                "env.perf_event_paranoid": None, "env.perf_membw": False,
+                "env.perf_core": False, "env.ollama_version": None,
+            }
+            clean = mod.preflight(
+                [("model-a", "test")], fingerprint, str(manifest),
+                models_path=str(roster), artifact_lock_path=str(lock),
+            )
+            mod.ollama_model_digest = lambda _model: "b" * 64
+            bad_digest = mod.preflight(
+                [("model-a", "test")], fingerprint, str(manifest),
+                models_path=str(roster), artifact_lock_path=str(lock),
+            )
+            mod.ollama_model_digest = lambda _model: None
+            missing_at_start = mod.preflight(
+                [("model-a", "test")], fingerprint, str(manifest),
+                models_path=str(roster), artifact_lock_path=str(lock),
+            )
+            roster.write_text("# bracket: test\nmodel-b\n")
+            bad_roster = mod.preflight(
+                [("model-b", "test")], fingerprint, str(manifest),
+                models_path=str(roster), artifact_lock_path=str(lock),
+            )
+    finally:
+        mod.INFERENCE_RUNTIME = old_runtime
+        mod.ollama_model_digest = old_digest
+    assert clean == []
+    assert len(bad_digest) == 1 and bad_digest[0].startswith("artifact digest for model-a")
+    assert missing_at_start == []
+    assert "artifact lock model domain differs from selected roster" in bad_roster
+    assert "artifact lock roster_sha256 differs from selected roster" in bad_roster
+
+
+def test_model_artifact_mismatch_is_fail_closed() -> None:
+    old_digest = mod.ollama_model_digest
+    lock = {"models": {"model-a": {"artifact_sha256": "a" * 64}}}
+    try:
+        mod.ollama_model_digest = lambda _model: "a" * 64
+        assert mod.model_artifact_mismatch("model-a", lock) is None
+        mod.ollama_model_digest = lambda _model: "b" * 64
+        mismatch = mod.model_artifact_mismatch("model-a", lock)
+    finally:
+        mod.ollama_model_digest = old_digest
+    assert mismatch and "refusing" not in mismatch
+    assert "lock wants" in mismatch and "node has" in mismatch
+
+
+def test_ollama_digest_accepts_only_implicit_latest_alias() -> None:
+    old_get = mod._get_json
+    try:
+        mod._get_json = lambda _path, _timeout: {"models": [
+            {"name": "model-a:latest", "digest": "a" * 64},
+            {"name": "model-b:v2", "digest": "b" * 64},
+        ]}
+        assert mod.ollama_model_digest("model-a") == "a" * 64
+        assert mod.ollama_model_digest("model-b:v2") == "b" * 64
+        assert mod.ollama_model_digest("model-b") is None
+    finally:
+        mod._get_json = old_get
+
+
+def test_resume_rows_require_runtime_policy_and_artifact_lock_identity() -> None:
+    row = {
+        "env.scenarios_sha": "scenario",
+        "env.memory_context": "none",
+        "env.memory_context_sha": None,
+        "env.inference_strategy": "baseline",
+        "env.strategy_prompt_sha": None,
+        "env.inference_runtime": "ollama",
+        "effective.timeout_policy_id": "timeout-v1",
+        "env.model_artifact_lock_sha256": "lock",
+    }
+    args = {
+        "scenario_sha": "scenario", "memory_context": "none", "memory_sha": None,
+        "strategy": "baseline", "strategy_sha": None, "runtime": "ollama",
+        "timeout_policy_id": "timeout-v1", "artifact_lock_sha": "lock",
+    }
+    assert mod.resume_row_matches(row, **args)
+    for field, bad in (
+        ("env.inference_runtime", "llama_cpp"),
+        ("effective.timeout_policy_id", "timeout-v0"),
+        ("env.model_artifact_lock_sha256", "old-lock"),
+    ):
+        changed = dict(row)
+        changed[field] = bad
+        assert not mod.resume_row_matches(changed, **args)
+    legacy = dict(row)
+    legacy.pop("env.model_artifact_lock_sha256")
+    assert not mod.resume_row_matches(legacy, **args)
+    legacy = dict(row)
+    legacy.pop("env.inference_runtime")
+    legacy["adapter"] = "ollama"
+    assert not mod.resume_row_matches(legacy, **args)
 
 
 def test_env_static_captures_ollama_kv_policy() -> None:
@@ -210,6 +459,25 @@ def test_llama_cpp_artifact_fields_promote_model_identity() -> None:
     assert fields["llama_cpp.artifact.params_b"] == 4.022
 
 
+def test_llama_cpp_artifact_file_hash_is_enforced() -> None:
+    old_map = mod.LLAMA_CPP_ARTIFACTS_BY_MODEL
+    old_resolver = mod.resolve_llama_cpp_model_path
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            path = pathlib.Path(td) / "model.gguf"
+            path.write_bytes(b"locked bytes")
+            digest = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+            mod.LLAMA_CPP_ARTIFACTS_BY_MODEL = {"model-a": {"sha256": digest}}
+            mod.resolve_llama_cpp_model_path = lambda _model: (str(path), None)
+            assert mod.verify_llama_cpp_artifact("model-a") is None
+            path.write_bytes(b"replaced bytes")
+            mismatch = mod.verify_llama_cpp_artifact("model-a")
+    finally:
+        mod.LLAMA_CPP_ARTIFACTS_BY_MODEL = old_map
+        mod.resolve_llama_cpp_model_path = old_resolver
+    assert mismatch and "lock wants" in mismatch and "file has" in mismatch
+
+
 def test_output_capture_fields_include_assistant_message() -> None:
     fields = mod.output_capture_fields("Answer", "stop")
     assert fields["gen_ai.output.messages"][0]["role"] == "assistant"
@@ -278,6 +546,12 @@ def main() -> None:
     test_llama_cpp_rejects_ollama_wrapped_model_without_mapping()
     test_llama_cpp_runtime_unsupported_telemetry_is_fail_closed()
     test_runtime_name_is_snapshot_adapter_name()
+    test_pipeline_threads_dedicated_manifest_and_timeout_policy()
+    test_preflight_binds_scenario_hash_to_timeout_policy()
+    test_preflight_enforces_roster_and_artifact_digests()
+    test_model_artifact_mismatch_is_fail_closed()
+    test_ollama_digest_accepts_only_implicit_latest_alias()
+    test_resume_rows_require_runtime_policy_and_artifact_lock_identity()
     test_env_static_captures_ollama_kv_policy()
     test_llama_cpp_timing_parser_extracts_counts_and_rates()
     test_llama_cpp_sampler_parser_extracts_otel_scalars()
@@ -285,6 +559,7 @@ def main() -> None:
     test_llama_cpp_server_metric_delta_and_probability_summary()
     test_prompt_capture_fields_include_exact_prompt_and_distill_target()
     test_llama_cpp_artifact_fields_promote_model_identity()
+    test_llama_cpp_artifact_file_hash_is_enforced()
     test_output_capture_fields_include_assistant_message()
     test_single_fenced_command_block_check_requires_only_one_block()
     test_llama_cpp_bench_summary_promotes_common_and_test_fields()

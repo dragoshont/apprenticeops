@@ -21,6 +21,8 @@ MODELS="${MODELS:-data/models.txt}"
 MODEL_SET="${MODEL_SET:-manual}"
 SCENARIOS="${SCENARIOS:-data/scenarios.json}"
 SCENARIO_SET="${SCENARIO_SET:-all}"
+RUN_MANIFEST="${RUN_MANIFEST:-data/run-manifest.json}"
+MODEL_ARTIFACT_LOCK="${MODEL_ARTIFACT_LOCK:-}"
 MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
 INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
@@ -32,6 +34,8 @@ MAX_TOKENS_CAP="${MAX_TOKENS_CAP:-}"
 RUN_REPEATS="${RUN_REPEATS:-5}"
 RUN_TEMP="${RUN_TEMP:-0.7}"
 RUN_ALLOW_UNLOCKED="${RUN_ALLOW_UNLOCKED:-0}"
+PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
+TIMEOUT_POLICY_ID="${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 OUT="${OUT:-results.${RUN_ID}.jsonl}"
 LOGDIR="${LOGDIR:-logs/${RUN_ID}}"
@@ -50,6 +54,10 @@ trap cleanup EXIT
 log "=== ROSTER RUN $RUN_ID START (host $(hostname)) models=$MODELS scenarios=$SCENARIOS out=$OUT outputs=$OUTPUTS_DIR ==="
 [ -f "$MODELS" ] || { log "FATAL: $MODELS not found"; exit 1; }
 [ -f "$SCENARIOS" ] || { log "FATAL: $SCENARIOS not found"; exit 1; }
+[ -f "$RUN_MANIFEST" ] || { log "FATAL: $RUN_MANIFEST not found"; exit 1; }
+if [ -n "$MODEL_ARTIFACT_LOCK" ]; then
+  [ -f "$MODEL_ARTIFACT_LOCK" ] || { log "FATAL: $MODEL_ARTIFACT_LOCK not found"; exit 1; }
+fi
 if [ -z "$MEMORY_CONTEXT_FILE" ] && [ "$MEMORY_CONTEXT" != "none" ]; then
   MEMORY_CONTEXT_FILE="$(python3 - "$MEMORY_CONTEXT" <<'PY'
 import json, sys
@@ -91,11 +99,15 @@ if [ "$INFERENCE_STRATEGY" = "single_call_tournament_brief" ] && [ -z "$STRATEGY
   exit 1
 fi
 log "memory: context=$MEMORY_CONTEXT file=${MEMORY_CONTEXT_FILE:-none}"
-log "strategy: inference_strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME prompt=${STRATEGY_PROMPT_FILE:-none} llama_cpp_model_map=${LLAMA_CPP_MODEL_MAP:-none} llama_cpp_artifacts=${LLAMA_CPP_ARTIFACTS:-none} repeats=$RUN_REPEATS temp=$RUN_TEMP max_tokens_cap=${MAX_TOKENS_CAP:-none} allow_unlocked=$RUN_ALLOW_UNLOCKED timeout_policy=${TIMEOUT_POLICY_ID:-ceops-v2-zero-stall-retry}"
+log "strategy: inference_strategy=$INFERENCE_STRATEGY runtime=$INFERENCE_RUNTIME prompt=${STRATEGY_PROMPT_FILE:-none} llama_cpp_model_map=${LLAMA_CPP_MODEL_MAP:-none} llama_cpp_artifacts=${LLAMA_CPP_ARTIFACTS:-none} repeats=$RUN_REPEATS temp=$RUN_TEMP max_tokens_cap=${MAX_TOKENS_CAP:-none} allow_unlocked=$RUN_ALLOW_UNLOCKED preflight_only=$PREFLIGHT_ONLY manifest=$RUN_MANIFEST artifact_lock=${MODEL_ARTIFACT_LOCK:-none} timeout_policy=$TIMEOUT_POLICY_ID"
 
 ALLOW_UNLOCKED_ARGS=()
 if [ "$RUN_ALLOW_UNLOCKED" = "1" ]; then
   ALLOW_UNLOCKED_ARGS=(--allow-unlocked)
+fi
+ARTIFACT_LOCK_ARGS=()
+if [ -n "$MODEL_ARTIFACT_LOCK" ]; then
+  ARTIFACT_LOCK_ARGS=(--artifact-lock "$MODEL_ARTIFACT_LOCK")
 fi
 
 # 0) never contend with another eval
@@ -136,7 +148,10 @@ log "cooldown target COOL_TEMP_C=${COOL_T}C"
 
 # 4) PREFLIGHT — refuse to run unless the node matches data/run-manifest.json
 log "--- preflight (must pass) ---"
-if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_ARTIFACTS="$LLAMA_CPP_ARTIFACTS" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" python3 run.py --preflight-only \
+if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET" TIMEOUT_POLICY_ID="$TIMEOUT_POLICY_ID" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_ARTIFACTS="$LLAMA_CPP_ARTIFACTS" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" python3 run.py --preflight-only \
+  --models "$MODELS" \
+  --manifest "$RUN_MANIFEST" \
+  "${ARTIFACT_LOCK_ARGS[@]}" \
   --scenarios "$SCENARIOS" \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
@@ -148,13 +163,27 @@ if ! RAPL_DOMAIN=package-0 PERF_MEMBW=1 PERF_CORE=1 SCENARIO_SET="$SCENARIO_SET"
 fi
 log "preflight OK"
 
+if [ "$PREFLIGHT_ONLY" = "1" ]; then
+  RESULT_ROWS=0
+  [ ! -f "$OUT" ] || RESULT_ROWS=$(grep -cvE '^[[:space:]]*$' "$OUT" || true)
+  OUTPUT_FILES=$(find "$OUTPUTS_DIR" -type f -print 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$RESULT_ROWS" -ne 0 ] || [ "$OUTPUT_FILES" -ne 0 ]; then
+    log "FATAL: preflight-only proof found result_rows=$RESULT_ROWS output_files=$OUTPUT_FILES"
+    exit 4
+  fi
+  log "PREFLIGHT_ONLY: PASS result_rows=0 output_files=0; no inference launched"
+  exit 0
+fi
+
 # 5) THE LOCKED ROSTER RUN — per-model quiesce + reset-state evidence, all telemetry
 NMODELS=$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS")
 NSCEN=$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['scenarios']))" "$SCENARIOS" 2>/dev/null || echo '?')
 log "--- roster run: ${NMODELS} models x ${NSCEN} scenarios x R=${RUN_REPEATS}, all telemetry, --rm-after ---"
 QUIESCE=1 FAN_MAX=1 COOL_TEMP_C="${COOL_T}" COOL_MAX_S=120 DROP_CACHES=1 RESET_SWAP=1 \
-SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_ARTIFACTS="$LLAMA_CPP_ARTIFACTS" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" \
+SAMPLE_INTERVAL=0.5 PERF_MEMBW=1 PERF_CORE=1 RAPL_DOMAIN=package-0 SCENARIO_SET="$SCENARIO_SET" TIMEOUT_POLICY_ID="$TIMEOUT_POLICY_ID" MEMORY_CONTEXT="$MEMORY_CONTEXT" INFERENCE_STRATEGY="$INFERENCE_STRATEGY" INFERENCE_RUNTIME="$INFERENCE_RUNTIME" LLAMA_CPP_MODEL_MAP="$LLAMA_CPP_MODEL_MAP" LLAMA_CPP_ARTIFACTS="$LLAMA_CPP_ARTIFACTS" LLAMA_CPP_EXTRA_ARGS="$LLAMA_CPP_EXTRA_ARGS" MAX_TOKENS_CAP="$MAX_TOKENS_CAP" \
 python3 run.py --models "$MODELS" --scenarios "$SCENARIOS" --shuffle --order-seed 1 \
+  --manifest "$RUN_MANIFEST" \
+  "${ARTIFACT_LOCK_ARGS[@]}" \
   --memory-context "$MEMORY_CONTEXT" \
   ${MEMORY_CONTEXT_FILE:+--memory-context-file "$MEMORY_CONTEXT_FILE"} \
   --inference-strategy "$INFERENCE_STRATEGY" \

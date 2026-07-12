@@ -543,7 +543,14 @@ def validate_metadata(
     models_count = int(meta.get("models_count") or meta.get("expect") or 0)
     scenario_count = int(meta.get("scenario_count") or 0)
     reps = int(meta.get("reps") or meta.get("run_repeats_override") or 0)
-    judge_count = int(meta.get("judges") or 0)
+    try:
+        judge_count = analysis_metrics.metadata_judge_count(meta)
+    except ValueError as exc:
+        raise PromotionError(
+            "P2",
+            "run.meta judge count is malformed",
+            details={"error": str(exc)},
+        ) from exc
     if models_count != len(roster) or int(meta.get("expect") or 0) != len(roster):
         raise PromotionError(
             "P2",
@@ -584,6 +591,29 @@ def validate_metadata(
                 "requested_judges": [f"{judge.backend}:{judge.model}" for judge in context.judges],
             },
         )
+    try:
+        authoritative = analysis_metrics.metadata_judge_identities(meta)
+    except ValueError as exc:
+        raise PromotionError(
+            "P2",
+            "run.meta judge identity declaration is malformed",
+            details={"error": str(exc)},
+        ) from exc
+    if authoritative is not None:
+        requested = {judge.identity for judge in context.judges}
+        if authoritative != requested:
+            raise PromotionError(
+                "P2",
+                "requested judge identities differ from authoritative run.meta",
+                details={
+                    "authoritative_judges": [
+                        f"{backend}:{model}" for backend, model in sorted(authoritative)
+                    ],
+                    "requested_judges": [
+                        f"{backend}:{model}" for backend, model in sorted(requested)
+                    ],
+                },
+            )
     return reps, len(roster) * len(scenarios) * reps
 
 
@@ -788,22 +818,6 @@ def normalize_results(
     }
 
 
-def judgement_success(row: Mapping[str, Any]) -> bool:
-    score = row.get("score")
-    return (
-        isinstance(score, (int, float))
-        and not isinstance(score, bool)
-        and math.isfinite(float(score))
-        and 1 <= float(score) <= 5
-        and isinstance(row.get("verdict"), str)
-        and bool(row.get("verdict"))
-        and isinstance(row.get("evidence"), str)
-        and bool(row.get("evidence"))
-        and isinstance(row.get("criteria_met"), list)
-        and isinstance(row.get("criteria_missed"), list)
-    )
-
-
 def retry_reason(row: Mapping[str, Any]) -> str:
     if row.get("score") is None and (
         row.get("evidence") == "parse_error"
@@ -914,7 +928,7 @@ def normalize_judgements(
                         extra_judgement_keys.add(key)
                         continue
                     attempt_lines[key].append(line_number)
-                    if judgement_success(row):
+                    if analysis_metrics.judgement_success(row):
                         if key in successes:
                             if not competing_successes[key]:
                                 competing_successes[key].append(

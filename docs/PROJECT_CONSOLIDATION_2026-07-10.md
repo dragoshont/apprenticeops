@@ -475,9 +475,11 @@ the current phase gate passes.
   current platform, and explicitly verifies uv, Pillow, and mlcroissant.
 - The optional `gemini-3.1-pro` third-judge smoke is blocked because the model is
   unavailable to the current account. The locked two-judge policy is unchanged.
-- The active 152-model doctoral run remains outside this correction lock. Its
-  completed-run promotion and analysis stay blocked on exact collection and
-  persistence completion.
+- The 152-model doctoral run completed and was promoted on 2026-07-12 into
+  provisional bundle `dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa`:
+  15,200 results, 30,400 canonical judgements, 41 preserved judge retries, and
+  152 persisted models. Bundle verification and privacy pass. Exploratory
+  failure-recovery analysis is separate; no frozen public claim was replaced.
 
 ## 9. Independent Review Contract
 

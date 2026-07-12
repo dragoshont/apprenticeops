@@ -33,6 +33,21 @@ hits = scan(f"token: {fake_key}\n")
 assert len(hits) == 1
 assert hits[0][0] == "openai-style-key"
 
+assert scan("Authorization: Bearer cloudflare_api_token\n") == []
+assert scan("Authorization: Bearer EXAMPLE_BEARER_TOKEN_DO_NOT_USE.\n") == []
+fake_bearer = "abcdefghijklmnop" + "qrstuvwxyz123456"
+bearer_hits = scan(f"Authorization: Bearer {fake_bearer}\n")
+assert bearer_hits and bearer_hits[0][0] == "bearer-token"
+for embedded in ("example", "REDACTED", "cloudflare_api_token"):
+    hostile_bearer = "abcdefghijklmnop" + embedded + "qrstuvwxyz123456"
+    embedded_hits = scan(f"Authorization: Bearer {hostile_bearer}\n")
+    assert embedded_hits and embedded_hits[0][0] == "bearer-token"
+
+for embedded in ("example", "REDACTED"):
+    hostile_openai = "sk" + "-" + "abcdefghijklmnop" + embedded + "qrstuvwxyz123456"
+    embedded_hits = scan(f"token: {hostile_openai}\n")
+    assert embedded_hits and embedded_hits[0][0] == "openai-style-key"
+
 with tempfile.TemporaryDirectory() as directory:
     path = Path(directory) / "judged.fixture.jsonl.gz"
     with gzip.open(path, "wt") as handle:
@@ -59,7 +74,22 @@ assert secrets == [("archive-read-error", "unreadable", "ReadError")]
 
 private_key_begin = "-----BEGIN " + "PRIVATE KEY-----"
 private_key_end = "-----END " + "PRIVATE KEY-----"
+ssh_private_key_begin = "-----BEGIN SSH " + "PRIVATE KEY-----"
+ssh_private_key_end = "-----END SSH " + "PRIVATE KEY-----"
 assert scan(f"{private_key_begin}\n...\n{private_key_end}\n") == []
+assert scan(f"{private_key_begin}{private_key_end}\n") == []
+same_line_key_hits = scan(f"{private_key_begin}MIIEvQIBADANBgkqhkiG9w0BAQEFAASC{private_key_end}\n")
+assert same_line_key_hits and same_line_key_hits[0][0] == "private-key"
+assert scan(
+    f'{{"completion":"{ssh_private_key_begin}\\n\\n{ssh_private_key_end}"}}\n'
+    '{"next":"ordinary evidence must not become key material"}\n'
+) == []
+escaped_key_hits = scan(
+    f'{{"completion":"{ssh_private_key_begin}\\n'
+    'MIIEvQIBADANBgkqhkiG9w0BAQEFAASC\\n'
+    f'{ssh_private_key_end}"}}\n'
+)
+assert escaped_key_hits and escaped_key_hits[0][0] == "private-key"
 private_key_hits = scan(
     f"{private_key_begin}\n"
     "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC\n"

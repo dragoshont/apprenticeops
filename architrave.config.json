@@ -1,0 +1,27 @@
+{
+  "kind": "knowledge",
+  "build": "bash -n scripts/run-e2e.sh scripts/run-from-homelab.sh scripts/run-roster.sh && python3 -m py_compile analysis_metrics.py run.py scripts/lock-completed-run.py scripts/privacy-scan.py scripts/report-run-quality.py scripts/analyze-completed-run-failures.py",
+  "test": "python3 scripts/test-analyze-completed-run-failures.py && python3 scripts/test-run-env-static.py && python3 scripts/test-report-run-quality.py && python3 scripts/test-privacy-scan.py && python3 scripts/test-lock-completed-run.py && python3 scripts/check-doc-links.py && git diff --check",
+  "learning": {
+    "runArtifactsPath": ".architrave/runs",
+    "repoProfilePath": ".architrave/learning/repo-profile.md",
+    "lessonsPath": ".architrave/learning/repo-lessons.md",
+    "capture": [
+      "run-artifacts",
+      "gate-results",
+      "judge-verdicts",
+      "repo-profile",
+      "lessons"
+    ],
+    "redactionPolicy": "no-secrets",
+    "staleFactPolicy": "validate-before-use",
+    "promotionPolicy": "approval-required",
+    "promoteAfterOccurrences": 2,
+    "promoteTargets": [
+      "architrave.config.json",
+      "AGENTS.md",
+      ".github/instructions",
+      "docs"
+    ]
+  }
+}
