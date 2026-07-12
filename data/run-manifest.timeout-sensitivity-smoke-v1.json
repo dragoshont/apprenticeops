@@ -1,0 +1,105 @@
+{
+  "_comment": "Frozen reproducible-node environment lock for the ApprenticeOps model-list run. run.py --preflight reads this and REFUSES to start unless the live node matches (or you pass --allow-unlocked). It exists because an earlier controlled run (Turbo OFF, RAPL package-0) and a later one (Turbo ON, RAPL psys/package-0 mixed) drifted: the later run was launched without scripts/node-power.sh setup, so a prior run's teardown trap had restored Turbo and RAPL_DOMAIN was unpinned, and none of it was recorded. This manifest + the env.* provenance run.py stamps make the node's power/energy regime explicit and enforceable so it can't recur.",
+  "name": "apprenticeops-run-env-timeout-sensitivity-smoke-v1",
+  "frozen_from": "data/run-manifest.json with repeats changed from 5 to 1 for a non-treatment mechanical pipeline smoke",
+  "platform": "linux",
+  "enforce_on_platform": "linux",
+  "cpu": {
+    "_comment": "Set by scripts/node-power.sh setup. no_turbo=1 disables Turbo Boost; min=max=100 perf_pct pins to the non-turbo BASE clock (i5-8350U = 1.70 GHz). wave1 observed freq ceiling 1708 MHz; wave2 (turbo on) reached 3602 MHz.",
+    "intel_pstate.no_turbo": "1",
+    "scaling_governor": "performance",
+    "min_perf_pct": "100",
+    "max_perf_pct": "100",
+    "freq_ceiling_mhz": 1750
+  },
+  "energy": {
+    "_comment": "RAPL domain MUST be pinned. package-0 = CPU package only (what wave1 used, 100%). psys = whole-SoC (reads higher; 760 wave2 rows used it -> not comparable). Pin via RAPL_DOMAIN=package-0.",
+    "rapl_domain": "package-0"
+  },
+  "telemetry": {
+    "_comment": "perf counters must be readable for membw.series + perf.core. wave2 silently lost these on ~14% of runs (perf_event_paranoid too high or perf unavailable). Require paranoid<=2.",
+    "perf_event_paranoid_max": 2,
+    "require_perf_membw": true,
+    "require_perf_core": true,
+    "sample_interval_s": 0.5
+  },
+  "model_runtime": {
+    "_comment": "Ollama options applied per request. num_ctx is the run.py NUM_CTX constant.",
+    "num_ctx": 8192
+  },
+  "protocol": {
+    "_comment": "Mechanical smoke only: temperature 0.7, seed_base 1, repeats 1, think=false; scenario hashes and all hardware/runtime requirements remain unchanged.",
+    "temperature": 0.7,
+    "repeats": 1,
+    "seed_base": 1,
+    "think": false,
+    "scenarios_file": "data/scenarios.json",
+    "scenarios_sha256": "5ebbc9fe36ae29273fcfd8565bc5e85cbc1dea778a731d357e10a6e006afc0a1",
+    "scenario_count": 33,
+    "scenario_sets": {
+      "all": {
+        "path": "data/scenarios.json",
+        "sha256": "5ebbc9fe36ae29273fcfd8565bc5e85cbc1dea778a731d357e10a6e006afc0a1",
+        "scenario_count": 33
+      },
+      "core-current": {
+        "path": "data/scenario_sets/core-current.json",
+        "sha256": "51c5941673ff6b43505ae0b1653dcb4efa83e621dd8557bd0828cc720a0733b6",
+        "scenario_count": 20
+      },
+      "extended": {
+        "path": "data/scenario_sets/extended.json",
+        "sha256": "d268f05f6beba09f4b4ac026504630e7e99a0bb2d84070db115f11f5837bb2db",
+        "scenario_count": 13
+      },
+      "strategy-pilot-6": {
+        "path": "data/scenario_sets/strategy-pilot-6.json",
+        "sha256": "826612fea7cea9444f7f331f5c6ce33a3055aed0636a56d11ffceeb302a3f0ee",
+        "scenario_count": 6
+      },
+      "external-candidates-v0": {
+        "path": "data/scenarios.external-candidates-v0.json",
+        "sha256": "7f188d7ed6e9d5e19902a6e25ce4ea6160258c8e815b0bc9917b4e954434b2eb",
+        "scenario_count": 8
+      },
+      "external-candidates-v1": {
+        "path": "data/scenarios.external-candidates-v1.json",
+        "sha256": "506f4bbf82f36566d70271a0bf1e7d7d151a4c3ed56b877cfdee7e3ab03788f3",
+        "scenario_count": 9
+      },
+      "doodle-6": {
+        "path": "data/scenario_sets/doodle-6.json",
+        "sha256": "585ce70f52232f92524fb7a92bfa8fff93e283d29739d7f8a8b4fa3804d04bcc",
+        "scenario_count": 6
+      },
+      "journal-ro-6": {
+        "path": "data/scenario_sets/journal-ro-6.json",
+        "sha256": "3b74e95e79a3bfa83132ba9990575153c7758f3ec4497313d9bddaa8a92ed861",
+        "scenario_count": 6
+      },
+      "journal-aletheia-6": {
+        "path": "data/scenario_sets/journal-aletheia-6.json",
+        "sha256": "0bd8bd1f3cf70407ca3006b278c6ea5e5c070fcf3550a7f4906fa8297da98a07",
+        "scenario_count": 6
+      },
+      "journal-aletheia-7": {
+        "path": "data/scenario_sets/journal-aletheia-7.json",
+        "sha256": "e33ddbe377f36a7e762f6000581d64778a840a57c2228c334e1c21f1926a7e79",
+        "scenario_count": 7
+      },
+      "doodle-simple": {
+        "path": "data/scenario_sets/doodle-simple.json",
+        "sha256": "76991a20791accaab02feccf8a93f557c4c9af9af5fca9c536cabacd639e71a4",
+        "scenario_count": 6
+      }
+    }
+  },
+  "expected": {
+    "_comment": "Ollama engine pinned from the home-ai node (hostname 'ai') on 2026-06-24; run.py stamps env.ollama_version into every row and the preflight refuses to run if the node's engine drifts from this. Re-pin only on a deliberate, reviewed engine upgrade.",
+    "ollama_version": "0.30.8"
+  },
+  "models_pinned": {
+    "_comment": "If true, the preflight requires EVERY model in --models to be present locally before the sweep starts (no mid-run pull_failed like wave2's 133). Pre-pull with: while read m; do [ -n \"$m\" ] && ollama pull \"$m\"; done < data/models.txt",
+    "require_all_present": true
+  }
+}
