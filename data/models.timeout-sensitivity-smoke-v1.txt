@@ -1,0 +1,4 @@
+# Mechanical smoke for the timeout-sensitivity pipeline.
+# This installed model is outside the 21-model treatment cohort.
+# bracket: 3-4B
+qwen3:4b-instruct-2507-q4_K_M
