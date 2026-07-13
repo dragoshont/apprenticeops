@@ -41,6 +41,7 @@ data/completed-runs/*/
 !data/pilot/results.pilot.jsonl
 !docs/gold-review.jsonl
 !docs/gold-review-recheck.jsonl
+!docs/analysis/research-radar/*.jsonl
 
 .venv/
 venv/
