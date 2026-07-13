@@ -192,7 +192,15 @@ def _gather(run_id: str | None) -> dict:
     """Invoke pipeline-status.py on home and return its parsed JSON."""
     arg = run_id if run_id and _RUNID_RE.match(run_id) else ""
     status_env = _env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO})
-    cp = _ssh(_home_cmd(f"{status_env} python3 scripts/pipeline-status.py {arg}".rstrip()), timeout=40)
+    try:
+        cp = _ssh(_home_cmd(f"{status_env} python3 scripts/pipeline-status.py {arg}".rstrip()), timeout=40)
+    except subprocess.TimeoutExpired:
+        return {
+            "state": "error",
+            "error": "status collection timed out after 40 seconds",
+            "run_id": run_id,
+            "ts": time.time(),
+        }
     if cp.returncode != 0:
         return {"state": "error", "error": (cp.stderr or cp.stdout or "ssh failed").strip()[:800],
                 "run_id": run_id, "ts": time.time()}
