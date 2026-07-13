@@ -50,6 +50,9 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+import recovery_profile
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 INFERENCE_RUNTIME = os.environ.get("INFERENCE_RUNTIME", "ollama")
@@ -690,7 +693,7 @@ class Sampler(threading.Thread):
         super().__init__(daemon=True)
         self.interval = interval if interval is not None else SAMPLE_INTERVAL_S
         self.samples: list[dict] = []
-        self._stop = threading.Event()
+        self._stop_event = threading.Event()
         self.abort_reason: str | None = None
         self.peak_swap_mb = 0
         self.min_avail_mb = 10**9
@@ -720,7 +723,7 @@ class Sampler(threading.Thread):
     def run(self):
         t0 = time.time()
         self.runner_pid = _runner_pid()
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             now = time.time()
             dt = (now - self._last_t) if self._last_t else None
             avail, swap = _meminfo()
@@ -812,10 +815,10 @@ class Sampler(threading.Thread):
                 "core_util": core_util, "core_freq": core_freq,
                 "disk_mb_s": disk_mb_s, "net_kb_s": net_kb_s, "load1": load1,
             })
-            self._stop.wait(self.interval)
+            self._stop_event.wait(self.interval)
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
 
 # --------------------------------------------------------------------------
@@ -877,6 +880,19 @@ def llama_cpp_artifact_fields(model: str) -> dict:
     }
 
 
+def verify_llama_cpp_artifact(model: str) -> str | None:
+    path, error = resolve_llama_cpp_model_path(model)
+    if not path:
+        return f"llama.cpp model unavailable: {error}"
+    expected = (LLAMA_CPP_ARTIFACTS_BY_MODEL.get(model) or {}).get("sha256")
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+        return f"llama.cpp artifact digest is not declared for {model}"
+    actual = _sha256_file(path)
+    if actual != expected:
+        return f"llama.cpp artifact digest for {model}: lock wants {expected!r}, file has {actual!r}"
+    return None
+
+
 def _post_json(path, payload, timeout):
     req = urllib.request.Request(
         OLLAMA + path, data=json.dumps(payload).encode(),
@@ -903,6 +919,48 @@ def model_present(model):
             return r.status == 200
     except Exception:
         return False
+
+
+def ollama_model_digest(model: str) -> str | None:
+    try:
+        payload = _get_json("/api/tags", 30)
+    except Exception:
+        return None
+    aliases = {model}
+    if ":" not in model.rsplit("/", 1)[-1]:
+        aliases.add(model + ":latest")
+    for item in payload.get("models", []):
+        if aliases & {item.get("name"), item.get("model")}:
+            digest = item.get("digest")
+            if isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest):
+                return digest
+    return None
+
+
+def load_model_artifact_lock(path: str | None) -> dict:
+    if not path:
+        return {}
+    try:
+        with open(path, encoding="utf-8") as handle:
+            value = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read model artifact lock: {exc}") from exc
+    models = value.get("models")
+    if not isinstance(models, dict) or not models:
+        raise ValueError("model artifact lock must contain a non-empty models object")
+    for model, item in models.items():
+        digest = item.get("artifact_sha256") if isinstance(item, dict) else None
+        if not isinstance(model, str) or not re.fullmatch(r"[0-9a-f]{64}", str(digest or "")):
+            raise ValueError(f"invalid model artifact lock entry: {model!r}")
+    return value
+
+
+def model_artifact_mismatch(model: str, artifact_lock: dict) -> str | None:
+    expected = (artifact_lock.get("models", {}).get(model) or {}).get("artifact_sha256")
+    actual = ollama_model_digest(model)
+    if actual == expected:
+        return None
+    return f"artifact digest for {model}: lock wants {expected!r}, node has {actual!r}"
 
 
 def _safe_env_name(model: str) -> str:
@@ -2661,6 +2719,30 @@ def load_models(path, only_bracket=None):
     return models
 
 
+def resume_row_matches(
+    row: dict,
+    *,
+    scenario_sha: str,
+    memory_context: str,
+    memory_sha: str | None,
+    strategy: str,
+    strategy_sha: str | None,
+    runtime: str,
+    timeout_policy_id: str,
+    artifact_lock_sha: str | None,
+) -> bool:
+    return (
+        row.get("env.scenarios_sha") == scenario_sha
+        and (row.get("env.memory_context") or "none") == memory_context
+        and row.get("env.memory_context_sha") == memory_sha
+        and (row.get("env.inference_strategy") or "baseline") == strategy
+        and row.get("env.strategy_prompt_sha") == strategy_sha
+        and row.get("env.inference_runtime") == runtime
+        and row.get("effective.timeout_policy_id") == timeout_policy_id
+        and row.get("env.model_artifact_lock_sha256") == artifact_lock_sha
+    )
+
+
 # --------------------------------------------------------------------------
 # Reproducibility guard: fingerprint the node's power/turbo/energy/version
 # state and refuse to run if it drifts from the frozen manifest. This exists
@@ -2829,7 +2911,16 @@ def _env_volatile():
     }
 
 
-def preflight(models, fp, manifest_path, require_models_present=False, protocol=None, scenarios_path=None):
+def preflight(
+    models,
+    fp,
+    manifest_path,
+    require_models_present=False,
+    protocol=None,
+    scenarios_path=None,
+    models_path=None,
+    artifact_lock_path=None,
+):
     """Compare the live node fingerprint + protocol args + model presence against the
     frozen manifest. Returns a list of human-readable problems ([] = clean). Model
     presence is only enforced when require_models_present (i.e. --no-pull), so the
@@ -2909,15 +3000,26 @@ def preflight(models, fp, manifest_path, require_models_present=False, protocol=
     if scenarios_path and os.path.exists(scenarios_path):
         got_sha = hashlib.sha256(open(scenarios_path, "rb").read()).hexdigest()
         approved = set()
+        matching_contracts = []
         want_sha = prot.get("scenarios_sha256")
         if want_sha:
             approved.add(want_sha)
         for item in (prot.get("scenario_sets") or {}).values():
             if isinstance(item, dict) and item.get("sha256"):
                 approved.add(item["sha256"])
+                if item["sha256"] == got_sha:
+                    matching_contracts.append(item)
         if approved and got_sha not in approved:
             shown = ", ".join(sorted(s[:12] + "…" for s in approved))
             problems.append(f"scenario set hash {got_sha[:12]}… is not approved by manifest ({shown})")
+        if protocol:
+            for contract in matching_contracts:
+                expected_policy = contract.get("timeout_policy_id")
+                if expected_policy and protocol.get("timeout_policy_id") != expected_policy:
+                    problems.append(
+                        f"timeout policy: scenario contract wants {expected_policy!r}, "
+                        f"run uses {protocol.get('timeout_policy_id')!r}"
+                    )
 
     if require_models_present and man.get("models_pinned", {}).get("require_all_present"):
         missing = [m for m, _ in models if not model_present(m)]
@@ -2925,6 +3027,27 @@ def preflight(models, fp, manifest_path, require_models_present=False, protocol=
             shown = ", ".join(missing[:6]) + ("…" if len(missing) > 6 else "")
             problems.append(f"{len(missing)} model(s) not present locally — pre-pull to avoid mid-run "
                             f"pull_failed rows: {shown}")
+    if artifact_lock_path:
+        try:
+            lock = load_model_artifact_lock(artifact_lock_path)
+        except ValueError as exc:
+            problems.append(f"artifact lock unreadable: {exc}")
+        else:
+            lock_models = lock.get("models") or {}
+            selected = {model for model, _bracket in models}
+            if set(lock_models) != selected:
+                problems.append("artifact lock model domain differs from selected roster")
+            if models_path and os.path.exists(models_path):
+                roster_sha = hashlib.sha256(open(models_path, "rb").read()).hexdigest()
+                if lock.get("roster_sha256") != roster_sha:
+                    problems.append("artifact lock roster_sha256 differs from selected roster")
+            if INFERENCE_RUNTIME == "ollama":
+                for model in sorted(selected & set(lock_models)):
+                    actual_digest = ollama_model_digest(model)
+                    if actual_digest is not None:
+                        mismatch = model_artifact_mismatch(model, lock)
+                        if mismatch:
+                            problems.append(mismatch)
     return problems
 
 
@@ -2964,6 +3087,8 @@ def main():
     ap.add_argument("--manifest", default="data/run-manifest.json",
                     help="frozen env-lock manifest; run.py refuses to start if the node has drifted "
                          "from it (turbo/governor/RAPL-domain/perf/models). The run-drift guard.")
+    ap.add_argument("--artifact-lock", default="",
+                    help="exact selected-roster and model-digest lock; mismatch refuses before inference")
     ap.add_argument("--allow-unlocked", action="store_true",
                     help="downgrade preflight failures to warnings (local/dev or Mac runs; "
                          "NEVER for a canonical wave).")
@@ -2977,6 +3102,31 @@ def main():
 
     if INFERENCE_RUNTIME not in RUNTIMES:
         sys.exit(f"unknown INFERENCE_RUNTIME={INFERENCE_RUNTIME!r}; expected one of {sorted(RUNTIMES)}")
+
+    try:
+        recovery_profile.validate_profile(
+            {
+                "models": args.models,
+                "model_set": os.environ.get("MODEL_SET", "manual"),
+                "scenarios": args.scenarios,
+                "scenario_set": os.environ.get("SCENARIO_SET", "all"),
+                "run_manifest": args.manifest,
+                "model_artifact_lock": args.artifact_lock,
+                "timeout_policy_id": DEFAULT_TIMEOUT_POLICY_ID,
+                "memory_context": args.memory_context or os.environ.get("MEMORY_CONTEXT") or "none",
+                "memory_context_file": args.memory_context_file,
+                "inference_strategy": args.inference_strategy or DEFAULT_INFERENCE_STRATEGY,
+                "inference_runtime": INFERENCE_RUNTIME,
+                "max_tokens_cap": "" if MAX_TOKENS_CAP == 0 else MAX_TOKENS_CAP,
+                "run_repeats": args.repeats,
+                "run_temp": args.temp,
+                "run_allow_unlocked": args.allow_unlocked,
+            },
+            repo_root=Path(__file__).resolve().parent,
+            scope="producer",
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        sys.exit(f"FATAL: {exc}")
 
     os.makedirs(args.outputs_dir, exist_ok=True)
     scen = json.load(open(args.scenarios))["scenarios"]
@@ -3003,6 +3153,10 @@ def main():
             memory_context = fh.read().strip()
         memory_sha = hashlib.sha256(open(args.memory_context_file, "rb").read()).hexdigest()
     models = load_models(args.models, args.bracket)
+    try:
+        model_artifact_lock = load_model_artifact_lock(args.artifact_lock)
+    except ValueError as exc:
+        sys.exit(str(exc))
     if args.shuffle:
         random.Random(args.order_seed).shuffle(models)
 
@@ -3011,9 +3165,13 @@ def main():
     _protocol = {"temperature": args.temp, "repeats": args.repeats,
                  "seed_base": args.seed_base, "think": args.think,
                  "inference_strategy": inference_strategy_id,
-                 "inference_runtime": INFERENCE_RUNTIME}
-    problems = preflight(models, env_fp, args.manifest, require_models_present=args.no_pull,
-                         protocol=_protocol, scenarios_path=args.scenarios)
+                 "inference_runtime": INFERENCE_RUNTIME,
+                 "timeout_policy_id": DEFAULT_TIMEOUT_POLICY_ID}
+    problems = preflight(
+        models, env_fp, args.manifest, require_models_present=args.no_pull,
+        protocol=_protocol, scenarios_path=args.scenarios, models_path=args.models,
+        artifact_lock_path=args.artifact_lock or None,
+    )
     if args.preflight_only:
         if problems:
             tag = "WARN (unlocked)" if args.allow_unlocked else "FAIL"
@@ -3046,6 +3204,11 @@ def main():
     env_static["env.inference_strategy"] = inference_strategy_id
     env_static["env.strategy_prompt_file"] = args.strategy_prompt_file or None
     env_static["env.strategy_prompt_sha"] = strategy_prompt_sha
+    env_static["env.model_artifact_lock"] = args.artifact_lock or None
+    env_static["env.model_artifact_lock_sha256"] = (
+        hashlib.sha256(open(args.artifact_lock, "rb").read()).hexdigest()
+        if args.artifact_lock else None
+    )
     _man = {}
     if args.manifest and os.path.exists(args.manifest):
         try:
@@ -3082,6 +3245,9 @@ def main():
     current_memory_sha = env_static.get("env.memory_context_sha")
     current_strategy = env_static.get("env.inference_strategy")
     current_strategy_sha = env_static.get("env.strategy_prompt_sha")
+    current_runtime = env_static.get("env.inference_runtime")
+    current_timeout_policy = DEFAULT_TIMEOUT_POLICY_ID
+    current_artifact_lock_sha = env_static.get("env.model_artifact_lock_sha256")
     if os.path.exists(args.out):
         with open(args.out) as _f:
             for _ln in _f:
@@ -3094,13 +3260,17 @@ def main():
                     continue
                 _m = _r.get("model")
                 pair = (_r.get("scenario"), _r.get("rep"))
-                row_sha = _r.get("env.scenarios_sha")
                 if (_m and pair in expected_pairs and _r.get("det_total") is not None
-                    and row_sha == scenario_sha
-                    and (_r.get("env.memory_context") or "none") == current_memory_context
-                    and _r.get("env.memory_context_sha") == current_memory_sha
-                    and (_r.get("env.inference_strategy") or "baseline") == current_strategy
-                    and _r.get("env.strategy_prompt_sha") == current_strategy_sha):
+                    and resume_row_matches(
+                        _r, scenario_sha=scenario_sha,
+                        memory_context=current_memory_context,
+                        memory_sha=current_memory_sha,
+                        strategy=current_strategy,
+                        strategy_sha=current_strategy_sha,
+                        runtime=current_runtime,
+                        timeout_policy_id=current_timeout_policy,
+                        artifact_lock_sha=current_artifact_lock_sha,
+                    )):
                     _seen.setdefault(_m, set()).add(pair)
             done_models = {m for m, u in _seen.items() if expected_pairs <= u}
         if done_models:
@@ -3142,6 +3312,18 @@ def main():
                 continue
             if args.no_pull and not model_present(model):
                 continue
+            if model_artifact_lock:
+                mismatch = model_artifact_mismatch(model, model_artifact_lock)
+                if mismatch:
+                    if args.rm_after and not was_present:
+                        remove_model(model)
+                    sys.stderr.write(f"FATAL: {mismatch}; refusing inference\n")
+                    sys.exit(5)
+            if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
+                artifact_error = verify_llama_cpp_artifact(model)
+                if artifact_error:
+                    sys.stderr.write(f"FATAL: {artifact_error}; refusing inference\n")
+                    sys.exit(5)
             warm_s, warm_err = warmup(model, args.think)
             meta = {**model_meta(model), **model_runtime(model)}
             if INFERENCE_RUNTIME in LLAMA_CPP_RUNTIMES:
