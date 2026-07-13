@@ -66,13 +66,20 @@ _FOOTER_RE = re.compile(r"^(Changes|AI Credits|Tokens)\b")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 
+def analysis_condition_identity(result_row, evaluation_policy):
+    """Return one normalized identity for stamping, indexing, and resume."""
+
+    normalized = analysis_metrics.normalize_condition_provenance(result_row)
+    return analysis_metrics.analysis_condition(
+        normalized,
+        evaluation_policy=evaluation_policy,
+    )
+
+
 def analysis_condition_fields(result_row, evaluation_policy):
     """Canonical condition provenance copied from an inference row."""
 
-    identity = analysis_metrics.analysis_condition(
-        result_row,
-        evaluation_policy=evaluation_policy,
-    )
+    identity = analysis_condition_identity(result_row, evaluation_policy)
     if identity.incomplete:
         raise ValueError(
             "cannot judge an incomplete analysis condition: "
@@ -166,8 +173,8 @@ class Judge:
         else:  # copilot
             self._bin = shutil.which(COPILOT_BIN) or COPILOT_BIN
             if not shutil.which(COPILOT_BIN):
-                sys.exit("Copilot CLI not found. Install: npm i -g @github/copilot, then `copilot` "
-                         "once to authenticate.")
+                sys.exit("Copilot CLI not found. Install: brew install --cask copilot-cli "
+                         "(or npm i -g @github/copilot), then run `copilot login`.")
 
     def list_models(self):
         """Return [(id, label)] of judge models available on this backend."""
@@ -254,10 +261,11 @@ class Judge:
     def complete(self, system, user, *, json_mode=False, temperature=0):
         if self.backend == "copilot":
             prompt = f"{system}\n\n{user}"
-            env = {**os.environ, "COPILOT_ALLOW_ALL": "1"}
+            env = dict(os.environ)
+            env.pop("COPILOT_ALLOW_ALL", None)
             p = subprocess.run(
-                [self._bin, "--model", self.model, "--no-color", "--allow-all-tools",
-                 "-p", prompt],
+                [self._bin, "--model", self.model, "--no-color", "--available-tools=",
+                 "--no-custom-instructions", "--no-remote", "--no-remote-export", "-p", prompt],
                 capture_output=True, text=True, timeout=300, env=env)
             if p.returncode != 0 and not p.stdout.strip():
                 raise RuntimeError(f"copilot CLI failed: {p.stderr.strip()[:200]}")
@@ -338,6 +346,67 @@ def normalize_judgement(judgement, *, fallback_score=None, fallback_verdict=None
 
 class EmptyJudgeResponse(Exception):
     """The judge backend returned no text — transient (retryable), unlike a parse error."""
+
+
+def recover_jsonl_tail(path):
+    """Remove only a torn final fragment; reject malformed durable interior rows."""
+
+    if not os.path.exists(path):
+        return
+    with open(path, "r+b") as handle:
+        payload = handle.read()
+        if payload and not payload.endswith(b"\n"):
+            boundary = payload.rfind(b"\n") + 1
+            handle.seek(boundary)
+            handle.truncate()
+            handle.flush()
+            os.fsync(handle.fileno())
+            payload = payload[:boundary]
+        for line_number, raw in enumerate(payload.splitlines(), 1):
+            if not raw.strip():
+                continue
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{path}:{line_number} contains malformed durable JSON") from exc
+            if not isinstance(value, dict):
+                raise ValueError(f"{path}:{line_number} is not a JSON object")
+
+
+def append_jsonl_durable(path, row):
+    payload = json.dumps(row, separators=(",", ":")).encode() + b"\n"
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    try:
+        written = os.write(descriptor, payload)
+        if written != len(payload):
+            raise OSError(f"short JSONL append: {written}/{len(payload)} bytes")
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def load_judgement_resume_state(path):
+    """Return only canonical successful attempts as resumable judge keys."""
+
+    recover_jsonl_tail(path)
+    done_exact = set()
+    done_legacy = set()
+    if not os.path.exists(path):
+        return done_exact, done_legacy
+    for line in open(path):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not analysis_metrics.judgement_success(row):
+            continue
+        condition_sha = row.get("analysis_condition_key_sha256")
+        exact_key, legacy_key = judgement_resume_keys(row)
+        if condition_sha:
+            done_exact.add(exact_key)
+        else:
+            done_legacy.add(legacy_key)
+    return done_exact, done_legacy
 
 
 # A scenario set without a per-scenario `judge_rubric` must NOT make every judge call
@@ -466,6 +535,8 @@ def main():
                          "(option-C); writes a disagreement list to --out for you to adjudicate")
     ap.add_argument("--list-models", action="store_true",
                     help="list judge models on the selected backend (find the Claude id), then exit")
+    ap.add_argument("--check-backends", action="store_true",
+                    help="make one minimal authenticated request to every declared judge, then exit")
     ap.add_argument("--backend", help="copilot | github | anthropic (overrides JUDGE_BACKEND)")
     ap.add_argument("--model", help="judge model id (overrides JUDGE_MODEL)")
     ap.add_argument("--ensemble",
@@ -498,6 +569,25 @@ def main():
         for mid, who in sorted(primary.list_models(), key=lambda x: (x[0] or "")):
             tag = "   <-- CLAUDE" if "claude" in (mid or "").lower() else ""
             print(f"{mid}\t{who}{tag}")
+        return
+
+    if args.check_backends:
+        for judge in judges:
+            response = judge.complete(
+                "This is an authentication and model-entitlement check. Do not use tools.",
+                "Reply with exactly: COPILOT_BACKEND_OK",
+            )
+            if response.strip() != "COPILOT_BACKEND_OK":
+                sys.exit(
+                    f"judge backend check failed for {judge.backend}:{judge.model}: "
+                    f"unexpected response {response[:80]!r}"
+                )
+            print(json.dumps({
+                "backend": judge.backend,
+                "model": judge.model,
+                "ok": True,
+                "usage": judge.last_usage,
+            }, sort_keys=True))
         return
 
     scen_path = args.scenarios
@@ -538,25 +628,8 @@ def main():
         # without one condition suppressing the other.
         # so a long ensemble run that dies (sleep/network) continues instead of
         # re-judging from scratch. Output is opened in APPEND mode.
-        done_exact = set()
-        done_legacy = set()
+        done_exact, done_legacy = load_judgement_resume_state(args.out)
         if os.path.exists(args.out):
-            for line in open(args.out):
-                try:
-                    d = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                # A score=None row is a judge-hiccup empty (the backend returned
-                # no text); it is NOT done -> leave it out of `done` so resume
-                # re-judges it. DNF-legit empties keep score=1 and stay done.
-                if d.get("score") is None:
-                    continue
-                condition_sha = d.get("analysis_condition_key_sha256")
-                exact_key, legacy_key = judgement_resume_keys(d)
-                if condition_sha:
-                    done_exact.add(exact_key)
-                else:
-                    done_legacy.add(legacy_key)
             if done_exact or done_legacy:
                 legacy_mode = "eligible" if args.allow_legacy_resume else "ignored (no opt-in)"
                 sys.stderr.write(
@@ -585,12 +658,9 @@ def main():
             if row_sha != scen_sha:
                 sys.stderr.write(f"skip {row.get('model')} {sid}: result scenario hash {row_sha!r} != selected {scen_sha[:12]}…\n")
                 continue
-            result_rows.append(row)
+            result_rows.append(analysis_metrics.normalize_condition_provenance(row))
         identities = {
-            id(row): analysis_metrics.analysis_condition(
-                row,
-                evaluation_policy=evaluation_policy,
-            )
+            id(row): analysis_condition_identity(row, evaluation_policy)
             for row in result_rows
         }
         _, legacy_conditions = analysis_metrics.judge_condition_index(
@@ -666,6 +736,15 @@ def main():
             for attempt in range(4):
                 try:
                     j = normalize_judgement(judge_one(jg, scen[sid], answer))
+                    if not analysis_metrics.judgement_success(j):
+                        missed = list(j.get("criteria_missed") or [])
+                        if "judge response violated the judgement contract" not in missed:
+                            missed.append("judge response violated the judgement contract")
+                        j.update({
+                            "score": None,
+                            "evidence": "invalid_contract",
+                            "criteria_missed": missed,
+                        })
                     return (model, sid, rep, memory_context, inference_strategy, inference_runtime,
                             condition_fields, be, mo, j, jg.last_usage)
                 except Exception as e:  # noqa: BLE001
@@ -678,8 +757,8 @@ def main():
 
         workers = max(1, args.workers)
         sys.stderr.write(f"judging {len(tasks)} (answer x judge) calls, {workers}-wide\n")
-        # single writer (the main thread) -> no lock needed; write as each completes.
-        with open(args.out, "a") as f, cf.ThreadPoolExecutor(max_workers=workers) as ex:
+        # single durable writer (the main thread); each row is one fsynced append.
+        with cf.ThreadPoolExecutor(max_workers=workers) as ex:
             for fut in cf.as_completed([ex.submit(_judge_task, t) for t in tasks]):
                 res = fut.result()
                 if res is None:
@@ -690,17 +769,18 @@ def main():
                     cost["calls"] += 1
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
-                f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
-                                    **condition_fields,
-                                    "memory_context": memory_context,
-                                    "inference_strategy": inference_strategy,
-                                    "inference_runtime": inference_runtime,
-                                    "adapter": inference_runtime,
-                                    "scenarios_path": scen_path,
-                                    "scenarios_sha256": scen_sha,
-                                    "judge_backend": be, "judge_model": mo,
-                                    "usage": u, **j}) + "\n")
-                f.flush()
+                append_jsonl_durable(args.out, {
+                    "model": model, "scenario": sid, "rep": rep,
+                    **condition_fields,
+                    "memory_context": memory_context,
+                    "inference_strategy": inference_strategy,
+                    "inference_runtime": inference_runtime,
+                    "adapter": inference_runtime,
+                    "scenarios_path": scen_path,
+                    "scenarios_sha256": scen_sha,
+                    "judge_backend": be, "judge_model": mo,
+                    "usage": u, **j,
+                })
                 sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} -> {j.get('score')}\n")
         ci = cost["tokens_in"]
         hit = round(100 * cost["cache_read"] / ci, 1) if ci else None
