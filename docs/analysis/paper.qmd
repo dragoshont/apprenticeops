@@ -119,7 +119,7 @@ hardware.
 > harness. **(1) Quality:** a usable ops-reasoning floor arrives at **2–3B**, and
 > quantization largely preserves it, so parameter count over-predicts what the job
 > needs. **(2) Safety:** on deterministic refusal checks the real driver is
-> **training type, not size** — reasoning-distilled models refuse roughly 30 points
+> **training type, not size** — reasoning-distilled models refuse **24.2 points**
 > less than instruct siblings, so a 7.6 B reasoning model is *out-refused by a
 > 0.36 B instruct one*. **(3) Energy:** within one controlled 24-model batch, the
 > bigger deployment bills you in watts and tokens/s for capability above the knee
@@ -180,7 +180,7 @@ benchmark — which is why we report **continuous** judged %-of-frontier with
 confidence intervals, not a thresholded can/can't.
 
 **Reasoning-distillation degrades safety — we corroborate, not discover.** Our
-deterministic result (reasoning-distilled models refuse destructive actions ~31
+deterministic result (reasoning-distilled models refuse destructive actions **24.2
 points less than instruct siblings; @sec-results) is the phenomenon of
 **Self-Jailbreaking** [@yong2026selfjailbreak]: after benign reasoning training,
 models "reason themselves out of safety alignment," named explicitly for the
@@ -374,7 +374,7 @@ size.
 **Post-lock analysis amendment for the current doctoral track.** The released
 94-model results above retain their original pre-registration and estimands. A
 2026-07-10 audit added a second-generation analysis contract for the current ≤5B
-track, but it was written after partial inspection of that still-running dataset.
+track, but it was written after partial inspection of that then-active dataset.
 The additions are therefore **exploratory for that run**, not retroactive
 confirmatory hypotheses, and they do not change its roster, scenarios, sampler,
 budgets, judges, or inference rows. The contract (`docs/STATISTICS.md`) requires
@@ -654,9 +654,27 @@ file-level mitigations) is in `docs/PAPER.md` §9.
   label in the frozen result.
 - **The current SLM extensions are post-lock.** Repeated-attempt reliability,
   crossed covariates, uncertainty/risk-coverage, and Pareto stability were
-  specified after partial inspection of the active run. They are exploratory
+  specified after partial inspection of the then-active run. They are exploratory
   there and require an independent run or held-out scenario pack for
-  confirmation; no provisional value is reported here.
+  confirmation; no provisional analytical outcome enters the current results.
+- **The completed doctoral run has a separate provisional reliability record.**
+  A separate 152-model run completed 15,200 primary rows. Its locked provisional
+  bundle records 208 did-not-finish (DNF) rows: 204 had produced partial output
+  when their scenario-specific 120-202 s wall-clock limits elapsed, and four
+  retained output but lacked an observed terminal `done` frame. Another 1,452
+  rows ended at the output-token limit and are not DNF. All DNF rows and both
+  declared judge scores remain in the evidence; 30,441 judge attempts reconcile
+  to 30,400 canonical successes plus 41 preserved parse-failed retries, with no
+  missing or competing canonical-success keys. We exclude this accounting from
+  the current results: the bundle remains `claim_status=provisional`, and its
+  `claude-opus-4.6` / `gpt-5.4` judge provenance differs from the frozen 94-model
+  evidence. The separate 21-model follow-up changes only `timeout_s`, remains
+  ongoing, and contributes no interpreted partial outcome before its 2,100
+  inference rows and 4,200 canonical judgements complete, followed by lock and
+  independent review. The
+  [committed bundle summary](../../data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa.summary.json)
+  and [failure-recovery SDD](../sdd/timeout-recovery-sensitivity.md) preserve the
+  accounting and treatment boundary.
 - **A model tag is a deployable package, not bare weights.** Ollama packages can
   differ in chat template, sampler defaults, and stop directives. Cross-package
   results answer the deployment question; weights-, architecture-, or
