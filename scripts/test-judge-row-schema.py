@@ -122,6 +122,43 @@ def test_runtime_default_sampler_is_normalized_before_judging():
     assert normalized["analysis.sampler_policy"]["kind"] == "runtime_defaults"
 
 
+def test_runtime_default_sampler_resume_key_matches_stamped_condition():
+    module = load_module()
+    result = {
+        "model": "m", "scenario": "s", "rep": 0,
+        "env.inference_runtime": "ollama",
+        "ollama.digest": "sha256:m", "ollama.quantization": "Q4_K_M",
+        "env.host": "ai", "env.kernel": "linux", "env.cpu_no_turbo": "1",
+        "env.cpu_governor": "performance", "env.cpu_min_perf_pct": "100",
+        "env.cpu_max_perf_pct": "100", "env.rapl_domain": "package-0",
+        "env.num_ctx": 8192, "env.ollama_version": "ollama version is 0.30.8",
+        "prompt.template_sha256": "p", "env.memory_context": "none",
+        "env.inference_strategy": "baseline", "temp": 0.7, "think": False,
+        "ollama.parameters": None, "env.scenario_set": "core",
+        "env.scenarios_sha": "scenario-sha",
+    }
+    policy = "deterministic-checks-v1|judges:copilot:gpt"
+    identity = module.analysis_condition_identity(result, policy)
+    fields = module.analysis_condition_fields(result, policy)
+    assert identity.sha256 == fields["analysis_condition_key_sha256"]
+    judged = {
+        "analysis_condition_key_sha256": fields["analysis_condition_key_sha256"],
+        "scenario": "s", "rep": 0,
+        "judge_backend": "copilot", "judge_model": "gpt",
+    }
+    exact, _legacy = module.judgement_resume_keys(judged)
+    assert module.judgement_is_done(
+        result,
+        condition_sha=identity.sha256,
+        judge_backend="copilot",
+        judge_model="gpt",
+        done_exact={exact},
+        done_legacy=set(),
+        legacy_resume_safe=False,
+        allow_legacy_resume=False,
+    ) is True
+
+
 def test_incomplete_result_condition_cannot_be_judged():
     module = load_module()
     result = {

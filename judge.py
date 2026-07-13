@@ -66,14 +66,19 @@ _FOOTER_RE = re.compile(r"^(Changes|AI Credits|Tokens)\b")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 
-def analysis_condition_fields(result_row, evaluation_policy):
-    """Canonical condition provenance copied from an inference row."""
-
+def analysis_condition_identity(result_row, evaluation_policy):
+    """Canonical normalized condition identity for judging and resume checks."""
     result_row = analysis_metrics.normalize_condition_provenance(result_row)
-    identity = analysis_metrics.analysis_condition(
+    return analysis_metrics.analysis_condition(
         result_row,
         evaluation_policy=evaluation_policy,
     )
+
+
+def analysis_condition_fields(result_row, evaluation_policy):
+    """Canonical condition provenance copied from an inference row."""
+
+    identity = analysis_condition_identity(result_row, evaluation_policy)
     if identity.incomplete:
         raise ValueError(
             "cannot judge an incomplete analysis condition: "
@@ -588,9 +593,9 @@ def main():
                 continue
             result_rows.append(row)
         identities = {
-            id(row): analysis_metrics.analysis_condition(
+            id(row): analysis_condition_identity(
                 row,
-                evaluation_policy=evaluation_policy,
+                evaluation_policy,
             )
             for row in result_rows
         }

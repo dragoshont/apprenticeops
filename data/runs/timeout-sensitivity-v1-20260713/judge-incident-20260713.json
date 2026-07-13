@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "timeout-sensitivity-v1-20260713",
+  "status": "contained_and_recovering",
+  "inference_affected": false,
+  "detected_at": "2026-07-13T07:19:29Z",
+  "consumer_paused_at_raw_attempts": 1790,
+  "raw_attempts_sha256": "27debd10b61d1da358542faeb95c5bae83df41a97280dd4c02fef9a347ea5388",
+  "raw_attempts_archive": "judge-incident-duplicate-attempts-20260713.jsonl.gz",
+  "raw_attempts_archive_sha256": "495335597cd032027d92f49d6cd5f7693463742e4888c7a33086b0ea99c5c960",
+  "unique_judge_keys": 832,
+  "duplicate_extra_attempts": 958,
+  "duplicate_keys": 389,
+  "maximum_attempts_per_key": 4,
+  "root_cause": "Judge condition stamping normalized runtime-default sampler provenance, but the resume identity map hashed the raw unnormalized result row. Stored and resume hashes differed, causing successful keys to be judged again.",
+  "repair": "Use one normalized analysis_condition_identity helper for both condition stamping and resume task suppression.",
+  "recovery_rule": "Preserve all 1790 accidental attempts in the incident archive; restore the unaffected qwen3:8b-only 200-row journal from commit 260d824528d7a573c00f65f6042e88af89244001; rejudge every other key once under the repaired resume logic.",
+  "canonical_baseline_rows": 200,
+  "canonical_baseline_sha256": "a803403ebe029b543254004a8461266f6a7e4e7dc4558bde34fe165bf8d28f78",
+  "canonical_baseline_model": "qwen3:8b",
+  "parent_judges": [
+    "copilot:claude-opus-4.6",
+    "copilot:gpt-5.4"
+  ]
+}
