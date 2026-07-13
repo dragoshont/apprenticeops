@@ -300,7 +300,12 @@ def validate_judgement_rows(
             or row.get("condition_identity_incomplete") is not False
         ):
             raise ValueError(
-                f"model {model} judgement condition differs from result: {shallow_key}"
+                f"model {model} judgement condition differs from result: {shallow_key} "
+                f"actual_condition={row.get('analysis_condition_key_sha256')!r} "
+                f"expected_condition={expected_condition!r} "
+                f"actual_policy={row.get('evaluation_policy')!r} "
+                f"expected_policy={evaluation_policy!r} "
+                f"incomplete={row.get('condition_identity_incomplete')!r}"
             )
         key = (
             str(row.get("analysis_condition_key_sha256")),
@@ -380,7 +385,10 @@ def persist_model(
     reps: int,
     judges: frozenset[tuple[str, str]],
     validate_only: bool = False,
+    persist_mode: str = "local-files",
 ) -> dict[str, Any]:
+    if persist_mode not in {"git-push", "local-files"}:
+        raise ValueError("persist_mode must be git-push or local-files")
     units = strict_int(units, "units", minimum=1)
     reps = strict_int(reps, "reps", minimum=1)
     if outputs_dir.is_symlink() or not outputs_dir.is_dir():
@@ -473,7 +481,7 @@ def persist_model(
     receipt = {
         "analysis_condition_keys_sha256": condition_keys_sha256,
         "schema_version": 1,
-        "persist_mode": "local-files",
+        "persist_mode": persist_mode,
         "candidate_archive": candidate_archive.name,
         "candidate_archive_sha256": sha256_file(candidate_archive),
         "candidate_files": len(candidate_files),
@@ -536,7 +544,7 @@ def verify_receipt(
     model = receipt.get("model")
     if not isinstance(model, str) or not model or (expected_model and model != expected_model):
         raise ValueError(f"persistence receipt model mismatch: {receipt_path}")
-    if receipt.get("persist_mode") != "local-files":
+    if receipt.get("persist_mode") not in {"git-push", "local-files"}:
         raise ValueError(f"persistence receipt mode mismatch: {receipt_path}")
     reps = strict_int(receipt.get("reps"), "receipt.reps", minimum=1)
     units = strict_int(receipt.get("units"), "receipt.units", minimum=1)
@@ -708,6 +716,7 @@ def main() -> None:
     parser.add_argument("--judge", action="append", default=[], metavar="BACKEND:MODEL")
     parser.add_argument("--verify-receipt", type=Path)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--persist-mode", choices=("git-push", "local-files"), default="local-files")
     args = parser.parse_args()
     if args.verify_receipt:
         verify_judges = parse_judges(args.judge, "--judge") if args.judge else None
@@ -757,6 +766,7 @@ def main() -> None:
         reps=args.reps,
         judges=frozenset(judges),
         validate_only=args.validate_only,
+        persist_mode=args.persist_mode,
     )
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
 
