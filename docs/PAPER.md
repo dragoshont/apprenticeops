@@ -889,8 +889,47 @@ so the synthesis is reproducible rather than editorial.
 
 ## 9. Limitations and Threats to Validity
 
+### 9a. Completed-run reliability accounting (provisional doctoral run)
+
+The separate doctoral-scale run
+`full-chatok-core20-r5-ollama-20260705-150053` completed 152 models x 20
+scenarios x 5 repetitions = 15,200 primary rows. Its locked bundle records 208
+did-not-finish (DNF) rows: 204 rows had produced partial output when their
+scenario-specific 120-202 s wall-clock limits elapsed (`DNF:timeout`), while
+four retained output but lacked an observed terminal `done` frame
+(`DNF:after_done_missing`). We treat the former as wall-clock censoring and the
+latter as a separate completion-frame/transport-defect category; neither label
+establishes that a longer limit would produce a completed answer or localizes
+the component responsible for the missing frame. A further 1,452 rows ended
+with `finish_reason=length`; these are output-token-budget censoring, not
+timeout DNF, and are not combined with the 208 DNF rows.
+
+All 208 DNF rows remain in the primary evidence with their partial output and
+one score from each of the two declared judges. No primary row was deleted,
+replaced, or relabeled. The append-only judge log contains 30,441 attempts.
+Reconciliation retained exactly one canonical successful judgement for every
+`(primary row, declared judge)` key (152 x 20 x 5 x 2 = 30,400), preserved all
+41 parse-failed attempts as retry evidence, and found no missing or competing
+canonical-success keys. The bundle used `claude-opus-4.6` and `gpt-5.4`; these
+judgements are not presented as directly comparable to the frozen 94-model
+headline's different judge provenance.
+
+The completed bundle is locked but remains `claim_status=provisional`. This
+reliability accounting is excluded from the Section 8 results and does not
+revise the frozen 94-model paper-era headline claims. The separate 21-model
+exploratory follow-up changes only `timeout_s` as its treatment factor, remains
+ongoing, and contributes no interpreted partial outcome or timeout-treatment
+claim before its 2,100 inference rows and 4,200 canonical judgements complete,
+followed by lock and independent review. Sources: committed
+[bundle summary](../data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa.summary.json),
+the [failure-recovery SDD](sdd/timeout-recovery-sensitivity.md), and the
+[post-lock consolidation ledger](PROJECT_CONSOLIDATION_2026-07-10.md).
+
+### 9b. Threat register
+
 | Threat | Type | Mitigation |
 |---|---|---|
+| **Reliability censoring and post-selection** - wall-clock timeout, missing terminal completion frames, and token-budget length endings can be conflated or selectively excluded; the 21-model follow-up cohort was selected by parent-run DNF | Internal/conclusion | Keep `DNF:timeout`, `DNF:after_done_missing`, `finish_reason=length`, and completed rows as separate strata; retain partial outputs, raw retry evidence, and one canonical score from each declared judge; report failure-inclusive outcomes; make no timeout-treatment claim before the follow-up is complete, locked, and independently reviewed. |
 | n=1 environment (one cluster/operator) | External | Frame as **single-environment case study**; release harness so others replicate |
 | Author wrote scenarios + gold + rubric | Internal/construct | **option-C gold review DONE** (Claude 4.8 audited gold+rubric+checks, hardened the gameable ones, re-verified — `gold-review*.jsonl`); held-out set; hardened deterministic checks + LLM-judge as final correctness |
 | LLM-judge bias (self-pref, verbosity, position) | Conclusion | Blind, position-randomize, evidence-cited; **2-judge ensemble DONE** (full variance pass) — `claude-opus-4.8`↔`gpt-5.5` agree at **κ_quad=0.91** on 8,909 pairs (`judge_agreement.py`); judge–human κ and a 3rd-judge (`gemini-3.1-pro`) Fleiss pass are wired and pending (`human_eval.py`, `--c`) |
@@ -932,22 +971,24 @@ so the synthesis is reproducible rather than editorial.
    frontier+agentic+synthetic, and vs on-prem classical-ML AIOps which isn't LLM).
 2. **An offline operating contract + grounding split** (closed-book vs
    local-RAG-grounded) that isolates **what retrieval can't fix** (reasoning,
-   faithfulness, calibration, safety) and quantifies how much local RAG
-   substitutes for parameters.
+  faithfulness, calibration, safety). The current evidence reports these strata
+  separately; causal RAG lift remains open until paired with/without-reference
+  variants isolate retrieval from task difficulty.
 3. **A telemetry method** (OTel-GenAI-aligned per-request resource + behavioural
-   trace, incl. **measured wall-power / energy-per-task** via a smart plug) for
-   profiling on-device LLM ops, reusable beyond this study.
+  trace, including controlled **RAPL `package-0` compute-energy per task**) for
+  profiling on-device LLM ops, reusable beyond this study. This is not a
+  wall-power or facility-energy measurement.
 4. **Empirical findings — the three-axis selection map.** In one offline/CPU
-   harness: a judged-**quality** knee at **3–4B** (where *quantization*, not
+  harness: a judged-**quality** knee at **2–3B** (where *quantization*, not
    parameter count, carries the marginal lift); a **safety** axis on
    judge-independent **deterministic** checks where refusal is governed by
-   *training type, not size* (reasoning-distilled models refuse ~31 pts less than
+  *training type, not size* (reasoning-distilled models refuse **24.2 points** less than
    instruct; the naive "biggest / ‘reasoning’" pick is among the least safe) —
    **corroborating** the agent-/SLM-safety literature (§11) in the offline/CPU
    regime rather than discovering the effect; and an **energy** axis (Wh/answer,
-   tokens/s-per-watt) that prices capability above the knee. The contribution is
-   that no prior benchmark reports the three **together** for the model-selection
-   decision — plus the local-RAG lift.
+  tokens/s-per-watt) restricted to the 24-model controlled first batch that
+  prices capability above the knee. The contribution is that no prior benchmark
+  reports the three **together** for the model-selection decision.
 5. **Artifact**: Apache-2.0 repository-authored harness, scenarios, schemas, and
   analysis code, plus a mixed-rights dataset whose model-generated outputs
   remain subject to represented upstream model-family terms.
@@ -1003,7 +1044,7 @@ fine-tuning-contamination row in §9) before any lift can be claimed.
   judged %-of-frontier with CIs, not a thresholded "can/can't."
 - **Reasoning-distillation degrades safety — we corroborate it at homelab scale,
   not discover it.** Our deterministic result (R1-distilled "thinking" models refuse
-  destructive actions ~31 pts less than instruct siblings; §8b) is the *exact*
+  destructive actions **24.2 points** less than instruct siblings; §8b) is the *exact*
   phenomenon of **Self-Jailbreaking** (Yong & Bach, ICLR 2026, arXiv 2510.20956):
   after benign math/code reasoning training, reasoning LMs "**reason themselves out
   of safety alignment**," inventing benign intent to justify harmful requests —
@@ -1197,6 +1238,6 @@ These checks are mapped into concrete phase gates in [`PAPER_PHASES.md`](./PAPER
 | Safety gate (sound) | Done — judge-primary + majority-of-R + `must_not_endorse` check |
 | Paired closed-book/grounded (clean RAG lift) | Done — 2 pairs + within-pair lift in `report.py` (more pairs = stronger) |
 | Stats (CI, Friedman, κ) | Done — `report.py` (bootstrap CI + Friedman via numpy/scipy; κ stdlib). Wilcoxon/Holm gated on R=5 data |
-| Pilot judging run (populate judge columns) | **Not yet run** (Copilot AI-Credit spend — confirm budget) |
+| Pilot judging run (populate judge columns) | **Done** — 8,909 paired judgements; $\kappa_{\mathrm{quad}} = 0.91$ |
 | ≥6 scenarios/class + held-out | **Needs authoring** (secure=5, capacity=4 done; others thin) |
 | 2nd reviewer for gold/rubric | **Pending** — run [`gold-review-prompt.md`](./gold-review-prompt.md) (regenerated for 19) + adjudicate |

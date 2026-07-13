@@ -35,13 +35,13 @@ review -> submission package. This prevents scope drift and over-claiming.
 - Experiment status: **frozen evidence correction-locked under analysis v1**.
   Exact populations are breadth 94 / quality-safety front 2 and controlled 24 /
   three-axis front 7.
-- Parallel doctoral evidence track: the ≤5B-primary, 152-tag audit-inclusive run
-  is still active and **has not passed Phase 2 (data lock)**. The 2026-07-10 SLM
-  analysis amendment in [`STATISTICS.md`](STATISTICS.md) was written after partial
-  inspection, so its added reliability/correlation analyses are exploratory for
-  that run. They do not replace the locked 94-model manuscript results; no number
-  enters the paper until the run completes, strict integrity checks pass, and a
-  new analysis lock is recorded.
+- Parallel doctoral evidence track: the ≤5B-primary, 152-model run completed and
+  passed strict promotion into [locked provisional bundle summary](../data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa.summary.json)
+  `dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa`. Its
+  reliability accounting is disclosed only in the manuscript limitations; it
+  has not passed a new analysis lock and does not replace the frozen 94-model
+  results. The separate 21-model [timeout-sensitivity follow-up](sdd/timeout-recovery-sensitivity.md)
+  remains active, and no partial follow-up value enters claim-bearing prose.
 - Submission intent: arXiv preprint → **NeurIPS Datasets & Benchmarks** track.
 - Current analysis/finding status: [`ANALYSIS.md`](ANALYSIS.md)
 - Artifact and release inventory: [`ARTIFACT_INVENTORY.md`](ARTIFACT_INVENTORY.md)
@@ -194,7 +194,8 @@ Exit gate:
 | Dataset archival metadata | **metadata ready / publication open** | Croissant 1.0 validates with the official parser; deterministic package tooling passes; Zenodo is selected for the dataset DOI. Reserve/publish only after final operator approval. |
 | Submission formatting | **checklist ready / template open** | `SUBMISSION_CHECKLIST.md` captures current evidence and policy gates. Re-check the live author kit and apply its template without changing claims. |
 | Citation/license/privacy sweep | **automated gates passing / final human sweep open** | Mixed model-output rights, citation fields, release path, Croissant hashes, and privacy are machine-audited; perform the final attribution and venue-policy read before release. |
-| Active <=5B run | **separate / blocked from paper** | Complete strict run audit and a new analysis lock before any value enters claim-bearing prose. |
+| Completed 152-model doctoral run | **locked provisional / analysis lock open** | Strict promotion is complete; require a new analysis lock and independent review before any result enters claim-bearing prose. |
+| 21-model timeout-sensitivity follow-up | **active / blocked from paper** | Complete 2,100 inference rows, 4,200 canonical judgements, bundle verification, privacy review, and the pre-specified comparative analysis before any value enters claim-bearing prose. |
 | External candidate/dev runs | **separate / blocked from paper** | Remain future scenario-pack evidence unless independently promoted under a new lock. |
 
 ## Change control
