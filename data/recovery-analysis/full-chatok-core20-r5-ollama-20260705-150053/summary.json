@@ -1,0 +1,54 @@
+{
+  "affected_models": 21,
+  "analysis_kind": "completed_run_failure_recovery",
+  "canonical_judgements": 30400,
+  "dnf": 208,
+  "dnf_candidate_sidecars": 208,
+  "dnf_full_deterministic_pass": 75,
+  "dnf_judge_rows": 416,
+  "dnf_mean_judge_score": 2.308,
+  "dnf_median_output_chars": 1933.5,
+  "dnf_partial_outputs": 208,
+  "dnf_rate": 1.37,
+  "dnf_tuples_with_any_judge_score_above_one": 175,
+  "finish_reasons": {
+    "DNF:after_done_missing": 4,
+    "DNF:timeout": 204,
+    "length": 1452,
+    "stop": 13540
+  },
+  "judge_competing_successes": 0,
+  "judge_missing_successes": 0,
+  "judge_retries": 41,
+  "judge_retry_reasons": {
+    "parse_error": 41
+  },
+  "length": 1452,
+  "length_full_deterministic_pass": 509,
+  "length_rate": 9.55,
+  "llama_cpp_catalog_eligible_affected_models": [
+    "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M",
+    "hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M"
+  ],
+  "llama_cpp_catalog_eligible_count": 2,
+  "llama_cpp_staged_affected_models": [
+    "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M"
+  ],
+  "llama_cpp_staged_count": 1,
+  "raw_judge_attempts": 30441,
+  "recommendation": "Run a separate timeout-sensitivity-v1 full matrix for the post-selected affected-model subset; retain primary DNF/length rows unchanged and do not extrapolate population-wide.",
+  "recovery_options": {
+    "affected_model_full_matrix_calls": 2100,
+    "existing_partial_sensitivity_calls": 0,
+    "failed_tuple_only_calls": 208,
+    "full_roster_calls": 15200
+  },
+  "results": 15200,
+  "runtime": [
+    "ollama"
+  ],
+  "schema_version": 1,
+  "source_bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+  "source_claim_status": "provisional",
+  "source_run_id": "full-chatok-core20-r5-ollama-20260705-150053"
+}

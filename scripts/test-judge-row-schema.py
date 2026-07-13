@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,6 +98,52 @@ def test_result_condition_provenance_is_stamped():
     assert fields["evaluation_policy"] == "deterministic-checks-v1|judges:copilot:gpt"
 
 
+def test_runtime_default_sampler_stamping_and_resume_share_one_identity():
+    module = load_module()
+    result = {
+        "model": "granite3.3:8b", "scenario": "s", "rep": 0,
+        "env.inference_runtime": "ollama",
+        "ollama.digest": "sha256:granite", "ollama.quantization": "Q4_K_M",
+        "env.host": "ai", "env.kernel": "linux", "env.cpu_no_turbo": "1",
+        "env.cpu_governor": "performance", "env.cpu_min_perf_pct": "100",
+        "env.cpu_max_perf_pct": "100", "env.rapl_domain": "package-0",
+        "env.num_ctx": 8192, "env.ollama_version": "0.30.8",
+        "prompt.template_sha256": "p", "env.memory_context": "none",
+        "env.inference_strategy": "baseline", "temp": 0.7, "think": False,
+        "env.scenario_set": "core", "env.scenarios_sha": "s",
+    }
+    policy = "deterministic-checks-v1|judges:copilot:gpt"
+    identity = module.analysis_condition_identity(result, policy)
+    fields = module.analysis_condition_fields(result, policy)
+    assert fields["analysis_condition_key_sha256"] == identity.sha256
+    assert identity.incomplete is False
+    normalized = module.analysis_metrics.normalize_condition_provenance(result)
+    assert normalized["analysis.sampler_policy"]["kind"] == "runtime_defaults"
+
+    stored = {
+        **result,
+        **fields,
+        "judge_backend": "copilot",
+        "judge_model": "gpt",
+        "score": 4,
+        "verdict": "ok",
+        "evidence": "ok",
+        "criteria_met": [],
+        "criteria_missed": [],
+    }
+    exact, _legacy = module.judgement_resume_keys(stored)
+    assert module.judgement_is_done(
+        normalized,
+        condition_sha=identity.sha256,
+        judge_backend="copilot",
+        judge_model="gpt",
+        done_exact={exact},
+        done_legacy=set(),
+        legacy_resume_safe=False,
+        allow_legacy_resume=False,
+    ) is True
+
+
 def test_incomplete_result_condition_cannot_be_judged():
     module = load_module()
     result = {
@@ -179,14 +227,43 @@ def test_scheduler_completion_identity_includes_backend():
     assert '(.judge_backend // "unknown")' in scheduler
 
 
+def test_copilot_backend_disables_tools_and_repository_instructions():
+    module = load_module()
+    captured = {}
+    module.shutil.which = lambda _value: "/mock/copilot"
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["env"] = kwargs["env"]
+        return SimpleNamespace(returncode=0, stdout="COPILOT_BACKEND_OK\n", stderr="")
+
+    module.subprocess.run = fake_run
+    os.environ["COPILOT_ALLOW_ALL"] = "1"
+    try:
+        response = module.Judge(backend="copilot", model="model-test").complete(
+            "system", "user"
+        )
+    finally:
+        os.environ.pop("COPILOT_ALLOW_ALL", None)
+    assert response == "COPILOT_BACKEND_OK"
+    assert "--available-tools=" in captured["command"]
+    assert "--no-custom-instructions" in captured["command"]
+    assert "--no-remote" in captured["command"]
+    assert "--no-remote-export" in captured["command"]
+    assert "--allow-all-tools" not in captured["command"]
+    assert "COPILOT_ALLOW_ALL" not in captured["env"]
+
+
 def main() -> None:
     test_empty_answer_contract()
     test_partial_judge_payload_is_completed()
     test_parse_error_fallback_contract()
     test_result_condition_provenance_is_stamped()
+    test_runtime_default_sampler_stamping_and_resume_share_one_identity()
     test_incomplete_result_condition_cannot_be_judged()
     test_hashless_resume_requires_explicit_opt_in()
     test_exact_resume_distinguishes_backend_family()
+    test_copilot_backend_disables_tools_and_repository_instructions()
     print("judge row schema tests passed")
 
 
