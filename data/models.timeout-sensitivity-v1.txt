@@ -1,0 +1,32 @@
+# Generated failure-recovery roster.
+# source_bundle_id: dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa
+# Run all 20 scenarios x 5 reps; do not merge with primary rows.
+
+# bracket: 1-2B
+sailor2:1b
+
+# bracket: 2-3B
+qwen2.5-coder:3b-instruct-q8_0
+codegemma:2b-code-q6_K
+starcoder2:3b
+
+# bracket: 3-4B
+phi3.5:3.8b-mini-instruct-q8_0
+phi3:3.8b-mini-128k-instruct-q8_0
+phi4-mini-reasoning
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M
+qwen3:4b-thinking-2507-q8_0
+hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M
+starcoder2:3b-q8_0
+
+# bracket: 4-5GB
+qwen2.5:7b
+falcon3:7b
+exaone3.5:7.8b
+exaone-deep:7.8b
+command-r7b:latest
+aya-expanse:8b
+granite3.3:8b
+olmo2:7b
+internlm2:7b
+qwen3:8b
