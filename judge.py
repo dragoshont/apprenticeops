@@ -69,6 +69,7 @@ _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 def analysis_condition_fields(result_row, evaluation_policy):
     """Canonical condition provenance copied from an inference row."""
 
+    result_row = analysis_metrics.normalize_condition_provenance(result_row)
     identity = analysis_metrics.analysis_condition(
         result_row,
         evaluation_policy=evaluation_policy,

@@ -96,6 +96,32 @@ def test_result_condition_provenance_is_stamped():
     assert fields["evaluation_policy"] == "deterministic-checks-v1|judges:copilot:gpt"
 
 
+def test_runtime_default_sampler_is_normalized_before_judging():
+    module = load_module()
+    result = {
+        "model": "m", "env.inference_runtime": "ollama",
+        "ollama.digest": "sha256:m", "ollama.quantization": "Q4_K_M",
+        "env.host": "ai", "env.kernel": "linux", "env.cpu_no_turbo": "1",
+        "env.cpu_governor": "performance", "env.cpu_min_perf_pct": "100",
+        "env.cpu_max_perf_pct": "100", "env.rapl_domain": "package-0",
+        "env.num_ctx": 8192, "env.ollama_version": "ollama version is 0.30.8",
+        "prompt.template_sha256": "p", "env.memory_context": "none",
+        "env.inference_strategy": "baseline", "temp": 0.7, "think": False,
+        "ollama.parameters": None, "env.scenario_set": "core",
+        "env.scenarios_sha": "s",
+    }
+    policy = "deterministic-checks-v1|judges:copilot:gpt"
+    fields = module.analysis_condition_fields(result, policy)
+    normalized = module.analysis_metrics.normalize_condition_provenance(result)
+    expected = module.analysis_metrics.analysis_condition(
+        normalized,
+        evaluation_policy=policy,
+    )
+    assert fields["condition_identity_incomplete"] is False
+    assert fields["analysis_condition_key_sha256"] == expected.sha256
+    assert normalized["analysis.sampler_policy"]["kind"] == "runtime_defaults"
+
+
 def test_incomplete_result_condition_cannot_be_judged():
     module = load_module()
     result = {
