@@ -92,3 +92,5 @@
 {"model":"*","stage":"judge","ts":1783898426,"ok":1,"detail":"judged 194->196"}
 {"model":"*","stage":"judge","ts":1783898480,"ok":1,"detail":"judged 196->198"}
 {"model":"*","stage":"judge","ts":1783898538,"ok":1,"detail":"judged 198->200"}
+{"model":"qwen3:8b","stage":"persist","ts":1783898542,"ok":1,"detail":"260d824"}
+{"model":"*","stage":"judge","ts":1783924578,"ok":1,"detail":"judged 200->752"}
