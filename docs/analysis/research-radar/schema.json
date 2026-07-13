@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprenticeops.local/schemas/research-radar-v1.json",
+  "title": "ApprenticeOps research radar records",
+  "oneOf": [
+    { "$ref": "#/$defs/query" },
+    { "$ref": "#/$defs/source" },
+    { "$ref": "#/$defs/claim" },
+    { "$ref": "#/$defs/scan" },
+    { "$ref": "#/$defs/promotion" }
+  ],
+  "$defs": {
+    "date": { "type": "string", "format": "date" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "small-models",
+          "peft-finetuning",
+          "distillation",
+          "specialization",
+          "quantization-compression",
+          "efficient-reasoning",
+          "on-device-systems",
+          "agent-safety",
+          "evaluation-statistics",
+          "ops-domain-eval"
+        ]
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "scan_id", "query_id", "observed_at", "source_family",
+        "organization", "topic", "query", "window_start", "window_end",
+        "result_count", "selected_version_ids", "notes"
+      ],
+      "properties": {
+        "schema": { "const": "apprenticeops.radar-query.v1" },
+        "scan_id": { "type": "string" },
+        "query_id": { "type": "string" },
+        "observed_at": { "$ref": "#/$defs/timestamp" },
+        "source_family": {
+          "enum": ["primary-index", "company-research", "model-code", "independent-reproduction", "social-lead"]
+        },
+        "organization": { "type": "string" },
+        "topic": { "type": "string" },
+        "query": { "type": "string", "minLength": 1 },
+        "window_start": { "$ref": "#/$defs/date" },
+        "window_end": { "$ref": "#/$defs/date" },
+        "result_count": { "type": "integer", "minimum": 0 },
+        "selected_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "notes": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "scan_id", "work_id", "version_id", "prior_version_id",
+        "canonical_url", "variants", "title", "authors_or_orgs",
+        "first_published", "observed_at", "revision_id", "revision_date",
+        "revision_hash", "source_tier", "verification", "topics",
+        "organizations", "delta_status", "update_kind",
+        "changed_claim_version_ids", "relevance", "limitations", "decision",
+        "promotion_state", "promoted_to"
+      ],
+      "properties": {
+        "schema": { "const": "apprenticeops.radar-source.v1" },
+        "scan_id": { "type": "string" },
+        "work_id": { "type": "string" },
+        "version_id": { "type": "string" },
+        "prior_version_id": { "type": ["string", "null"] },
+        "canonical_url": { "$ref": "#/$defs/url" },
+        "variants": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/url" } },
+        "title": { "type": "string", "minLength": 1 },
+        "authors_or_orgs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "first_published": { "$ref": "#/$defs/date" },
+        "observed_at": { "$ref": "#/$defs/timestamp" },
+        "revision_id": { "type": "string", "minLength": 1 },
+        "revision_date": { "$ref": "#/$defs/date" },
+        "revision_hash": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "source_tier": { "enum": ["primary-paper", "company-report", "model-card", "code-artifact", "independent-reproduction", "social"] },
+        "verification": { "enum": ["lead", "metadata-verified", "abstract-verified", "fulltext-verified", "reproduced"] },
+        "topics": { "$ref": "#/$defs/topics" },
+        "organizations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "delta_status": { "enum": ["already-covered", "new", "updated", "contradictory"] },
+        "update_kind": { "enum": ["none", "revision", "venue-upgrade", "retraction", "claim-change"] },
+        "changed_claim_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "relevance": { "type": "string", "minLength": 1 },
+        "limitations": { "type": "string", "minLength": 1 },
+        "decision": { "enum": ["monitor", "promote-candidate", "reject", "already-covered"] },
+        "promotion_state": { "enum": ["candidate", "approved", "promoted", "rejected"] },
+        "promoted_to": { "type": ["array", "null"], "items": { "type": "string" } }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "scan_id", "claim_id", "claim_version_id", "work_id",
+        "version_id", "claim_text", "evidence_scope", "status",
+        "supersedes_claim_version_id", "changed_from_claim_version_id",
+        "corroborating_version_ids", "contradicting_version_ids", "last_verified_at"
+      ],
+      "properties": {
+        "schema": { "const": "apprenticeops.radar-claim.v1" },
+        "scan_id": { "type": "string" },
+        "claim_id": { "type": "string" },
+        "claim_version_id": { "type": "string" },
+        "work_id": { "type": "string" },
+        "version_id": { "type": "string" },
+        "claim_text": { "type": "string", "minLength": 1 },
+        "evidence_scope": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["active", "superseded", "retracted", "contradicted"] },
+        "supersedes_claim_version_id": { "type": ["string", "null"] },
+        "changed_from_claim_version_id": { "type": ["string", "null"] },
+        "corroborating_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "contradicting_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "last_verified_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "scan_id", "scan_date", "window_start", "window_end",
+        "status", "report_path", "query_ids", "selected_version_ids",
+        "claim_version_ids", "canonical_hashes", "notes"
+      ],
+      "properties": {
+        "schema": { "const": "apprenticeops.radar-scan.v1" },
+        "scan_id": { "type": "string" },
+        "scan_date": { "$ref": "#/$defs/date" },
+        "window_start": { "$ref": "#/$defs/date" },
+        "window_end": { "$ref": "#/$defs/date" },
+        "status": { "enum": ["incomplete", "complete"] },
+        "report_path": { "type": ["string", "null"] },
+        "query_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "selected_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "claim_version_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "canonical_hashes": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" } },
+        "notes": { "type": "string" }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "promotion_id", "scan_id", "version_id", "approved_by", "approved_at", "targets"],
+      "properties": {
+        "schema": { "const": "apprenticeops.radar-promotion.v1" },
+        "promotion_id": { "type": "string" },
+        "scan_id": { "type": "string" },
+        "version_id": { "type": "string" },
+        "approved_by": { "type": "string", "minLength": 1 },
+        "approved_at": { "$ref": "#/$defs/timestamp" },
+        "targets": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
+      }
+    }
+  }
+}

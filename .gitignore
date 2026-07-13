@@ -40,6 +40,7 @@ data/completed-runs/.state/
 !docs/gold-review-recheck.jsonl
 !data/completed-runs/**/pipeline-ledger.jsonl
 !data/completed-runs/**/promotion-ledger.jsonl
+!docs/analysis/research-radar/*.jsonl
 
 .venv/
 venv/
