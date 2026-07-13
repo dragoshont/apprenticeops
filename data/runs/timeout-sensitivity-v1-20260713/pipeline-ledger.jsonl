@@ -98,3 +98,6 @@
 {"model":"internlm2:7b","stage":"persist","ts":1783924587,"ok":1,"detail":"2bfa63f"}
 {"model":"*","stage":"judge","ts":1783925732,"ok":1,"detail":"judged 752->1141"}
 {"model":"*","stage":"judge","ts":1783926932,"ok":1,"detail":"judged 1141->1573"}
+{"model":"qwen2.5:7b","stage":"persist","ts":1783926937,"ok":1,"detail":"4844ec1"}
+{"model":"*","stage":"judge","ts":1783930327,"ok":1,"detail":"judged 200->946"}
+{"model":"*","stage":"judge","ts":1783930552,"ok":1,"detail":"judged 946->1010"}
