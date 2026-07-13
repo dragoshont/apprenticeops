@@ -31,6 +31,9 @@ data/collected/
 data/run-batches/
 data/completed-runs/.staging/
 data/completed-runs/.state/
+# Full content-addressed bundles are archival payloads and can exceed normal Git
+# hosting limits. Commit the root-level *.summary.json index, not bundle bytes.
+data/completed-runs/*/
 .tmp/
 
 # Released evidence artifacts — tracked despite the broad *.jsonl ignore above.
@@ -38,8 +41,6 @@ data/completed-runs/.state/
 !data/pilot/results.pilot.jsonl
 !docs/gold-review.jsonl
 !docs/gold-review-recheck.jsonl
-!data/completed-runs/**/pipeline-ledger.jsonl
-!data/completed-runs/**/promotion-ledger.jsonl
 
 .venv/
 venv/

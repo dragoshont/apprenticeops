@@ -394,6 +394,7 @@ bundle:
 ```bash
 python3 scripts/lock-completed-run.py promote \
   --run-dir data/runs/<RUN_ID> \
+  --persist-mode git-push \
   --judge copilot:claude-opus-4.6 \
   --judge copilot:gpt-5.4
 
@@ -408,9 +409,22 @@ canceled runs, and unpushed models. Raw judge attempts remain intact;
 `canonical/judged.jsonl.gz` contains exactly one valid row per requested judge.
 Compressed per-model results, candidate traces, and operational logs are also
 hash-bound when present. Run `python3 scripts/privacy-scan.py` after `verify`;
+`--persist-mode` is mandatory and must equal `run.meta.persist_mode`. For the
+receipt-backed no-push sensitivity run, pass `--persist-mode local-files`.
 integrity verification does not itself certify privacy.
 The bundle uses analysis schema v1 with `source_kind=completed_run` and
 `claim_status=provisional`; public claims still require a reviewed analysis lock.
+
+Historical schema-v2 dev runs that predate `persist_mode` and done/committed
+markers remain fail-closed by default. Audit one only with an explicit exception:
+
+```bash
+python3 scripts/report-run-quality.py --strict --allow-legacy-persistence \
+  --judge copilot:claude-opus-4.6 --judge copilot:gpt-5.4 data/runs/<LEGACY_RUN_ID>
+```
+
+This opt-in relaxes only the historical persistence-marker requirement; exact
+roster, scenario, repetition, result, and judge domains still apply.
 
 See [`docs/sdd/completed-run-promotion.md`](docs/sdd/completed-run-promotion.md).
 

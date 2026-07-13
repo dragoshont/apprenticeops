@@ -1,7 +1,7 @@
 # SDD: Completed-Run Promotion Into Analysis v1
 
-Status: implemented and independently reviewed; live promotion blocked on collection
-Date: 2026-07-11
+Status: live promotion completed; exploratory failure-recovery analysis staged
+Date: 2026-07-12
 Scope: post-run normalization, completion validation, evidence locking, and analysis eligibility
 
 ## 1. User-Visible Outcome
@@ -11,7 +11,16 @@ After this change, an operator can run one command against a completed experimen
 - an immutable, SHA-256-bound `source_kind=completed_run` evidence bundle that is eligible for analysis schema v1; or
 - a fail-closed report naming every missing, ambiguous, incomplete, or unpersisted unit.
 
-The command can be implemented and tested now with synthetic fixtures. It must refuse the live `full-chatok-core20-r5-ollama-20260705-150053` run until collection, judging, and persistence are complete.
+The command refused the run while it was partial, then promoted the exact completed evidence after collection, judging, and persistence reached their declared domains.
+
+Live outcome:
+
+- bundle ID: `dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa`;
+- 15,200 canonical results and 30,400 canonical judgements;
+- 41 failed judge parse attempts preserved separately as retries;
+- 152 completed and committed models, 152 result archives, 152 candidate archives, and zero pending pushes;
+- bundle verification and repository privacy scan pass;
+- `claim_status=provisional`; the frozen 94-model claim source remains unchanged.
 
 ## 2. Scope Honesty
 
@@ -237,15 +246,17 @@ No `--force`, `--allow-partial`, or `--allow-unlocked` escape hatch is permitted
 ## 9. CLI And State Machine
 
 ```bash
-python3 scripts/lock-completed-run.py normalize --run-dir ... --repo-root ... --judge ...
-python3 scripts/lock-completed-run.py validate  --run-dir ... --repo-root ... --judge ...
-python3 scripts/lock-completed-run.py lock      --run-dir ... --repo-root ... --judge ...
-python3 scripts/lock-completed-run.py promote   --run-dir ... --repo-root ... --judge ...
+python3 scripts/lock-completed-run.py normalize --run-dir ... --repo-root ... --persist-mode git-push --judge ...
+python3 scripts/lock-completed-run.py validate  --run-dir ... --repo-root ... --persist-mode git-push --judge ...
+python3 scripts/lock-completed-run.py lock      --run-dir ... --repo-root ... --persist-mode git-push --judge ...
+python3 scripts/lock-completed-run.py promote   --run-dir ... --repo-root ... --persist-mode git-push --judge ...
 python3 scripts/lock-completed-run.py verify    --bundle ...
 python3 scripts/lock-completed-run.py status    --run-id ... --output-root ...
 ```
 
 `promote` runs normalize -> validate -> lock and stops at the first failed gate.
+The explicit persistence mode must match `run.meta`; `local-files` additionally
+requires exact receipt/result/candidate inventories and receipt revalidation.
 
 Ledger stages:
 
@@ -270,6 +281,11 @@ identity.
 
 ## 10. Atomicity, Idempotency, And Rollback
 
+- A normalized staging directory is disposable and is never treated as a trust
+  anchor. Public `validate` and direct `lock` rebuild it deterministically from
+  the still-hash-bound source evidence under the promotion lock. `lock` carries
+  one in-process payload hash map through manifest creation, rechecks it before
+  rename, and verifies the final bundle; failed finalization removes the target.
 - Build under `.staging/<RUN_ID>.<pid>/` on the same filesystem.
 - Write temporary files, flush and `fsync`, then `os.replace` each completed file.
 - Write `bundle-manifest.json` last.
@@ -304,10 +320,12 @@ automatically.
 | 2. Fixture-first core | completed | Normalization, validation, locking, verification, status CLI; synthetic fixtures | Focused tests PASS, including a full-shape 152×20×5×2 promotion; live partial run refused at P5 with exit 4, no source mutation, no bundle; all captured rows at the validation-v4 checkpoint (12,623) normalized to complete single-condition v1 identities | Revert new script/tests |
 | 3. Repository integration | completed | Docs, artifact inventory, `.gitignore`, privacy and complete script suite | All script tests, `audit-paper-data.py`, claims, links, privacy, CLI, compile, and diff checks PASS | Revert integration edits |
 | 4. Independent implementation review | completed | Repeated implementation and adversarial passes repaired exact-gap, full-ID, ledger, full-shape, sidecar, TOCTOU, symlink-tree, and archive-privacy findings. | Final v5 GPT implementation judge PASS (all dimensions >=4/5); Claude adversarial review PASS (no blocker/major); 26 focused tests and all repository gates PASS | Repair or revert |
-| 5. Live completed-run promotion | blocked on collection | Run `promote` only after 15,200/30,400/152 and no pending pushes | Bundle verifies; privacy PASS | Discard additive bundle only |
-| 6. Completed-run analysis | blocked on Phase 5 | Generate exploratory v1 outputs from locked bundle | New analysis lock and claim audit | Keep prior public paper lock |
+| 5. Live completed-run promotion | completed | Promoted exact 15,200 results / 30,400 canonical judgements / 152 persisted models; retained 41 judge retries | Bundle `dd262a5c…` verifies; privacy PASS | Discard additive bundle only |
+| 6. Completed-run analysis | completed: diagnosis only | Generated privacy-safe failure report and timeout-sensitivity contract; no public claims replaced | Bundle verify, privacy, deterministic report/analyzer tests PASS | Keep prior public paper lock |
 
-At most one implementation phase is active. Phase 5 is an explicit operator action; this task must not invoke it against the active run.
+This promotion ledger is closed. Timeout-sensitivity hardening, launch readiness,
+execution, comparative analysis, and the policy decision are governed by
+`docs/sdd/timeout-recovery-sensitivity.md` and its Architrave P0-P7 ledger.
 
 ## 13. Acceptance Checks
 

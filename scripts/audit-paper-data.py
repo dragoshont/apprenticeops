@@ -36,9 +36,12 @@ REQUIRED_SNAPSHOTS = [
     "data/snapshots/judged_snapshot.det.csv",
 ]
 
-STRICT_RUNS = [
-    "external-v1-spread10-baseline-clean-20260703-164337",
-]
+STRICT_RUNS = {
+    "external-v1-spread10-baseline-clean-20260703-164337": {
+        "allow_legacy_persistence": True,
+        "judges": ("copilot:claude-opus-4.6", "copilot:gpt-5.4"),
+    },
+}
 
 
 def fail(message: str) -> None:
@@ -238,12 +241,18 @@ def audit_analysis_contract() -> None:
 
 
 def audit_strict_runs() -> None:
-    for run_id in STRICT_RUNS:
+    for run_id, policy in STRICT_RUNS.items():
         run_path = REPO / "data/runs" / run_id
         require_file(str(Path("data/runs") / run_id / "run.meta"))
         if not run_path.exists():
             fail(f"missing committed run directory: {run_id}")
-        run_check([sys.executable, "scripts/report-run-quality.py", "--strict", str(run_path)])
+        command = [sys.executable, "scripts/report-run-quality.py", "--strict"]
+        if policy["allow_legacy_persistence"]:
+            command.append("--allow-legacy-persistence")
+        for judge in policy["judges"]:
+            command.extend(["--judge", judge])
+        command.append(str(run_path))
+        run_check(command)
 
 
 def main() -> None:

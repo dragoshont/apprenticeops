@@ -1,0 +1,62 @@
+{
+  "schema": "apprenticeops.completed-run-summary.v1",
+  "run_id": "full-chatok-core20-r5-ollama-20260705-150053",
+  "bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+  "source_kind": "completed_run",
+  "bundle_state": "locked",
+  "claim_status": "provisional",
+  "evaluation_policy": "deterministic-checks-v1|judges:copilot:claude-opus-4.6+copilot:gpt-5.4",
+  "expected": {
+    "models": 152,
+    "scenarios": 20,
+    "repetitions": 5,
+    "results": 15200,
+    "judges": 2,
+    "canonical_judgements": 30400
+  },
+  "observed": {
+    "results": 15200,
+    "canonical_judgements": 30400,
+    "raw_judge_attempts": 30441,
+    "judge_retries": 41,
+    "committed_models": 152,
+    "pending_pushes": 0
+  },
+  "reliability": {
+    "dnf_timeout": 204,
+    "dnf_after_done_missing": 4,
+    "finish_reason_length": 1452,
+    "affected_models": 21
+  },
+  "verification": {
+    "promotion_gate_passed": true,
+    "bundle_verify_passed": true,
+    "privacy_scan_passed": true,
+    "bundle_file_count": 323,
+    "bundle_bytes_on_disk": 454266880,
+    "bundle_manifest_sha256": "029cd321e47569caef29ba19531f0440da73ffa83855f9aea256ddbc7fbdabea",
+    "gate_report_sha256": "038522dcd23e5b8ca56e06898952a8a90e69bfc5a3deef60fb1b9ec0ec3ba13c",
+    "canonical_results_sha256": "660058c452ca197ad9fd0df3a63e5ccddc9377cb348f3d52ee40bd0fd881b1d8"
+  },
+  "storage": {
+    "summary_is_bundle": false,
+    "summary_is_verification_material": false,
+    "full_payload_tracked_in_git": false,
+    "reason": "The content-addressed archival payload contains files above the normal GitHub 100 MiB object limit; two independently verified copies are retained outside normal Git history.",
+    "verified_copies": [
+      {
+        "copy_id": "maintainer-archive",
+        "verified_at_utc": "2026-07-13T10:24:49.009113+00:00",
+        "bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+        "bundle_manifest_sha256": "029cd321e47569caef29ba19531f0440da73ffa83855f9aea256ddbc7fbdabea"
+      },
+      {
+        "copy_id": "control-node-evidence-archive",
+        "verified_at_utc": "2026-07-13T10:24:53.971021+00:00",
+        "bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+        "bundle_manifest_sha256": "029cd321e47569caef29ba19531f0440da73ffa83855f9aea256ddbc7fbdabea"
+      }
+    ],
+    "verify_command": "python3 scripts/lock-completed-run.py verify --bundle <full-bundle-path>"
+  }
+}

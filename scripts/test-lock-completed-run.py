@@ -21,6 +21,12 @@ promotion = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = promotion
 SPEC.loader.exec_module(promotion)
 
+PERSIST_SCRIPT = REPO / "scripts" / "persist-run-model.py"
+PERSIST_SPEC = importlib.util.spec_from_file_location("persist_run_model", PERSIST_SCRIPT)
+assert PERSIST_SPEC and PERSIST_SPEC.loader
+local_persistence = importlib.util.module_from_spec(PERSIST_SPEC)
+PERSIST_SPEC.loader.exec_module(local_persistence)
+
 
 JUDGES = ("copilot:claude-test", "copilot:gpt-test")
 
@@ -71,6 +77,7 @@ def complete_result(model: str, scenario: str, rep: int, scenario_sha: str) -> d
         "ollama.parameters": "top_k 40\ntop_p 0.9",
         "env.scenario_set": "fixture-core",
         "env.scenarios_sha": scenario_sha,
+        "strategy.candidates": [{"index": 0}],
         "det_score": 1.0,
         "dnf": False,
         "gen_ai.response.finish_reasons": ["stop"],
@@ -138,10 +145,15 @@ def fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, pathlib.Pat
         "scenario_ids": ["s1", "s2"],
         "reps": 2,
         "judges": 2,
+        "judge_identities": [
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+            {"judge_backend": "copilot", "judge_model": "gpt-test"},
+        ],
         "expect": 2,
         "memory_context": "none",
         "inference_strategy": "baseline",
         "inference_runtime": "ollama",
+        "persist_mode": "git-push",
     }
     (run / "run.meta").write_text(json.dumps(meta) + "\n")
     results = [
@@ -183,6 +195,59 @@ def fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, pathlib.Pat
     return repo, run, output
 
 
+def make_local_persistence_fixture(
+    root: pathlib.Path,
+) -> tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
+    repo, run, output = fixture(root)
+    meta_path = run / "run.meta"
+    meta = json.loads(meta_path.read_text())
+    meta["persist_mode"] = "local-files"
+    meta_path.write_text(json.dumps(meta) + "\n")
+    judged_path = run / "judged.fixture-run.jsonl"
+    judged = [json.loads(line) for line in judged_path.read_text().splitlines()]
+    result_rows = [
+        json.loads(line)
+        for line in (run / "_mirror" / "results.fixture-run.jsonl").read_text().splitlines()
+    ]
+    judges = frozenset({("copilot", "claude-test"), ("copilot", "gpt-test")})
+    evaluation_policy = local_persistence.evaluation_policy_for(judges)
+    condition_by_model = {}
+    for model in ("model-a", "model-b"):
+        _policy, conditions, _digest = local_persistence.result_condition_contract(
+            [row for row in result_rows if row["model"] == model], judges
+        )
+        condition_by_model[model] = conditions
+    for row in judged:
+        row["scenarios_sha256"] = meta["scenarios_sha256"]
+        row["analysis_condition_key_sha256"] = condition_by_model[row["model"]][
+            (row["scenario"], row["rep"])
+        ]
+        row["condition_identity_incomplete"] = False
+        row["evaluation_policy"] = evaluation_policy
+    write_jsonl(judged_path, judged)
+    outputs = run / "_mirror" / "outputs"
+    for model in ("model-a", "model-b"):
+        for scenario in ("s1", "s2"):
+            for rep in range(2):
+                write_jsonl(
+                    outputs / f"{model}__{scenario}__r{rep}.candidates.jsonl",
+                    [{"model": model, "scenario": scenario, "rep": rep, "index": 0}],
+                )
+        local_persistence.persist_model(
+            results_path=run / "_mirror" / "results.fixture-run.jsonl",
+            judged_path=judged_path,
+            outputs_dir=outputs,
+            run_dir=run,
+            model=model,
+            units=4,
+            scenario_sha256=meta["scenarios_sha256"],
+            scenarios_path=repo / meta["scenarios"],
+            reps=2,
+            judges=judges,
+        )
+    return repo, run, output
+
+
 def full_shape_fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
     repo = root / "repo"
     run = repo / "data" / "runs" / "full-shape-run"
@@ -211,10 +276,15 @@ def full_shape_fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, 
         "scenario_ids": list(scenarios),
         "reps": 5,
         "judges": len(JUDGES),
+        "judge_identities": [
+            {"judge_backend": backend, "judge_model": model}
+            for backend, model in (value.split(":", 1) for value in JUDGES)
+        ],
         "expect": len(models),
         "memory_context": "none",
         "inference_strategy": "baseline",
         "inference_runtime": "ollama",
+        "persist_mode": "git-push",
     }
     (run / "run.meta").write_text(json.dumps(meta) + "\n")
     write_jsonl(
@@ -250,11 +320,13 @@ def full_shape_fixture(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path, 
 
 
 def context(repo: pathlib.Path, run: pathlib.Path, output: pathlib.Path):
+    meta = json.loads((run / "run.meta").read_text())
     return promotion.build_context(
         repo_root=repo,
         run_dir=run,
         output_root=output,
         judge_values=JUDGES,
+        expected_persist_mode=meta.get("persist_mode", "git-push"),
     )
 
 
@@ -298,6 +370,27 @@ def test_complete_fixture_promotes_verifies_and_is_idempotent() -> None:
         status = promotion.latest_status(output, "fixture-run")
         assert status["bundles"] == [bundle.name]
         assert status["last_event"]["stage"] == "promotion_eligible"
+
+
+def test_local_persistence_receipts_promote_and_verify() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = make_local_persistence_fixture(pathlib.Path(directory))
+        ctx = context(repo, run, output)
+        bundle, manifest = promotion.promote(ctx)
+        assert manifest["observed"]["persistence_receipts"] == 2
+        assert manifest["observed"]["verified_persistence_receipts"] == 2
+        assert len(list((bundle / "raw" / "persistence-receipts").glob("*.json"))) == 2
+        assert promotion.verify_bundle(bundle)["bundle_id"] == manifest["bundle_id"]
+
+
+def test_local_persistence_archive_tamper_refuses_promotion() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = make_local_persistence_fixture(pathlib.Path(directory))
+        with (run / "model-a.results.jsonl.gz").open("ab") as handle:
+            handle.write(b"tamper")
+        ctx = context(repo, run, output)
+        error = expect_failure(lambda: promotion.build_stage(ctx), "P5")
+        assert "receipt_validation" in error.details
 
 
 def test_full_shape_fixture_promotes_verifies_and_is_idempotent() -> None:
@@ -394,6 +487,22 @@ def test_multiple_successful_judgements_refuse() -> None:
         ctx = context(repo, run, output)
         expect_failure(lambda: promotion.build_stage(ctx), "P4")
         assert not list(output.glob("fixture-run-*"))
+
+
+def test_unclassified_failed_judgement_refuses_even_with_success() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        failed = judgement("model-a", "s1", 0, "copilot", "gpt-test", score=None)
+        failed.update({
+            "evidence": "unknown_failure",
+            "criteria_missed": ["unclassified backend failure"],
+        })
+        with (run / "judged.fixture-run.jsonl").open("a") as handle:
+            handle.write(json.dumps(failed) + "\n")
+        error = expect_failure(
+            lambda: promotion.build_stage(context(repo, run, output)), "P4"
+        )
+        assert error.details["unclassified_failures"]
 
 
 def test_wrong_roster_hash_refuses() -> None:
@@ -533,6 +642,37 @@ def test_pending_push_refuses() -> None:
         expect_failure(lambda: promotion.build_stage(ctx), "P1")
 
 
+def test_promotion_mode_mismatch_or_missing_metadata_refuses() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        mismatched = promotion.build_context(
+            repo_root=repo,
+            run_dir=run,
+            output_root=output,
+            judge_values=JUDGES,
+            expected_persist_mode="local-files",
+        )
+        roster = promotion.parse_roster(mismatched.inputs.roster)
+        scenarios = promotion.parse_scenarios(mismatched.inputs.scenarios)
+        expect_failure(lambda: promotion.validate_metadata(mismatched, roster, scenarios), "P2")
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        meta_path = run / "run.meta"
+        meta = json.loads(meta_path.read_text())
+        del meta["persist_mode"]
+        meta_path.write_text(json.dumps(meta) + "\n")
+        ctx = promotion.build_context(
+            repo_root=repo,
+            run_dir=run,
+            output_root=output,
+            judge_values=JUDGES,
+            expected_persist_mode="git-push",
+        )
+        roster = promotion.parse_roster(ctx.inputs.roster)
+        scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+        expect_failure(lambda: promotion.validate_metadata(ctx, roster, scenarios), "P2")
+
+
 def test_pause_and_cancel_markers_refuse() -> None:
     for marker in (".paused", ".canceled"):
         with tempfile.TemporaryDirectory() as directory:
@@ -553,16 +693,97 @@ def test_symlinked_mirror_refuses() -> None:
         assert "symlinked run evidence" in str(error)
 
 
-def test_source_mutation_between_normalize_and_lock_refuses() -> None:
+def test_symlinked_promotion_state_paths_refuse() -> None:
+    for relative in (".state", ".staging"):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            outside = pathlib.Path(directory) / "outside"
+            outside.mkdir()
+            output.mkdir(parents=True, exist_ok=True)
+            (output / relative).symlink_to(outside, target_is_directory=True)
+            ctx = context(repo, run, output)
+            expect_failure(lambda: promotion.build_stage(ctx), "P0")
+
+
+def test_symlinked_promotion_lock_and_ledger_refuse() -> None:
+    for filename in ("promotion.lock", "promotion-ledger.jsonl"):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            ctx = context(repo, run, output)
+            ctx.state_dir.mkdir(parents=True)
+            outside = pathlib.Path(directory) / "outside-file"
+            outside.write_text("outside\n")
+            (ctx.state_dir / filename).symlink_to(outside)
+            if filename == "promotion.lock":
+                expect_failure(lambda: promotion.promotion_lock(ctx).__enter__(), "P0")
+            else:
+                expect_failure(
+                    lambda: promotion.record_event(ctx, "test", True),
+                    "P0",
+                )
+
+
+def test_lock_rebuilds_from_current_source_evidence() -> None:
     with tempfile.TemporaryDirectory() as directory:
         repo, run, output = fixture(pathlib.Path(directory))
         ctx = context(repo, run, output)
         promotion.build_stage(ctx)
-        gate_report = promotion.validate_stage(ctx)
+        promotion.validate_stage(ctx)
         with (run / "pipeline-ledger.jsonl").open("a") as handle:
             handle.write(json.dumps({"stage": "late-write", "ok": 1}) + "\n")
-        expect_failure(lambda: promotion.lock_stage(ctx, gate_report), "P7")
-        assert not list(output.glob("fixture-run-*"))
+        bundle, _manifest = promotion.lock_stage(ctx)
+        assert b"late-write" in (bundle / "raw" / "pipeline-ledger.jsonl").read_bytes()
+
+
+def test_staged_payload_mutation_is_discarded_by_public_commands() -> None:
+    for relative in ("raw/run.meta", "canonical/results.jsonl.gz"):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            ctx = context(repo, run, output)
+            promotion.build_stage(ctx)
+            with (ctx.stage_dir / relative).open("ab") as handle:
+                handle.write(b"tamper")
+            promotion.validate_stage(ctx)
+            assert b"tamper" not in (ctx.stage_dir / relative).read_bytes()
+            bundle, _manifest = promotion.lock_stage(ctx, {"passed": True})
+            assert promotion.verify_bundle(bundle)["bundle_state"] == "locked"
+
+
+def test_coordinated_stale_stage_replacement_is_discarded_before_lock() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        ctx = context(repo, run, output)
+        promotion.build_stage(ctx)
+        (ctx.stage_dir / "canonical" / "results.jsonl.gz").write_bytes(b"coordinated tamper")
+        (ctx.stage_dir / "fake-attestation.json").write_text("{}\n")
+        bundle, _manifest = promotion.lock_stage(ctx, {"passed": True})
+        assert not (bundle / "fake-attestation.json").exists()
+        assert promotion.verify_bundle(bundle)["bundle_state"] == "locked"
+
+
+def test_unsafe_run_ids_refuse_before_state_paths() -> None:
+    for unsafe in ("../outside", "bad*glob", "bad?[id]", ".", ""):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["run_id"] = unsafe
+            meta_path.write_text(json.dumps(meta) + "\n")
+            expect_failure(lambda: context(repo, run, output), "P0")
+            expect_failure(lambda: promotion.latest_status(output, unsafe), "P0")
+            assert not (output / ".state" / unsafe).exists()
+
+
+def test_terminal_marker_added_after_validation_refuses_lock() -> None:
+    for marker in (".paused", ".canceled"):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            ctx = context(repo, run, output)
+            promotion.build_stage(ctx)
+            gate_report = promotion.validate_stage(ctx)
+            (run / marker).write_text("late stop\n")
+            expect_failure(lambda: promotion.lock_stage(ctx, gate_report), "P1")
+            assert not list(output.glob("fixture-run-*"))
 
 
 def test_verify_detects_bundle_tampering() -> None:
@@ -573,6 +794,224 @@ def test_verify_detects_bundle_tampering() -> None:
         with (bundle / "gate-report.json").open("a") as handle:
             handle.write(" ")
         expect_failure(lambda: promotion.verify_bundle(bundle), "P7")
+
+
+def test_non_promotion_verification_failure_removes_visible_bundle() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        ctx = context(repo, run, output)
+        original = promotion.verify_bundle
+        observed_final = None
+
+        def crash(path):
+            nonlocal observed_final
+            observed_final = path
+            raise OSError("injected verification failure")
+
+        promotion.verify_bundle = crash
+        try:
+            try:
+                promotion.lock_stage(ctx)
+            except OSError as exc:
+                assert "injected verification failure" in str(exc)
+            else:
+                raise AssertionError("non-PromotionError verification failure was accepted")
+        finally:
+            promotion.verify_bundle = original
+        assert observed_final is not None
+        assert not observed_final.exists()
+
+
+def test_post_rename_fsync_failure_removes_visible_bundle() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        ctx = context(repo, run, output)
+        original_fsync = promotion.fsync_directory
+        original_replace = promotion.os.replace
+        calls = 0
+        published = False
+
+        def observe_replace(source, destination):
+            nonlocal published
+            result = original_replace(source, destination)
+            if (
+                pathlib.Path(source) == ctx.stage_dir
+                and pathlib.Path(destination).parent == ctx.output_root
+            ):
+                published = True
+            return result
+
+        def fail_after_rename(path):
+            nonlocal calls
+            calls += 1
+            if published and path == ctx.output_root:
+                raise OSError("injected post-rename fsync failure")
+            return original_fsync(path)
+
+        promotion.os.replace = observe_replace
+        promotion.fsync_directory = fail_after_rename
+        try:
+            try:
+                promotion.lock_stage(ctx)
+            except OSError as exc:
+                assert "post-rename fsync failure" in str(exc)
+            else:
+                raise AssertionError("post-rename fsync failure was accepted")
+        finally:
+            promotion.os.replace = original_replace
+            promotion.fsync_directory = original_fsync
+        assert calls > 0
+        assert not list(output.glob("fixture-run-*"))
+
+
+def test_metadata_rejects_same_count_judge_substitution() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        substituted = promotion.build_context(
+            repo_root=repo,
+            run_dir=run,
+            output_root=output,
+            judge_values=("copilot:wrong-claude", "copilot:wrong-gpt"),
+            expected_persist_mode="git-push",
+        )
+        roster = promotion.parse_roster(substituted.inputs.roster)
+        scenarios = promotion.parse_scenarios(substituted.inputs.scenarios)
+        expect_failure(
+            lambda: promotion.validate_metadata(substituted, roster, scenarios),
+            "P2",
+        )
+
+
+def test_metadata_rejects_malformed_modern_judge_identities() -> None:
+    malformed_values = (
+        None,
+        "copilot:claude-test",
+        [],
+        [{}],
+        [{"judge_backend": "", "judge_model": "claude-test"}],
+        [
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+            {"judge_backend": "copilot", "judge_model": "claude-test"},
+        ],
+        [{"judge_backend": "copilot", "judge_model": "claude-test"}],
+    )
+    for malformed in malformed_values:
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["judge_identities"] = malformed
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(
+                lambda: promotion.validate_metadata(ctx, roster, scenarios),
+                "P2",
+            )
+
+
+def test_metadata_requires_strict_positive_integer_judge_count() -> None:
+    invalid_counts = (2.5, "2", "two", {}, [], True, False, 0, -1, None)
+    for invalid in invalid_counts:
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["judges"] = invalid
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(
+                lambda: promotion.validate_metadata(ctx, roster, scenarios),
+                "P2",
+            )
+
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        meta_path = run / "run.meta"
+        meta = json.loads(meta_path.read_text())
+        del meta["judges"]
+        meta_path.write_text(json.dumps(meta) + "\n")
+        ctx = context(repo, run, output)
+        roster = promotion.parse_roster(ctx.inputs.roster)
+        scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+        expect_failure(
+            lambda: promotion.validate_metadata(ctx, roster, scenarios),
+            "P2",
+        )
+
+    assert promotion.analysis_metrics.metadata_judge_count({"judges": 2}) == 2
+
+
+def test_metadata_requires_strict_positive_integer_counts() -> None:
+    fields = ("models_count", "expect", "scenario_count", "reps")
+    invalid_values = (1.0, "1", True, False, 0, -1, None)
+    for field in fields:
+        for invalid in invalid_values:
+            with tempfile.TemporaryDirectory() as directory:
+                repo, run, output = fixture(pathlib.Path(directory))
+                meta_path = run / "run.meta"
+                meta = json.loads(meta_path.read_text())
+                meta[field] = invalid
+                meta_path.write_text(json.dumps(meta) + "\n")
+                ctx = context(repo, run, output)
+                roster = promotion.parse_roster(ctx.inputs.roster)
+                scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+                expect_failure(lambda: promotion.validate_metadata(ctx, roster, scenarios), "P2")
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            del meta[field]
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(lambda: promotion.validate_metadata(ctx, roster, scenarios), "P2")
+
+    for invalid in (2.0, "2", True, 0, -1):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            meta_path = run / "run.meta"
+            meta = json.loads(meta_path.read_text())
+            meta["run_repeats_override"] = invalid
+            meta_path.write_text(json.dumps(meta) + "\n")
+            ctx = context(repo, run, output)
+            roster = promotion.parse_roster(ctx.inputs.roster)
+            scenarios = promotion.parse_scenarios(ctx.inputs.scenarios)
+            expect_failure(lambda: promotion.validate_metadata(ctx, roster, scenarios), "P2")
+
+
+def test_result_and_judgement_repetitions_are_strict_integers() -> None:
+    for target in ("result", "judgement"):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            path = (
+                run / "_mirror" / "results.fixture-run.jsonl"
+                if target == "result"
+                else run / "judged.fixture-run.jsonl"
+            )
+            rows = [json.loads(line) for line in path.read_text().splitlines()]
+            rows[0]["rep"] = 0.0
+            write_jsonl(path, rows)
+            ctx = context(repo, run, output)
+            error = expect_failure(lambda: promotion.build_stage(ctx), "P3" if target == "result" else "P4")
+            assert "repetition" in json.dumps(error.details)
+
+
+def test_done_units_are_strict_positive_integers() -> None:
+    for invalid in (4.0, "4", True, None, 0, -1):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, run, output = fixture(pathlib.Path(directory))
+            done = run / "_mirror" / "results.fixture-run.jsonl.done"
+            rows = [json.loads(line) for line in done.read_text().splitlines()]
+            rows[0]["units"] = invalid
+            write_jsonl(done, rows)
+            ctx = context(repo, run, output)
+            error = expect_failure(lambda: promotion.build_stage(ctx), "P5")
+            assert "unit" in str(error).lower()
 
 
 def test_verify_rejects_unlisted_bundle_file() -> None:
@@ -615,6 +1054,7 @@ def test_cli_promote_and_verify_end_to_end() -> None:
             "--repo-root", str(repo),
             "--run-dir", str(run),
             "--output-root", str(output),
+            "--persist-mode", "git-push",
         ]
         for judge in JUDGES:
             command.extend(["--judge", judge])
@@ -640,6 +1080,24 @@ def test_cli_promote_and_verify_end_to_end() -> None:
         assert completed["output_sha256"] == payload["manifest"]["bundle_id"]
 
 
+def test_cli_requires_explicit_persistence_mode() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        repo, run, output = fixture(pathlib.Path(directory))
+        command = [
+            sys.executable,
+            str(SCRIPT),
+            "promote",
+            "--repo-root", str(repo),
+            "--run-dir", str(run),
+            "--output-root", str(output),
+        ]
+        for judge in JUDGES:
+            command.extend(["--judge", judge])
+        failed = subprocess.run(command, capture_output=True, text=True)
+        assert failed.returncode != 0
+        assert "--persist-mode" in failed.stderr
+
+
 def test_cli_failure_reports_exact_gaps_and_stage() -> None:
     with tempfile.TemporaryDirectory() as directory:
         repo, run, output = fixture(pathlib.Path(directory))
@@ -652,6 +1110,7 @@ def test_cli_failure_reports_exact_gaps_and_stage() -> None:
             "--repo-root", str(repo),
             "--run-dir", str(run),
             "--output-root", str(output),
+            "--persist-mode", "git-push",
         ]
         for judge in JUDGES:
             command.extend(["--judge", judge])

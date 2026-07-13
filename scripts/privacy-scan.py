@@ -43,12 +43,11 @@ TEXT_SUFFIXES = {
     ".yml",
 }
 
-ALLOW_SECRET_SUBSTRINGS = {
+EXACT_SECRET_PLACEHOLDERS = {
     "EXAMPLE_BEARER_TOKEN_DO_NOT_USE",
-    "<token>",
-    "<secret>",
-    "REDACTED",
-    "example",
+    "cloudflare_api_token",
+    "your-auth-token",
+    "your_token",
 }
 
 SECRET_PATTERNS = [
@@ -108,9 +107,22 @@ def iter_files() -> list[Path]:
     return sorted(files)
 
 
-def allowed_secret(match_text: str) -> bool:
-    low = match_text.lower()
-    return any(item.lower() in low for item in ALLOW_SECRET_SUBSTRINGS)
+def allowed_secret(pattern_name: str, match: re.Match[str]) -> bool:
+    if pattern_name != "bearer-token":
+        return False
+    value = match.group(1).rstrip(".,;:!?)]}'\"")
+    return value.lower() in {item.lower() for item in EXACT_SECRET_PLACEHOLDERS}
+
+
+def logical_private_key_lines(line: str) -> list[str]:
+    """Expose JSON-escaped newlines without decoding arbitrary JSON escapes."""
+
+    return line.replace("\\r\\n", "\n").replace("\\n", "\n").splitlines()
+
+
+def private_key_material(value: str) -> bool:
+    stripped = value.strip()
+    return bool(stripped and stripped not in {"...", "```"})
 
 
 def iter_text_lines(path: Path):
@@ -138,30 +150,55 @@ def scan_file(path: Path) -> tuple[list[tuple[str, str, str]], list[tuple[str, s
         secrets: list[tuple[str, str, str]] = []
         disclosures: list[tuple[str, str, str]] = []
         private_key_start = None
+        private_key_kind = None
         private_key_has_material = False
         for location, line in lines:
-            if re.search(r"-----BEGIN [A-Z ]*PRIVATE KEY-----", line):
-                private_key_start = location
-                private_key_has_material = False
-            elif private_key_start is not None:
-                stripped = line.strip()
-                if re.search(r"-----END [A-Z ]*PRIVATE KEY-----", line):
+            for logical_line in logical_private_key_lines(line):
+                begin = re.search(r"-----BEGIN ([A-Z ]*PRIVATE KEY)-----", logical_line)
+                if begin:
+                    if private_key_start is not None and private_key_has_material:
+                        secrets.append(("private-key", private_key_start, "unterminated private key PEM block"))
+                    private_key_start = location
+                    private_key_kind = begin.group(1)
+                    remainder = logical_line[begin.end():]
+                    same_line_end = re.search(
+                        rf"-----END {re.escape(private_key_kind)}-----",
+                        remainder,
+                    )
+                    if same_line_end:
+                        if private_key_material(remainder[:same_line_end.start()]):
+                            secrets.append(("private-key", private_key_start, "private key PEM block"))
+                        private_key_start = None
+                        private_key_kind = None
+                        private_key_has_material = False
+                    else:
+                        private_key_has_material = private_key_material(remainder)
+                    continue
+                if private_key_start is None:
+                    continue
+                end = re.search(
+                    rf"-----END {re.escape(private_key_kind or '')}-----",
+                    logical_line,
+                )
+                if end:
+                    private_key_has_material |= private_key_material(logical_line[:end.start()])
                     if private_key_has_material:
                         secrets.append(("private-key", private_key_start, "private key PEM block"))
                     private_key_start = None
+                    private_key_kind = None
                     private_key_has_material = False
-                elif stripped not in {"", "...", "```"}:
+                elif private_key_material(logical_line):
                     private_key_has_material = True
             for name, pattern in SECRET_PATTERNS:
                 for match in pattern.finditer(line):
                     snippet = match.group(0)[:120]
-                    if not allowed_secret(snippet):
+                    if not allowed_secret(name, match):
                         secrets.append((name, location, snippet))
             for name, pattern in DISCLOSURE_PATTERNS:
                 if pattern.search(line):
                     disclosures.append((name, location, line.strip()[:160]))
-                if private_key_start is not None and private_key_has_material:
-                    secrets.append(("private-key", private_key_start, "unterminated private key PEM block"))
+        if private_key_start is not None and private_key_has_material:
+            secrets.append(("private-key", private_key_start, "unterminated private key PEM block"))
         return secrets, disclosures
     except (OSError, tarfile.TarError) as exc:
         return [("archive-read-error", "unreadable", type(exc).__name__)], []

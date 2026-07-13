@@ -9,9 +9,11 @@ import datetime as dt
 import fcntl
 import gzip
 import hashlib
+import importlib.util
 import json
 import math
 import os
+import re
 import shutil
 import sys
 from collections import defaultdict
@@ -28,6 +30,7 @@ TOOL_VERSION = "completed-run-promotion-v1"
 EXIT_VALIDATION = 2
 EXIT_BOUNDARY = 3
 EXIT_INCOMPLETE = 4
+SAFE_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 class PromotionError(RuntimeError):
@@ -72,6 +75,7 @@ class RunInputs:
     scenarios: Path
     result_archives: tuple[Path, ...]
     candidate_archives: tuple[Path, ...]
+    persistence_receipts: tuple[Path, ...]
     logs: tuple[Path, ...]
 
     def sidecar_sources(self) -> dict[str, Path]:
@@ -79,6 +83,7 @@ class RunInputs:
         for directory, paths in (
             ("model-results", self.result_archives),
             ("candidates", self.candidate_archives),
+            ("persistence-receipts", self.persistence_receipts),
             ("logs", self.logs),
         ):
             for path in paths:
@@ -107,6 +112,7 @@ class PromotionContext:
     output_root: Path
     judges: tuple[JudgeSpec, ...]
     evaluation_policy: str
+    expected_persist_mode: str
     inputs: RunInputs
     meta: Mapping[str, Any]
 
@@ -141,6 +147,16 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def load_local_persistence():
+    path = REPO / "scripts" / "persist-run-model.py"
+    spec = importlib.util.spec_from_file_location("persist_run_model", path)
+    if spec is None or spec.loader is None:
+        raise PromotionError("P0", "cannot load local persistence verifier")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def digest_mapping(value: Mapping[str, Any]) -> str:
@@ -184,8 +200,30 @@ def fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def ensure_directory(path: Path, gate: str) -> None:
+    if path.is_symlink():
+        raise PromotionError(gate, f"symlinked directory is not allowed: {path}")
+    if not path.exists():
+        parent = path.parent
+        if parent != path:
+            ensure_directory(parent, gate)
+        try:
+            path.mkdir()
+        except FileExistsError:
+            pass
+    if path.is_symlink() or not path.is_dir():
+        raise PromotionError(gate, f"required directory is missing or unsafe: {path}")
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise PromotionError(gate, f"cannot safely open directory: {path}") from exc
+    else:
+        os.close(descriptor)
+
+
 def atomic_write_bytes(path: Path, value: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_directory(path.parent, "P7")
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     with temporary.open("wb") as handle:
         handle.write(value)
@@ -200,8 +238,13 @@ def atomic_write_json(path: Path, value: Any) -> None:
 
 
 def append_jsonl(path: Path, value: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("ab") as handle:
+    ensure_directory(path.parent, "P0")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except OSError as exc:
+        raise PromotionError("P0", f"cannot safely append ledger: {path}") from exc
+    with os.fdopen(descriptor, "ab") as handle:
         handle.write(canonical_json(value) + b"\n")
         handle.flush()
         os.fsync(handle.fileno())
@@ -323,6 +366,12 @@ def safe_run_glob(run_dir: Path, pattern: str, gate: str) -> tuple[Path, ...]:
     )
 
 
+def require_safe_run_id(value: Any, gate: str) -> str:
+    if not isinstance(value, str) or not SAFE_RUN_ID.fullmatch(value):
+        raise PromotionError(gate, f"unsafe run id: {value!r}", exit_code=EXIT_BOUNDARY)
+    return value
+
+
 def parse_judge_specs(values: Iterable[str]) -> tuple[JudgeSpec, ...]:
     parsed = set()
     for value in values:
@@ -378,19 +427,26 @@ def build_context(
     run_dir: Path,
     output_root: Path,
     judge_values: Iterable[str],
+    expected_persist_mode: str,
 ) -> PromotionContext:
     repo_root = repo_root.resolve()
     if run_dir.is_symlink():
         raise PromotionError("P0", f"symlinked run directory is not allowed: {run_dir}")
     run_dir = run_dir.resolve()
+    output_root = Path(os.path.abspath(output_root))
+    if output_root.is_symlink():
+        raise PromotionError("P0", f"symlinked output root is not allowed: {output_root}")
+    ensure_directory(output_root, "P0")
     output_root = output_root.resolve()
     if run_dir.is_symlink() or not run_dir.is_dir():
         raise PromotionError("P0", f"run directory is missing or symlinked: {run_dir}")
     judges = parse_judge_specs(judge_values)
+    if expected_persist_mode not in {"git-push", "local-files"}:
+        raise PromotionError("P2", "--persist-mode must be git-push or local-files")
     meta_path = run_dir / "run.meta"
     require_regular_file(meta_path, "P2")
     meta = read_json(meta_path, "P2")
-    run_id = str(meta.get("run_id") or run_dir.name)
+    run_id = require_safe_run_id(meta["run_id"] if "run_id" in meta else run_dir.name, "P0")
     if run_id != run_dir.name:
         raise PromotionError("P2", f"run.meta run_id {run_id!r} does not match directory name")
     roster = safe_repo_file(repo_root, meta.get("models"), "P2")
@@ -409,6 +465,7 @@ def build_context(
         scenarios=scenarios,
         result_archives=safe_run_glob(run_dir, "*.results.jsonl.gz", "P0"),
         candidate_archives=safe_run_glob(run_dir, "*.candidates.tar.gz", "P0"),
+        persistence_receipts=safe_run_glob(run_dir, "*.persistence.json", "P0"),
         logs=safe_run_glob(run_dir, "*.log", "P0"),
     )
     for path in inputs.hash_sources().values():
@@ -419,6 +476,7 @@ def build_context(
         output_root=output_root,
         judges=judges,
         evaluation_policy=evaluation_policy_for(judges),
+        expected_persist_mode=expected_persist_mode,
         inputs=inputs,
         meta=meta,
     )
@@ -426,9 +484,16 @@ def build_context(
 
 @contextlib.contextmanager
 def promotion_lock(context: PromotionContext):
-    context.state_dir.mkdir(parents=True, exist_ok=True)
+    ensure_directory(context.output_root, "P0")
+    ensure_directory(context.output_root / ".state", "P0")
+    ensure_directory(context.state_dir, "P0")
     lock_path = context.state_dir / "promotion.lock"
-    with lock_path.open("a+b") as handle:
+    flags = os.O_RDWR | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(lock_path, flags, 0o600)
+    except OSError as exc:
+        raise PromotionError("P0", "cannot safely open promotion lock") from exc
+    with os.fdopen(descriptor, "a+b") as handle:
         try:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
@@ -467,9 +532,11 @@ def set_error_stage(error: PromotionError, stage: str) -> PromotionError:
 
 
 def source_hashes(inputs: RunInputs) -> dict[str, str]:
+    validate_terminal_markers(inputs.run_dir)
     for pattern, expected in (
         ("*.results.jsonl.gz", inputs.result_archives),
         ("*.candidates.tar.gz", inputs.candidate_archives),
+        ("*.persistence.json", inputs.persistence_receipts),
         ("*.log", inputs.logs),
     ):
         actual = safe_run_glob(inputs.run_dir, pattern, "P7")
@@ -489,10 +556,17 @@ def source_hashes(inputs: RunInputs) -> dict[str, str]:
     }
 
 
-def validate_terminal_state(context: PromotionContext, roster: list[str]) -> dict[str, Any]:
+def validate_terminal_markers(run_dir: Path) -> None:
     for marker in (".paused", ".canceled"):
-        if (context.run_dir / marker).exists():
+        path = run_dir / marker
+        if path.is_symlink():
+            raise PromotionError("P1", f"run terminal marker is symlinked: {marker}")
+        if path.exists():
             raise PromotionError("P1", f"run is blocked by {marker}", exit_code=EXIT_INCOMPLETE)
+
+
+def validate_terminal_state(context: PromotionContext, roster: list[str]) -> dict[str, Any]:
+    validate_terminal_markers(context.run_dir)
     pending = file_lines(context.inputs.push_pending, "P1")
     if pending:
         raise PromotionError(
@@ -520,12 +594,29 @@ def validate_terminal_state(context: PromotionContext, roster: list[str]) -> dic
     return {"committed_models": len(committed), "push_pending": 0}
 
 
+def strict_integer(value: Any, *, gate: str, label: str, minimum: int = 0) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise PromotionError(gate, f"{label} must be an integer >= {minimum}")
+    return value
+
+
 def validate_metadata(
     context: PromotionContext,
     roster: list[str],
     scenarios: list[str],
 ) -> tuple[int, int]:
     meta = context.meta
+    schema_version = strict_integer(
+        meta.get("schema_version"), gate="P2", label="run.meta schema_version", minimum=2
+    )
+    if schema_version != 2:
+        raise PromotionError("P2", "run.meta schema_version must be 2")
+    if meta.get("persist_mode") != context.expected_persist_mode:
+        raise PromotionError(
+            "P2",
+            "run.meta persistence mode does not match the requested promotion mode",
+            details={"actual": meta.get("persist_mode"), "expected": context.expected_persist_mode},
+        )
     roster_sha = sha256_file(context.inputs.roster)
     if roster_sha != meta.get("models_sha256"):
         raise PromotionError(
@@ -540,17 +631,39 @@ def validate_metadata(
             "scenario SHA-256 does not match run.meta",
             details={"actual": scenario_sha, "expected": meta.get("scenarios_sha256")},
         )
-    models_count = int(meta.get("models_count") or meta.get("expect") or 0)
-    scenario_count = int(meta.get("scenario_count") or 0)
-    reps = int(meta.get("reps") or meta.get("run_repeats_override") or 0)
-    judge_count = int(meta.get("judges") or 0)
-    if models_count != len(roster) or int(meta.get("expect") or 0) != len(roster):
+    models_count = strict_integer(
+        meta.get("models_count"), gate="P2", label="run.meta models_count", minimum=1
+    )
+    expect = strict_integer(meta.get("expect"), gate="P2", label="run.meta expect", minimum=1)
+    scenario_count = strict_integer(
+        meta.get("scenario_count"), gate="P2", label="run.meta scenario_count", minimum=1
+    )
+    reps = strict_integer(meta.get("reps"), gate="P2", label="run.meta reps", minimum=1)
+    override = meta.get("run_repeats_override")
+    if override is not None:
+        override = strict_integer(
+            override,
+            gate="P2",
+            label="run.meta run_repeats_override",
+            minimum=1,
+        )
+        if override != reps:
+            raise PromotionError("P2", "run.meta repeat override differs from repetitions")
+    try:
+        judge_count = analysis_metrics.metadata_judge_count(meta)
+    except ValueError as exc:
+        raise PromotionError(
+            "P2",
+            "run.meta judge count is malformed",
+            details={"error": str(exc)},
+        ) from exc
+    if models_count != len(roster) or expect != len(roster):
         raise PromotionError(
             "P2",
             "run.meta model counts do not match the roster",
             details={
                 "models_count": models_count,
-                "expect": int(meta.get("expect") or 0),
+                "expect": expect,
                 "roster_count": len(roster),
             },
         )
@@ -572,8 +685,6 @@ def validate_metadata(
                 "missing_scenarios": sorted(set(scenarios) - set(metadata_scenarios)),
             },
         )
-    if reps <= 0:
-        raise PromotionError("P2", "run.meta repetitions must be positive")
     if judge_count != len(context.judges):
         raise PromotionError(
             "P2",
@@ -584,19 +695,34 @@ def validate_metadata(
                 "requested_judges": [f"{judge.backend}:{judge.model}" for judge in context.judges],
             },
         )
+    try:
+        authoritative = analysis_metrics.metadata_judge_identities(meta)
+    except ValueError as exc:
+        raise PromotionError(
+            "P2",
+            "run.meta judge identity declaration is malformed",
+            details={"error": str(exc)},
+        ) from exc
+    if authoritative is not None:
+        requested = {judge.identity for judge in context.judges}
+        if authoritative != requested:
+            raise PromotionError(
+                "P2",
+                "requested judge identities differ from authoritative run.meta",
+                details={
+                    "authoritative_judges": [
+                        f"{backend}:{model}" for backend, model in sorted(authoritative)
+                    ],
+                    "requested_judges": [
+                        f"{backend}:{model}" for backend, model in sorted(requested)
+                    ],
+                },
+            )
     return reps, len(roster) * len(scenarios) * reps
 
 
 def normalized_rep(value: Any, *, gate: str) -> int:
-    if isinstance(value, bool):
-        raise PromotionError(gate, "repetition must be an integer")
-    try:
-        rep = int(value)
-    except (TypeError, ValueError) as exc:
-        raise PromotionError(gate, "repetition must be an integer") from exc
-    if str(value) not in {str(rep), f"{rep}.0"} and not isinstance(value, int):
-        raise PromotionError(gate, f"invalid repetition value: {value!r}")
-    return rep
+    return strict_integer(value, gate=gate, label="repetition")
 
 
 def normalize_results(
@@ -788,31 +914,14 @@ def normalize_results(
     }
 
 
-def judgement_success(row: Mapping[str, Any]) -> bool:
-    score = row.get("score")
-    return (
-        isinstance(score, (int, float))
-        and not isinstance(score, bool)
-        and math.isfinite(float(score))
-        and 1 <= float(score) <= 5
-        and isinstance(row.get("verdict"), str)
-        and bool(row.get("verdict"))
-        and isinstance(row.get("evidence"), str)
-        and bool(row.get("evidence"))
-        and isinstance(row.get("criteria_met"), list)
-        and isinstance(row.get("criteria_missed"), list)
-    )
-
-
-def retry_reason(row: Mapping[str, Any]) -> str:
+def retry_reason(row: Mapping[str, Any]) -> str | None:
     if row.get("score") is None and (
-        row.get("evidence") == "parse_error"
+        row.get("evidence") in {"parse_error", "invalid_contract"}
         or "judge response could not be parsed" in (row.get("criteria_missed") or [])
+        or "judge response violated the judgement contract" in (row.get("criteria_missed") or [])
     ):
-        return "parse_error"
-    if row.get("score") is None:
-        return "no_score"
-    return "invalid_contract"
+        return "parse_error" if row.get("evidence") == "parse_error" else "invalid_contract"
+    return None
 
 
 def normalize_judgements(
@@ -836,6 +945,7 @@ def normalize_judgements(
     policy_conflicts: list[dict[str, Any]] = []
     undeclared_judges: list[dict[str, Any]] = []
     unresolved_attempts: list[dict[str, Any]] = []
+    unclassified_failures: list[dict[str, Any]] = []
     successes: dict[tuple[str, str, int, str, str], dict[str, Any]] = {}
     raw_attempts = 0
     retry_destination.parent.mkdir(parents=True, exist_ok=True)
@@ -914,7 +1024,7 @@ def normalize_judgements(
                         extra_judgement_keys.add(key)
                         continue
                     attempt_lines[key].append(line_number)
-                    if judgement_success(row):
+                    if analysis_metrics.judgement_success(row):
                         if key in successes:
                             if not competing_successes[key]:
                                 competing_successes[key].append(
@@ -924,7 +1034,14 @@ def normalize_judgements(
                             continue
                         successes[key] = row
                     else:
-                        row["promotion.retry_reason"] = retry_reason(row)
+                        reason = retry_reason(row)
+                        if reason is None:
+                            unclassified_failures.append({
+                                "source_line": line_number,
+                                "judge_key": judge_key_details([key])[0],
+                            })
+                            continue
+                        row["promotion.retry_reason"] = reason
                         compressed.write(canonical_json(row) + b"\n")
                         retry_count += 1
             raw_output.flush()
@@ -945,6 +1062,7 @@ def normalize_judgements(
         or policy_conflicts
         or undeclared_judges
         or unresolved_attempts
+        or unclassified_failures
     ):
         retry_temporary.unlink(missing_ok=True)
         raise PromotionError(
@@ -970,6 +1088,7 @@ def normalize_judgements(
                 },
                 "undeclared_judges": undeclared_judges,
                 "unresolved_attempts": unresolved_attempts,
+                "unclassified_failures": unclassified_failures,
             },
             exit_code=EXIT_INCOMPLETE,
         )
@@ -978,7 +1097,7 @@ def normalize_judgements(
     canonical_rows.sort(key=lambda row: (
         row["analysis_condition_key_sha256"],
         row["scenario"],
-        int(row["rep"]),
+        normalized_rep(row["rep"], gate="P4"),
         row.get("judge_backend") or "unknown",
         row.get("judge_model") or "unknown",
     ))
@@ -1014,11 +1133,22 @@ def validate_done_file(
             },
             exit_code=EXIT_INCOMPLETE,
         )
-    unit_mismatches = [
-        {"actual_units": int(row.get("units") or 0), "expected_units": expected_units, "model": row.get("model")}
-        for row in rows
-        if int(row.get("units") or 0) != expected_units
-    ]
+    unit_mismatches = []
+    for row in rows:
+        malformed = False
+        try:
+            units = strict_integer(
+                row.get("units"), gate="P5", label="completed-model units", minimum=1
+            )
+        except PromotionError:
+            malformed = True
+            units = row.get("units")
+        if malformed or units != expected_units:
+            unit_mismatches.append({
+                "actual_units": units,
+                "expected_units": expected_units,
+                "model": row.get("model"),
+            })
     if unit_mismatches:
         raise PromotionError(
             "P5",
@@ -1038,17 +1168,24 @@ def validate_pipeline_ledger(context: PromotionContext) -> dict[str, Any]:
 def validate_sidecar_inventory(
     context: PromotionContext,
     roster: list[str],
+    reps: int,
 ) -> dict[str, Any]:
     incomplete: dict[str, Any] = {}
     slugs = [model.replace("/", "_").replace(":", "_") for model in roster]
     collisions = duplicate_values(slugs)
-    if (context.inputs.candidate_archives or context.inputs.result_archives) and collisions:
+    persist_mode = str(context.meta.get("persist_mode") or "git-push")
+    if (
+        context.inputs.candidate_archives
+        or context.inputs.result_archives
+        or context.inputs.persistence_receipts
+    ) and collisions:
         incomplete["filename_collisions"] = collisions
     for name, suffix, paths in (
         ("candidate_archives", ".candidates.tar.gz", context.inputs.candidate_archives),
         ("result_archives", ".results.jsonl.gz", context.inputs.result_archives),
+        ("persistence_receipts", ".persistence.json", context.inputs.persistence_receipts),
     ):
-        if not paths:
+        if not paths and persist_mode != "local-files":
             continue
         expected = {f"{slug}{suffix}" for slug in slugs}
         actual = {path.name for path in paths}
@@ -1057,6 +1194,28 @@ def validate_sidecar_inventory(
                 "extra": sorted(actual - expected),
                 "missing": sorted(expected - actual),
             }
+    verified_receipts = 0
+    if persist_mode == "local-files" and not incomplete:
+        verifier = load_local_persistence()
+        receipts = {path.name: path for path in context.inputs.persistence_receipts}
+        for model, model_slug in zip(roster, slugs):
+            try:
+                verifier.verify_receipt(
+                    context.run_dir,
+                    receipts[f"{model_slug}.persistence.json"],
+                    model,
+                    context.inputs.judged,
+                    context.inputs.results,
+                    context.run_dir / "_mirror" / "outputs",
+                    context.inputs.scenarios,
+                    reps,
+                    frozenset(judge.identity for judge in context.judges),
+                    sha256_file(context.inputs.scenarios),
+                )
+            except Exception as exc:  # verifier converts malformed evidence to failure
+                incomplete.setdefault("receipt_validation", {})[model] = str(exc)
+            else:
+                verified_receipts += 1
     if incomplete:
         raise PromotionError(
             "P5",
@@ -1067,7 +1226,9 @@ def validate_sidecar_inventory(
     return {
         "candidate_archives": len(context.inputs.candidate_archives),
         "log_files": len(context.inputs.logs),
+        "persistence_receipts": len(context.inputs.persistence_receipts),
         "result_archives": len(context.inputs.result_archives),
+        "verified_persistence_receipts": verified_receipts,
     }
 
 
@@ -1098,7 +1259,7 @@ def build_stage(context: PromotionContext) -> dict[str, Any]:
         expected_judgements = expected_results * len(context.judges)
         done = validate_done_file(context, roster, len(scenarios) * reps)
         pipeline = validate_pipeline_ledger(context)
-        sidecars = validate_sidecar_inventory(context, roster)
+        sidecars = validate_sidecar_inventory(context, roster, reps)
         before_hashes = source_hashes(context.inputs)
         input_digest = digest_mapping(before_hashes)
         record_event(context, "normalize_started", True, input_sha256=input_digest)
@@ -1169,7 +1330,8 @@ def build_stage(context: PromotionContext) -> dict[str, Any]:
                 "tool_version": TOOL_VERSION,
             },
         )
-        context.stage_dir.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory(context.output_root, "P0")
+        ensure_directory(context.stage_dir.parent, "P0")
         if context.stage_dir.exists():
             shutil.rmtree(context.stage_dir)
         os.replace(temporary, context.stage_dir)
@@ -1233,7 +1395,7 @@ def require_unchanged_sources(
     return current_hashes
 
 
-def validate_stage(context: PromotionContext) -> dict[str, Any]:
+def validate_existing_stage(context: PromotionContext) -> tuple[dict[str, Any], dict[str, str]]:
     try:
         stage = context.stage_dir
         if stage.is_symlink() or not stage.is_dir():
@@ -1247,6 +1409,7 @@ def validate_stage(context: PromotionContext) -> dict[str, Any]:
         if metadata.get("evaluation_policy") != context.evaluation_policy:
             raise PromotionError("P7", "staged evaluation policy differs from this invocation")
         require_unchanged_sources(context, metadata.get("source_sha256") or {})
+        validate_terminal_markers(context.run_dir)
         for relative in (
             "contract/roster.txt",
             "contract/scenarios.json",
@@ -1273,9 +1436,17 @@ def validate_stage(context: PromotionContext) -> dict[str, Any]:
             input_sha256=input_digest,
             output_sha256=output_digest,
         )
-        return gate_report
+        return gate_report, payload_hashes(stage)
     except PromotionError as exc:
         raise set_error_stage(exc, "validate")
+
+
+def validate_stage(context: PromotionContext) -> dict[str, Any]:
+    # A normalized stage is disposable, not a trust anchor. Rebuild it from the
+    # still-hash-bound source evidence on every public validate invocation.
+    build_stage(context)
+    gate_report, _stage_hashes = validate_existing_stage(context)
+    return gate_report
 
 
 def bundle_tree_files(root: Path) -> list[Path]:
@@ -1349,11 +1520,17 @@ def lock_stage(
     gate_report: Mapping[str, Any] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     try:
-        gate_report = dict(gate_report or validate_stage(context))
-        stage_digest = digest_mapping(payload_hashes(context.stage_dir))
+        # Direct lock never trusts a stage left by a prior process. Rebuild and
+        # validate under this invocation's promotion lock.
+        build_stage(context)
+        rebuilt_report, stage_hashes = validate_existing_stage(context)
+        gate_report = dict(rebuilt_report)
+        stage_digest = digest_mapping(stage_hashes)
         record_event(context, "lock_started", True, input_sha256=stage_digest)
         atomic_write_bytes(context.stage_dir / "promotion-ledger.jsonl", context.ledger_path.read_bytes())
         hashes = payload_hashes(context.stage_dir)
+        if hashes != stage_hashes:
+            raise PromotionError("P7", "normalized stage changed after validation")
         bundle_id = sha256_bytes(canonical_json(hashes))
         manifest = {
         "analysis_schema_version": analysis_metrics.ANALYSIS_SCHEMA_VERSION,
@@ -1370,10 +1547,14 @@ def lock_stage(
         "tool_version": TOOL_VERSION,
         }
         atomic_write_json(context.stage_dir / "bundle-manifest.json", manifest)
+        if payload_hashes(context.stage_dir) != stage_hashes:
+            raise PromotionError("P7", "normalized stage changed while writing the manifest")
         metadata = read_json(context.stage_dir / "normalization-metadata.json", "P7")
         require_unchanged_sources(context, metadata.get("source_sha256") or {})
+        validate_terminal_markers(context.run_dir)
         final = context.output_root / f"{context.inputs.run_id}-{bundle_id}"
         if final.exists():
+            validate_terminal_markers(context.run_dir)
             existing = verify_bundle(final)
             if existing.get("bundle_id") != bundle_id:
                 raise PromotionError("P7", "existing bundle path contains different evidence")
@@ -1395,9 +1576,16 @@ def lock_stage(
                 output_sha256=bundle_id,
             )
             return final, existing
-        os.replace(context.stage_dir, final)
-        fsync_directory(context.output_root)
-        verified = verify_bundle(final)
+        validate_terminal_markers(context.run_dir)
+        try:
+            os.replace(context.stage_dir, final)
+            fsync_directory(context.output_root)
+            verified = verify_bundle(final)
+        except BaseException:
+            shutil.rmtree(final, ignore_errors=True)
+            if final.exists():
+                raise PromotionError("P7", "failed bundle verification left a visible target")
+            raise
         record_event(
             context,
             "lock_passed",
@@ -1427,12 +1615,11 @@ def promote(context: PromotionContext) -> tuple[Path, dict[str, Any]]:
         True,
         input_sha256=initial_source_digest,
     )
-    build_stage(context)
-    gate_report = validate_stage(context)
-    return lock_stage(context, gate_report)
+    return lock_stage(context)
 
 
 def latest_status(output_root: Path, run_id: str) -> dict[str, Any]:
+    run_id = require_safe_run_id(run_id, "P0")
     state = output_root.resolve() / ".state" / run_id
     ledger = state / "promotion-ledger.jsonl"
     events = []
@@ -1452,6 +1639,7 @@ def command_context(args: argparse.Namespace) -> PromotionContext:
         run_dir=Path(args.run_dir),
         output_root=Path(args.output_root),
         judge_values=args.judge,
+        expected_persist_mode=args.persist_mode,
     )
 
 
@@ -1464,6 +1652,7 @@ def add_promotion_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repo-root", default=str(REPO))
     parser.add_argument("--output-root", default=str(REPO / "data" / "completed-runs"))
     parser.add_argument("--judge", action="append", default=[], metavar="BACKEND:MODEL")
+    parser.add_argument("--persist-mode", required=True, choices=("git-push", "local-files"))
 
 
 def build_parser() -> argparse.ArgumentParser:
