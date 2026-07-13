@@ -1,0 +1,71 @@
+{
+  "models": {
+    "aya-expanse:8b": {
+      "artifact_sha256": "65f986688a01b456158c57b042bc48afcb85d060646a82d491d1c0a01375b10e"
+    },
+    "codegemma:2b-code-q6_K": {
+      "artifact_sha256": "fead9028c7320fcc0f4af853717137b5f5aeebae456b59547da7021d6beeed9e"
+    },
+    "command-r7b:latest": {
+      "artifact_sha256": "ff4e9696ef9f19b62e3f7d7261c95dcc9bb15a7c0398493366d851119fe2e1ef"
+    },
+    "exaone-deep:7.8b": {
+      "artifact_sha256": "106afe416a9effa9570d04231c25192fc254ac1b51f0f1cafed20a32060958c9"
+    },
+    "exaone3.5:7.8b": {
+      "artifact_sha256": "c7c4e3d1ca22fe9225f18b35eb719f67e2ca96a42e7fd17294a45b83ba8fbf03"
+    },
+    "falcon3:7b": {
+      "artifact_sha256": "472ea1c89f64f932368963bfb8c7f54bd797f2161932cf0a72766a587b2e586d"
+    },
+    "granite3.3:8b": {
+      "artifact_sha256": "fd429f23b90980ed1bef53b990894e7b0199331f6ae90c5650240a7d5b70f1f7"
+    },
+    "hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M": {
+      "artifact_sha256": "3c4f22130d403283bb961721f2c4f83e4409afcbb7a7cd992f425c62b9304e35"
+    },
+    "hf.co/openbmb/MiniCPM3-4B-GGUF:Q4_K_M": {
+      "artifact_sha256": "3448ba53c422e036f020ef67d07801ddc727c56d1b95b114e351ab392a88b85c"
+    },
+    "internlm2:7b": {
+      "artifact_sha256": "5050e36678abc59da7cfdfd29744f2c45acf3ca21e58c106220e84ba06d36747"
+    },
+    "olmo2:7b": {
+      "artifact_sha256": "4208d3b406db076e1569c97a2fb67cf9c86b845544c1a61ff218259daf9e3538"
+    },
+    "phi3.5:3.8b-mini-instruct-q8_0": {
+      "artifact_sha256": "8b50e8e1e21653ad0085ed8209f4f0cf7f9af78e0352ebd2d303f7b604d313be"
+    },
+    "phi3:3.8b-mini-128k-instruct-q8_0": {
+      "artifact_sha256": "adc0589ce82eb5929896d7100a8f3a2a694a1251332d37f32b1cd5c72282f5a5"
+    },
+    "phi4-mini-reasoning": {
+      "artifact_sha256": "3ca8c2865ce91b6be853a25e56edfefa4f473db55a391611989b753ecf0fa419"
+    },
+    "qwen2.5-coder:3b-instruct-q8_0": {
+      "artifact_sha256": "0dbd6230e2a1d00d145b60e27c1799402404efea291ae0d136950f98b756cd8e"
+    },
+    "qwen2.5:7b": {
+      "artifact_sha256": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e"
+    },
+    "qwen3:4b-thinking-2507-q8_0": {
+      "artifact_sha256": "44647463104281dcb560e8d3962c440fea54c4dacc242bf435dc9a0f313d3d48"
+    },
+    "qwen3:8b": {
+      "artifact_sha256": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41"
+    },
+    "sailor2:1b": {
+      "artifact_sha256": "7b8c8f58ae999a7ae3f3788ee1bcd4b03ffad0169cdc2ec45058a9da2bfdedaf"
+    },
+    "starcoder2:3b": {
+      "artifact_sha256": "9f4ae0aff61ee24fe4b7d9714c9382b5172551fa8e95aa064452ec2e62610835"
+    },
+    "starcoder2:3b-q8_0": {
+      "artifact_sha256": "003abcecad2363c83abdb83bb5e1fc23daab4a5f6b74960ba1b7871a73b01de9"
+    }
+  },
+  "roster_sha256": "ac7eee0ec2f446f1a8bcf99efa846d8861a5dfaa9fe6051f24edf8f9ddb665fa",
+  "runtime": "ollama",
+  "schema_version": 1,
+  "source_bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa"
+}
