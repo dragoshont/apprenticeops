@@ -1195,7 +1195,7 @@ def validate_sidecar_inventory(
                 "missing": sorted(expected - actual),
             }
     verified_receipts = 0
-    if persist_mode == "local-files" and not incomplete:
+    if context.inputs.persistence_receipts and not incomplete:
         verifier = load_local_persistence()
         receipts = {path.name: path for path in context.inputs.persistence_receipts}
         for model, model_slug in zip(roster, slugs):
