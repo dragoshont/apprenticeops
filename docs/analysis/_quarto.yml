@@ -1,6 +1,8 @@
 project:
   type: website
   output-dir: _site
+  resources:
+    - portal-build.js
   render:
     - index.qmd
     - paper.qmd
@@ -8,6 +10,7 @@ project:
     - judge_comparison.ipynb
     - reviewer.ipynb
     - reviewers.qmd
+    - research-updates.qmd
 
 # Use the committed cell outputs — do NOT re-execute on render (the systems
 # telemetry needs the specific node; re-run locally with build-analysis-site.sh).
@@ -17,40 +20,65 @@ execute:
 website:
   title: "ApprenticeOps"
   site-url: https://dragoshont.github.io/apprenticeops/
+  favicon: favicon.svg
   description: >-
     Small locally-sovereign LLMs as homelab ops assistants —
     quality × safety × energy, on commodity offline hardware.
   reader-mode: true
+  search:
+    location: navbar
+    type: overlay
+    limit: 12
+    collapse-after: 1
+    show-item-context: tree
   navbar:
     background: dark
+    collapse-below: xl
     left:
-      - text: "Home"
+      - text: "Overview"
         href: index.qmd
-      - text: "The paper"
+      - text: "Paper"
         href: paper.qmd
-      - text: "The sovereign selection"
-        href: wave_analysis.ipynb
-      - text: "Judge agreement"
-        href: judge_comparison.ipynb
-      - text: "Run the queries"
-        href: reviewer.ipynb
-      - text: "For reviewers"
+      - text: "Evidence"
+        menu:
+          - text: "Selection results"
+            href: wave_analysis.ipynb
+          - text: "Judge agreement"
+            href: judge_comparison.ipynb
+          - text: "Research updates (candidate)"
+            href: research-updates.qmd
+      - text: "Reproduce"
+        menu:
+          - text: "Reviewer query lab"
+            href: reviewer.ipynb
+          - text: "Machine-readable exports"
+            href: https://github.com/dragoshont/apprenticeops/tree/main/data/site
+          - text: "Reproduction guide"
+            href: https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md
+      - text: "Review"
         href: reviewers.qmd
-    right:
+    tools:
       - icon: github
         href: https://github.com/dragoshont/apprenticeops
+        aria-label: "ApprenticeOps source on GitHub"
   page-footer:
-    center: "Code Apache-2.0 · dataset mixed rights · human-guided, AI-assisted · arXiv preprint → NeurIPS D&B"
+    left: "Evidence: analysis v1 · corrected 2026-07-10"
+    center: "Code Apache-2.0 · dataset mixed rights · human-guided, AI-assisted"
+    right:
+      - text: "Build provenance"
+        href: build.json
 
 format:
   html:
     theme: cosmo
+    css: portal.css
     toc: true
     toc-depth: 3
     toc-expand: true
     code-fold: true
-    code-tools: true
+    code-tools: false
     code-summary: "show code"
     fig-align: center
     df-print: paged
     smooth-scroll: true
+    include-after-body: portal-build.html

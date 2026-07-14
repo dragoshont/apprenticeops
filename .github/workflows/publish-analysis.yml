@@ -50,6 +50,7 @@ jobs:
           .venv/bin/python scripts/check-doc-links.py
           .venv/bin/python scripts/privacy-scan.py
           .venv/bin/python scripts/validate-croissant.py --official
+          .venv/bin/python scripts/test-portal.py
 
       - name: Reproduce analysis v1 without mutation
         run: PY=.venv/bin/python scripts/build-analysis-site.sh --verify
@@ -67,6 +68,20 @@ jobs:
       - name: Render site (committed outputs; execute disabled)
         run: quarto render docs/analysis
 
+      - name: Stamp and verify portal provenance
+        env:
+          PORTAL_COMMIT: ${{ github.sha }}
+          PORTAL_BUILD_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/write-portal-build.py \
+            --site-dir docs/analysis/_site \
+            --commit "$PORTAL_COMMIT" \
+            --built-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --workflow-run-url "$PORTAL_BUILD_URL"
+          python3 scripts/verify-portal.py \
+            --site-dir docs/analysis/_site \
+            --expected-commit "$PORTAL_COMMIT"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -79,6 +94,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout verification script
+        uses: actions/checkout@v4
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployed portal truth
+        run: |
+          python3 scripts/verify-portal.py \
+            --base-url "${{ steps.deployment.outputs.page_url }}" \
+            --expected-commit "${{ github.sha }}" \
+            --attempts 12 \
+            --delay 10

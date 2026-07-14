@@ -17,6 +17,12 @@ plan that the manuscript cites.
 - **[`reviewer.ipynb`](reviewer.ipynb)** — twelve editable reviewer queries.
   Energy/speed/roofline/MCDA queries can access controlled rows only.
 
+The public portal keeps narrative discovery separate from executable evidence:
+Home, Paper, Review, and Research Updates are searchable; the three code-heavy
+notebooks remain directly navigable but are excluded from the site search index.
+[`research-updates.qmd`](research-updates.qmd) summarizes candidate radar evidence
+without promoting it into the paper or bibliography.
+
 ## Machine-readable exports → [`../../data/site/`](../../data/site)
 
 The wave notebook writes the figures' underlying numbers, so a website (or any
@@ -42,6 +48,14 @@ scripts/build-analysis-site.sh --update
 
 # Re-execute all public notebooks in temporary outputs and compare everything.
 scripts/build-analysis-site.sh --verify
+
+# Stamp the rendered site with canonical evidence + commit provenance.
+python3 scripts/write-portal-build.py --site-dir docs/analysis/_site
+
+# Fail on stale claims, wrong commit identity, or notebook search leakage.
+python3 scripts/verify-portal.py \
+  --site-dir docs/analysis/_site \
+  --expected-commit "$(git rev-parse HEAD)"
 ```
 
 > **Honesty:** the **quality** axis is the **5-rep × 2-judge ensemble**
