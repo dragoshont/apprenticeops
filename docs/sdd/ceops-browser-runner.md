@@ -251,6 +251,15 @@ in-process control channel. A hostile local process remains outside the web
 threat boundary; the runner does not claim to defend a fully compromised user
 account.
 
+> **Implementation note (spike).** The prototype runner exposes confirmation as
+> `POST /v1/pairing/{id}/confirm` gated by a **host-only local-admin secret**
+> (generated at startup, written mode-0600, or supplied via
+> `CEOPS_LOCAL_ADMIN_TOKEN`), rather than a purely in-process channel. This
+> preserves the property §6.3 protects — the public console cannot self-approve,
+> because it never holds the secret (verified live: a LAN client without the
+> secret receives `403`). The deviation is a conscious spike simplification; a
+> production build should move confirmation to the native local approval surface.
+
 The 120-second value is a default, not an inaccessible hard timeout. The local
 approval UI offers **Extend by 5 minutes** before expiry and an untimed manual
 pairing command that prints the same origin/scopes for users who need more time.

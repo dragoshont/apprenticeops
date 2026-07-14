@@ -54,6 +54,19 @@ def test_unknown_scope_rejected():
         store.create_pairing("x" * 20, "https://o.example", ["bogus:scope"])
 
 
+def test_failed_challenge_reads_deny_pairing():
+    store = AuthStore(120, 3600)
+    pairing = _pair(store)
+    store.confirm_pairing(pairing.pairing_id)
+    for _ in range(AuthStore.MAX_FAILED_READS):
+        with pytest.raises(PermissionError):
+            store.retrieve_token(pairing.pairing_id, "wrong-challenge-value")
+    # the pairing is now denied; even the correct challenge yields no token
+    assert store.get_pairing(pairing.pairing_id).status == "denied"
+    with pytest.raises(LookupError):
+        store.retrieve_token(pairing.pairing_id, "x" * 20)
+
+
 def test_short_challenge_rejected():
     store = AuthStore(120, 3600)
     with pytest.raises(ValueError):
