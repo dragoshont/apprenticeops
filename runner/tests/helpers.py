@@ -8,6 +8,8 @@ PORT = 8799
 PUBLIC = "https://experiment.ceops.org"
 LOCAL = f"http://127.0.0.1:{PORT}"
 BASE_URL = f"http://127.0.0.1:{PORT}"
+ADMIN = "test-admin-token"
+ADMIN_HEADER = {"X-CEOps-Local-Admin": ADMIN}
 
 
 def make_config(**env_over: str) -> RunnerConfig:
@@ -19,6 +21,7 @@ def make_config(**env_over: str) -> RunnerConfig:
         "CEOPS_OLLAMA_URL": "http://127.0.0.1:59999",
         "CEOPS_ALLOWED_ORIGINS": PUBLIC,
         "CEOPS_RUNNER_INSTANCE_ID": "test-instance",
+        "CEOPS_LOCAL_ADMIN_TOKEN": ADMIN,
     }
     env.update(env_over)
     return RunnerConfig.from_env(env)
@@ -34,8 +37,8 @@ def complete_pairing(client, scopes=("runner:read", "experiment:execute")) -> di
     )
     assert r.status_code == 201, r.text
     pairing_id = r.json()["pairing_id"]
-    # local-host approval (no Origin header == loopback caller)
-    confirm = client.post(f"/v1/pairing/{pairing_id}/confirm")
+    # host-side approval requires the local-admin secret
+    confirm = client.post(f"/v1/pairing/{pairing_id}/confirm", headers=ADMIN_HEADER)
     assert confirm.status_code == 200, confirm.text
     poll = client.get(
         f"/v1/pairing/{pairing_id}",

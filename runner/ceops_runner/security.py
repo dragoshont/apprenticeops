@@ -61,6 +61,10 @@ def validate_scopes(scopes: list[str]) -> list[str]:
     return scopes
 
 
+class PairingLimitError(RuntimeError):
+    """Raised when too many pending pairings exist (rate/DoS guard)."""
+
+
 @dataclass
 class Token:
     value: str
@@ -85,6 +89,7 @@ class Pairing:
     status: str = "pending"  # pending | confirmed | denied | expired
     token: Token | None = None
     token_retrieved: bool = False
+    failed_reads: int = 0
 
     def expired(self, now: float | None = None) -> bool:
         return (now or time.time()) >= self.expires_at
@@ -93,12 +98,30 @@ class Pairing:
 class AuthStore:
     """Thread-safe in-memory pairing/token store (single runner process)."""
 
+    MAX_PENDING_PAIRINGS = 64
+    MAX_FAILED_READS = 10
+    RETENTION_SECONDS = 60
+
     def __init__(self, pairing_ttl: int, token_ttl: int) -> None:
         self._pairing_ttl = pairing_ttl
         self._token_ttl = token_ttl
         self._pairings: dict[str, Pairing] = {}
         self._tokens: dict[str, Token] = {}
         self._lock = threading.Lock()
+
+    def _evict_locked(self, now: float) -> None:
+        """Delete terminal/expired pairings past the retention window and dead
+        tokens, so an unauthenticated caller cannot grow memory without bound."""
+        drop = [
+            pid
+            for pid, p in self._pairings.items()
+            if (p.expired(now) or p.status in ("denied", "expired", "confirmed"))
+            and now - p.created_at > self.RETENTION_SECONDS
+        ]
+        for pid in drop:
+            self._pairings.pop(pid, None)
+        for value in [v for v, t in self._tokens.items() if not t.active(now)]:
+            self._tokens.pop(value, None)
 
     # -- pairing ---------------------------------------------------------
     def create_pairing(self, challenge: str, origin: str, scopes: list[str]) -> Pairing:
@@ -116,6 +139,12 @@ class AuthStore:
             expires_at=now + self._pairing_ttl,
         )
         with self._lock:
+            self._evict_locked(now)
+            pending = sum(
+                1 for p in self._pairings.values() if p.status == "pending" and not p.expired(now)
+            )
+            if pending >= self.MAX_PENDING_PAIRINGS:
+                raise PairingLimitError("too many pending pairings; try again later")
             self._pairings[pairing.pairing_id] = pairing
         return pairing
 
@@ -173,6 +202,9 @@ class AuthStore:
             if pairing is None:
                 raise KeyError("unknown pairing")
             if not secrets.compare_digest(pairing.challenge, challenge):
+                pairing.failed_reads += 1
+                if pairing.failed_reads >= self.MAX_FAILED_READS:
+                    pairing.status = "denied"
                 raise PermissionError("challenge mismatch")
             if pairing.status != "confirmed" or pairing.token is None:
                 raise LookupError(pairing.status)

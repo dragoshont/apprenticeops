@@ -38,13 +38,15 @@ def _print_banner(cfg: RunnerConfig) -> None:
         f"    ollama     : {cfg.ollama_url}",
         f"    origins    : {', '.join(sorted(cfg.allowed_origins))}",
         f"    local UI   : http://127.0.0.1:{cfg.port}/",
+        f"    admin file : {cfg.local_admin_file or '(CEOPS_LOCAL_ADMIN_TOKEN env)'}",
     ]
     if cfg.lan_bound:
         lines += [
             "",
             "  ⚠ LAN bind is ON. Anyone who can reach "
             f"{cfg.bind_host}:{cfg.port} on the network can attempt to connect.",
-            "    Only the pairing token and your host firewall stand in front of it.",
+            "    Pairing still requires host-side approval with the local-admin",
+            "    secret (readable only on this host) plus the scoped token.",
             "    Bind one trusted interface and keep it off untrusted networks.",
         ]
     lines.append("")
@@ -66,7 +68,13 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         help="additional allowed console origin (repeatable)",
     )
+    parser.add_argument("--tls-cert", dest="tls_cert", help="TLS certificate (fullchain) PEM path; enables HTTPS")
+    parser.add_argument("--tls-key", dest="tls_key", help="TLS private key PEM path (required with --tls-cert)")
     args = parser.parse_args(argv)
+
+    if bool(args.tls_cert) != bool(args.tls_key):
+        print("--tls-cert and --tls-key must be provided together", file=sys.stderr)
+        return 2
 
     try:
         cfg = RunnerConfig.from_env(_build_env(args))
@@ -79,7 +87,17 @@ def main(argv: list[str] | None = None) -> int:
 
     app = create_app(cfg)
     _print_banner(cfg)
-    uvicorn.run(app, host=cfg.bind_host, port=cfg.port, log_level="info", access_log=True)
+    if args.tls_cert:
+        print(f"    TLS        : on (cert {args.tls_cert})", file=sys.stderr, flush=True)
+    uvicorn.run(
+        app,
+        host=cfg.bind_host,
+        port=cfg.port,
+        log_level="info",
+        access_log=True,
+        ssl_certfile=args.tls_cert,
+        ssl_keyfile=args.tls_key,
+    )
     return 0
 
 

@@ -58,6 +58,8 @@ class RunnerConfig:
     pairing_ttl_seconds: int = 120
     token_ttl_seconds: int = 12 * 3600
     inference_timeout_seconds: float = 300.0
+    local_admin_token: str | None = None
+    local_admin_file: str = ""
 
     @staticmethod
     def from_env(env: dict[str, str] | None = None) -> "RunnerConfig":
@@ -99,6 +101,10 @@ class RunnerConfig:
         allowed_origins = set(public_origins) | local_origins
 
         instance_id = env.get("CEOPS_RUNNER_INSTANCE_ID") or secrets.token_hex(8)
+        local_admin_token = env.get("CEOPS_LOCAL_ADMIN_TOKEN") or None
+        local_admin_file = env.get("CEOPS_LOCAL_ADMIN_FILE") or os.path.join(
+            os.path.expanduser("~"), ".ceops-runner", "local-admin.token"
+        )
 
         return RunnerConfig(
             bind_host=bind_host,
@@ -109,4 +115,6 @@ class RunnerConfig:
             host_allowlist=frozenset(authorities),
             instance_id=instance_id,
             lan_bound=lan_bound,
+            local_admin_token=local_admin_token,
+            local_admin_file=local_admin_file,
         )

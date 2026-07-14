@@ -36,6 +36,7 @@ def test_real_inference_end_to_end():
             "CEOPS_OLLAMA_URL": OLLAMA_URL,
             "CEOPS_ALLOWED_ORIGINS": PUBLIC,
             "CEOPS_RUNNER_INSTANCE_ID": "integration",
+            "CEOPS_LOCAL_ADMIN_TOKEN": "test-admin-token",
         }
     )
     client = TestClient(create_app(cfg), base_url=BASE_URL)

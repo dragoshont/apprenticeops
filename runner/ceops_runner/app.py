@@ -17,6 +17,8 @@ is unreachable the route returns an honest ``502`` rather than fabricating outpu
 
 from __future__ import annotations
 
+import os
+import secrets
 import sys
 from pathlib import Path
 from typing import Any
@@ -27,7 +29,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import RunnerConfig
 from .ollama import OllamaClient, OllamaError
-from .security import AuthStore, host_authority_allowed, validate_scopes
+from .security import AuthStore, PairingLimitError, host_authority_allowed, validate_scopes
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -96,14 +98,9 @@ def _require_public_origin(request: Request) -> str:
 
 
 def _require_local_origin(request: Request) -> str | None:
-    """Local approval: same-origin local-UI or no-origin (loopback) only."""
-    cfg: RunnerConfig = request.app.state.config
-    origin = request.headers.get("origin")
-    if origin is None:
-        return None
-    if origin not in cfg.local_origins:
-        return _forbidden("local_confirmation_requires_local_origin")
-    return origin
+    """Deprecated: retained only so nothing imports a missing symbol. The local
+    approval surface is now gated by the host-side admin secret, not by Origin."""
+    raise RuntimeError("local approval is gated by require_local_admin")
 
 
 def _forbidden(detail: str):
@@ -116,17 +113,50 @@ def require_token(scope: str):
     def dependency(request: Request):
         from fastapi import HTTPException
 
+        cfg: RunnerConfig = request.app.state.config
         store: AuthStore = request.app.state.store
         origin = request.headers.get("origin")
         token_value = request.headers.get("x-ceops-token")
         token = store.validate_token(token_value, origin)
         if token is None:
             raise HTTPException(status_code=401, detail="invalid_or_missing_token")
+        # Close the no-Origin bypass: a token minted for a public console origin
+        # must always present that Origin. Only same-origin local-UI tokens may
+        # omit Origin (browsers may drop it on same-origin GETs).
+        if origin is None and token.origin not in cfg.local_origins:
+            raise HTTPException(status_code=401, detail="origin_required")
         if scope not in token.scopes:
             raise HTTPException(status_code=403, detail=f"missing_scope:{scope}")
         return token
 
     return dependency
+
+
+def _write_admin_file(path: str, token: str) -> None:
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, (token + "\n").encode())
+    finally:
+        os.close(fd)
+
+
+def require_local_admin(request: Request) -> bool:
+    """Gate the local approval surface on a host-only secret.
+
+    The secret is generated at startup and written to a mode-0600 file readable
+    only on the runner host (or provided via CEOPS_LOCAL_ADMIN_TOKEN). LAN
+    reachability alone can never approve a pairing (SDD 6.3/6.7).
+    """
+    from fastapi import HTTPException
+
+    provided = request.headers.get("x-ceops-local-admin", "")
+    expected = getattr(request.app.state, "local_admin_token", "")
+    if not provided or not expected or not secrets.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="local_admin_required")
+    return True
 
 
 # -- application factory ------------------------------------------------------
@@ -152,6 +182,9 @@ def create_app(
     app.state.config = cfg
     app.state.store = auth
     app.state.ollama = backend
+    app.state.local_admin_token = cfg.local_admin_token or secrets.token_urlsafe(32)
+    if cfg.local_admin_token is None and cfg.local_admin_file:
+        _write_admin_file(cfg.local_admin_file, app.state.local_admin_token)
     app.add_middleware(GuardMiddleware, config=cfg)
 
     _register_routes(app)
@@ -208,14 +241,14 @@ def _register_routes(app: FastAPI) -> None:
         try:
             ollama_version = await backend.version()
             models = await backend.tags()
-        except OllamaError as exc:
-            raise HTTPException(status_code=502, detail=f"ollama_unreachable: {exc}")
+        except OllamaError:
+            raise HTTPException(status_code=502, detail="ollama_unreachable")
         return JSONResponse(
             {
                 "runner_version": cfg.runner_version,
                 "api_version": cfg.api_version,
                 "instance_id": cfg.instance_id,
-                "backend": {"kind": "ollama", "version": ollama_version, "url": backend_public_url(cfg)},
+                "backend": {"kind": "ollama", "version": ollama_version},
                 "models": [
                     {"name": m.get("name"), "size": m.get("size"), "family": (m.get("details") or {}).get("family")}
                     for m in models
@@ -229,8 +262,8 @@ def _register_routes(app: FastAPI) -> None:
         backend: OllamaClient = request.app.state.ollama
         try:
             tags = await backend.tags()
-        except OllamaError as exc:
-            raise HTTPException(status_code=502, detail=f"ollama_unreachable: {exc}")
+        except OllamaError:
+            raise HTTPException(status_code=502, detail="ollama_unreachable")
         return JSONResponse(
             {"models": [{"name": m.get("name"), "size": m.get("size")} for m in tags]}
         )
@@ -252,6 +285,8 @@ def _register_routes(app: FastAPI) -> None:
         try:
             validate_scopes([str(s) for s in scopes])
             pairing = store.create_pairing(challenge, origin, [str(s) for s in scopes])
+        except PairingLimitError as exc:
+            raise HTTPException(status_code=429, detail=str(exc))
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         _announce_pairing(request, pairing)
@@ -293,8 +328,8 @@ def _register_routes(app: FastAPI) -> None:
         )
 
     @app.get("/v1/pairing/pending/list")
-    def pairing_pending(request: Request, _origin=Depends(_require_local_origin)) -> JSONResponse:
-        """Local approval surface: pending pairings visible only to the runner host."""
+    def pairing_pending(request: Request, _admin=Depends(require_local_admin)) -> JSONResponse:
+        """Local approval surface: pending pairings, gated by the host-side secret."""
         store: AuthStore = request.app.state.store
         store.purge_expired()
         pending = [
@@ -313,7 +348,7 @@ def _register_routes(app: FastAPI) -> None:
     def pairing_confirm(
         request: Request,
         pairing_id: str = PathParam(...),
-        _origin=Depends(_require_local_origin),
+        _admin=Depends(require_local_admin),
     ) -> JSONResponse:
         store: AuthStore = request.app.state.store
         try:
@@ -330,7 +365,7 @@ def _register_routes(app: FastAPI) -> None:
     def pairing_deny(
         request: Request,
         pairing_id: str = PathParam(...),
-        _origin=Depends(_require_local_origin),
+        _admin=Depends(require_local_admin),
     ) -> JSONResponse:
         store: AuthStore = request.app.state.store
         store.deny_pairing(pairing_id)
@@ -364,8 +399,8 @@ def _register_routes(app: FastAPI) -> None:
 
         try:
             available = await backend.model_names()
-        except OllamaError as exc:
-            raise HTTPException(status_code=502, detail=f"ollama_unreachable: {exc}")
+        except OllamaError:
+            raise HTTPException(status_code=502, detail="ollama_unreachable")
         if model not in available:
             raise HTTPException(
                 status_code=400,
@@ -374,8 +409,8 @@ def _register_routes(app: FastAPI) -> None:
 
         try:
             result = await backend.generate(model, prompt, options)
-        except OllamaError as exc:
-            raise HTTPException(status_code=502, detail=f"inference_failed: {exc}")
+        except OllamaError:
+            raise HTTPException(status_code=502, detail="inference_failed")
 
         return JSONResponse(
             {
@@ -391,12 +426,10 @@ def _register_routes(app: FastAPI) -> None:
         )
 
 
-def backend_public_url(cfg: RunnerConfig) -> str:
-    return cfg.ollama_url
-
-
 def _announce_pairing(request: Request, pairing) -> None:
     cfg: RunnerConfig = request.app.state.config
+    authority = f"{cfg.bind_host}:{cfg.port}"
+    admin_src = cfg.local_admin_file or "$CEOPS_LOCAL_ADMIN_TOKEN"
     lines = [
         "",
         "==================== CEOps pairing request ====================",
@@ -404,8 +437,9 @@ def _announce_pairing(request: Request, pairing) -> None:
         f"  origin     : {pairing.origin}",
         f"  scopes     : {', '.join(pairing.scopes)}",
         f"  phrase     : {pairing.confirm_phrase}",
-        "  approve on this host with:",
-        f"    curl -s -X POST http://127.0.0.1:{cfg.port}/v1/pairing/{pairing.pairing_id}/confirm",
+        "  approve on this host (needs the host-only local-admin secret):",
+        f"    curl -s -X POST http://{authority}/v1/pairing/{pairing.pairing_id}/confirm \\",
+        f'      -H "X-CEOps-Local-Admin: $(cat {admin_src})"',
         "===============================================================",
         "",
     ]

@@ -1,4 +1,4 @@
-from helpers import PUBLIC
+from helpers import ADMIN_HEADER, PUBLIC
 
 
 def _request(client, challenge, scopes=("runner:read", "experiment:execute")):
@@ -20,7 +20,7 @@ def test_full_pairing_ceremony(client):
     pending = client.get(f"/v1/pairing/{pairing_id}", headers={"X-CEOps-Pairing-Challenge": challenge})
     assert pending.json()["status"] == "pending"
 
-    confirm = client.post(f"/v1/pairing/{pairing_id}/confirm")
+    confirm = client.post(f"/v1/pairing/{pairing_id}/confirm", headers=ADMIN_HEADER)
     assert confirm.status_code == 200
 
     got = client.get(f"/v1/pairing/{pairing_id}", headers={"X-CEOps-Pairing-Challenge": challenge})
@@ -51,10 +51,10 @@ def test_pairing_request_requires_public_origin(client):
     assert r.status_code == 403  # no Origin header
 
 
-def test_pending_list_is_local_only(client):
+def test_pending_list_requires_admin_secret(client):
     _request(client, "h" * 32)
-    local = client.get("/v1/pairing/pending/list")
-    assert local.status_code == 200
-    assert len(local.json()["pending"]) >= 1
-    public = client.get("/v1/pairing/pending/list", headers={"origin": PUBLIC})
-    assert public.status_code == 403
+    denied = client.get("/v1/pairing/pending/list")  # no secret
+    assert denied.status_code == 403
+    ok = client.get("/v1/pairing/pending/list", headers=ADMIN_HEADER)
+    assert ok.status_code == 200
+    assert len(ok.json()["pending"]) >= 1

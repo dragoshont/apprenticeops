@@ -1,4 +1,4 @@
-from helpers import LOCAL, PUBLIC, complete_pairing
+from helpers import ADMIN_HEADER, LOCAL, PUBLIC, complete_pairing
 
 
 def test_preflight_allowed_origin(client):
@@ -35,15 +35,19 @@ def test_wrong_scope_forbidden(client):
     assert r.status_code == 403
 
 
-def test_public_origin_cannot_confirm(client):
+def test_confirm_requires_admin_secret(client):
     r = client.post(
         "/v1/pairing/request",
         headers={"origin": PUBLIC},
         json={"challenge": "d" * 32, "scopes": ["runner:read"], "client_version": "t"},
     )
     pairing_id = r.json()["pairing_id"]
-    bad = client.post(f"/v1/pairing/{pairing_id}/confirm", headers={"origin": PUBLIC})
-    assert bad.status_code == 403
+    # no secret, wrong secret, and a public console origin all cannot approve
+    assert client.post(f"/v1/pairing/{pairing_id}/confirm").status_code == 403
+    assert client.post(f"/v1/pairing/{pairing_id}/confirm", headers={"X-CEOps-Local-Admin": "wrong"}).status_code == 403
+    assert client.post(f"/v1/pairing/{pairing_id}/confirm", headers={"origin": PUBLIC}).status_code == 403
+    # only the host-side secret approves
+    assert client.post(f"/v1/pairing/{pairing_id}/confirm", headers=ADMIN_HEADER).status_code == 200
 
 
 def test_token_origin_binding(client):
@@ -53,4 +57,11 @@ def test_token_origin_binding(client):
         "/v1/capabilities",
         headers={"origin": LOCAL, "x-ceops-token": creds["token"]},
     )
+    assert r.status_code == 401
+
+
+def test_token_no_origin_bypass(client):
+    creds = complete_pairing(client)  # token bound to PUBLIC
+    # omitting Origin entirely must not bypass origin binding
+    r = client.get("/v1/capabilities", headers={"x-ceops-token": creds["token"]})
     assert r.status_code == 401
