@@ -62,7 +62,7 @@ website:
         href: https://github.com/dragoshont/apprenticeops
         aria-label: "ApprenticeOps source on GitHub"
   page-footer:
-    left: "Evidence: analysis v1 · corrected 2026-07-10"
+    left: "Evidence: ApprenticeOps analysis v1 · locked"
     center: "Code Apache-2.0 · dataset mixed rights · human-guided, AI-assisted"
     right:
       - text: "Build provenance"

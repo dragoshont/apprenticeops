@@ -39,6 +39,19 @@ the three-axis front; the balanced pick is highlighted.
 
 {{< include _ceops-table.md >}}
 
+## Comparability
+
+Every controlled result above shares one measurement regime — collection batch
+`var`, CPU regime `base_clock_1700_turbo_off`, energy from RAPL `package-0` — so
+quality, safety, and **energy** are compared like-for-like across all 24.
+
+Energy is **not** pooled across batches or regimes
+(`energy_cross_batch_comparison_allowed = false`): mixing incompatible
+CPU-frequency or RAPL regimes is the error the 2026-07-10 correction withdrew.
+Quality and safety are judge-consistent across the full 94-model breadth set, but
+that set spans regimes, so it carries **no** energy front — only the controlled
+24 support a three-axis quality × safety × energy comparison.
+
 ## Verify this evidence
 
 Quality is the 5-rep × 2-judge ensemble; safety and energy are judge-free and
