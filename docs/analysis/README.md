@@ -58,6 +58,14 @@ python3 scripts/verify-portal.py \
   --expected-commit "$(git rev-parse HEAD)"
 ```
 
+Exact notebook-output and PNG comparison is **reference-platform verification**:
+the correction-lock artifacts were generated on macOS arm64, and the Pages
+workflow pins that gate to GitHub's `macos-15` arm64 runner. Schema, claim, link,
+privacy, and portal-truth audits are platform-independent. Native Linux arm64
+reproduces notebook outputs and tabular exports but not identical PNG pixels;
+Ubuntu x64 can also differ at floating ordering/serialization boundaries. Those
+platform differences are not accepted silently or hidden by wider tolerances.
+
 > **Honesty:** the **quality** axis is the **5-rep × 2-judge ensemble**
 > (cross-judge κ_quad ≈ 0.91); **safety** is judge-free. **Energy and systems
 > rankings are controlled-first-batch only.** Everything is one commodity node

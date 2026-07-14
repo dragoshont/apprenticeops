@@ -24,7 +24,10 @@ concurrency:
 jobs:
   verify-analysis-v1:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # Cached notebook/PNG artifacts are byte- and pixel-locked to the macOS arm64
+    # correction environment. Portable schema/claim checks still run here; only
+    # exact artifact reproduction needs the reference platform.
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +36,9 @@ jobs:
 
       - name: Verify archival history
         run: git cat-file -e '36fc989^{commit}'
+
+      - name: Verify reference platform
+        run: test "$(uname -s)/$(uname -m)" = "Darwin/arm64"
 
       - name: Set up Python
         uses: actions/setup-python@v5
