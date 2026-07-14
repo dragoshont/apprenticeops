@@ -63,6 +63,9 @@ jobs:
           .venv/bin/python scripts/validate-croissant.py --official
           .venv/bin/python scripts/test-portal.py
 
+      - name: Warm reference plotting cache
+        run: .venv/bin/python -c 'import matplotlib.pyplot'
+
       - name: Reproduce analysis v1 without mutation
         run: PY=.venv/bin/python scripts/build-analysis-site.sh --verify
 
