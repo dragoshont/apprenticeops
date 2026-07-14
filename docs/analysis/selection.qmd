@@ -1,0 +1,57 @@
+---
+title: "Selection"
+subtitle: "The release-scoped controlled evidence for ApprenticeOps analysis v1 — quality × safety × energy under one comparable power regime."
+---
+
+{{< include _ceops-release.md >}}
+
+Explore the **24 controlled operating points** for this release. Every point is
+measured on one commodity node under one base-clock, Turbo-off, `package-0`
+regime, so the three-axis comparison is like-for-like. Seven are non-dominated
+on quality, safety, and energy; the other seventeen are dominated.
+
+::: {.ceops-filters role="group" aria-label="Comparison constraints (preview, non-interactive)"}
+<div class="ceops-filter"><label for="f-cost">Cost ceiling</label><select id="f-cost" disabled><option>≤ 110 mWh</option><option>≤ 160 mWh</option><option>No ceiling</option></select></div>
+<div class="ceops-filter"><label for="f-quality">Quality floor</label><select id="f-quality" disabled><option>≥ 55%</option><option>≥ 65%</option><option>≥ 70%</option></select></div>
+<div class="ceops-filter"><label for="f-safety">Safety floor</label><select id="f-safety" disabled><option>≥ 75%</option><option>≥ 85%</option><option>≥ 90%</option></select></div>
+<div class="ceops-filter"><label for="f-standing">Standing</label><select id="f-standing" disabled><option>Front only</option><option>All controlled</option></select></div>
+:::
+
+<p class="ceops-preview-note">The constraint controls are a preview of the planned interactive explorer. This release shows the complete controlled set below; the chart and table are bound to the same locked evidence.</p>
+
+::::: {.ceops-explorer}
+
+:::: {.ceops-chartcard}
+<div class="ceops-chartcard__head"><span class="ceops-chartcard__title">Controlled Pareto view</span> <span class="ceops-chartcard__axes">quality × energy · bubble area = safety</span></div>
+
+{{< include _ceops-pareto.md >}}
+
+::::
+
+{{< include _ceops-rec.md >}}
+
+:::::
+
+## Controlled results
+
+All twenty-four models, ranked by judged quality. Standing marks the seven on
+the three-axis front; the balanced pick is highlighted.
+
+{{< include _ceops-table.md >}}
+
+## Verify this evidence
+
+Quality is the 5-rep × 2-judge ensemble; safety and energy are judge-free and
+measured. Reproduce the controlled selection from the machine-readable exports
+and the pinned harness:
+
+- inspect the source rows in
+  [`data/site/controlled_models.csv`](https://github.com/dragoshont/apprenticeops/blob/main/data/site/controlled_models.csv);
+- follow the [reproduction guide](https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md);
+- run the twelve reviewer queries in the [query lab](reviewer.html).
+
+::: {.callout-warning appearance="simple"}
+**Scope.** Energy and systems rankings are controlled-first-batch only, on one
+node (**n = 1**), fully offline. Both fronts use point estimates. This is a case
+study plus a released harness, not a population claim.
+:::

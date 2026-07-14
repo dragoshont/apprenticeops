@@ -5,6 +5,7 @@ project:
     - portal-build.js
   render:
     - index.qmd
+    - selection.qmd
     - paper.qmd
     - wave_analysis.ipynb
     - judge_comparison.ipynb
@@ -18,12 +19,13 @@ execute:
   enabled: false
 
 website:
-  title: "ApprenticeOps"
+  title: "CEOps"
   site-url: https://dragoshont.github.io/apprenticeops/
   favicon: favicon.svg
   description: >-
-    Small locally-sovereign LLMs as homelab ops assistants —
-    quality × safety × energy, on commodity offline hardware.
+    CEOps — a benchmark and paper on whether small, locally sovereign model
+    deployments are good enough at a cost commodity offline hardware can
+    sustain. First release: ApprenticeOps (quality × safety × energy).
   reader-mode: true
   search:
     location: navbar
@@ -32,21 +34,20 @@ website:
     collapse-after: 1
     show-item-context: tree
   navbar:
-    background: dark
     collapse-below: xl
     left:
       - text: "Overview"
         href: index.qmd
-      - text: "Paper"
-        href: paper.qmd
       - text: "Evidence"
         menu:
+          - text: "Selection"
+            href: selection.qmd
           - text: "Selection results"
             href: wave_analysis.ipynb
           - text: "Judge agreement"
             href: judge_comparison.ipynb
-          - text: "Research updates (candidate)"
-            href: research-updates.qmd
+      - text: "Method & paper"
+        href: paper.qmd
       - text: "Reproduce"
         menu:
           - text: "Reviewer query lab"
@@ -57,6 +58,8 @@ website:
             href: https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md
       - text: "Review"
         href: reviewers.qmd
+      - text: "Research updates"
+        href: research-updates.qmd
     tools:
       - icon: github
         href: https://github.com/dragoshont/apprenticeops
@@ -70,7 +73,9 @@ website:
 
 format:
   html:
-    theme: cosmo
+    theme:
+      light: [cosmo, ceops.scss]
+      dark: [cosmo, ceops.scss]
     css: portal.css
     toc: true
     toc-depth: 3

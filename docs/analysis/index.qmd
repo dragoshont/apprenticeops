@@ -1,7 +1,36 @@
 ---
-title: "ApprenticeOps"
-subtitle: "Which small, offline LLM do you actually run? Choose on quality × safety × energy — not a proxy."
+title: "Which local model deployment is good enough at a cost your hardware can sustain?"
+subtitle: "CEOps benchmarks small, locally sovereign model deployments — quality × safety × energy, on commodity offline hardware. First release: ApprenticeOps."
 ---
+
+{{< include _ceops-release.md >}}
+
+<ul class="ceops-scopes">
+<li class="ceops-scope"><b class="u-tnum">7 of 24</b><span>controlled three-axis front</span></li>
+<li class="ceops-scope"><b class="u-tnum">2 of 94</b><span>breadth quality–safety front</span></li>
+<li class="ceops-scope"><b>Single node</b><span>i5-8350U · offline · n = 1</span></li>
+</ul>
+
+::::: {.ceops-explorer}
+
+:::: {.ceops-chartcard}
+<div class="ceops-chartcard__head"><span class="ceops-chartcard__title">Controlled selection</span> <span class="ceops-chartcard__axes">quality × energy · bubble area = safety</span></div>
+
+{{< include _ceops-pareto.md >}}
+
+::::
+
+{{< include _ceops-rec.md >}}
+
+:::::
+
+<div class="ceops-actions">
+<a class="ceops-btn ceops-btn--primary" href="selection.html">Inspect the evidence</a>
+<a class="ceops-btn" href="paper.html">Read the paper</a>
+<a class="ceops-btn" href="reviewer.html">Reproduce this release</a>
+</div>
+
+<p class="ceops-boundary">Results hold for one measured environment and one preference rule. They do not rank models universally, and they do not imply readiness for autonomous operations.</p>
 
 ## The question
 
