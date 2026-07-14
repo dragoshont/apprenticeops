@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ceops-runner"
+version = "0.1.0"
+description = "CEOps user-owned experiment runner (loopback-first, pairing-token authorized)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+ceops-runner = "ceops_runner.__main__:main"
+
+[tool.setuptools]
+packages = ["ceops_runner"]
+
+[tool.setuptools.package-data]
+ceops_runner = ["static/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
