@@ -26,6 +26,9 @@ their home network to CEOps.
   browser CORS/Local Network Access permission.
 - A runner may coordinate explicitly configured LAN workers, but that is a
   runner-side capability. The browser talks only to its paired loopback runner.
+- Serving the runner's local UI to a second machine on the same LAN is an
+  opt-in, explicitly configured, token-gated capability; it is never on by
+  default and never exposes the runner beyond the LAN (section 6.7).
 - The current private Mission Control remains private and unchanged until this
   contract is independently implemented and reviewed.
 
@@ -72,6 +75,42 @@ instructions. The local UI bundle and runner API advertise compatible versions.
 The protocol spike uses a genuinely public HTTPS origin and real GUI browsers;
 hosts-file mappings, headless-only tests, and localhost-hosted copies do not close
 the permission/compatibility gate.
+
+### 3.2 Exact browser reachability (researched 2026-07-14)
+
+Reachability depends on where the console document is served from and where the
+runner listens. The facts below are from the WHATWG/MDN mixed-content definition
+and Chrome's Local Network Access launch, verified 2026-07-14.
+
+- **Loopback is a mixed-content exception.** A secure (HTTPS) document may fetch
+  `http://127.0.0.1` / `http://localhost` in Chromium/Edge (since 79) and Firefox
+  (loopback since 55, `localhost` since 84). Safari/WebKit grants no such
+  exception: a public HTTPS page cannot fetch loopback HTTP at all.
+- **Private LAN IPs are not a general exception.** Chrome 142 LNA exempts a
+  request from mixed content only when the target is known-local before DNS
+  resolution -- a private-IP literal (`http://192.168.1.50`), a `.local` name, or
+  `fetch(..., { targetAddressSpace: "local" })` -- and then still shows a one-time
+  Local Network Access permission prompt. Firefox and Safari have no equivalent
+  exemption; a public HTTPS page fetching `http://192.168.x.x` is blocked with no
+  override.
+- **A directly-navigated HTTP local page has no mixed content.** A browser
+  navigated to `http://127.0.0.1:<port>` or `http://<lan-ip>:<port>` (the
+  runner-served local UI) is a same-origin HTTP document that every browser,
+  including Safari, runs. Served from a LAN IP it is not a Secure Context, so it
+  must not depend on Secure-Context-only APIs (Service Workers, `crypto.subtle`);
+  `crypto.getRandomValues` remains available.
+
+| Console origin -> runner listener | Chromium/Edge | Firefox | Safari |
+|---|---|---|---|
+| `https://experiment.ceops.org` -> `http://127.0.0.1` (same machine) | one-time LNA permission | works | blocked |
+| `https://experiment.ceops.org` -> `http://192.168.x.x` (second machine) | LNA permission + local hint | blocked | blocked |
+| direct `http://127.0.0.1:<port>` local UI (same machine) | works | works | works |
+| direct `http://<lan-ip>:<port>` local UI (second machine) | works | works | works |
+
+The portable path to a second machine is therefore the runner-served local UI on
+an opt-in LAN bind, navigated directly -- not the public HTTPS console reaching a
+LAN IP. The public console stays the Chromium-first same-machine path, with the
+local UI as the Firefox-optional, Safari-required, and offline surface.
 
 ## 4. Current System And Reuse Map
 
@@ -129,6 +168,29 @@ polls status from repository/run files.
 | Public static browser pairs to loopback runner | Browser-only UI, user-owned execution/data, no inbound home access, clear local authorization boundary | Requires local install and careful pairing/CORS design | **Selected** |
 | Runner serves the entire UI locally | Simplest same-origin security and best browser compatibility | Loses canonical web-delivered UI/update experience | Required compatibility fallback, not primary |
 | Native desktop application | Strong local integration | Packaging and update burden; violates browser-only product goal | Reject |
+
+### 5.1 Transport-security options considered
+
+Scope: LAN-only, no-internet operation. The following automated-TLS options were
+evaluated for giving the runner a browser-trusted HTTPS endpoint. All were
+rejected for this scope; the runner uses plain HTTP on loopback (and on an opt-in
+LAN bind, section 6.7).
+
+| Option | Mechanism | Why rejected for this scope |
+|---|---|---|
+| Local CA (Caddy internal / mkcert) | Runner mints a private CA and installs its root | Trusted only where the root is installed; breaks on every other LAN device; per-device trust management |
+| Real cert via ACME DNS-01 | Public domain whose record points at the LAN IP; cert issued via DNS TXT | Requires a user-owned domain plus a supported DNS API; issuance is an internet control-plane call; overkill for loopback |
+| Plex-style IP-in-hostname wildcard (`plex.direct`) | `ip.hash.<domain>` resolves to the IP with a matching wildcard cert | CEOps-run DNS plus wildcard-cert distribution; DNS-rebinding-protection breakage; a hosted-relay dependency this product rejects |
+| Public IP-literal DNS (sslip.io / nip.io) | `192-168-1-50.sslip.io` resolves to the IP; per-host ACME cert | Third-party DNS plus internet issuance; still per-host cert management; unnecessary when the local UI is same-origin HTTP |
+| Overlay TLS (Tailscale `*.ts.net`) | Managed cert plus identity over a WireGuard mesh | Cross-network tool for a LAN-only requirement; mandatory dependency; publishes machine names to Certificate Transparency |
+| Let's Encrypt IP / 6-day certs | Cert bound to a public IP | Only issuable for public IPs; cannot cover RFC1918 LAN addresses |
+
+Decision: none adopted. The browser path is loopback HTTP (a mixed-content
+exception, section 3.2) or a directly-navigated HTTP local UI (no mixed content).
+Wire confidentiality is out of scope for a single trusted LAN carrying a
+no-secret benchmark payload; the pairing token plus exact origin/host plus the
+CORS allowlist remain the authorization controls. If wire confidentiality is
+later required, the ACME DNS-01 option is the documented re-entry point.
 
 ## 6. Pairing And Authorization Contract
 
@@ -266,6 +328,46 @@ The server rejects every unlisted route/method/header/profile combination. The
 test matrix includes guessed or cross-pairing pairing IDs, preparation IDs, run
 IDs, operation IDs, deletion IDs, candidate IDs, and bundle digests, plus
 wrong/missing scopes for every endpoint family.
+
+### 6.7 Same-machine and second-machine access
+
+The runner supports two deployment shapes with one install and no certificates:
+
+1. **Same machine (default).** The runner and the browser run on one computer.
+   The public console reaches `http://127.0.0.1:<port>` (Chromium/Edge with the
+   one-time LNA permission; Firefox directly), and the runner-served local UI at
+   `http://127.0.0.1:<port>` is the Safari and offline path. This is the loopback
+   profile of sections 6.2-6.6, unchanged.
+2. **Second machine on the same LAN (opt-in).** The runner runs on one computer
+   (for example a workstation) and is driven from a browser on another computer
+   on the same LAN (for example a laptop). Because a public HTTPS console cannot
+   portably reach a LAN-IP HTTP runner (section 3.2), the supported
+   second-machine surface is the runner-served local UI, navigated directly at
+   `http://<lan-host>:<port>`.
+
+The LAN bind is never the default. It is enabled by an explicit runner
+flag/config that names the interface or address to bind, and it fails closed if
+that address is not a private or link-local range. When LAN-bound the runner:
+
+- keeps loopback bound as well, and adds the exact configured LAN authority
+  (`<lan-ip>:<port>` and any configured `<name>.local:<port>`) to the exact-`Host`
+  allowlist; every other `Host` is still rejected (DNS-rebinding defense,
+  section 12);
+- requires the same local pairing ceremony (section 6.3); approval is shown on
+  the runner host, so the second-machine user must be able to see the runner
+  host's approval surface or a printed pairing code;
+- requires the scoped pairing token on every non-health request exactly as
+  loopback does -- LAN reachability is not authorization;
+- serves the local UI as a plain-HTTP, non-Secure-Context origin and therefore
+  must not rely on Service Workers or `crypto.subtle`;
+- prints an explicit exposure warning: everyone who can reach the port on the LAN
+  can attempt to reach the runner, and only the pairing token and the OS firewall
+  stand in front of it. The documentation recommends binding one specific trusted
+  interface and adding a host firewall rule, and warns against untrusted networks.
+
+Direct control of a LAN-IP runner from the public HTTPS console remains a
+Chromium-only, separately-gated capability; it stays in the protocol spike
+(section 14.1) and deferrals (section 15) until proven across the browser matrix.
 
 ## 7. Minimal Runner API
 
@@ -507,7 +609,7 @@ rejected-alternative rationale.
 | Threat | Required control |
 |---|---|
 | Malicious public site drives localhost runner | Exact origin/host checks, user-confirmed pairing, scoped token, non-simple preflighted mutations. |
-| DNS rebinding or cross-network confusion | Loopback binding only; reject non-loopback Host/address; no wildcard DNS or arbitrary LAN discovery. |
+| DNS rebinding or cross-network confusion | Loopback by default; when LAN bind is explicitly enabled, accept only the exact configured loopback and LAN authorities and reject every other Host/address; no wildcard DNS or arbitrary LAN discovery. |
 | Stolen token | In-memory, short-lived, origin-bound token; explicit revoke; no URL/cookie storage. |
 | Runner command injection | Browser submits typed IDs and manifests; runner resolves adapters/paths and never executes raw shell from the client. |
 | Malicious experiment pack | Digest pinning, schema validation, declared capabilities, sandbox policy, no source-provided command execution by default. |
@@ -633,7 +735,10 @@ passes in isolation.
 ## 15. Explicit Deferrals
 
 - central CEOps accounts, cloud queue, result upload, or hosted judging;
-- browser-direct arbitrary LAN runner discovery/control;
+- automatic or public-console-driven LAN runner discovery/control -- the
+  explicit, user-configured second-machine local UI (section 6.7) is in scope,
+  but browser-direct control of a LAN-IP runner from the public HTTPS console is
+  not;
 - collaborative teams and remote administration;
 - automatic public leaderboard submissions;
 - model artifact hosting;
@@ -656,6 +761,9 @@ passes in isolation.
 - Chrome's implementation guidance records LNA permission launch in Chrome 142
   and explicitly states that it replaced the paused PNA preflight approach:
   <https://developer.chrome.com/blog/local-network-access>.
+- WHATWG/MDN Mixed Content defines the loopback mixed-content exception and the
+  IP-address blocking rule that shape the section 3.2 reachability matrix:
+  <https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content>.
 - CEOps still uses ordinary Fetch/CORS preflight because its JSON and scoped
   token headers are not CORS-safelisted; it does not depend on obsolete
   `Access-Control-Allow-Private-Network` headers.
