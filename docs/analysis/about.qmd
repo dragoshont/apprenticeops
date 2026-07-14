@@ -46,11 +46,12 @@ condition, not a footnote.
 
 Because the condition already carries that adaptation, the **same released
 harness** measures a model **you have fine-tuned** for your own domain: a local
-GGUF is run through the identical scenarios and grading, on the same quality and
-safety axes, and — where your hardware exposes energy counters or a metered plug
-— the same energy axis. A tuned model is not scored on a different scale; it
-sits in the same comparison, so "stock model" versus "the model I adapted" is a
-like-for-like question you can answer with evidence.
+GGUF is run through the identical scenarios, with quality scored by the same
+frontier judge, safety by the same deterministic checks, and — where your
+hardware exposes energy counters or a metered plug — energy on the same axis. A
+tuned model is not scored on a different scale; it sits in the same comparison,
+so "stock model" versus "the model I adapted" is a like-for-like question you
+can answer with evidence.
 
 ## What CEOps does not claim
 
