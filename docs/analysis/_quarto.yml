@@ -5,6 +5,7 @@ project:
     - portal-build.js
   render:
     - index.qmd
+    - about.qmd
     - selection.qmd
     - paper.qmd
     - wave_analysis.ipynb
@@ -38,6 +39,8 @@ website:
     left:
       - text: "Overview"
         href: index.qmd
+      - text: "About"
+        href: about.qmd
       - text: "Evidence"
         menu:
           - text: "Selection"
@@ -50,16 +53,10 @@ website:
         href: paper.qmd
       - text: "Reproduce"
         menu:
-          - text: "Reviewer query lab"
-            href: reviewer.ipynb
-          - text: "Machine-readable exports"
-            href: https://github.com/dragoshont/apprenticeops/tree/main/data/site
           - text: "Reproduction guide"
             href: https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md
-      - text: "Review"
-        href: reviewers.qmd
-      - text: "Research updates"
-        href: research-updates.qmd
+          - text: "Machine-readable exports"
+            href: https://github.com/dragoshont/apprenticeops/tree/main/data/site
     tools:
       - icon: github
         href: https://github.com/dragoshont/apprenticeops

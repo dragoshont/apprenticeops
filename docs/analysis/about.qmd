@@ -1,0 +1,62 @@
+---
+title: "About CEOps"
+subtitle: "What CEOps measures, who it is for, and why it exists."
+---
+
+## Why CEOps exists
+
+Teams and individuals are increasingly told to run a small model locally — on a
+laptop, a homelab box, or an offline workstation — for private, bounded work.
+The hard question is left unanswered: **which local model is actually good
+enough, safe enough, and efficient enough to run?** General leaderboards measure
+frontier capability on datacenter hardware, which is the wrong axis on the wrong
+machine for this decision.
+
+CEOps exists to answer that question with **measured, verifiable evidence** on
+the axes that decide a local deployment: judged **quality**, **safety**
+(refusal behavior), and **energy** per answer, on commodity offline hardware.
+
+## What a CEOps result means
+
+A CEOps result is **not a leaderboard and there is no single best model.** It is
+a **decision under explicit constraints.** Set a quality floor, a safety floor,
+and an energy or latency ceiling, and the controlled front returns a defensible
+choice for those constraints — together with the boundary where that choice
+stops holding. Change the constraints and the choice can change; the site makes
+that dependency visible rather than hiding it inside a composite score.
+
+## Who it is for
+
+- **Researchers and reviewers** — trace any claim to its method, condition
+  identity, raw rows, and reproduction command; the primary audience.
+- **Operators and self-hosters** — decide what to run on a specific box and know
+  the latency and energy cost before committing.
+- **Platform and safety evaluators** — weigh refusal behavior alongside quality,
+  not after it.
+- **Anyone measuring their own model** — apply the same lens to a model they
+  built or adapted.
+
+## Vanilla and tuned models
+
+The released evidence measures **vanilla** stock open models across sizes,
+training types, and quantizations. CEOps records **how each model was built and
+run** — its size, training type (base, instruct, or reasoning-distilled),
+quantization, and reasoning mode — as a first-class part of the measured
+condition, not a footnote.
+
+Because the condition already carries that adaptation, the **same released
+harness** measures a model **you have fine-tuned** for your own domain: a local
+GGUF is run through the identical scenarios and grading, on the same quality and
+safety axes, and — where your hardware exposes energy counters or a metered plug
+— the same energy axis. A tuned model is not scored on a different scale; it
+sits in the same comparison, so "stock model" versus "the model I adapted" is a
+like-for-like question you can answer with evidence.
+
+## What CEOps does not claim
+
+- It does not rank models universally or reduce them to one composite score.
+- It does not claim small models replace frontier models.
+- It does not treat local execution as readiness for autonomous operations.
+- It reports one commodity node (**n = 1**), fully offline: a rigorous case
+  study plus a released harness, not a population claim. Point estimates are
+  shown with their uncertainty, and corrections are stated as openly as results.
