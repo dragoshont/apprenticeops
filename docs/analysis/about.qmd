@@ -61,3 +61,25 @@ can answer with evidence.
 - It reports one commodity node (**n = 1**), fully offline: a rigorous case
   study plus a released harness, not a population claim. Point estimates are
   shown with their uncertainty, and corrections are stated as openly as results.
+
+## Releases
+
+CEOps evidence is versioned on three levels, so a result is never ambiguous
+about which body of evidence it belongs to:
+
+- **Schema** (`v1`, `v2` …) — the analysis method and comparability rules. A new
+  schema measures results through a different lens, so its numbers are not
+  directly comparable to the previous schema's.
+- **Revision** (`v1.1`, `v1.2` …) — added models, scenarios, or a correction
+  under the *same* schema. A revision stays like-for-like with the rest of that
+  schema's evidence.
+- **Digest** — the exact content identity (the release commit and bundle hash)
+  behind every human-readable label. The label is an alias; the digest is the
+  ground truth, recorded for each build in `build.json` at the site root.
+
+**Release history**
+
+- **v1** — the current locked release. Corrected 2026-07-10: an earlier pooled
+  12-of-94 energy front was withdrawn and every snapshot was rebound to its raw
+  batch. The raw evidence is immutable; the correction re-derived the analysis,
+  not the data.
