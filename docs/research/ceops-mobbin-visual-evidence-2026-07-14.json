@@ -1,0 +1,78 @@
+{
+  "schema": "ceops.mobbin-visual-evidence.v1",
+  "observed_at": "2026-07-14",
+  "purpose": "Identify the exact third-party visual bytes inspected for the CEOps design brief without redistributing those images.",
+  "license_note": "Images remain third-party Mobbin/source-site content. This manifest stores identifiers, URLs, hashes, and observations only.",
+  "sections": [
+    {
+      "section_id": "ce75938d-b352-4140-b083-3c3af66b6c87",
+      "mobbin_url": "https://mobbin.com/sections/ce75938d-b352-4140-b083-3c3af66b6c87",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/sites/4574ecbb-fbd5-40b3-bcae-b7d5200717c7.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "bb4792851d2d70234ee52c006a0b1748558efc5c6231601a5a7d3b9eddd18354",
+      "observations": [
+        "Research-specific proposition is stated before feature detail.",
+        "The real product surface appears in the first viewport."
+      ]
+    },
+    {
+      "section_id": "e47ac64e-a959-43c8-910f-d79ae24b674b",
+      "mobbin_url": "https://mobbin.com/sections/e47ac64e-a959-43c8-910f-d79ae24b674b",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/app_fullpage_screens/289e99e9-b7f4-481f-b469-364771d514f8.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "ba89085102d383e0edeb4e036302dfab78f4802b4228a647b96db85b4f49fd51",
+      "observations": [
+        "The workflow is broken into named user jobs.",
+        "Product UI is placed adjacent to explanatory text."
+      ]
+    },
+    {
+      "section_id": "2e54223a-941c-425e-8f0b-f756a93f52d8",
+      "mobbin_url": "https://mobbin.com/sections/2e54223a-941c-425e-8f0b-f756a93f52d8",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/sites/ffa6a0e9-059f-478c-a6dc-9c4a300b9894.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "8acddb517ef8475f00e6e6d2f1cda68589c60df2b46eecd15fdf4867eea573c9",
+      "observations": [
+        "Three compact measured facts sit near the proposition.",
+        "The page proceeds from benchmark comparisons to concrete error examples and then integration."
+      ]
+    },
+    {
+      "section_id": "141ab41e-c74b-4f61-b877-fe16806e1345",
+      "mobbin_url": "https://mobbin.com/sections/141ab41e-c74b-4f61-b877-fe16806e1345",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/sites/d0451562-7bd6-4d36-9131-0611682988b5.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "04872b0bd655f9b0d9c4831ae33a9dac235f4238656417ba5ad65247ed8962c5",
+      "observations": [
+        "The benchmark follows a linear overview, methodology, aggregate result, result slices, and case-library narrative.",
+        "The case table makes individual outcomes inspectable."
+      ]
+    },
+    {
+      "section_id": "05f59762-1939-4e26-8f89-e1da4f78d5b9",
+      "mobbin_url": "https://mobbin.com/sections/05f59762-1939-4e26-8f89-e1da4f78d5b9",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/app_fullpage_screens/d6341634-02b9-47e9-ad16-d046991307ca.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "871e247ef7ffe928bbf0fa9f38b2f1246469eaf2e114d23681b7b5f7c02e2ca5",
+      "observations": [
+        "Quick start, overview, documentation, support, and policy are separate routes.",
+        "Developer jobs are grouped before learning resources."
+      ]
+    },
+    {
+      "section_id": "848358e0-f42c-4880-84ae-e972247e8583",
+      "mobbin_url": "https://mobbin.com/sections/848358e0-f42c-4880-84ae-e972247e8583",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/app_fullpage_screens/eece55ec-f5f2-45c6-b98e-8f70f2ac8e57.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "cf5b5173097e546c90c3ddd0a9a10b44e005b10f7715c8b370b970f3d9d5dfc7",
+      "observations": [
+        "Possible developer jobs are explicit in the first content region.",
+        "Community and resource links follow the task definition."
+      ]
+    },
+    {
+      "section_id": "2481bc4e-a2b5-4c28-a8f3-d46556140c74",
+      "mobbin_url": "https://mobbin.com/sections/2481bc4e-a2b5-4c28-a8f3-d46556140c74",
+      "source_image_url": "https://bytescale.mobbin.com/FW25bBB/image/mobbin.com/prod/content/app_fullpage_screens/48ccfcaf-6870-4cab-9fa0-2e6176adde4f.png?f=png&w=1920&q=50&fit=shrink-cover",
+      "image_sha256": "90022a48e0cf7d90be8fd94c6476184bbebef2d34c675ab5b79ce54284a26ab1",
+      "observations": [
+        "Credentials, product paths, APIs and SDKs, interactive tools, sandbox guidance, and support are separated.",
+        "Get-started branches are explicit rather than hidden in a generic documentation index."
+      ]
+    }
+  ]
+}
