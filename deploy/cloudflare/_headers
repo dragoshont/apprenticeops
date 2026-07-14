@@ -1,0 +1,16 @@
+# Cloudflare Pages headers for CEOps (docs/analysis/_site).
+# Copied into _site at deploy time (Quarto ignores files starting with "_").
+
+# Quarto content-hashes everything under site_libs/, so those URLs never change
+# their bytes — cache them immutably for fast repeat visits.
+/site_libs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Pages and provenance must always reflect the latest locked build and any
+# correction, so they revalidate rather than cache.
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/build.json
+  Cache-Control: public, max-age=0, must-revalidate
+/search.json
+  Cache-Control: public, max-age=0, must-revalidate

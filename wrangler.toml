@@ -1,0 +1,8 @@
+name = "ceops"
+compatibility_date = "2026-07-14"
+
+# CEOps is a static Quarto site. GitHub Actions runs the locked analysis-verify
+# and Quarto render, then `wrangler pages deploy` publishes docs/analysis/_site
+# to this Cloudflare Pages project. The build output directory is passed on the
+# command line in .github/workflows/publish-analysis.yml.
+pages_build_output_dir = "docs/analysis/_site"
