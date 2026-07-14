@@ -81,7 +81,7 @@ power regime.
 | `smollm2:360m` | 0-1B | 27.8% | 65.6% | 23 |
 
 : Ordered by the controlled balanced pick first. The 94-model quality-safety
-front is separate: `unsloth/Qwen3-4B` and `qwen3:4b-instruct-2507-q8_0`.
+front is separate: `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` and `qwen3:4b-instruct-2507-q8_0`.
 
 ## Choose your path
 

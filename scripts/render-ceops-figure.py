@@ -37,8 +37,8 @@ M = {"top": 24.0, "right": 118.0, "bottom": 58.0, "left": 62.0}
 PW = W - M["left"] - M["right"]
 PH = H - M["top"] - M["bottom"]
 
-X_MAX_MWH = 170.0            # energy ceiling (max observed ~155 mWh)
-Y_MIN, Y_MAX = 25.0, 75.0   # quality percent window
+X_MAX_MWH = 170.0           # energy ceiling; recomputed from the full dataset in main()
+Y_MIN, Y_MAX = 20.0, 75.0   # quality percent window (covers 25.2%..71.3%)
 
 
 def x_px(mwh: float) -> float:
@@ -51,7 +51,8 @@ def y_px(q_pct: float) -> float:
 
 def r_safety(safety_frac: float) -> float:
     # Bubble AREA encodes safety: radius grows with sqrt so area is linear.
-    return 5.0 + math.sqrt(max(0.0, safety_frac - 0.55)) * 24.0
+    # Baseline below the observed minimum (~0.41) so every value is distinct.
+    return 5.0 + math.sqrt(max(0.0, safety_frac - 0.40)) * 20.0
 
 
 def short_label(model: str) -> str:
@@ -93,8 +94,8 @@ def load_rows() -> list[dict]:
 
 
 def build_svg(rows: list[dict], pick: str) -> str:
-    x_ticks = [0, 25, 50, 75, 100, 125, 150]
-    y_ticks = [25, 35, 45, 55, 65, 75]
+    x_ticks = list(range(0, int(X_MAX_MWH) + 1, 50))
+    y_ticks = [20, 30, 40, 50, 60, 70]
     parts: list[str] = []
     parts.append(
         '<svg class="ceops-pareto" viewBox="0 0 {w:.0f} {h:.0f}" '
@@ -206,11 +207,14 @@ def build_table(rows: list[dict], pick: str) -> str:
 
 
 def main() -> None:
+    global X_MAX_MWH
     rows = load_rows()
     summary = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
     pick = summary.get("controlled_three_axis_pick", "")
     front = sum(1 for r in rows if r["front"])
     total = len(rows)
+    # Size the energy axis to the full controlled set so no model is clipped.
+    X_MAX_MWH = math.ceil(max(r["energy"] for r in rows) / 25.0) * 25.0
     svg = build_svg(rows, pick)
     legend = (
         '<div class="ceops-chartlegend" aria-hidden="true">'
