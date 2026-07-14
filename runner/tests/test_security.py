@@ -65,3 +65,23 @@ def test_token_no_origin_bypass(client):
     # omitting Origin entirely must not bypass origin binding
     r = client.get("/v1/capabilities", headers={"x-ceops-token": creds["token"]})
     assert r.status_code == 401
+
+
+def test_self_served_token_may_omit_origin(client):
+    # A token minted for an origin the runner itself serves (a Host-allowlist
+    # authority, e.g. the runner-served local UI) may omit Origin on same-origin
+    # GETs. It must NOT be rejected as origin_required; reaching the backend
+    # (here an unreachable Ollama -> 502) proves auth passed.
+    challenge = "s" * 32
+    r = client.post(
+        "/v1/pairing/request",
+        headers={"origin": LOCAL},
+        json={"challenge": challenge, "scopes": ["runner:read"], "client_version": "t"},
+    )
+    pairing_id = r.json()["pairing_id"]
+    client.post(f"/v1/pairing/{pairing_id}/confirm", headers=ADMIN_HEADER)
+    token = client.get(
+        f"/v1/pairing/{pairing_id}", headers={"X-CEOps-Pairing-Challenge": challenge}
+    ).json()["token"]
+    got = client.get("/v1/capabilities", headers={"x-ceops-token": token})
+    assert got.status_code != 401

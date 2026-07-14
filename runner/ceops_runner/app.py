@@ -121,10 +121,13 @@ def require_token(scope: str):
         if token is None:
             raise HTTPException(status_code=401, detail="invalid_or_missing_token")
         # Close the no-Origin bypass: a token minted for a public console origin
-        # must always present that Origin. Only same-origin local-UI tokens may
-        # omit Origin (browsers may drop it on same-origin GETs).
-        if origin is None and token.origin not in cfg.local_origins:
-            raise HTTPException(status_code=401, detail="origin_required")
+        # must always present that Origin. A token minted for an origin the runner
+        # itself serves (its own Host authority, e.g. the runner-served local UI)
+        # may omit Origin, since browsers drop it on same-origin GETs.
+        if origin is None:
+            authority = token.origin.split("://", 1)[-1]
+            if authority not in cfg.host_allowlist and token.origin not in cfg.local_origins:
+                raise HTTPException(status_code=401, detail="origin_required")
         if scope not in token.scopes:
             raise HTTPException(status_code=403, detail=f"missing_scope:{scope}")
         return token
