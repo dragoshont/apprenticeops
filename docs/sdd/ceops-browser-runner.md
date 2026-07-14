@@ -788,3 +788,45 @@ passes in isolation.
 
 These standards do not define the CEOps application protocol. The SDD uses their
 security model rather than inventing a weaker one.
+
+## 17. Implementation Status (spike, 2026-07-14)
+
+A working vertical slice of sections 6.2-6.6 (auth + real inference) is built and
+deployed. It is **not** the full section 7 mutating surface or the section 10
+evidence bundle, which remain not started.
+
+**Built** (`runner/`, FastAPI package `ceops_runner`): loopback-first runner with
+fail-closed private-only bind; exact-`Host` allowlist; exact-`Origin`, non-wildcard
+CORS with `Vary` and no credentials; the pairing ceremony (request -> host-side
+approval -> challenge-authenticated single-retrieval token) with origin-bound,
+scoped bearer tokens; a real Ollama client (`/v1/infer`, honest `502` on failure,
+no mock path); the runner-served console (`static/`) that also hosts verbatim; and
+optional uvicorn TLS. 35 unit tests + 1 real-inference integration test.
+
+**Security review.** An independent adversarial pass first returned FAIL on the
+LAN-bound profile (any LAN client could self-approve a pairing). Fixed: approval
+(`confirm`/`deny`/`pending`) now requires a **host-only local-admin secret**
+(mode-0600 file or `CEOPS_LOCAL_ADMIN_TOKEN`), not forgeable Origin membership;
+the no-Origin token bypass is closed (self-served vs public-console origins); a
+pending-pairing cap (`429`), eviction, and bounded failed reads guard memory. The
+re-review returned **PASS** (single family; a second judge family should co-sign
+before merge). Verified live from a separate machine: self-confirm and
+pending-list without the secret return `403`, and a spoofed `Host` returns `421`.
+
+**Deployed + verified live on home-ai** (systemd units, additive to the running
+experiment; the existing Ollama and its loaded model were never evicted -- runs
+targeted the warm model):
+
+- Demo A -- plain-HTTP runner-served console at `http://192.168.1.200:8799`: a
+  real browser paired and ran a real `phi3.5` completion end to end.
+- Demo B -- **real HTTPS** at `https://home-ai.hont.ro:8443` with a valid Let's
+  Encrypt certificate (issued via Cloudflare DNS-01): the same flow over a real,
+  browser-trusted domain.
+
+**`experiment.ceops.org`.** Demos A/B used `hont.ro` because hosting the console
+on the literal `experiment.ceops.org` requires a Cloudflare API token scoped to
+the `ceops.org` zone (the homelab tokens are `hont.ro`-scoped only). The flow is
+identical; the swap is: publish `static/` to the `ceops.org` Cloudflare Pages
+project, then start the runner with `--allow-origin https://experiment.ceops.org`
+(already the default) for the Chromium/LNA public-to-loopback path, or serve the
+console over TLS as in Demo B for the all-browser path.
