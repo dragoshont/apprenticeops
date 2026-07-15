@@ -108,6 +108,32 @@ follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
     capable-slow generalists (44), fast-weak lightweights (49), and 2 big-failure
     outliers. *(B2)*
 
+## Full-run re-center (Option A) — new findings
+
+Centering the analysis on `full-chatok-core20-r5` (152 models, one controlled
+turbo-off / RAPL package-0 regime; `full_data.py` + `full_report.py`) surfaces
+results the two-batch snapshot could not:
+
+15. **3-axis coverage jumps 25 → 152 models.** Quality × safety × **energy** is now
+    measured on every model under a single regime (no cross-batch confound), and the
+    ranking is robust to the re-center (**Spearman 0.974** vs the frozen snapshot).
+16. **Tool-training reproduces** on the full set: **+0.37 quality (p=0.018)**.
+17. **"Thinking mode" penalty is mostly a token-budget artifact — adversarially
+    defended** (`full_reasoning_pairs.py`). Same-lineage instruct-vs-thinking pairs
+    (Qwen3-4B ×2, Phi-4-mini, Qwen2.5-3B→smallthinker, EXAONE) lose **−0.42 quality**
+    at a fixed **512-token cap** (paired *t* p≈10⁻⁶). BUT both modes share that cap,
+    thinking exceeds it **74–100%** of the time, and on the answers it *finishes*
+    **3 of 5 pairs match or beat instruct** (mean Δ −0.07). Honest claim: **thinking
+    mode is a poor FIT for a tight token/latency budget on bounded ops tasks** (it
+    exhausts the budget before answering) — *not* that its reasoning is worse. Worst
+    on `toolcall` (−1.50) and `monitor`; neutral on `secure`. Lone genuine exception:
+    EXAONE-deep (worse even when finishing; also the least-matched pair). **To be
+    confirmed** by the queued budget-sensitivity re-run at higher `max_tokens`
+    (`data/models.reasoning-budget-v1.txt`).
+18. **Reasoning roster gap:** deepseek-r1 (the frozen "reasoning hurts" driver) is
+    absent from `full` (only deepseek-*coder* is present); the pilot carries the
+    R1-specific claim, or it is reframed as the budget-fit finding above.
+
 ## Methods (grounded)
 
 | Analysis | Method | Source |

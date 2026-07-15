@@ -1,0 +1,41 @@
+# Reasoning budget-sensitivity roster.
+#
+# Purpose: CONFIRM whether the "thinking mode hurts on bounded ops tasks" penalty
+# is a TOKEN-BUDGET artifact (thinking runs out of tokens before answering) or is
+# intrinsic to reasoning. On the full-chatok run at a fixed 512-token cap, thinking
+# variants lost ~-0.42 quality, but on the answers they did NOT truncate, 3 of 5
+# matched or BEAT their instruct sibling (deep-dive/full_reasoning_pairs.py) — i.e.
+# the penalty looks mostly like budget exhaustion (74-100% truncation), not worse
+# reasoning. This roster re-tests the matched pairs at higher budgets to settle it.
+#
+# Method: run these matched instruct<->thinking pairs at max_tokens in
+#   {512 (baseline), 1024, 2048, 4096}. Raise the budget via DEFAULT_MAX_TOKENS or a
+#   per-scenario `max_tokens` (note: MAX_TOKENS_CAP only LOWERS, it cannot raise).
+# Prediction: the (instruct - thinking) quality gap shrinks toward 0 (or flips
+#   positive) as the budget grows; truncation rate falls from ~74-100% toward the
+#   instruct baseline.
+#
+# Run all 20 scenarios x 5 reps; do NOT merge with primary rows. QUEUE AFTER the live
+# 21-model timeout-sensitivity run finishes — single node, do not disrupt it.
+#
+# Pairs (instruct control  <->  thinking/reasoning variant):
+
+# Qwen3-4B 2507 (Q8)
+qwen3:4b-instruct-2507-q8_0
+qwen3:4b-thinking-2507-q8_0
+
+# Qwen3-4B 2507 (Q4)
+qwen3:4b-instruct-2507-q4_K_M
+qwen3:4b-thinking-2507-q4_K_M
+
+# Phi-4-mini (Microsoft)
+phi4-mini
+phi4-mini-reasoning
+
+# Qwen2.5-3B-Instruct base (Q4)
+qwen2.5:3b-instruct-q4_K_M
+smallthinker:3b-preview-q4_K_M
+
+# EXAONE 7.8B (LG)
+exaone3.5:7.8b
+exaone-deep:7.8b

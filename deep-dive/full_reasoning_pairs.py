@@ -1,14 +1,18 @@
-"""Matched-pair reasoning analysis on the full run — "it's the mode, not the model".
+"""Matched-pair reasoning analysis on the full run + its adversarial defense.
 
-The cleanest causal test of whether thinking/reasoning helps or hurts on bounded
-ops tasks: hold the base model fixed and flip ONLY the mode (instruct vs
-thinking/reasoning). Because each pair shares a lineage, the contrast has no
-cross-model confound — unlike the frozen "reasoning-trained models are worse"
-claim, which compared deepseek-r1 to unrelated instruct models.
+Holds the base model fixed and flips ONLY the mode (instruct vs thinking/
+reasoning) across same-lineage pairs, so the contrast has no cross-model confound
+(unlike the frozen "reasoning-trained is worse" claim, which compared deepseek-r1
+to unrelated models).
 
-Reports: per-pair quality/safety deltas, a pooled paired test at the scenario
-grain, where thinking hurts most (by task class), and the mechanism
-(truncation / output tokens / energy).
+ADVERSARIAL RESULT (do not drop this caveat): the raw ~-0.4 "thinking hurts"
+penalty is LARGELY a token-budget artifact. Both modes share a 512-token cap;
+thinking variants blow past it 74-100% of the time. On the answers where thinking
+actually FINISHES, 3 of 5 match or beat their instruct sibling. So the honest
+claim is about FIT, not reasoning quality: thinking mode is a poor fit for a tight
+token/latency budget on bounded ops tasks -- it exhausts the budget before
+answering, not because its reasoning is worse. Confirm with the budget-sensitivity
+re-run (data/models.reasoning-budget-v1.txt) at higher max_tokens.
 """
 
 from __future__ import annotations
@@ -78,6 +82,27 @@ def main() -> None:
     print(f"  truncation:     instruct {S.ins_trunc.mean():.0%}  ->  thinking {S.think_trunc.mean():.0%}")
     print(f"  output tokens:  thinking = {S.tok_x.mean():.1f}x instruct")
     print(f"  energy:         thinking = {S.energy_x.mean():.1f}x instruct")
+
+    # ---- adversarial defense: is the penalty just the shared 512-token cap? ----
+    print("\n=== ADVERSARIAL: is the penalty just the 512-token cap? ===")
+    print("  both modes share max_tokens=512; compare thinking on answers it did NOT truncate:")
+    print(f"  {'pair':30} {'ins_q':>6} {'thk_all':>7} {'thk_DONE':>8} {'d_DONE':>7}")
+    d_done = []
+    for ins, think, label in PAIRS:
+        if ins not in mstat.index or think not in mstat.index:
+            continue
+        iq = mstat.loc[ins, "quality"]
+        t = df[df.model == think]
+        done = t[~t["truncated"]]
+        tq_done = done["judge_score"].mean() if len(done) else np.nan
+        d_done.append(tq_done - iq)
+        print(f"  {label:30} {iq:6.2f} {mstat.loc[think,'quality']:7.2f} {tq_done:8.2f} {tq_done-iq:+7.2f}")
+    finite = [x for x in d_done if np.isfinite(x)]
+    print(f"\n  VERDICT: on non-truncated answers mean delta = {np.mean(finite):+.2f} "
+          f"({sum(x >= 0 for x in finite)}/{len(finite)} pairs >= instruct).")
+    print("  => the raw penalty is mostly BUDGET EXHAUSTION, not degraded reasoning. The")
+    print("     operational claim stands (avoid thinking under a tight budget); the mechanism")
+    print("     is fit-to-budget. Confirm by re-running at higher max_tokens (budget-sensitivity).")
 
     out = REPO / "deep-dive" / "out"
     out.mkdir(parents=True, exist_ok=True)
