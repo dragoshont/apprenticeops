@@ -113,8 +113,101 @@ shift, not a hobbyist niche. Cite Fara-7B / Ferret-UI Lite / Granite-4 as the
 5. **Gaps we uniquely occupy:** CPU-only local, RAPL energy per answer, safety scenarios,
    and honest capability accounting — none of the neighbors combine all four.
 
-## 7. Read-in-full queue (before any of this is cited)
+## 7. Full reads (2026-07-15) — six papers, extracted and mapped
 
-2607.13034 (E3), 2606.22942 (when-KD-works), 2606.19544 (reliability≠validity),
-2607.12885 (generous judges), 2510.03847 (SLM-agentic survey), 2511.22138 (TinyLLM),
-2607.08268 (sub-1B distillation methodology), 2606.16152 (quality-utility paradox).
+*Six of the eight queued papers are now **read in full** (arXiv HTML). Concrete
+numbers + the ApprenticeOps mapping below are citable. Still abstract-only:
+2606.22942 (when-KD-works), 2606.16152 (quality-utility paradox).*
+
+### 7.1 E3 — "Do AI Agents Know When a Task Is Simple?" (2607.13034, Jul 14; Yin & Feng, UT/CURENT, thanks MSR)
+- **Claim/method:** agents lack *execution-scope estimation* — they gather max
+  context on trivial tasks. Formalizes *minimum-sufficient execution* + the **Agent
+  Cognitive Redundancy Ratio** ACRR = (C_act−C_min)/C_min, and **E3 = Estimate →
+  Execute → Expand** (optimistic start + verified progressive expansion). Evaluated
+  on MSE-Bench (121 edits in a *capability-invariant* simulator) + a real gpt-4o
+  harness (LLM-Case) graded by real pytest.
+- **Numbers:** E3 keeps 100% success while cutting **cost 85%, tokens 91%, files
+  92%** vs max-context-first (ACRR 12.9→0.55); beats a strong adaptive-retrieval
+  baseline by 16%. **Redundancy is largest on the simplest tasks** (ACRR 22.1 L1 vs
+  5.4 L3). Survives held-out wording (+8.7% cost) and 99.8% of 4000 cost weightings.
+  Real gpt-4o: milder but real; the heaviest-reading runs are the ones that fail.
+- **Maps to ApprenticeOps:** names our reasoning result — "when *not* to think." Our
+  thinking-mode-exhausts-the-budget is the deployment/energy instance of ACRR. **Caveat:**
+  headline is a simulator (no LLM in loop); real-model part is a 3-run case study.
+
+### 7.2 Reliability without Validity (2606.19544, Jun 17; Norman/Rivera/Hughes, UC Berkeley)
+- **Largest LLM-judge study:** 21 judges × 3 benchmarks × 3 protocols, ~541k
+  judgments — and it **includes ApprenticeOps' exact judges, Claude Opus 4.6 and GPT-5.4.**
+- **Findings:** (1) *kappa deflation* universal — exact-match overstates chance-corrected
+  κ by **33–41 pp** ("85% agreement" ≈ κ 0.48); (2) rankings move up to 14 positions
+  across benchmarks; (3) *consistency–bias paradox* (test-retest >0.95 with position
+  bias >0.10); (4) **verbosity bias tiny (<0.011)** cohort-wide.
+- **Our judges specifically:** **Claude Opus 4.6 = JudgeBench κ 0.875 (best of all 21),
+  position bias 0.004, verbosity 0.0032** — with Gemini 3.1 Pro the only judges holding
+  top-3 across all benchmarks; **GPT-5.4 = κ 0.606, pos-bias 0.083.** Anthropic family
+  has the lowest cohort bias.
+- **Maps to ApprenticeOps:** primary citation for lesson 6 (**agreement≠validity**);
+  validates Claude Opus 4.6 as a near-best judge and motivates reporting κ (our 0.853),
+  not raw agreement, plus the second-family (GPT-5.4) cross-check. Its verbosity<0.011
+  corroborates our finding 7. **Caveat:** judge-vs-*human*, English/text, thinking suppressed.
+
+### 7.3 LLM Judges Too Generous Without a Reference (2607.12885, Jul 14; Kranti & Vajjala, Potsdam/NRC)
+- **Method:** two-stage — calibration (accept-correct C1 vs accept-incorrect C2) +
+  sensitivity (No-Ref / Ref-Visible / Ref-Compared). 3 judges, 3 languages (EN/AR/TE).
+- **Findings:** judges **over-credit incorrect answers without a reference**; adding a
+  reference **flips verdicts up to 85%** (mostly Correct→Incorrect), and the flips **align
+  with humans** (agreement up to 0.98, highest in Ref-Compared). Worst in low-resource
+  (Telugu); the *same* extracted answer can flip verdict once a reference is present.
+- **Maps to ApprenticeOps:** validates the **gold-answer + rubric + deterministic-check**
+  design — ApprenticeOps grades *reference-aware*, exactly the calibration they prescribe;
+  reference-free scoring inflates. **Caveat:** QA-specific; needs some gold to calibrate.
+
+### 7.4 TinyLLM — SLMs for Agentic Tasks on Edge (2511.22138, Nov 27; Haque et al, Clark Atlanta)
+- **Closest evaluation neighbor.** BFCL v4 function-calling, models xLAM-2-3b/1b,
+  Qwen3-4B/1.7B/0.6B, TinyLlama/TinyAgent-1.1B; SFT/PEFT/RL/DPO/hybrid tuning.
+- **Numbers:** hard size hierarchy 1–3B ≫ <1B. xLAM-2-3b best **65.74% overall / 88.22%
+  AST / 55.62% multi-turn**; Qwen3-4B 62% but multi-turn only 35%; Qwen3-0.6B 45.8% /
+  **1.38% multi-turn**; TinyLlama/TinyAgent ~19.7% / **0% multi-turn** (only abstention).
+- **Maps to ApprenticeOps:** corroborates finding 9 (bigger helps, ~4B knee) and R6/R13
+  (tiny models fail hard, esp. multi-turn). **But it measures function-call accuracy only
+  — no energy, no safety, no CPU-local, no capability honesty** = exactly ApprenticeOps'
+  gap. **Caveat:** cloud/GPU eval; "edge" aspirational; energy not measured.
+
+### 7.5 SLM-for-Agentic-Systems survey (2510.03847, Oct 4 2025; Sharma & Mehta) — *[abstract-level; body not fetched]*
+- **Thesis:** SLMs (1–12B) are sufficient/superior for **schema/API-constrained** agentic
+  work; **SLM-default + LLM-fallback** with uncertainty routing + verifier cascades.
+  Proposes engineering metrics: **cost-per-successful-task, schema-validity rate,
+  executable-call rate, p50/p95 latency, energy/request.** Guided decoding + strict JSON
+  Schema close the gap at **10–100× lower token cost**.
+- **Maps to ApprenticeOps:** the framing citation; its metric set ≈ our axes (quality,
+  det, energy/answer, latency). **Caveat:** 9-page blueprint, not new measurement; I read
+  the detailed abstract, not the full body — re-fetch body before quoting specifics.
+
+### 7.6 Different Teachers — Sub-1B On-Device Distillation (2607.08268, Jul 9; V. K. Chaganti, independent)
+- **Methodological near-twin of ApprenticeOps.** Distill deepseek-r1:8b → Qwen3-0.6B
+  (QLoRA, 3 seeds, Q4_K_M, on-device) + a **same-size non-reasoning-teacher control** +
+  a managed 120B pipeline. **Blinded reference-free 3-judge panel across 3 families that
+  EXCLUDES the teacher's/student's families**, a **negative control** (0% faithful on
+  mismatched, n=30), paired bootstrap (20k), per-sub-task, temp-0 deterministic reruns.
+- **Findings:** student 0.8s vs teacher 39s (5.4h→7min); recovers **58% of the summary
+  gap**, beats constrained decoding **+16.8 (p<0.001)** and few-shot +4.9. **A same-size
+  NON-reasoning teacher trains a student no better than base (+0.6, ns) → the gain is the
+  teacher's *reasoning nature*, not its scale.** But reasoning-lineage students **fabricate
+  on thin sources** (55 vs 74 faithful on 22 short articles) — "reasoning-oriented training
+  can raise hallucination." Seed variance first-order at 0.6B (tone 11.8–58.1% across seeds).
+- **Their transferable lessons (verbatim intent):** *decompose before concluding* (per-subtask
+  scoring reveals findings an aggregate hides); *check the instrument* (grade reference-free
+  faithfulness against the **full source** or a truncation artifact masquerades as a model
+  regression); controls are "nearly free and changed the conclusion twice."
+- **Maps to ApprenticeOps:** the paper to benchmark our *method* against — same local
+  on-device, same own-family-excluded multi-judge panel, same negative control + paired
+  bootstrap + per-subtask + deterministic reruns. Independently corroborates: **reasoning
+  helps writing but hurts faithfulness** (≈ our reasoning quality-vs-safety split);
+  **decompose-before-concluding** (≈ per-scenario-class); **check-the-instrument** (≈ our
+  param-unit-bug catch + full-run re-center + judge-validity gate). "Distill vs use-directly
+  + per-field routing" is the design counterpart to our "which small model, used directly,
+  for which ops verb." **Caveat:** silver (judge) labels; n=22 subgroup; one task family.
+
+### 7.7 Still abstract-only (fetch before citing)
+2606.22942 (when-KD-helps/fails), 2606.16152 (quality-utility paradox: distilling reasoning
+into small models can hurt).
