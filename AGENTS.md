@@ -45,7 +45,9 @@ Hard-won rules from the full-run re-center; each one cost a real bug, so enforce
    + `data/analysis-manifest.<run>.json` (claim lock, sha256-bound), regenerated from the
    bundle by `deep-dive/full_snapshot.py`; `deep-dive/full_data.py` resolves bundle → `.tmp`
    → snapshot, so a fresh clone reproduces every number offline. `claim_status` stays
-   `provisional` until a human promotes it to paper-final.
+   `provisional` until a human promotes it to paper-final. The heavy bundle is served
+   **out-of-band from an Azure Blob**, fetched by content hash (`bundle_id`); the in-repo
+   reproducibility path stays the snapshot + manifest, so git never carries the raw.
 
 ## Topology
 

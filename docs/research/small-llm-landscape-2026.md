@@ -173,15 +173,19 @@ numbers + the ApprenticeOps mapping below are citable. Still abstract-only:
   — no energy, no safety, no CPU-local, no capability honesty** = exactly ApprenticeOps'
   gap. **Caveat:** cloud/GPU eval; "edge" aspirational; energy not measured.
 
-### 7.5 SLM-for-Agentic-Systems survey (2510.03847, Oct 4 2025; Sharma & Mehta) — *[abstract-level; body not fetched]*
-- **Thesis:** SLMs (1–12B) are sufficient/superior for **schema/API-constrained** agentic
-  work; **SLM-default + LLM-fallback** with uncertainty routing + verifier cascades.
-  Proposes engineering metrics: **cost-per-successful-task, schema-validity rate,
+### 7.5 SLM-for-Agentic-Systems survey (2510.03847, Oct 4 2025; Sharma & Mehta) — *[full 8-page body read 2026-07-16 via Edge/CDP + pypdf]*
+- **Thesis:** SLMs (1–12B, occasionally ~20B) are sufficient/superior for **schema/API-
+  constrained** agentic work; **SLM-default + LLM-fallback** with an uncertainty-aware
+  router + verifier cascades (it cites NVIDIA's "SLMs are the future of agentic AI").
+  Proposes engineering metrics: **cost-per-successful-task (CPS), schema-validity rate,
   executable-call rate, p50/p95 latency, energy/request.** Guided decoding + strict JSON
-  Schema close the gap at **10–100× lower token cost**.
+  Schema close the gap at **10–100× lower token cost**. Concrete recipes: LoRA-adapter-
+  per-task-cluster + INT4/INT8 serving; collect 10k–50k de-identified success traces; an
+  abstention/escalation pseudo-algorithm; an industrial cost model (KV-cache residency).
 - **Maps to ApprenticeOps:** the framing citation; its metric set ≈ our axes (quality,
-  det, energy/answer, latency). **Caveat:** 9-page blueprint, not new measurement; I read
-  the detailed abstract, not the full body — re-fetch body before quoting specifics.
+  det, energy/answer, latency). **No dataset:** it is a survey/blueprint — it synthesizes
+  existing SLMs + benchmarks (BFCL v3/v4, StableToolBench); no repository, no availability
+  statement, nothing to release.
 
 ### 7.6 Different Teachers — Sub-1B On-Device Distillation (2607.08268, Jul 9; V. K. Chaganti, independent)
 - **Methodological near-twin of ApprenticeOps.** Distill deepseek-r1:8b → Qwen3-0.6B
@@ -211,3 +215,34 @@ numbers + the ApprenticeOps mapping below are citable. Still abstract-only:
 ### 7.7 Still abstract-only (fetch before citing)
 2606.22942 (when-KD-helps/fails), 2606.16152 (quality-utility paradox: distilling reasoning
 into small models can hurt).
+
+## 8. Where each paper releases its data (verified 2026-07-16)
+
+*Full-text-verified per paper: where the underlying data lives, and whether the paper
+releases its OWN dataset. This is the reference for positioning ApprenticeOps' release.*
+
+| Paper | Releases its own data? | Where / mechanism |
+|---|---|---|
+| E3 (2607.13034) | ✅ | Public **GitHub** repo (`eejyin/Do-AI-Agents-…`): MSE-Bench + LLM-Case harness + scripts that regenerate every table/figure; simulator results deterministic from a fixed seed (20260712). |
+| Reliability-without-Validity (2606.19544) | ✅ (on publication) | ~**541k** per-judgment records (verdict + reasoning + raw response + latency) keyed by `(judge_id, benchmark, protocol, item_id, run_idx, position_order)`; permissive license. |
+| Different Teachers (2607.08268) | ✅ | A **"released scorecard"** (full-context multi-arm pass-rate + per-item per-check detail) that **recomputes every metric offline with no API keys**, explicitly separate from a non-canonical judge cache; releases the RSS-News test set + 401/93 split. |
+| TinyLLM (2511.22138) | ❌ | Reuses public **BFCL v4 / Gorilla OpenFunctions / AgentBank**; own artifacts are "internal figures/spreadsheets/working notes." No repo/URL. |
+| Generous Judges (2607.12885) | ❌ | Reuses public **TyDiQA + MATA** (each released separately); judges via Sarvam/FanAR/OpenRouter APIs. No repo/URL. |
+| SLM survey (2510.03847) | ❌ (survey) | Synthesizes existing SLMs + benchmarks; **no repository, no availability statement.** |
+
+**Net: 3 of 6 release their own data; 3 do not** (two reuse public benchmarks, one is a
+survey). The field norm is a **compact, recompute-offline artifact + regeneration scripts**;
+none commit a multi-GB raw dump to git.
+
+**Where ApprenticeOps sits — and the hosting decision.** ApprenticeOps matches or exceeds the
+strongest of this cohort. The compact `data/snapshots/<run>.{results,judged}.csv` (~3.5 MB,
+tracked in git) recomputes every 152-run number offline — the *Different Teachers*
+"released-scorecard" pattern — and `data/analysis-manifest.<run>.json` **content-addresses
+and sha256-binds** the canonical inputs (stronger than "a GitHub folder" or "released on
+publication"). The heavy raw (the 433 MB locked bundle `<run>-<bundle_id>` and the 1.1 GB
+`.tmp` intake) is **not** committed to git by design; it is served **out-of-band from an
+Azure Blob**, fetched by its content hash (`bundle_id`) — the DVC/git-LFS-style split the
+field uses for large artifacts. A reviewer reproduces the headline from the tracked snapshot
+with **zero downloads**, and can re-derive the raw rows by pulling the hash-verified bundle
+from the blob. *(Blob + its URL to be created by the maintainer and wired into the manifest;
+the content hash is already fixed, so the pointer is verifiable the moment the blob exists.)*

@@ -12,7 +12,10 @@
 > hash-bound by `bundle-manifest.json`, gate `passed`), and a compact **tracked
 > snapshot** (`data/snapshots/<run>.{results,judged}.csv`, ~3.5 MB) with a
 > **claim-lock manifest** (`data/analysis-manifest.<run>.json`) recomputes every
-> 152-run number offline — verified byte-identical to the bundle. The remaining
+> 152-run number offline — verified byte-identical to the bundle. The heavy raw is
+> hosted **out-of-band** (an Azure blob, content-addressed by `bundle_id`) and fetched by
+> hash, so reviewers reproduce the headline from the tracked snapshot with zero downloads
+> and re-derive raw rows from the hash-verified blob. The remaining
 > promotion gate is editorial, not data: the bundle's `claim_status` is still
 > **`provisional`** (promoting to a paper-final claim is a deliberate human decision),
 > and the exploratory cross-run rank note (§X.1) is retired under the standalone-152
