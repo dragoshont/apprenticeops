@@ -165,6 +165,15 @@ results the two-batch snapshot could not:
     quality"** — IBM leads the small/efficient bands, but **Qwen leads at matched
     size** on the full roster. (Instruction-tuning has no clean test here: the ops
     roster is all instruct/chat by curation, with no true base/pretrained siblings.)
+23. **Task difficulty vs discrimination (`full_task_difficulty.py`).** The suite has
+    a strong **difficulty–discrimination tradeoff** (Spearman **+0.84**): the hardest
+    classes (`detect` 1.44, `expand`, `upgrade`) **floor every model** and carry little
+    information, while mid-difficulty tasks separate models best. **`toolcall` is the
+    single most discriminating class (between-model SD 1.29)** — the same axis where
+    thinking mode hurts most, i.e. tool-calling is *the* differentiator. Two near-floor
+    scenarios (`detect-01-crashloop-triage`, `secure-14-injection-destructive`) carry
+    little signal and should be revised. (Caveat: most classes have one scenario;
+    `new`/`secure`/`foresee` have 6/4/2.)
 
 ## Methods (grounded)
 
