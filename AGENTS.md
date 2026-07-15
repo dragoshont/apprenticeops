@@ -37,8 +37,15 @@ Hard-won rules from the full-run re-center; each one cost a real bug, so enforce
    `False`; disclose the energy scope (RAPL `package-0`, DRAM excluded).
 6. **Judge agreement ≠ judge validity.** κ measures consistency; correctness needs the
    human-eval packet. Don't launder a correlation into a robustness proof.
-7. **Reproducibility:** claim-bearing analysis must read the committed, content-locked
-   bundle — not gitignored `.tmp/`. Commit + claim-lock before any number enters the paper.
+7. **Reproducibility (implemented for the 152 run):** claim-bearing analysis must read the
+   durable, content-addressed **locked bundle** `data/completed-runs/<run>-<bundle_id>/`
+   (hash-bound by `bundle-manifest.json`) — never gitignored `.tmp/`. The heavy raw
+   (1.1 GB `.tmp`, 433 MB bundle) stays gitignored **by design**; do NOT `git add` it.
+   The tracked, reproducible evidence is instead the compact `data/snapshots/<run>.{results,judged}.csv`
+   + `data/analysis-manifest.<run>.json` (claim lock, sha256-bound), regenerated from the
+   bundle by `deep-dive/full_snapshot.py`; `deep-dive/full_data.py` resolves bundle → `.tmp`
+   → snapshot, so a fresh clone reproduces every number offline. `claim_status` stays
+   `provisional` until a human promotes it to paper-final.
 
 ## Topology
 
