@@ -46,8 +46,8 @@ def main() -> None:
     print(f"    MoE   = {r[r.is_moe].resid.mean():+.2f}  (n={r.is_moe.sum()})")
     print(f"    dense = {r[~r.is_moe].resid.mean():+.2f}  (n={(~r.is_moe).sum()})")
     if r.is_moe.sum() and (~r.is_moe).sum():
-        _, p = stats.ttest_ind(r[r.is_moe].resid, r[~r.is_moe].resid, equal_var=False)
-        print(f"    difference p={p:.3f}")
+        print(f"    (n_MoE={int(r.is_moe.sum())} is far too few for a valid significance test;")
+        print("     residuals are reported descriptively as a case study, no p-value)")
 
     print("\n=== ADVERSARIAL: is this a quality win? NO; and n is small. ===")
     dq = mt[mt.is_moe].quality.mean() - mt[~mt.is_moe].quality.mean()

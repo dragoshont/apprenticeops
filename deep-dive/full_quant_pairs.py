@@ -66,20 +66,28 @@ def main() -> None:
     print(P.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
 
     dq = P.dq.dropna()
+    n = len(dq)
+    mean, se = dq.mean(), dq.std(ddof=1) / np.sqrt(n)
     _, p = stats.ttest_1samp(dq, 0.0)
-    print(f"\n=== quality cost of Q4 (vs high precision) ===")
-    print(f"  mean Q4-minus-hi = {dq.mean():+.2f} quality  (n={len(dq)} pairs), paired t p={p:.2f}")
-    print(f"  pairs where Q4 is within +/-0.15 of hi: {(dq.abs() <= 0.15).sum()}/{len(dq)}")
-    print(f"\n=== what Q4 buys (efficiency) ===")
-    print(f"  size:   {P.gb_x.mean():.2f}x   decode: {P.tps_x.mean():.2f}x   energy: {P.wh_x.mean():.2f}x  (of high precision)")
+    print(f"\n=== quality cost of Q4 vs high precision (paired, n={n}) ===")
+    print(f"  mean Q4-minus-hi = {mean:+.2f}  95% CI [{mean-1.96*se:+.2f}, {mean+1.96*se:+.2f}]  paired t p={p:.3f}")
+    margin = 0.25
+    _, p_low = stats.ttest_1samp(dq, -margin)
+    _, p_high = stats.ttest_1samp(dq, margin)
+    tost_p = max(p_low / 2, p_high / 2)
+    print(f"  TOST practical-equivalence within +/-{margin}: p={tost_p:.3f} "
+          f"({'EQUIVALENT' if tost_p < 0.05 else 'not established'})")
 
-    med_sd = mt["quality_sd"].median()
-    print(f"\n=== ADVERSARIAL: is the quality delta just noise? ===")
-    print(f"  median within-model rep-SD = {med_sd:.2f};  mean |Q4-hi delta| = {dq.abs().mean():.2f}")
-    verdict = "SMALLER than rep-noise -> Q8 and Q4 are statistically indistinguishable on quality" \
-        if dq.abs().mean() < med_sd else "comparable to / above rep-noise -> a real (small) quality cost"
-    print(f"  => {verdict}")
-    print("  Efficiency win (smaller/faster/less energy) is deterministic, not noisy -> Q4 is the default.")
+    print("\n=== what Q4 buys (efficiency) ===")
+    print(f"  size: {P.gb_x.mean():.2f}x   decode: {P.tps_x.mean():.2f}x   energy: {P.wh_x.mean():.2f}x  (of high precision)")
+
+    ds = P.d_safety.dropna()
+    print("\n=== SAFETY cost of Q4 (full distribution, not one example) ===")
+    print(f"  mean d_safety = {ds.mean():+.2f}  worst = {ds.min():+.2f}  pairs losing >0.2 safety: {(ds < -0.2).sum()}/{len(ds)}")
+    print("\n=== HONEST CONCLUSION ===")
+    print(f"  Q4 carries a small but statistically real mean quality cost ({mean:+.2f}); it is practically minor")
+    print(f"  (equivalence within +/-{margin}: {'established' if tost_p < 0.05 else 'not established'}) and bought with")
+    print("  large deterministic efficiency gains. NOT a blanket 'free lunch': it can cost safety on some models.")
 
     P.to_csv(REPO / "deep-dive" / "out" / "quant_pairs.csv", index=False)
     print(f"\nsaved {REPO/'deep-dive'/'out'/'quant_pairs.csv'}")

@@ -99,8 +99,18 @@ def _join_metadata(df: pd.DataFrame) -> pd.DataFrame:
     df["params_b"] = df["params_b"].fillna(df["model"].map(_parse_pb))
     md_reason = df.get("training_regime", pd.Series("", index=df.index)).astype(str).str.contains("reason", case=False, na=False)
     df["is_reasoning"] = md_reason | df["model"].str.contains(_REASON_RE)
-    df["is_tools"] = df.get("tools_capable", pd.Series("", index=df.index)).astype(str).str.lower().eq("true")
+    tc = df.get("tools_capable", pd.Series(index=df.index)).astype("string").str.lower()
+    df["is_tools"] = tc.map({"true": True, "false": False})  # missing metadata -> NaN (unknown-preserving)
     return df
+
+
+def _scenario_class_map() -> dict:
+    """Authoritative scenario -> class from the scenario set (NOT the name prefix)."""
+    p = REPO / "data" / "scenario_sets" / "core-current.json"
+    dd = json.loads(p.read_text())
+    items = dd if isinstance(dd, list) else dd.get("scenarios", dd.get("items", []))
+    return {(it.get("id") or it.get("scenario")): (it.get("class") or it.get("category"))
+            for it in items if (it.get("id") or it.get("scenario"))}
 
 
 def load_full() -> pd.DataFrame:
@@ -110,7 +120,7 @@ def load_full() -> pd.DataFrame:
     cons = jud.groupby(["model", "scenario", "rep"])["score"].mean().rename("judge_score").reset_index()
     df = res.merge(cons, on=["model", "scenario", "rep"], how="left")
 
-    df["scenario_class"] = df["scenario"].str.split("-").str[0]
+    df["scenario_class"] = df["scenario"].map(_scenario_class_map()).fillna(df["scenario"].str.split("-").str[0])
     df["is_safety"] = df["scenario_class"].isin(SAFETY_CLASSES)
 
     df = _join_metadata(df)
@@ -161,7 +171,7 @@ if __name__ == "__main__":
     print(f"rows={len(df)} | models={df.model.nunique()} | scenarios={df.scenario.nunique()} | reps={sorted(df.rep.unique())}")
     print(f"judge_score {df.judge_score.min():.2f}..{df.judge_score.max():.2f} (mean {df.judge_score.mean():.2f}) matched {df.judge_score.notna().mean()*100:.1f}%")
     print(f"det_score mean {df.det_score.mean():.3f} | energy_wh mean {df.energy_wh.mean():.4f} | energy_comparable {df.energy_comparable.mean()*100:.0f}%")
-    print(f"is_reasoning models: {df[df.is_reasoning].model.nunique()} | is_tools models: {df[df.is_tools].model.nunique()}")
+    print(f"is_reasoning models: {df[df.is_reasoning].model.nunique()} | is_tools models: {df[df.is_tools == True].model.nunique()}")
     mt = model_table_full(df)
     out = REPO / "deep-dive" / "out"
     out.mkdir(parents=True, exist_ok=True)
