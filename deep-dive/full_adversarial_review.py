@@ -9,8 +9,6 @@ reproducible backing for FINDINGS 24:
 
 from __future__ import annotations
 
-import glob
-import gzip
 import json
 import re
 
@@ -18,19 +16,13 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import cohen_kappa_score
 
-from full_data import JUDGED, RUN, load_full, model_table_full
+from full_data import _load_judged, _open_text, _source, load_full, model_table_full
 from full_org_effects import _org
 
 
 def attack_judges() -> None:
-    rows = []
-    for line in open(JUDGED):
-        r = json.loads(line)
-        try:
-            rows.append((r["model"], r["scenario"], r["rep"], r.get("judge_model"), float(r["score"])))
-        except (TypeError, ValueError):
-            continue
-    j = pd.DataFrame(rows, columns=["model", "scenario", "rep", "judge", "score"])
+    # per-judge rows (before consensus); source-agnostic (locked bundle gz or CSV fallback)
+    j = _load_judged().rename(columns={"judge_model": "judge"})
     piv = j.pivot_table(index=["model", "scenario", "rep"], columns="judge", values="score", aggfunc="mean").dropna()
     a, b = list(piv.columns)[:2]
     qk = cohen_kappa_score(piv[a].round().astype(int), piv[b].round().astype(int), weights="quadratic")
@@ -42,11 +34,18 @@ def attack_judges() -> None:
 
 
 def attack_thermal() -> None:
+    results_files = [f for f in _source()[0] if f.exists()]
+    if not results_files:  # fresh clone w/o the heavy bundle: snapshot CSV carries no raw telemetry
+        print("\nATTACK 2 - is energy thermal/order-confounded?")
+        print("  raw per-row telemetry (thermal.start_c) unavailable on this checkout "
+              "(locked bundle absent) -> thermal attack skipped")
+        return
     rows = []
-    for f in glob.glob(str(RUN / "*.results.jsonl.gz")):
-        for line in gzip.open(f, "rt"):
-            r = json.loads(line)
-            rows.append((r["model"], r.get("thermal.start_c"), r.get("power.energy_wh")))
+    for f in results_files:
+        with _open_text(f) as fh:
+            for line in fh:
+                r = json.loads(line)
+                rows.append((r["model"], r.get("thermal.start_c"), r.get("power.energy_wh")))
     d = pd.DataFrame(rows, columns=["model", "tstart", "energy"]).dropna()
     wc = d.groupby("model").apply(
         lambda g: g.tstart.corr(g.energy) if g.tstart.nunique() > 2 and g.energy.nunique() > 2 else np.nan
