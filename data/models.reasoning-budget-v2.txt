@@ -1,0 +1,28 @@
+# Reasoning / truncation budget-sensitivity roster — v2 (newly-identified cases).
+#
+# Companion to models.reasoning-budget-v1.txt. The truncation scan
+# (deep-dive/full_truncation_scan.py) checked every heavy truncator on the full run
+# and found ONE further BUDGET VICTIM not already queued:
+#   * qwen3:4b (plain; thinking-on by default) truncates 100% at the 512-token cap,
+#     so its quality cannot even be measured on finished answers -> it MUST be
+#     re-run at a higher budget to know its true score.
+# The remaining heavy truncators are GENUINELY WEAK (code/tiny models with
+#   q_done ~= q_all ~= 1.0-1.5 and ~zero lift when they finish). They are included
+#   here ONLY as CONTROLS: predicted to NOT improve with more budget. That contrast
+#   is the point -- it proves the budget effect is specific to over-generated useful
+#   reasoning, not a generic "more tokens = better".
+#
+# Method: run at max_tokens in {512 (baseline), 1024, 2048, 4096} (raise
+#   DEFAULT_MAX_TOKENS or per-scenario max_tokens; MAX_TOKENS_CAP only lowers).
+# Prediction: qwen3:4b truncation collapses and quality rises; the weak controls
+#   stay flat (they are bad regardless of budget).
+# Run all 20 scenarios x 5 reps; do NOT merge with primary rows. QUEUE AFTER the live
+# 21-model timeout-sensitivity run finishes -- single node, do not disrupt it.
+
+# BUDGET VICTIM (100% truncated at 512 -> must re-run to measure)
+qwen3:4b
+
+# WEAK CONTROLS (predict NO benefit from more budget; bad even when they finish)
+starcoder2:3b-q6_K
+codegemma:2b
+falcon3:1b-instruct-q8_0

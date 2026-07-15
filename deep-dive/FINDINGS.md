@@ -133,6 +133,14 @@ results the two-batch snapshot could not:
 18. **Reasoning roster gap:** deepseek-r1 (the frozen "reasoning hurts" driver) is
     absent from `full` (only deepseek-*coder* is present); the pilot carries the
     R1-specific claim, or it is reframed as the budget-fit finding above.
+19. **Truncation triage (`full_truncation_scan.py`).** Heavy truncation ≠ budget
+    victim. Of the models truncating ≥30% at the 512 cap, only **`qwen3:4b`** (plain,
+    thinking-on; 100% truncated, so unmeasurable when finished) is a further budget
+    victim to re-run; the rest (`starcoder2:3b`, `codegemma:2b`, `falcon3:1b`,
+    `deepseek-coder:1.3b`, `smollm:360m`) are **genuinely weak** — `q_done ≈ q_all ≈
+    1.0–1.5` with ~zero lift when they finish. Queued as
+    `data/models.reasoning-budget-v2.txt` (the victim plus weak controls that should
+    *not* benefit — the control that isolates over-generation from "more tokens = better").
 
 ## Methods (grounded)
 
