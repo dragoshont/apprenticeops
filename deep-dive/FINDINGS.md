@@ -17,14 +17,19 @@ bandwidth, MoE expert usage, DNF/finish-reason, and a full model taxonomy
 speed × memory × size (cf. Lu et al., *Small Language Models: Survey,
 Measurements, and Insights*, arXiv:2409.15790).
 
-**One run, not two batches.** The `var`/`wave2` split was operational, not
-scientific — treat it as a single run. CPU regime changes watts and latency, not
-the tokens a model emits at fixed temperature, so **quality / safety / capability
-pool across all 95 models**. Only **energy** is regime-sensitive, so energy
-comparisons are confined to the 25-model controlled single-regime subset. (The two
-batches happen to be *disjoint* model sets — no model was measured under both — so
-a small bridge subset run under both regimes would be needed to license
-cross-regime energy and to price the CPU power policy.)
+**One study, a deliberate two-stage funnel.** The `var`/`wave2` split is not a
+confound — it is the intended methodology. A broad **exploratory sweep first**
+(`wave2`, 150+ models under the node's default dynamic-turbo policy, to triage the
+roster and shake out failing scripts — energy stamped `descriptive_only`, because
+you do not measure energy on a triage pass), then a **curated controlled re-run**
+of the survivors (`var`, ~24 models under `node-power.sh`: turbo off, base clock
+1700, RAPL package-0 — the `controlled_three_axis` energy scope). CPU regime
+changes watts and latency, not the tokens a model emits at fixed temperature, so
+**quality / safety / capability pool across all 95 models** (the whole exploratory
+sweep included); **energy is confined to the controlled stage by design**. The two
+stages are disjoint model sets, so a small optional *bridge subset* (the same
+handful of models under both regimes) would additionally *price* the CPU power
+policy — an enhancement, not a correction.
 
 ## Headline discoveries (the gold)
 
@@ -127,9 +132,11 @@ cross-regime energy and to price the CPU power policy.)
 4. **Roofline / MBU deep-dive** using `membw_peak_mb_s` + `calibrate.py` ceilings:
    confirm decode is memory-bandwidth-bound and quantify how MoE/hybrid breaks the
    size→energy law (the granite4 result).
-5. **The `wave2` vs `var` regime study** — the confound is also an *opportunity*:
-   the same models at base-clock vs dynamic-turbo quantify the energy/latency cost
-   of the CPU power policy (ties to the homelab EPP=performance finding).
+5. **A bridge subset across regimes** — an optional enhancement, not a fix: run
+   the same handful of models at base-clock *and* dynamic-turbo to *price* the CPU
+   power policy's energy/latency cost (ties to the homelab EPP=performance
+   finding). The `var`/`wave2` stages are disjoint by design, so this is all that
+   is needed to license cross-regime energy.
 6. **The 897 MB `full-chatok-core20-r5` run** (unанalysed here) — a deeper single
    collection that may support the top-tier separation the 19-scenario set cannot.
 7. **Human-eval expansion** (`human_eval.py`) targeted at the judge-vs-det

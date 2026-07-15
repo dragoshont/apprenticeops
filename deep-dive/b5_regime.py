@@ -1,13 +1,19 @@
-"""B5 — Batch/regime confound structure (data integrity).
+"""B5 — Two-stage funnel structure (not a confound).
 
-Finding: the two collection batches are DISJOINT model sets on different CPU
-regimes (var/base-clock: 25 models with controlled energy; wave2/turbo: 70).
-There is no model in both, so a paired regime study is impossible with this data.
+The var/wave2 split is the intended methodology, not an accident: a broad
+EXPLORATORY sweep first (wave2: 150+ models under the node's default dynamic-turbo
+policy, to triage the roster and repair failing scripts; energy descriptive_only),
+then a CURATED CONTROLLED re-run of the survivors (var: ~24 models under
+node-power.sh -- turbo off, base clock 1700, RAPL package-0; the controlled energy
+scope). The two stages are disjoint model sets by design.
 Consequences:
 * quality/det are regime-invariant by construction (CPU clock does not change the
-  emitted tokens at fixed temperature/seed) -> the cross-batch *quality* ranking
-  is valid even though energy is confined to the 25-model var set;
-* the one thing regime CAN change is timeout/DNF (a slower regime times out more).
+  emitted tokens at fixed temperature/seed) -> the full-95 *quality* ranking is
+  valid, the exploratory sweep included; energy is confined to the controlled var
+  stage BY DESIGN, not as a limitation;
+* the one thing regime CAN change is timeout/DNF (a slower regime times out more);
+* an optional bridge subset (same models under both regimes) would additionally
+  PRICE the power policy -- an enhancement, not a correction.
 """
 
 from __future__ import annotations
@@ -19,13 +25,12 @@ def main() -> None:
     df = load_runs()
     var_models = set(df[df.collection_batch == "var"]["model"])
     w2_models = set(df[df.collection_batch == "wave2"]["model"])
-    print("=== batch / regime structure ===")
-    print(f"var  (base_clock 1.7GHz, turbo-off, energy-controlled): {len(var_models)} models")
-    print(f"wave2(dynamic turbo-on, energy descriptive-only):       {len(w2_models)} models")
-    print(f"overlap: {len(var_models & w2_models)} models  ->  DISJOINT")
-    print("consequence: no paired regime study is possible; energy comparisons are confined")
-    print("to the 25-model var set; quality/det are regime-invariant so the full-95 quality")
-    print("ranking remains valid.\n")
+    print("=== two-stage funnel structure (not a confound) ===")
+    print(f"wave2 = exploratory sweep FIRST (dynamic turbo-on, energy descriptive-only): {len(w2_models)} models")
+    print(f"var   = curated controlled RE-RUN of survivors (base_clock 1.7GHz, turbo-off): {len(var_models)} models")
+    print(f"overlap: {len(var_models & w2_models)} models  ->  disjoint stages by design")
+    print("energy is confined to the controlled var stage BY DESIGN; quality/det are")
+    print("regime-invariant so the full-95 quality ranking (incl. the exploratory sweep) is valid.\n")
 
     dnf = df.groupby("collection_batch")["dnf_bool"].mean()
     to = df[df.finish_reason.astype(str).str.contains("timeout")].groupby("collection_batch").size()
@@ -38,8 +43,8 @@ def main() -> None:
     print("\n=== the 25 energy-controlled (var) models — the only ones with a comparable energy axis ===")
     print(", ".join(sorted(var_models)))
 
-    print("\nRECOMMENDATION: run a bridge subset (~10 models) under BOTH regimes to measure the")
-    print("CPU power-policy effect on energy/latency and to license cross-batch energy comparison.")
+    print("\nOPTIONAL ENHANCEMENT (not a fix): run a bridge subset (~10 models) under BOTH regimes")
+    print("to PRICE the CPU power-policy effect on energy/latency (ties to the homelab EPP finding).")
 
 
 if __name__ == "__main__":
