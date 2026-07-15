@@ -34,10 +34,9 @@ def main() -> None:
     print(f"=== chatok run: {c['model'].nunique()} models, {c['scenario'].nunique()} scenarios ===")
 
     inv = pd.read_csv(REPO / "data" / "models-inventory.csv")
-    # params_b from the bug-free integer param_count; unit-aware param_size fallback (M->/1000)
+    # params_b: unit-aware param_size (M -> /1000); models-inventory has no param_count column
     _ps = inv["param_size"].astype(str).str.extract(r"([\d.]+)\s*([mMbB])")
-    _ps_b = pd.to_numeric(_ps[0], errors="coerce") * _ps[1].str.lower().map({"m": 1e-3, "b": 1.0})
-    inv["params_b"] = (pd.to_numeric(inv.get("param_count"), errors="coerce") / 1e9).fillna(_ps_b)
+    inv["params_b"] = pd.to_numeric(_ps[0], errors="coerce") * _ps[1].str.lower().map({"m": 1e-3, "b": 1.0})
     inv = inv.set_index("model")
     tab = pd.DataFrame(cq).join(inv[["family", "size_gb", "params_b", "bracket", "is_moe"]])
     tab["size_gb"] = pd.to_numeric(tab["size_gb"], errors="coerce")
