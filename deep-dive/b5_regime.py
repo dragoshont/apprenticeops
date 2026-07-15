@@ -1,19 +1,26 @@
-"""B5 — Two-stage funnel structure (not a confound).
+"""B5 — Two-batch role structure (controlled vs breadth), not a confound.
 
-The var/wave2 split is the intended methodology, not an accident: a broad
-EXPLORATORY sweep first (wave2: 150+ models under the node's default dynamic-turbo
-policy, to triage the roster and repair failing scripts; energy descriptive_only),
-then a CURATED CONTROLLED re-run of the survivors (var: ~24 models under
-node-power.sh -- turbo off, base clock 1700, RAPL package-0; the controlled energy
-scope). The two stages are disjoint model sets by design.
+The var/wave2 split is by design (PAPER.md §7). The frozen v1 snapshot holds two
+batches with different ROLES — not a botched re-run:
+* var   = the pre-registered CONTROLLED first batch: 25 tags / 24 functional; base
+          clock 1700, turbo OFF, RAPL package-0 -- the ONLY energy-comparable scope;
+* wave2 = a BREADTH-extension second batch: 70 tags, dynamic turbo-on -- grows
+          quality/safety coverage to 94 functional but is EXCLUDED from energy/
+          systems ranking by design (schema v1 records batch/regime/source and
+          forbids the pooled energy front).
+The two batches are disjoint model sets.
 Consequences:
 * quality/det are regime-invariant by construction (CPU clock does not change the
-  emitted tokens at fixed temperature/seed) -> the full-95 *quality* ranking is
-  valid, the exploratory sweep included; energy is confined to the controlled var
-  stage BY DESIGN, not as a limitation;
+  emitted tokens at fixed temperature/seed) -> the full 94-functional *quality*
+  ranking is valid; energy is confined to the 24 controlled models BY DESIGN, not
+  as a limitation;
 * the one thing regime CAN change is timeout/DNF (a slower regime times out more);
 * an optional bridge subset (same models under both regimes) would additionally
   PRICE the power policy -- an enhancement, not a correction.
+
+Separate cohorts, OUTSIDE this snapshot: the 152-model `full-chatok-core20-r5`
+doctoral run (provisional; analysed in b6) and the ongoing 21-model timeout-
+sensitivity follow-up (DNF-selected; 21x20x5 = 2100 rows).
 """
 
 from __future__ import annotations
@@ -25,12 +32,12 @@ def main() -> None:
     df = load_runs()
     var_models = set(df[df.collection_batch == "var"]["model"])
     w2_models = set(df[df.collection_batch == "wave2"]["model"])
-    print("=== two-stage funnel structure (not a confound) ===")
-    print(f"wave2 = exploratory sweep FIRST (dynamic turbo-on, energy descriptive-only): {len(w2_models)} models")
-    print(f"var   = curated controlled RE-RUN of survivors (base_clock 1.7GHz, turbo-off): {len(var_models)} models")
-    print(f"overlap: {len(var_models & w2_models)} models  ->  disjoint stages by design")
-    print("energy is confined to the controlled var stage BY DESIGN; quality/det are")
-    print("regime-invariant so the full-95 quality ranking (incl. the exploratory sweep) is valid.\n")
+    print("=== two-batch role structure (controlled vs breadth), not a confound ===")
+    print(f"var   = pre-registered CONTROLLED first batch (base_clock 1.7GHz, turbo-off, energy-comparable): {len(var_models)} tags")
+    print(f"wave2 = BREADTH-extension second batch (dynamic turbo-on, energy descriptive-only): {len(w2_models)} tags")
+    print(f"overlap: {len(var_models & w2_models)} models  ->  disjoint batches by design")
+    print("energy is confined to the controlled var batch BY DESIGN; quality/det are")
+    print("regime-invariant so the full 94-functional quality ranking is valid.\n")
 
     dnf = df.groupby("collection_batch")["dnf_bool"].mean()
     to = df[df.finish_reason.astype(str).str.contains("timeout")].groupby("collection_batch").size()

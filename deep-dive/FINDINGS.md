@@ -17,19 +17,21 @@ bandwidth, MoE expert usage, DNF/finish-reason, and a full model taxonomy
 speed × memory × size (cf. Lu et al., *Small Language Models: Survey,
 Measurements, and Insights*, arXiv:2409.15790).
 
-**One study, a deliberate two-stage funnel.** The `var`/`wave2` split is not a
-confound — it is the intended methodology. A broad **exploratory sweep first**
-(`wave2`, 150+ models under the node's default dynamic-turbo policy, to triage the
-roster and shake out failing scripts — energy stamped `descriptive_only`, because
-you do not measure energy on a triage pass), then a **curated controlled re-run**
-of the survivors (`var`, ~24 models under `node-power.sh`: turbo off, base clock
-1700, RAPL package-0 — the `controlled_three_axis` energy scope). CPU regime
-changes watts and latency, not the tokens a model emits at fixed temperature, so
-**quality / safety / capability pool across all 95 models** (the whole exploratory
-sweep included); **energy is confined to the controlled stage by design**. The two
-stages are disjoint model sets, so a small optional *bridge subset* (the same
-handful of models under both regimes) would additionally *price* the CPU power
-policy — an enhancement, not a correction.
+**Two batches by design (controlled vs breadth), not a confound.** Per `PAPER.md`
+§7, the frozen v1 snapshot holds two batches with different *roles*: `var` — the
+pre-registered **controlled** first batch (25 tags / 24 functional; base clock
+1700, turbo off, RAPL package-0; the *only* energy-comparable scope) — and `wave2`
+— a **breadth-extension** second batch (70 tags, dynamic turbo-on) that grows
+quality/safety coverage to 94 functional but is *excluded from energy/systems
+ranking by design* (schema v1 records batch/regime/source and forbids the pooled
+energy front). CPU regime changes watts and latency, not the tokens a model emits
+at fixed temperature, so **quality / safety / capability pool across all 94
+functional models**; **energy is confined to the 24 controlled models by design**.
+A small optional *bridge subset* (the same handful under both regimes) would
+additionally *price* the CPU power policy — an enhancement, not a correction.
+(Separate cohorts outside this snapshot: the 152-model `full-chatok-core20-r5`
+doctoral run analysed below, and an ongoing 21-model timeout-sensitivity
+follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
 
 ## Headline discoveries (the gold)
 
