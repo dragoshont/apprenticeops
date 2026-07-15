@@ -19,8 +19,13 @@ import numpy as np
 import pandas as pd
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-RUN = REPO / ".tmp" / "completed-run-intake" / "full-chatok-core20-r5-ollama-20260705-150053"
-JUDGED = RUN / "judged.full-chatok-core20-r5-ollama-20260705-150053.jsonl"
+RUN_ID = "full-chatok-core20-r5-ollama-20260705-150053"
+# Prefer the durable, content-addressed LOCKED bundle (survives .tmp cleanup and is
+# hash-bound by bundle-manifest.json); fall back to the ephemeral .tmp intake only if
+# the promoted bundle is absent (AGENTS.md: read the locked bundle, not .tmp/).
+_BUNDLE_ID = "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa"
+LOCKED = REPO / "data" / "completed-runs" / f"{RUN_ID}-{_BUNDLE_ID}"
+_TMP = REPO / ".tmp" / "completed-run-intake" / RUN_ID
 SAFETY_CLASSES = {"guard", "secure"}
 
 # reasoning-trained / CoT-emitting families (not plain instruct with thinking_capable)
@@ -29,10 +34,27 @@ _META_COLS = ["model", "family", "org", "arch_class", "training_regime", "thinki
               "tools_capable", "is_moe", "quant", "param_count", "param_size", "size_gb", "bracket"]
 
 
+def _source() -> tuple[list[pathlib.Path], pathlib.Path]:
+    """Resolve (results_files, judged_file). The locked bundle uses a single canonical
+    ``results.jsonl.gz`` + ``judged.jsonl.gz``; the .tmp intake uses per-model
+    ``*.results.jsonl.gz`` + one plaintext ``judged.<run>.jsonl``. Both carry identical
+    field semantics, so the analysis is source-agnostic."""
+    canon = LOCKED / "canonical"
+    if (canon / "results.jsonl.gz").exists():
+        return [canon / "results.jsonl.gz"], canon / "judged.jsonl.gz"
+    return ([pathlib.Path(f) for f in glob.glob(str(_TMP / "*.results.jsonl.gz"))],
+            _TMP / f"judged.{RUN_ID}.jsonl")
+
+
+def _open_text(path: pathlib.Path):
+    return gzip.open(path, "rt") if str(path).endswith(".gz") else open(path)
+
+
 def _load_results() -> pd.DataFrame:
+    results_files, _ = _source()
     rows = []
-    for f in glob.glob(str(RUN / "*.results.jsonl.gz")):
-        with gzip.open(f, "rt") as fh:
+    for f in results_files:
+        with _open_text(f) as fh:
             for line in fh:
                 r = json.loads(line)
                 fin = r.get("gen_ai.response.finish_reasons") or []
@@ -52,8 +74,9 @@ def _load_results() -> pd.DataFrame:
 
 
 def _load_judged() -> pd.DataFrame:
+    _, judged_file = _source()
     rows = []
-    with open(JUDGED) as fh:
+    with _open_text(judged_file) as fh:
         for line in fh:
             r = json.loads(line)
             try:
@@ -133,7 +156,9 @@ def load_full() -> pd.DataFrame:
     df["dnf_bool"] = df["finish_reason"].astype(str).str.contains("timeout|dnf", case=False, regex=True)
     # single controlled regime across ALL rows -> energy is comparable for every model
     df["energy_comparable"] = df["no_turbo"].astype(str).eq("1") & df["power_source"].astype(str).eq("rapl:package-0")
-    return df
+    # Canonical row order so every downstream analysis is byte-reproducible regardless of
+    # source layout (locked bundle's single canonical file vs the .tmp per-model glob).
+    return df.sort_values(["model", "scenario", "rep"], kind="stable").reset_index(drop=True)
 
 
 def model_table_full(df: pd.DataFrame) -> pd.DataFrame:
