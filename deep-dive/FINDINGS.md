@@ -79,11 +79,14 @@ follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
 
 ## Deeper battery (B-series) — additional discoveries
 
-9. **The ~4B sweet spot is real and robust — bigger does not win.** Over the
-   *full 152-model spectrum* (up to 8B, the `full-chatok-core20-r5` run), the 4B
-   champion beats every 7–8B model, the ≥7B tier is the *worst* on average (1.69
-   vs 2.50 for 3–6.5B), and **Spearman(params, quality) = 0.14** — capability
-   plateaus at ~4B on ops tasks at CPU scale. *(B6)*
+9. **~4B is the efficiency knee, but bigger *does* help on average.** *(CORRECTED
+   — an earlier version claimed "bigger does not win" from a parameter-unit bug that
+   mis-sized 15 sub-1B models as 100–1000B.)* With parameters from the canonical
+   `param_count`, mean quality rises 1.81 (<3B) → 2.44 (3–6.5B) → **2.84 (≥6.5B)**,
+   **Spearman(params, quality) = 0.73**. The single best model is a 4B
+   (`qwen3:4b-instruct` 3.59, edging `qwen3:8b` 3.51) at a fraction of the energy, so
+   ~4B is the best quality-per-cost knee — but larger models are better on average.
+   *(B6, corrected)*
 10. **The ranking is robust to judge-version and prompt-format.** On the 90 models
     shared between the chatok run (gpt-5.4 + claude-4.6, chatok format) and the
     snapshot (gpt-5.5 + claude-4.8, current format), Spearman = **0.974**. With
@@ -117,19 +120,21 @@ results the two-batch snapshot could not:
 15. **3-axis coverage jumps 25 → 152 models.** Quality × safety × **energy** is now
     measured on every model under a single regime (no cross-batch confound), and the
     ranking is robust to the re-center (**Spearman 0.974** vs the frozen snapshot).
-16. **Tool-training reproduces** on the full set: **+0.37 quality (p=0.018)**.
-17. **"Thinking mode" penalty is mostly a token-budget artifact — adversarially
-    defended** (`full_reasoning_pairs.py`). Same-lineage instruct-vs-thinking pairs
-    (Qwen3-4B ×2, Phi-4-mini, Qwen2.5-3B→smallthinker, EXAONE) lose **−0.42 quality**
-    at a fixed **512-token cap** (paired *t* p≈10⁻⁶). BUT both modes share that cap,
-    thinking exceeds it **74–100%** of the time, and on the answers it *finishes*
-    **3 of 5 pairs match or beat instruct** (mean Δ −0.07). Honest claim: **thinking
-    mode is a poor FIT for a tight token/latency budget on bounded ops tasks** (it
-    exhausts the budget before answering) — *not* that its reasoning is worse. Worst
-    on `toolcall` (−1.50) and `monitor`; neutral on `secure`. Lone genuine exception:
-    EXAONE-deep (worse even when finishing; also the least-matched pair). **To be
-    confirmed** by the queued budget-sensitivity re-run at higher `max_tokens`
-    (`data/models.reasoning-budget-v1.txt`).
+16. **Tool-training reproduces** on the full set: **+0.44 quality (p=0.006)** among
+    models with *known* tool-capability metadata (unknown-metadata models excluded,
+    not counted as non-tool) — an observational association, not a controlled contrast.
+17. **"Thinking mode" penalty is directional and mostly fit-to-budget — not
+    significant** (`full_reasoning_pairs.py`). *(CORRECTED: the earlier non-truncated
+    "recovers" test was survivorship-biased and the p≈10⁻⁶ was pseudoreplicated.)*
+    Same-lineage instruct-vs-thinking pairs, tested at the **lineage level** (n≈4;
+    Qwen3-4B Q8/Q4 are one lineage): thinking is **−0.40 quality at the per-scenario
+    budget (400–700 tokens), NOT significant (paired t p=0.19)**. On **matched**
+    non-truncated cells the gap halves to −0.24 (p=0.30), and the clean mode-flip
+    pairs (Qwen3-4B, Phi-4-mini) are ≈0.00 — the residual is the near-match
+    EXAONE-Deep (−0.80). Mechanism: thinking truncates ~74% of cells against the small
+    budget. **Honest claim:** poor fit for tight budgets; evidence it degrades
+    *reasoning quality* is weak/underpowered → confirm with the queued
+    budget-sensitivity re-run (`data/models.reasoning-budget-v1.txt`).
 18. **Reasoning roster gap:** deepseek-r1 (the frozen "reasoning hurts" driver) is
     absent from `full` (only deepseek-*coder* is present); the pilot carries the
     R1-specific claim, or it is reframed as the budget-fit finding above.
@@ -141,20 +146,22 @@ results the two-batch snapshot could not:
     1.0–1.5` with ~zero lift when they finish. Queued as
     `data/models.reasoning-budget-v2.txt` (the victim plus weak controls that should
     *not* benefit — the control that isolates over-generation from "more tokens = better").
-20. **Quantization: Q4 is a free lunch (`full_quant_pairs.py`).** Across 16
-    same-base high-precision-vs-Q4 pairs, Q4 costs **−0.09 quality** — mean |Δ| 0.12
-    is far below the median within-model rep-SD of **0.89**, so **Q8 and Q4 are
-    practically indistinguishable on quality** — while buying **0.66× size, 1.42×
-    decode speed, 0.70× energy**. Q4 is the correct default. *Caveat (adversarial):*
-    Q4 can nick **safety** more than quality on some strong models (`qwen3:4b`
-    −0.56 safety) — verify the specific model's Q4 safety for safety-critical use.
+20. **Quantization: Q4 has a small, real, practically-minor quality cost — not a
+    "free lunch"** (`full_quant_pairs.py`). *(CORRECTED: the earlier rep-SD argument
+    used the wrong variance.)* Across 16 same-base hi-vs-Q4 pairs, Q4 costs **−0.09
+    quality (95% CI [−0.14, −0.04], paired t p=0.003)** — non-zero but **practically
+    equivalent within ±0.25 (TOST established)** — while buying **0.66× size, 1.42×
+    speed, 0.70× energy**. NOT a blanket free lunch: Q4's safety delta averages −0.08,
+    reaches **−0.56** (`qwen3:4b`), and 3/16 pairs lose >0.2 safety. Good default for
+    quality/efficiency; verify the Q4 variant for safety-critical use.
 21. **MoE is an efficiency story, not a quality one (`full_moe_dense.py`).**
     Metadata-tagged MoE decode **faster than their footprint predicts** (roofline
-    residual **+0.87 vs −0.02** for dense, p=0.043) and win within the Granite family
-    on tps/GB (5.2 vs 3.7) — reproducing the b4 result. MoE-minus-dense *quality*
-    (+0.22) is confounded (different models) and is NOT the claim. *Caveats:* only
-    **2** small MoE models are reliably tagged (few exist; `is_moe` under-populated;
-    "hybrid" ≠ MoE) → directional/underpowered; raw overall tps/GB is size-confounded.
+    residual **+0.87 vs −0.02** for dense — reported descriptively, **n=2, no
+    significance test**) and win within the Granite family on tps/GB (5.2 vs 3.7) —
+    reproducing the b4 result. MoE-minus-dense *quality* (+0.22) is confounded
+    (different models) and is NOT the claim. *Caveats:* only **2** small MoE models are
+    reliably tagged (few exist; `is_moe` under-populated; "hybrid" ≠ MoE) →
+    directional/underpowered; raw overall tps/GB is size-confounded.
 22. **Org/maker effects must be size-controlled (`full_org_effects.py`).** The raw
     per-maker quality ranking is a **size-mix artifact**: Cohere (2.76), LG (2.63),
     DeepCogito, Mistral top it only because each contributed just 2 models, both
@@ -168,15 +175,14 @@ results the two-batch snapshot could not:
     but shrinks (2.75 over 6 bases), so the honest claim is "the qwen3:4b line leads,"
     not broad Qwen superiority. (Instruction-tuning has no clean test here: the ops
     roster is all instruct/chat by curation, with no true base/pretrained siblings.)
-23. **Task difficulty vs discrimination (`full_task_difficulty.py`).** The suite has
-    a strong **difficulty–discrimination tradeoff** (Spearman **+0.84**): the hardest
-    classes (`detect` 1.44, `expand`, `upgrade`) **floor every model** and carry little
-    information, while mid-difficulty tasks separate models best. **`toolcall` is the
-    single most discriminating class (between-model SD 1.29)** — the same axis where
-    thinking mode hurts most, i.e. tool-calling is *the* differentiator. Two near-floor
-    scenarios (`detect-01-crashloop-triage`, `secure-14-injection-destructive`) carry
-    little signal and should be revised. (Caveat: most classes have one scenario;
-    `new`/`secure`/`foresee` have 6/4/2.)
+23. **Task difficulty vs discrimination (`full_task_difficulty.py`).** *(CORRECTED:
+    now uses the authoritative scenario `class` field, not name prefixes — the earlier
+    "toolcall" was a mislabel; its class is `test`.)* Strong difficulty–discrimination
+    tradeoff (Spearman **+0.88**): the hardest classes floor every model, while
+    mid-difficulty classes separate best — **`guard` (SD 0.98), `test` (0.94, 3
+    scenarios), `monitor`, `diagnose` (0.84, 5 scenarios)**. Two near-floor scenarios
+    (`detect-01-crashloop-triage`, `secure-14-injection-destructive`) should be
+    revised. (Most classes are thin, 1–5 scenarios → indicative.)
 24. **Adversarial validation of the re-center (`full_adversarial_review.py`).** The
     foundation was attacked and mostly holds: (a) the full run's two judges **agree**
     (quad-κ **0.853**, within-1 98.6%, r 0.86 over 15,200 rows) — solid, though below

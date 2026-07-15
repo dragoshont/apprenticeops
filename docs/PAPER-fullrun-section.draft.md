@@ -1,140 +1,148 @@
 # DRAFT — Full-run re-analysis section (for review before integration into `PAPER.md`)
 
-> Status: **draft for review.** This section re-centers the empirical results on the
-> single-collection `full-chatok-core20-r5` run (152 models, one controlled regime).
-> It does **not** overwrite the frozen 94-model paper-era results; on integration it
-> becomes the primary results section, with the frozen two-batch snapshot repositioned
-> as the pre-registered pilot / robustness cross-check. Every claim below is reproduced
-> by a committed script in `deep-dive/` and recorded in `deep-dive/FINDINGS.md` (items
-> 15–23). Adversarial caveats are kept inline on purpose — they are what make each
-> claim defensible.
+> Status: **draft for review — revised after a dual-family adversarial gate.**
+> An independent Adversarial Judge pass (Claude Opus 4.8 = REVISE, GPT-5.6 Sol =
+> FAIL) attacked an earlier version and found real defects, since fixed: a
+> parameter-unit bug that had **inverted** the size finding, a survivorship-biased
+> reasoning defense, pseudoreplicated p-values, a wrong "512-token cap" premise, a
+> scenario-taxonomy mislabel, and over-stated equivalence/robustness claims. This
+> revision incorporates those fixes and reports every result honestly, but it is
+> **not yet promotable**: the primary data still lives outside the tracked tree and
+> the bundle is `provisional`, and magnitude claims still await a re-judge with the
+> paper's newer judges (see X.7). Reproduced by scripts in `deep-dive/`
+> (`FINDINGS.md` 15–24).
 
-## X.1 The full run and why it is the primary dataset
+## X.1 The full run and why it is the candidate primary dataset
 
-The `full-chatok-core20-r5-ollama-20260705-150053` bundle is a single, content-addressed
-collection of **152 models × 20 scenarios × 5 repetitions = 15,200 primary rows**, each
+`full-chatok-core20-r5-ollama-20260705-150053` is a single content-addressed
+collection of **152 models × 20 scenarios × 5 repetitions = 15,200 rows**, each
 judged by a two-model ensemble (`claude-opus-4.6` + `gpt-5.4`, 30,400 canonical
-judgements). Critically, **every one of the 15,200 rows was collected under one operating
-point** — `cpu_no_turbo = 1`, RAPL `package-0`, base clock — with a valid
-`power.energy_wh` on 100% of rows. This removes the cross-batch power-regime confound that
-constrained the two-batch snapshot: quality, safety, and **energy** are all comparable
-across the same 152 models simultaneously (25 → 152 models with comparable energy).
+judgements), collected under **one operating point** (`cpu_no_turbo = 1`, RAPL
+`package-0`, per-scenario token budgets of 400–700). Energy is present on 100% of
+rows, so quality × safety × **CPU-package energy** are comparable across the same
+152 models (25 → 152 models with comparable package energy).
 
-The re-center does not overturn the prior ranking: on the 90 models shared with the frozen
-snapshot, the two rankings correlate at **Spearman 0.974** despite a judge-version change
-(4.6/5.4 vs 4.8/5.5) and a prompt-format change — the model ordering is robust to both. The
-two full-run judges themselves agree substantially (quadratic-weighted κ = **0.853**, 98.6%
-within one point, r = 0.86 over 15,200 rows), with a small disclosed systematic bias
-(`claude-opus-4.6` mean 2.21 vs `gpt-5.4` 2.07) that the consensus mean absorbs.
-*(FINDINGS 15, 24; `full_report.py`, `full_adversarial_review.py`.)*
+The two full-run judges agree substantially (quadratic-weighted κ = **0.853**,
+98.6% within one point, r = 0.86 over 15,200 rows), with a disclosed systematic
+bias (`claude-opus-4.6` mean 2.21 vs `gpt-5.4` 2.07) that the consensus mean
+absorbs. As an **exploratory** cross-check, a rank comparison against the frozen
+94-model snapshot on 90 name-matched models gives Spearman 0.974 — this indicates
+**rank stability only**; it is *not* a formal cross-run join (the frozen manifest
+forbids joining on incomplete condition identity) and it cannot license the paired
+**magnitudes** below, which require a same-output re-judge with `4.8`/`5.5`.
+*(FINDINGS 15, 24.)*
 
-## X.2 Scale: the ~4B sweet spot, and diminishing returns
+## X.2 Scale: bigger helps; ~4B is the efficiency knee
 
-Over the full spectrum, capability plateaus well before the largest models tested. Mean
-quality by size band is 1.90 (<3B), **2.42 (3–6.5B, best)**, and 2.16 (≥6.5B), and the
-overall correlation between parameters and quality is weak (Spearman 0.14–0.32). The best
-~4B instruct model outscores every 7–8B model in the pool. For bounded CPU operations,
-parameters past ~4B do not pay for themselves. *(FINDINGS 15; `full_report.py`.)*
+*(Corrected — an earlier draft claimed "bigger doesn't win" from a parameter-unit
+bug that mis-sized 15 sub-1B models as 100–1000B.)* With parameters read from the
+canonical `param_count`, quality **rises with size**: mean quality by band is 1.81
+(<3B), 2.44 (3–6.5B), and **2.84 (≥6.5B)**, with **Spearman(params, quality) =
+0.73**. Size is therefore *not* irrelevant. What survives is a narrower, efficiency
+claim: the single best model is a **4B** (`qwen3:4b-instruct-2507`, 3.59, edging
+`qwen3:8b` 3.51) at a fraction of the energy, so ~4B is the best quality-per-cost
+operating point — but larger models are, on average, better. *(FINDINGS 15.)*
 
 ## X.3 Training and inference choices
 
-**Tool-training helps.** Models trained for tool use score **+0.37 quality (p = 0.018)**
-over those that are not — the effect reproduces on the full roster. *(FINDINGS 16.)*
+**Tool-training is associated with higher quality.** Among models with known
+tool-capability metadata, tool-capable models score **+0.44 quality (p = 0.006)**;
+models with unknown metadata are excluded rather than treated as non-tool. This is
+an observational association (annotation-based), not a controlled contrast.
+*(FINDINGS 16.)*
 
-**Thinking/reasoning mode is a poor fit for a tight budget — not worse reasoning.** Holding
-the base model fixed and flipping only the mode (five same-lineage instruct↔thinking pairs:
-Qwen3-4B ×2, Phi-4-mini, Qwen2.5-3B→SmallThinker, EXAONE), thinking loses **−0.42 quality**
-at a fixed 512-token cap (paired *t* p ≈ 10⁻⁶). **But this is largely a token-budget
-artifact.** Both modes share the 512 cap; thinking variants exceed it **74–100%** of the
-time, generate 2.2× the tokens, and use 2.3× the energy. On the answers where thinking
-*finishes*, **three of five pairs match or beat their instruct sibling** (mean Δ −0.07). The
-honest claim is therefore about **fit**: thinking mode exhausts a tight token/latency budget
-before answering on bounded ops tasks — it is not that its reasoning is worse. The effect is
-largest on `toolcall` (−1.50) and neutral on `secure`. The one genuine exception is
-EXAONE-Deep (worse even when it finishes; also the least-matched pair). A budget-sensitivity
-re-run at higher `max_tokens` (`data/models.reasoning-budget-v1.txt`) is queued to confirm
-the penalty collapses as the budget grows. *(FINDINGS 17; `full_reasoning_pairs.py`.)*
+**Thinking/reasoning mode underperforms at a small token budget — directional, and
+mostly a fit effect.** Flipping only the mode on same-lineage pairs (Qwen3-4B at
+two quants, Phi-4-mini, Qwen2.5-3B→SmallThinker*, EXAONE→Deep*), and testing at the
+**lineage level** (n ≈ 4 distinct lineages — Qwen3-4B Q8/Q4 are one lineage), the
+thinking variant is **−0.40 quality at the per-scenario budget, which is NOT
+statistically significant (paired t p = 0.19)**. On **matched** non-truncated cells
+(instruct restricted to the same scenarios/reps where the thinking variant did not
+truncate) the gap halves to −0.24 (p = 0.30), and the two clean mode-flip pairs
+(Qwen3-4B, Phi-4-mini) are ≈ 0.00 — the residual is driven by the near-match
+EXAONE-Deep (−0.80). The mechanism is budget exhaustion: thinking truncates ~74% of
+cells against per-scenario budgets of 400–700 tokens. **Honest reading:** thinking
+mode is a poor fit for tight bounded-ops budgets, but the evidence that it degrades
+*reasoning quality* is weak and underpowered — the queued budget-sensitivity re-run
+(higher `max_tokens`) is the confirmation. *(FINDINGS 17; `full_reasoning_pairs.py`.)*
 
-**Quantization to Q4 is close to free on quality.** Across 16 same-base high-precision-vs-Q4
-pairs, Q4 costs **−0.09 quality** — a mean absolute delta of 0.12, far below the median
-within-model repetition SD of 0.89, i.e. **statistically indistinguishable** — while buying
-**0.66× size, 1.42× decode speed, 0.70× energy**. Q4 is the correct default. *Caveat:* Q4
-can reduce **safety** more than quality on some strong models (`qwen3:4b`, −0.56 safety),
-so safety-critical deployments should verify the specific Q4 variant. *(FINDINGS 20;
+**Quantization to Q4 has a small, real, practically-minor quality cost.** Across 16
+same-base high-precision-vs-Q4 pairs, Q4 costs **−0.09 quality (95% CI [−0.14,
+−0.04], paired t p = 0.003)** — statistically non-zero, but **practically
+equivalent** within a ±0.25 margin (TOST established) — while buying **0.66× size,
+1.42× decode speed, 0.70× energy**. It is *not* a blanket "free lunch": across the
+16 pairs Q4's safety delta averages −0.08 and reaches **−0.56** (`qwen3:4b`), with
+3/16 pairs losing more than 0.2 safety. Q4 is a good default for quality/efficiency;
+safety-critical deployments should verify the specific Q4 variant. *(FINDINGS 20;
 `full_quant_pairs.py`.)*
 
-## X.4 Architecture: MoE is an efficiency story
+## X.4 Architecture: MoE efficiency (case study, underpowered)
 
-Mixture-of-experts models decode **faster than their footprint predicts** — a size→speed
-roofline residual of **+0.87 vs −0.02** for dense models (p = 0.043) — and win within the
-Granite family on decode-tokens-per-GB (5.2 vs 3.7), reproducing the controlled-scope
-roofline result. The apparent MoE quality advantage (+0.22) is confounded (MoE and dense are
-different models) and is *not* claimed. *Caveats:* only two small MoE models are reliably
-metadata-tagged (few small MoE exist; "hybrid" ≠ MoE, and uncertain labels were not forced),
-so the efficiency result is directional and underpowered; raw tokens-per-GB is
-size-confounded and the roofline residual is the correct size-controlled metric.
-*(FINDINGS 21; `full_moe_dense.py`.)*
+The two reliably-tagged MoE models decode **faster than their footprint predicts**
+— a size→speed roofline residual of **+0.87 vs −0.02** for dense — and win within
+the Granite family on decode-tokens-per-GB (5.2 vs 3.7). This is reported
+**descriptively as a case study with no significance test** (n = 2 is far too few),
+consistent with the controlled-scope roofline result. The apparent MoE quality edge
+is confounded (different models) and not claimed; raw tokens-per-GB is
+size-confounded (the residual is the correct metric); few small MoE exist and
+"hybrid" ≠ MoE, so uncertain labels are not forced. *(FINDINGS 21; `full_moe_dense.py`.)*
 
-## X.5 Makers: rank at matched size
+## X.5 Makers: rank at matched size (de-duplicated)
 
-Per-maker quality **must be size-controlled**. The raw ranking is a size-mix artifact —
-Cohere, LG, DeepCogito, and Mistral top it only because each contributed just two models,
-both 7–8B (the largest allowed). Within the 3–4B band, where makers compete head-to-head,
-**Alibaba/Qwen dominates (2.85, n = 16)**, ahead of IBM (2.52), Meta (2.51), Google (2.48),
-and Microsoft (2.40); code-specialist makers (BigCode/StarCoder) are worst at ops. This
-refines the pilot's "IBM tops org quality": IBM leads the small/efficient bands, but Qwen
-leads at matched size on the broader roster. Instruction-tuning could not be tested — the ops
-roster is entirely instruct/chat by curation, with no base/pretrained siblings. *De-dup
-caveat:* Qwen's raw band count was inflated by `qwen3:4b` quant variants; collapsed to
-distinct base models the Qwen lead survives (2.75, 6 bases) but narrows, so the honest claim
-is that the qwen3:4b line leads rather than broad Qwen superiority.
-*(FINDINGS 22; `full_org_effects.py`.)*
+Per-maker quality must be size-controlled *and* de-duplicated. Raw maker means are a
+size-mix artifact (Cohere, LG, DeepCogito, Mistral top it only via two 7–8B models
+each). Within the 3–4B band, de-duplicated to distinct base models (quant variants
+of `qwen3:4b` had inflated the raw count), **Alibaba/Qwen still leads (2.75, 6
+bases)**, ahead of TII (2.49), Microsoft (2.40, 7 bases), Meta (2.34). The honest
+claim is that **the qwen3:4b line leads at matched size**, not broad Qwen
+superiority. Instruction-tuning could not be tested — the roster is all instruct/chat
+by curation. *(FINDINGS 22; `full_org_effects.py`.)*
 
-## X.6 The scenario suite: difficulty vs discrimination
+## X.6 The scenario suite: difficulty vs discrimination (authoritative taxonomy)
 
-Task difficulty and discrimination are strongly, and inconveniently, correlated
-(Spearman **+0.84**): the hardest classes (`detect` 1.44, `expand`, `upgrade`) **floor
-every model** and thus carry little information, while mid-difficulty tasks separate models
-best. **`toolcall` is the single most discriminating class** (between-model SD 1.29) — the
-same axis where thinking mode is most harmful — making tool-calling the central
-differentiator of the suite. Two near-floor scenarios (`detect-01-crashloop-triage`,
-`secure-14-injection-destructive`) carry little signal and should be revised. *(FINDINGS 23;
-`full_task_difficulty.py`.)*
+Using the scenario set's authoritative `class` field (not name prefixes — an
+earlier draft mislabeled `toolcall-20`, whose class is `test`), difficulty and
+discrimination correlate strongly (Spearman **+0.88**): the hardest classes floor
+every model and carry little information, while mid-difficulty classes separate best
+— **`guard` (SD 0.98), `test` (0.94, 3 scenarios), `monitor`, `diagnose` (0.84, 5
+scenarios)**. Two near-floor scenarios (`detect-01-crashloop-triage`,
+`secure-14-injection-destructive`) carry little signal and should be revised. Most
+classes are thin (1–5 scenarios), so class-level numbers are indicative.
+*(FINDINGS 23; `full_task_difficulty.py`.)*
 
-## X.7 Threats specific to the re-center
+## X.7 Threats and what must happen before integration
 
-- **Judge provenance.** The full run used `claude-opus-4.6` + `gpt-5.4`, older than the
-  frozen paper's `4.8`/`5.5`. The 0.974 cross-version rank agreement (X.1) is the defence;
-  a re-judge of the 15,200 rows with the newer judges is available at zero node cost if a
-  strict version match is required.
-- **Claim status.** The bundle is gate-passed and content-addressed but `provisional`;
-  promotion to canonical requires its own locks and an independent GPT- and Claude-family
-  review.
-- **Roster gap.** `deepseek-r1` (the pilot's "reasoning hurts" driver) is absent from the
-  full run; the pilot carries the R1-specific claim, or it is reframed as the budget-fit
-  finding in X.3.
-- **Reliability censoring.** 208 rows are DNF and 1,452 are length-censored across 21
-  affected models; these are retained as separate strata, and the ongoing 21-model
-  timeout-sensitivity follow-up addresses the timeout question directly.
-- **Energy integrity (validated).** Within one regime the energy axis is not order- or
-  thermally-confounded: thermal start is stable (48–62 °C) and the within-model correlation
-  between thermal start and energy is +0.015 (only 4/152 models exceed |0.3|), confirming the
-  quiesce-between-models control works.
-- **Multiple comparisons.** Roughly eight axes were tested without a family-wise correction;
-  the strongly-significant results (reasoning p≈10⁻⁶, quantization) are robust, but the marginal
-  ones (MoE p=0.043, tools p=0.018) should be read as suggestive, not confirmatory.
-- **Statistical power.** The MoE contrast (n=2 reliably-tagged) and the reasoning matched
-  pairs (~4 distinct lineages) are underpowered; they are reported directionally with the
-  confirmation run queued.
+- **Not yet reproducible / not paper-eligible.** The primary results and 30,400
+  judgements are read from gitignored `.tmp/`; the bundle is `claim_status =
+  provisional`. Before integration the canonical bundle must be committed to the
+  tracked archival path and claim-locked.
+- **Judge provenance and magnitudes.** The full run used `claude-opus-4.6` +
+  `gpt-5.4`. The 0.974 cross-check validates *ranking only*; every paired magnitude
+  (−0.40, −0.09, +0.44, +0.87) requires a **re-judge of the same outputs with
+  `4.8`/`5.5`** (queued, zero node cost) before it is a primary claim.
+- **Judge validity ≠ agreement.** κ = 0.853 measures consistency, not correctness;
+  two frontier judges share priors, so the consensus is one correlated ensemble.
+  The committed human-eval packets are unscored and should be scored.
+- **Energy scope.** Energy is CPU-package (RAPL `package-0`) only; DRAM/system energy
+  is excluded (and is size-correlated, so it specifically bounds the MoE-efficiency
+  and cross-model energy claims). Scope the energy claim to CPU-package.
+- **Power / multiplicity.** MoE (n = 2) and reasoning (~4 lineages) are underpowered
+  and reported directionally; p-values across ~8 axes are not family-wise corrected,
+  so marginal results are suggestive, not confirmatory.
+- **Reliability censoring.** 208 DNF + 1,452 length-censored rows across 21 models
+  are retained as separate strata; the ongoing 21-model timeout-sensitivity run
+  addresses the timeout question directly.
 
 ## X.8 Reproduce
 
 ```
-cd deep-dive && .venv/bin/python full_report.py            # X.1–X.2
-.venv/bin/python full_reasoning_pairs.py                   # X.3 reasoning
-.venv/bin/python full_quant_pairs.py                       # X.3 quantization
-.venv/bin/python full_moe_dense.py                         # X.4 MoE
-.venv/bin/python full_org_effects.py                       # X.5 makers
-.venv/bin/python full_task_difficulty.py                   # X.6 suite
-.venv/bin/python full_truncation_scan.py                   # budget-victim triage
+cd deep-dive
+.venv/bin/python full_report.py            # X.1-X.2
+.venv/bin/python full_reasoning_pairs.py   # X.3 reasoning (matched, lineage-level)
+.venv/bin/python full_quant_pairs.py       # X.3 quantization (paired-t + TOST)
+.venv/bin/python full_moe_dense.py         # X.4 MoE (descriptive)
+.venv/bin/python full_org_effects.py       # X.5 makers (de-duplicated)
+.venv/bin/python full_task_difficulty.py   # X.6 suite (authoritative taxonomy)
+.venv/bin/python full_truncation_scan.py   # budget-victim triage
+.venv/bin/python full_adversarial_review.py # foundation attacks
 ```
