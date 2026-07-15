@@ -113,11 +113,10 @@ shift, not a hobbyist niche. Cite Fara-7B / Ferret-UI Lite / Granite-4 as the
 5. **Gaps we uniquely occupy:** CPU-only local, RAPL energy per answer, safety scenarios,
    and honest capability accounting — none of the neighbors combine all four.
 
-## 7. Full reads (2026-07-15) — six papers, extracted and mapped
+## 7. Full reads (2026-07-15 / -16) — all eight papers, extracted and mapped
 
-*Six of the eight queued papers are now **read in full** (arXiv HTML). Concrete
-numbers + the ApprenticeOps mapping below are citable. Still abstract-only:
-2606.22942 (when-KD-works), 2606.16152 (quality-utility paradox).*
+*All eight queued papers are now **read in full** (the SLM survey + the two KD papers
+were finished 2026-07-16). Concrete numbers + the ApprenticeOps mapping below are citable.*
 
 ### 7.1 E3 — "Do AI Agents Know When a Task Is Simple?" (2607.13034, Jul 14; Yin & Feng, UT/CURENT, thanks MSR)
 - **Claim/method:** agents lack *execution-scope estimation* — they gather max
@@ -212,9 +211,45 @@ numbers + the ApprenticeOps mapping below are citable. Still abstract-only:
   + per-field routing" is the design counterpart to our "which small model, used directly,
   for which ops verb." **Caveat:** silver (judge) labels; n=22 subgroup; one task family.
 
-### 7.7 Still abstract-only (fetch before citing)
-2606.22942 (when-KD-helps/fails), 2606.16152 (quality-utility paradox: distilling reasoning
-into small models can hurt).
+### 7.7 Understanding KD in Post-Training: When It Helps and When It Fails (2606.22942, Jun 22; Liu et al, U-Michigan + Zoom) — *[full read 2026-07-16]*
+- **Method:** systematic post-training KD on **Tulu 3** (939k instruction–response pairs);
+  on-policy **GKD**; teacher Llama3.1-70B, students Llama3.2-1B/3B + Llama3.1-8B; data
+  swept **10k→939k**. Adds a stronger instruction-tuned teacher (Llama3.3-70B-Instruct)
+  and a two-stage synthetic-data recipe for low-resource domains.
+- **Findings — when KD helps vs fails:** KD **beats SFT only in low-data regimes** (up to
+  +5% at 10k); the gain **vanishes as data grows** (SFT can win by 150k) because a
+  same-dataset teacher **saturates**. KD **recovers ~4% even at full data when the teacher
+  knows something beyond the training set** (stronger instruct teacher). **Smaller students
+  benefit most** (1B ≫ 3B ≫ 8B). Two-stage synthetic warm-up → human-refine beats naive
+  mixing (1B ARC 26.7→70.3). Confirmed cross-arch on Qwen2.5-7B.
+- **Maps to ApprenticeOps:** bounds the **distill-vs-use-directly** theme — distillation's
+  payoff is largest exactly where our small ops models are weakest (data-scarce, smallest
+  models) and ~null where data is abundant. We study models **as shipped** (no distillation),
+  so this is the training-side complement, not a method twin. **Data:** reuses public
+  Tulu3/Flores-200/DialogSum/ARC; **no own dataset/repo released** (CC BY 4.0).
+
+### 7.8 The Quality-Utility Paradox (2606.16152, Jun 15; Qian et al, incl. MSR Asia; ICML) — *[full read 2026-07-16]*
+- **Releases code + data:** `github.com/Dracoqhl/Quality-Utility-Paradox` (CC BY 4.0) — the
+  one paper here besides E3 with a public code+data repo.
+- **Method:** four parallel datasets on ONE fixed 34k-problem set (NuminaMath, RFT-sampled by
+  Qwen2.5-Math-1.5B): **SLM-RFT** (the SLM's own traces), **Oracle-Refined** (GPT-5.2 repairs
+  them), **Oracle-Synthesized** (GPT-5.2 from scratch), NuminaMath subset. Reward model =
+  "perceived quality"; Avg@16 = "actual utility." Validated across SFT+DFT, 4 SLMs
+  (1.5B/7B/3B/7B), hyperparams, and 3 reward models.
+- **Findings — the paradox:** **higher reward-model score → LOWER downstream utility.**
+  SLM-RFT has the **lowest** reward (1.47) but the **highest** accuracy (37.06 Avg@16),
+  beating Oracle-Refined (34.06) and Oracle-Synthesized (30.02). Mechanism: Oracle refinement
+  couples logical repair with **distributional drift** ("syntactic compaction" — dense symbols
+  replace the SLM's native scaffolding) that raises the learner's **adaptation cost**
+  (perplexity ↔ accuracy monotone; SLM-RFT PPL 1.52 lowest). Fix = **Style-Aligned Refinement**
+  (repair logic while emulating the SLM's native style) → PPL 1.46, accuracy **39.12**,
+  beating BOTH Oracle-Refined and even native SLM-RFT.
+- **Maps to ApprenticeOps:** the sharpest **"reasoning-into-small can hurt"** corroboration —
+  and it *refines* our R2: the problem isn't reasoning per se, it's **distributional
+  incompatibility** when a bigger reasoner's traces are imported verbatim. The model's **own**
+  (or style-aligned) traces beat distilling a stronger reasoner — a direct argument for
+  judging small models **as shipped** rather than assuming "bigger teacher = better."
+  **Caveat:** math-reasoning + SLM regime only.
 
 ## 8. Where each paper releases its data (verified 2026-07-16)
 
@@ -232,7 +267,9 @@ releases its OWN dataset. This is the reference for positioning ApprenticeOps' r
 
 **Net: 3 of 6 release their own data; 3 do not** (two reuse public benchmarks, one is a
 survey). The field norm is a **compact, recompute-offline artifact + regeneration scripts**;
-none commit a multi-GB raw dump to git.
+none commit a multi-GB raw dump to git. (The two secondary distillation-method papers in
+§7.7–7.8 fit the same pattern: *Quality-Utility Paradox* releases code + data on GitHub; the
+*KD-in-post-training* study reuses public Tulu3/ARC and releases neither.)
 
 **Where ApprenticeOps sits — and the hosting decision.** ApprenticeOps matches or exceeds the
 strongest of this cohort. The compact `data/snapshots/<run>.{results,judged}.csv` (~3.5 MB,
