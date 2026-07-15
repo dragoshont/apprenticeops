@@ -1,0 +1,53 @@
+=== quality ranking (judge 1-5) with scenario-clustered 95% CI ===
+                                          model  quality  ci_lo  ci_hi   det  rank
+                    qwen3:4b-instruct-2507-q8_0    3.590  3.135  4.015 0.879     1
+                                       qwen3:8b    3.510  3.005  3.985 0.843     2
+                                  qwen3:4b-q8_0    3.400  3.030  3.765 0.847     3
+             hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.380  2.935  3.810 0.817     4
+                  qwen3:4b-instruct-2507-q4_K_M    3.360  2.950  3.750 0.881     5
+                                  granite3.3:8b    3.265  2.830  3.655 0.776     6
+                              gemma4:e2b-it-qat    3.185  2.775  3.610 0.781     7
+                                 exaone3.5:7.8b    3.140  2.690  3.580 0.769     8
+                                     qwen2.5:7b    3.080  2.620  3.535 0.833     9
+hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M    3.060  2.630  3.490 0.796    10
+                                    llama3.1:8b    3.035  2.625  3.420 0.793    11
+                    qwen3:4b-thinking-2507-q8_0    3.035  2.725  3.345 0.810    12
+                               granite4:micro-h    3.015  2.610  3.405 0.741    13
+                                  granite4.1:3b    2.980  2.535  3.395 0.810    14
+                                      gemma3:4b    2.940  2.510  3.380 0.753    15
+...
+             model  quality  ci_lo  ci_hi   det  rank
+      smollm2:135m    1.095  1.040  1.155 0.480   148
+      codegemma:2b    1.070  1.020  1.130 0.530   149
+       smollm:360m    1.065  1.000  1.175 0.502   150
+starcoder2:3b-q8_0    1.055  1.010  1.110 0.498   151
+     starcoder2:3b    1.020  1.005  1.040 0.485   152
+
+#1 = qwen3:4b-instruct-2507-q8_0 (quality 3.590, CI 3.135-4.015)
+statistical co-leaders (CI overlaps #1): 28 models
+   qwen3:4b-instruct-2507-q8_0, qwen3:8b, qwen3:4b-q8_0, hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-instruct-2507-q4_K_M, granite3.3:8b, gemma4:e2b-it-qat, exaone3.5:7.8b, qwen2.5:7b, hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M
+
+=== Friedman test: 152 models over 20 complete scenarios ===
+chi2=1326.3, p=8.19e-270, Kendall's W=0.439 (0=no agreement,1=perfect ordering across scenarios)
+mean-rank best = qwen3:4b-q8_0 (10.30); CD(0.05)=63.95
+models within CD of the best mean-rank (statistical co-top): 78
+   qwen3:4b-q8_0, qwen3:4b-instruct-2507-q8_0, qwen3:4b-instruct-2507-q4_K_M, qwen3:8b, hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, granite3.3:8b, gemma4:e2b-it-qat, exaone3.5:7.8b, hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M, llama3.1:8b
+
+=== quality(judge) vs det_score ranking agreement ===
+Spearman rho=0.896 (p=1.1e-54); Kendall tau=0.713
+judge-favoured (judge rank >> det rank):
+                     model  quality  det  q_rank  d_rank
+          granite4:micro-h     3.01 0.74   13.00   59.00
+falcon3:3b-instruct-q4_K_M     1.99 0.60   85.00  129.50
+                falcon3:3b     1.99 0.60   87.00  129.50
+        command-r7b:latest     2.63 0.72   35.50   76.00
+             granite4:1b-h     2.24 0.63   75.00  114.00
+det-favoured (det rank >> judge rank):
+                                            model  quality  det  q_rank  d_rank
+                                       qwen3.5:2b     2.28 0.83   71.00    8.00
+                      tinyllama:1.1b-chat-v1-q8_0     1.41 0.72  126.00   75.00
+                              phi4-mini-reasoning     2.46 0.82   53.00   12.00
+hf.co/allenai/OLMo-2-0425-1B-Instruct-GGUF:Q4_K_M     1.69 0.73  107.00   69.00
+                       qwen2.5:0.5b-instruct-q8_0     1.32 0.67  135.00  100.00
+
+saved a1_ranking.csv

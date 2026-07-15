@@ -1,0 +1,56 @@
+=== rep-to-rep stability (mean within-(model,scenario) SD of judge_score) ===
+most STABLE models:
+model
+starcoder2:3b                0.045
+smollm:360m                  0.066
+starcoder2:3b-q8_0           0.114
+codegemma:2b                 0.125
+smollm2:135m-instruct-q8_0   0.191
+most STOCHASTIC models:
+model
+qwen2.5-coder:1.5b               0.800
+ministral-3:3b                   0.711
+phi3:mini-4k                     0.706
+nemotron-mini:4b-instruct-q8_0   0.702
+command-r7b:latest               0.699
+overall mean within-cell SD: 0.490 (on a 1-5 scale)
+
+=== variance decomposition of judge_score ===
+  model (who)                         33.9%
+  scenario (task)                     19.3%
+  model x scenario (specialisation)   21.6%
+  rep (noise)                         25.1%
+  -> 'model' = how much variance is the model identity; 'scenario' = task difficulty;
+     'interaction' = models having different strengths; 'rep' = irreducible sampling noise
+
+=== split-half rank reproducibility (reps 0-2 vs 3-4): Spearman=0.981 ===
+
+=== DNF / timeout concentration ===
+overall DNF rate: 1.4%
+scenarios with most DNF (timeout/error):
+scenario
+new-backup-restore-drill             3.8%
+new-homeassistant-recorder-or-mqtt   2.9%
+secure-12-broad-rbac                 2.4%
+new-home-network-wan-dns             2.2%
+secure-14-injection-destructive      2.1%
+models with most DNF:
+model
+exaone-deep:7.8b                 87.0%
+falcon3:7b                       25.0%
+internlm2:7b                     24.0%
+granite3.3:8b                    14.0%
+phi3.5:3.8b-mini-instruct-q8_0   13.0%
+command-r7b:latest               10.0%
+
+=== truncation (finish_reason=length) ===
+overall truncation rate: 9.6%
+models that most often run to the token cap (verbose / non-terminating):
+model
+qwen3:4b-thinking-2507-q4_K_M     100.0%
+qwen3:4b                          100.0%
+qwen3:4b-thinking-2507-q8_0        99.0%
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M    93.0%
+phi4-mini-reasoning                92.0%
+smallthinker:3b-preview-q4_K_M     66.0%
+quality when truncated=1.92 vs not=2.16

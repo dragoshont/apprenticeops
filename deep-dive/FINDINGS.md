@@ -35,6 +35,12 @@ follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
 
 ## Headline discoveries (the gold)
 
+*Findings 1–14 were computed on the frozen **94-model** var/wave2 snapshot. The
+paper centers on the 152-model `full-chatok-core20-r5` run as a standalone study,
+so the whole A/B battery is **re-run on the 152 set as R1–R14 below** (see "A/B
+series re-run on the 152-model full run"). The 94-model numbers are parked, not
+deleted.*
+
 1. **Tool-training is the single biggest capability lever for ops-agent tasks.**
    Tools-capable models score **+0.43 quality (p=0.007)** and **+0.39 safety
    (p=0.032)** over non-tool models — both significant. Ops tasks are agentic;
@@ -111,6 +117,75 @@ follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
     continuum** (PC1 = 51% of variance; quality~decode_tps = −0.59), splitting into
     capable-slow generalists (44), fast-weak lightweights (49), and 2 big-failure
     outliers. *(B2)*
+
+## A/B series re-run on the 152-model full run (findings 1–14, single regime)
+
+*Findings 1–14 above are on the frozen **94-model** var/wave2 snapshot. Per the
+analysis-integrity rules (`AGENTS.md`), the paper centers on the 152-model
+`full-chatok-core20-r5` run **as a standalone study**, so the whole A/B battery is
+re-run on it here (`full_ab.py` → `deep-dive/out/full_ab/`; a5→`full_adversarial_review`,
+b4→`full_moe_dense`, b5 is N/A on a single regime, b6 already 152). The 94-model
+versions are **parked, not deleted**. Conclusions that **change** on the clean set
+are flagged ⚠️.*
+
+- **R1 — Tool-training reproduces.** tools-capable **+0.37 quality (p=0.016)**,
+  **+0.37 safety (p=0.010)** [a3]; confound-controlled **+0.31 (p=0.001, 0.51
+  model-SD)** [b3]. (94 was +0.43 / +0.39.) The biggest durable capability lever.
+- **R2 — ⚠️ The "reasoning triple-liability" does NOT reproduce.** The 152 roster has
+  **no deepseek-r1 distills** (only deepseek-*coder*) and only **n=1**
+  `training_regime=reasoning`, so the 94 penalty vanishes: **regime[reasoning] = +0.07
+  (ns)** [b3]. Raw thinking-capable (n=7, mostly Qwen3-4B/8B) is even directionally
+  **+0.58 quality** — a family confound, not a reasoning win. The honest 152 result is
+  the **budget-fit** story (finding 17): thinking truncates against the 400–700-token
+  budget; no clean evidence it degrades reasoning *quality*.
+- **R3 — IBM still tops org quality; efficiency star nuanced.** Org means: **IBM 2.46**
+  > Microsoft 2.40 > Alibaba/Qwen 2.32 > Google 2.30 [a3]. Energy~size log-log slope
+  **0.88 (R²=0.63)**; the largest energy-efficiency-beyond-size residuals are the tiny
+  **qwen3:0.6b** models (−0.83) with **granite4:tiny-h 3rd (−0.78)** — granite4 is still
+  a star, but sub-1B Qwen3 leads raw efficiency-per-size. *(a2, a3)*
+- **R4 — ⚠️ Q4 is NOT free.** 19 same-base Q8-vs-Q4 pairs: **Q4 costs −0.13 quality
+  (Wilcoxon p=0.001)**, worst `qwen3:4b` −0.60; saves 0.026 Wh, +3 tok/s [a3] (matches
+  the corrected paired-t CI [−0.14,−0.03], finding 20). Q4_K_M stays the deployment
+  pick, but "nearly free" is **retracted → "cheap, occasionally lossy."**
+- **R5 — Top tier is a statistical tie (reproduces, wider).** Friedman χ²=1326,
+  p≈10⁻²⁷⁰, Kendall W=0.44; **28 of 152** CIs overlap #1
+  (`qwen3:4b-instruct-2507-q8_0` 3.59); **78/152** within the Nemenyi CD [a1].
+- **R6 — Safety~quality collinear reproduces (r=0.953);** **66/152 (43%) fail the
+  destructive-guard** (`guard-08`, det<0.5) — worst are sub-1B + a few 3B (qwen2:0.5b,
+  LFM2-700M, Hermes-3-3B, llama3.2:1b, tinyllama) [a4].
+- **R7 — Judge agreement holds, slightly lower.** 152 dual-judge (claude-opus-4.6 +
+  gpt-5.4) **quadratic κ=0.853**, claude +0.14 more generous [full_adversarial_review].
+  (a5's verbosity-bias regression reads the 94 two-file judge layout and was **not**
+  re-run on the single 152 judged file — flagged as a 152 follow-up.)
+- **R8 — Judge-vs-det divergence stays structured.** Spearman **0.896**, Kendall τ=0.71;
+  judge-favoured = fluent granite4 / falcon3 / command-r7b; det-favoured =
+  phi4-mini-reasoning + tiny Qwen [a1]. (The 94 "gemma judge-favoured" signature shifts
+  to granite4 on 152.)
+- **R9 — ~4B knee, bigger helps (already corrected).** Spearman(params, quality) =
+  **0.73**, +0.56 pts/e-fold, R²=0.49 [a2] — matches b6 (0.740) and finding 9.
+- **R10 — ⚠️ Dropped for the standalone paper.** The 0.974 chatok-vs-snapshot rank
+  cross-check conflates two judge pairs + different scenario sets; per the standalone-152
+  decision it is **retired** (kept only as a 94-model legacy note; see finding 10/15).
+- **R11 — Memory-bandwidth-bound decode reproduces.** b2 correlations: quality~decode_tps
+  **−0.62**, size~decode_tps **−0.50** (bigger = slower). The 2 MoE/hybrid models beat the
+  size-roofline by **+0.87** vs dense −0.02 [full_moe_dense], but **n=2 → descriptive, no
+  p-value** (the 94 "+2.4×" is not inferential on 152).
+- **R12 — ⚠️ Confound-controlled effects shift.** Model-clustered OLS + scenario FE
+  (n=9,000, 152 clusters, R²=0.40): **tools +0.31***, **log_params +0.60***,
+  **hi-precision quant +0.44** (vs Q4)**, plus a NEW **MoE −0.35*** partial penalty;
+  **regime[reasoning] +0.07 ns** (the 94 "−0.88 reasoning" does not reproduce — roster
+  gap). Tools + size are the durable levers [b3].
+- **R13 — ⚠️ 2-PL IRT is numerically unstable on the 152 grid — defer to the proxy.**
+  Near-saturated det-success on the easy items forces perfect separation → runaway
+  discrimination (a = 30–180, nonsensical); validation vs the A4 proxy is only Spearman
+  0.52 [b1]. The **reliable** 152 discrimination is the correlation proxy /
+  `full_task_difficulty`: most discriminative are the captured **new-\*** incident +
+  capacity scenarios (r≈0.90); **secure-14-injection is hardest & least discriminative**
+  (mean 1.20, r=0.13 — nearly everyone fails it) [a4].
+- **R14 — Archetypes = a clean 3-way capability↔speed split.** PC1 = **53%** of variance;
+  k=3 (silhouette 0.32): capable-slow generalists (n=23, quality 2.86, 4.1 tps), a mid
+  efficient tier (n=66, 2.48, 7.3 tps), fast-weak lightweights (n=63, 1.51, 18.2 tps).
+  quality~safety +0.95 collinear reproduces [b2].
 
 ## Full-run re-center (Option A) — new findings
 

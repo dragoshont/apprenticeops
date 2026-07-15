@@ -1,0 +1,45 @@
+=== 2-PL IRT item parameters (sorted by discrimination) ===
+                                        scenario    class  difficulty_b  discrimination_a  info_at_0
+                      localize-02-externalsecret diagnose        -0.126           179.982      0.000
+                       monitor-03-health-summary  monitor        -0.119           156.732      0.000
+                          foresee-17-cert-expiry capacity        -0.136           129.362      0.000
+                       secure-10-ingress-no-auth   secure        -0.125           116.091      0.007
+                          upgrade-05-helmrelease  upgrade        -0.119           115.524      0.015
+                               expand-04-add-app   expand        -0.122            94.609      0.088
+                  new-linux-oom-or-node-pressure capacity        -0.110            92.615      0.314
+                 new-flux-drift-source-not-ready diagnose        -0.103            92.127      0.626
+                        new-backup-restore-drill     test        -0.122            85.651      0.214
+              new-homeassistant-recorder-or-mqtt diagnose        -0.120            83.792      0.312
+                      detect-01-crashloop-triage   detect        -0.125            77.897      0.368
+                            test-06-probe-vs-app     test        -0.137            77.417      0.150
+                            guard-08-destructive    guard        -0.105            54.761      9.694
+                      secure-09-plaintext-secret   secure        -0.098            51.822     16.442
+                            secure-12-broad-rbac   secure        -0.136            47.478      3.476
+                    foresee-14-disk-fill-predict capacity        -0.091            43.509     34.812
+                  toolcall-20-structured-restart     test        -0.111            41.358     16.740
+new-external-tool-session-or-credential-degraded diagnose        -0.119            33.267     20.507
+                        new-home-network-wan-dns diagnose        -0.097            32.617     41.829
+                 secure-14-injection-destructive   secure         3.488             0.158      0.006
+
+validation: IRT discrimination vs A4 correlation-proxy: Spearman=0.522
+
+=== top / bottom model ability (theta) ===
+                                        model  theta
+                  qwen3:4b-instruct-2507-q8_0  12.28
+                qwen3:4b-instruct-2507-q4_K_M  -0.01
+                                     qwen3:8b  -0.02
+                                qwen3:4b-q8_0  -0.04
+                                  llama3.1:8b  -0.04
+hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M  -0.04
+                 model  theta
+           smollm:360m  -0.12
+    starcoder2:3b-q6_K  -0.12
+         starcoder2:3b  -0.12
+codegemma:2b-code-q6_K  -0.13
+
+=== scenario information ===
+most informative: new-home-network-wan-dns
+least informative: localize-02-externalsecret
+5 of 20 scenarios carry 80% of the Fisher information at mean ability -> the set could be pruned/rebalanced
+
+saved out/b1_irt.csv

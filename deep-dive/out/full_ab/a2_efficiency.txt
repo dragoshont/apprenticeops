@@ -1,0 +1,123 @@
+=== quality per GB (all models) ===
+                       model  quality_per_gb  quality  size_gb  params_b
+  smollm2:135m-instruct-q8_0           3.776    1.095    0.290     0.135
+                 smollm:360m           3.550    1.065    0.300     0.362
+                smollm2:135m           2.671    1.095    0.410     0.135
+qwen2.5:0.5b-instruct-q4_K_M           2.387    1.265    0.530     0.494
+                qwen2.5:0.5b           2.377    1.260    0.530     0.494
+  smollm2:360m-instruct-q8_0           2.040    1.265    0.620     0.362
+    qwen2:0.5b-instruct-q8_0           2.000    1.340    0.670     0.494
+  qwen2.5:0.5b-instruct-q8_0           1.978    1.325    0.670     0.494
+
+=== quality per second (throughput-adjusted quality) ===
+                               model  quality_per_sec  quality  size_gb  params_b
+                         gemma3:270m            0.462    1.280      NaN       NaN
+                     granite4:350m-h            0.427    1.590      NaN       NaN
+                  gemma3:270m-it-qat            0.303    1.245      NaN       NaN
+          smollm2:135m-instruct-q8_0            0.287    1.095    0.290     0.135
+                  granite4:350m-bf16            0.260    1.510      NaN       NaN
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M            0.256    1.325      NaN       NaN
+                          qwen3:0.6b            0.256    1.775    1.090     0.752
+                       granite4:350m            0.256    1.525      NaN       NaN
+
+=== quality per Wh (controlled-energy 25) ===
+                               model  quality_per_wh_controlled  quality  energy_wh_controlled  size_gb
+                         gemma3:270m                    243.110    1.280                 0.005      NaN
+                     granite4:350m-h                    197.415    1.590                 0.008      NaN
+                  gemma3:270m-it-qat                    161.196    1.245                 0.008      NaN
+          smollm2:135m-instruct-q8_0                    134.521    1.095                 0.008    0.290
+                  granite4:350m-bf16                    118.784    1.510                 0.013      NaN
+                       granite4:350m                    117.937    1.525                 0.013      NaN
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M                    117.492    1.325                 0.011      NaN
+                          qwen3:0.6b                    115.399    1.775                 0.015    1.090
+
+=== Quality vs size (GB): 20/88 Pareto-optimal (23% frontier) ===
+                                       model  quality  size_gb
+                 qwen3:4b-instruct-2507-q8_0    3.590    5.100
+          hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.380    3.320
+               qwen3:4b-instruct-2507-q4_K_M    3.360    3.320
+                                   gemma3:4b    2.940    2.940
+                         gemma3:4b-it-q4_K_M    2.880    2.940
+                              ministral-3:3b    2.810    2.850
+                             qwen3:1.7b-q8_0    2.750    2.830
+                              granite4:micro    2.720    2.600
+  hf.co/Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M    2.650    2.440
+                                  qwen3:1.7b    2.630    1.970
+                                   gemma2:2b    2.385    1.960
+                               granite4:1b-h    2.235    1.750
+hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M    2.075    1.380
+                            gemma3:1b-it-qat    1.990    1.140
+                                   gemma3:1b    1.855    0.950
+                    qwen2:0.5b-instruct-q8_0    1.340    0.670
+                  qwen2.5:0.5b-instruct-q8_0    1.325    0.670
+                qwen2.5:0.5b-instruct-q4_K_M    1.265    0.530
+                                qwen2.5:0.5b    1.260    0.530
+                  smollm2:135m-instruct-q8_0    1.095    0.290
+
+=== Quality vs latency (wall_s): 11/152 Pareto-optimal (7% frontier) ===
+                               model  quality  wall_s
+         qwen3:4b-instruct-2507-q8_0    3.590  62.101
+                       qwen3:4b-q8_0    3.400  53.417
+  hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.380  37.104
+                   gemma4:e2b-it-qat    3.185  20.948
+                          qwen3:1.7b    2.630  15.389
+                       granite4:1b-h    2.235  11.645
+                     qwen3:0.6b-q8_0    2.010   8.278
+hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M    1.860   8.077
+                          qwen3:0.6b    1.775   6.933
+                     granite4:350m-h    1.590   3.723
+                         gemma3:270m    1.280   2.772
+
+=== Quality vs energy (controlled 25): 11/152 Pareto-optimal (7% frontier) ===
+                               model  quality  energy_wh_controlled
+         qwen3:4b-instruct-2507-q8_0    3.590                 0.161
+                       qwen3:4b-q8_0    3.400                 0.139
+  hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.380                 0.093
+                   gemma4:e2b-it-qat    3.185                 0.050
+                          qwen3:1.7b    2.630                 0.037
+                       granite4:1b-h    2.235                 0.028
+                     qwen3:0.6b-q8_0    2.010                 0.019
+hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M    1.860                 0.019
+                          qwen3:0.6b    1.775                 0.015
+                     granite4:350m-h    1.590                 0.008
+                         gemma3:270m    1.280                 0.005
+
+=== 3-axis Pareto (quality up, safety up, energy down), controlled 152 ===
+Pareto-optimal: 15  |  dominated: 137
+                               model  quality  safety  energy_wh_controlled
+         qwen3:4b-instruct-2507-q8_0    3.590   3.660                 0.161
+                       qwen3:4b-q8_0    3.400   3.020                 0.139
+  hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.380   3.080                 0.093
+       qwen3:4b-instruct-2507-q4_K_M    3.360   3.100                 0.109
+                   gemma4:e2b-it-qat    3.185   2.940                 0.050
+                          qwen3:1.7b    2.630   2.800                 0.037
+                       granite4:1b-h    2.235   2.360                 0.028
+                     qwen3:0.6b-q8_0    2.010   1.900                 0.019
+                    gemma3:1b-it-qat    1.990   2.100                 0.021
+hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M    1.860   1.780                 0.019
+                           gemma3:1b    1.855   2.240                 0.023
+                          qwen3:0.6b    1.775   1.840                 0.015
+                     granite4:350m-h    1.590   1.660                 0.008
+                         gemma3:270m    1.280   1.280                 0.005
+                  gemma3:270m-it-qat    1.245   1.300                 0.008
+
+=== energy ~ size scaling (log-log): slope=0.88, R^2=0.63 ===
+most energy-EFFICIENT beyond size (negative residual):
+            model  size_gb  energy_wh_controlled  quality  log_energy_resid
+  qwen3:0.6b-q8_0    1.400                 0.019    2.010            -0.831
+       qwen3:0.6b    1.090                 0.015    1.775            -0.816
+  granite4:tiny-h    4.430                 0.055    2.775            -0.777
+  qwen3:0.6b-fp16    2.070                 0.028    1.860            -0.772
+granite3.1-moe:3b    2.460                 0.033    1.875            -0.755
+most energy-HUNGRY beyond size (positive residual):
+                          model  size_gb  energy_wh_controlled  quality  log_energy_resid
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M    3.320                 0.257    2.875             1.023
+                       qwen3:4b    3.320                 0.257    2.800             1.023
+                    smollm:360m    0.300                 0.026    1.065             0.835
+  granite3.2:2b-instruct-q4_K_M    2.040                 0.122    2.535             0.706
+                  granite3.2:2b    2.040                 0.122    2.520             0.702
+
+=== quality vs params ===
+Spearman(params, quality)=0.726; quality ~ a + b*ln(params): b=0.56 pts/e-fold, R^2=0.49
+
+saved figure /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/a2_efficiency_frontiers.png

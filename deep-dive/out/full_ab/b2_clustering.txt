@@ -1,0 +1,45 @@
+=== metric correlation structure (Pearson, standardized) ===
+            quality  safety  det_score  decode_tps  wall_s  quality_sd  trunc_rate  dnf_rate  size_gb  params_b
+quality        1.00    0.95       0.87       -0.62    0.49        0.90       -0.09      0.09     0.51      0.64
+safety         0.95    1.00       0.82       -0.60    0.51        0.87        0.03      0.10     0.50      0.57
+det_score      0.87    0.82       1.00       -0.58    0.50        0.80       -0.02      0.12     0.44      0.50
+decode_tps    -0.62   -0.60      -0.58        1.00   -0.56       -0.63       -0.07     -0.14    -0.50     -0.53
+wall_s         0.49    0.51       0.50       -0.56    1.00        0.35        0.56      0.47     0.38      0.64
+quality_sd     0.90    0.87       0.80       -0.63    0.35        1.00       -0.22      0.10     0.49      0.55
+trunc_rate    -0.09    0.03      -0.02       -0.07    0.56       -0.22        1.00     -0.00    -0.03     -0.02
+dnf_rate       0.09    0.10       0.12       -0.14    0.47        0.10       -0.00      1.00     0.05      0.38
+size_gb        0.51    0.50       0.44       -0.50    0.38        0.49       -0.03      0.05     1.00      0.48
+params_b       0.64    0.57       0.50       -0.53    0.64        0.55       -0.02      0.38     0.48      1.00
+
+notable:
+  quality~safety     +0.95 (collinear -> not an independent tradeoff)
+  quality~size_gb    +0.51
+  quality~decode_tps -0.62 (bigger/better = slower)
+  size~decode_tps    -0.50 (bigger = slower decode)
+  quality~quality_sd +0.90 (are better models more stochastic?)
+
+=== PCA: explained variance [0.53 0.16 0.11 0.07] ===
+             PC1   PC2   PC3
+quality     0.41 -0.18 -0.07
+safety      0.40 -0.12 -0.14
+det_score   0.37 -0.12 -0.11
+decode_tps -0.33 -0.05  0.09
+wall_s      0.30  0.54 -0.05
+quality_sd  0.38 -0.28  0.02
+trunc_rate  0.01  0.61 -0.57
+dnf_rate    0.11  0.40  0.73
+size_gb     0.28 -0.05 -0.06
+params_b    0.33  0.16  0.31
+
+=== archetypes: k=3 (silhouette=0.32) ===
+
+cluster 0 (n=23): quality=2.86 size=4.75GB decode=4.1tps  [wall_s+, size_gb+; decode_tps-, trunc_rate-]
+  members: qwen3:4b-instruct-2507-q8_0, qwen3:8b, qwen3:4b-q8_0, granite3.3:8b, exaone3.5:7.8b, qwen2.5:7b
+
+cluster 1 (n=63): quality=1.51 size=1.49GB decode=18.2tps  [trunc_rate+, decode_tps+; quality-, quality_sd-]
+  members: qwen3:0.6b-q8_0, gemma3:1b-it-qat, hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0, granite3.1-moe:3b, hf.co/LiquidAI/LFM2-1.2B-GGUF:Q4_K_M, qwen3:0.6b-fp16
+
+cluster 2 (n=66): quality=2.48 size=2.96GB decode=7.3tps  [size_gb+, quality_sd+; decode_tps-, trunc_rate-]
+  members: hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-instruct-2507-q4_K_M, gemma4:e2b-it-qat, granite4:micro-h, granite4.1:3b, gemma3:4b
+
+saved figure /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/b2_archetypes.png and out/b2_clusters.csv
