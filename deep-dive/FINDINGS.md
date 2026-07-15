@@ -17,11 +17,14 @@ bandwidth, MoE expert usage, DNF/finish-reason, and a full model taxonomy
 speed × memory × size (cf. Lu et al., *Small Language Models: Survey,
 Measurements, and Insights*, arXiv:2409.15790).
 
-**A structural caveat found in the data:** the two collection batches are
-**perfectly confounded with CPU regime** (`var`→base-clock/turbo-off,
-`wave2`→dynamic-turbo). That is why cross-batch energy is (correctly) marked
-non-comparable; energy comparisons here use only the 25-model controlled
-single-regime subset.
+**One run, not two batches.** The `var`/`wave2` split was operational, not
+scientific — treat it as a single run. CPU regime changes watts and latency, not
+the tokens a model emits at fixed temperature, so **quality / safety / capability
+pool across all 95 models**. Only **energy** is regime-sensitive, so energy
+comparisons are confined to the 25-model controlled single-regime subset. (The two
+batches happen to be *disjoint* model sets — no model was measured under both — so
+a small bridge subset run under both regimes would be needed to license
+cross-regime energy and to price the CPU power policy.)
 
 ## Headline discoveries (the gold)
 
@@ -66,6 +69,37 @@ single-regime subset.
    by judge than by deterministic correctness) while **tiny models are
    "det-favoured"** (pass checks, read poorly). Rubric-review candidates:
    `secure-12-broad-rbac`, `detect-01`, `secure-10`. *(A1, A5)*
+
+## Deeper battery (B-series) — additional discoveries
+
+9. **The ~4B sweet spot is real and robust — bigger does not win.** Over the
+   *full 152-model spectrum* (up to 8B, the `full-chatok-core20-r5` run), the 4B
+   champion beats every 7–8B model, the ≥7B tier is the *worst* on average (1.69
+   vs 2.50 for 3–6.5B), and **Spearman(params, quality) = 0.14** — capability
+   plateaus at ~4B on ops tasks at CPU scale. *(B6)*
+10. **The ranking is robust to judge-version and prompt-format.** On the 90 models
+    shared between the chatok run (gpt-5.4 + claude-4.6, chatok format) and the
+    snapshot (gpt-5.5 + claude-4.8, current format), Spearman = **0.974**. With
+    A5, the quality axis is validated on three fronts. *(B6)*
+11. **Decode is memory-bandwidth-bound, and that explains the energy story.**
+    log(decode_tps) vs log(size) slope = **−0.90** (theory −1.0), R²=0.86.
+    MoE/hybrid models beat the size-roofline by **~2.4×** (`granite3.1-moe` +0.93,
+    `granite4-tiny` +0.82 vs dense −0.02) because they stream only active experts
+    — the mechanistic reason granite4-tiny is the energy star. *(B4)*
+12. **The headline effects survive confound control.** In a model-clustered
+    fixed-effects model (controls size, quant, regime, scenario): `tools` = **+0.29
+    (p=0.002)**, `reasoning` = **−0.88 (p<0.001)**, `log_params` = +0.63/e-fold,
+    Q8-vs-Q4 ≈ +0.10 (ns). Tools and the reasoning penalty are genuine partial
+    effects, not size artifacts. *(B3)*
+13. **IRT: the safety scenarios are the most *informative*** at mean ability
+    (`guard-08` Fisher info 7.46, `secure-09` 6.35), and **12 of 19 scenarios
+    carry 80% of the information** — the set is prunable. Phi models are
+    det-strong but judge-mid (the det-vs-judge split is a Microsoft/Phi vs
+    Google/Gemma signature). *(B1)*
+14. **Model archetypes** (PCA/k-means): the universe is a **capability↔speed
+    continuum** (PC1 = 51% of variance; quality~decode_tps = −0.59), splitting into
+    capable-slow generalists (44), fast-weak lightweights (49), and 2 big-failure
+    outliers. *(B2)*
 
 ## Methods (grounded)
 
