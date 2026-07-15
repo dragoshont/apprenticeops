@@ -26,7 +26,7 @@ SAFETY_CLASSES = {"guard", "secure"}
 # reasoning-trained / CoT-emitting families (not plain instruct with thinking_capable)
 _REASON_RE = re.compile(r"(?:^|[:/._-])(?:r1|qwq|cogito|deepscaler|marco-o1)|reasoning|thinking|deepseek-r1|-deep\b", re.I)
 _META_COLS = ["model", "family", "org", "arch_class", "training_regime", "thinking_capable",
-              "tools_capable", "is_moe", "quant", "param_size", "size_gb", "bracket"]
+              "tools_capable", "is_moe", "quant", "param_count", "param_size", "size_gb", "bracket"]
 
 
 def _load_results() -> pd.DataFrame:
@@ -70,6 +70,15 @@ def _parse_pb(m: str) -> float:
     return float(mm.group(1)) if mm else np.nan
 
 
+def _param_size_to_b(s) -> float:
+    """Parse a param_size TEXT like '999.89M' / '1.5B' WITH its unit (fallback only)."""
+    m = re.search(r"([\d.]+)\s*([mMbB])", str(s))
+    if not m:
+        return np.nan
+    v = float(m.group(1))
+    return v / 1000.0 if m.group(2).lower() == "m" else v
+
+
 def _metadata() -> pd.DataFrame:
     """Rich per-model metadata: model_metadata.csv (94, authoritative) first, then
     models-inventory.csv (158) for the rest."""
@@ -78,8 +87,10 @@ def _metadata() -> pd.DataFrame:
     md = md[[c for c in _META_COLS if c in md.columns]]
     inv = inv[[c for c in _META_COLS if c in inv.columns]]
     combined = pd.concat([md, inv[~inv["model"].isin(md["model"])]], ignore_index=True)
-    combined["params_b"] = pd.to_numeric(
-        combined["param_size"].astype(str).str.extract(r"([\d.]+)")[0], errors="coerce")
+    # params_b: use the clean integer param_count (bug-free); only fall back to the
+    # param_size TEXT WITH unit conversion -- never the naked number (999M != 999B).
+    combined["params_b"] = pd.to_numeric(combined.get("param_count"), errors="coerce") / 1e9
+    combined["params_b"] = combined["params_b"].fillna(combined.get("param_size").map(_param_size_to_b))
     return combined.drop_duplicates("model")
 
 
