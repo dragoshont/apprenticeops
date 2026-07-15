@@ -1,0 +1,47 @@
+{
+  "analysis_schema_version": 1,
+  "bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+  "bundle_path": "data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+  "bundle_state": "locked",
+  "claim_status": "provisional",
+  "evaluation_policy": "deterministic-checks-v1|judges:copilot:claude-opus-4.6+copilot:gpt-5.4",
+  "expected": {
+    "canonical_judgements": 30400,
+    "judges": 2,
+    "models": 152,
+    "reps": 5,
+    "results": 15200,
+    "scenarios": 20
+  },
+  "gate_passed": true,
+  "judges": [
+    "claude-opus-4.6",
+    "gpt-5.4"
+  ],
+  "observed": {
+    "candidate_archives": 152,
+    "canonical_judgements": 30400,
+    "committed_models": 152,
+    "conditions": 152,
+    "done_models": 152,
+    "judge_retries": 41,
+    "log_files": 3,
+    "pipeline_ledger_rows": 8390,
+    "push_pending": 0,
+    "raw_judge_attempts": 30441,
+    "result_archives": 152,
+    "results": 15200,
+    "units_per_model": 100
+  },
+  "portable_reproduction": "The heavy raw run is the content-addressed locked bundle data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa/ (gitignored by design, ~433 MB). The two tracked snapshots above are the compact, offline-reproducible derivation that deep-dive/full_data.py falls back to when the bundle is absent; deep-dive/full_ab.py + full_*.py recompute every 152-run number from them.",
+  "provenance_note": "Standalone 152-model study. Do NOT cross-join with the frozen 94-model snapshot (data/analysis-manifest.json / paper-94-model-corrected-v1): different judge pair (claude-opus-4.8 + gpt-5.5) and only 12/20 shared scenario ids. claim_status is provisional; promotion to a paper-final claim is a separate human decision.",
+  "scenario_set": "core-current",
+  "source_id": "full-chatok-core20-r5-ollama-20260705-150053",
+  "source_kind": "completed_run",
+  "source_sha256": {
+    "canonical/judged.jsonl.gz": "5b3591b03e3c8e394b50ef0030d5c15c462b6ae7ed0118736ccb0bd313d42d09",
+    "canonical/results.jsonl.gz": "660058c452ca197ad9fd0df3a63e5ccddc9377cb348f3d52ee40bd0fd881b1d8",
+    "data/snapshots/full-chatok-core20-r5-ollama-20260705-150053.judged.csv": "bfceaf936b4a6096dd0f4bfdbb98d2e842479e8df6e1b210e87ac49391c9ac81",
+    "data/snapshots/full-chatok-core20-r5-ollama-20260705-150053.results.csv": "1b9a06867c04f371320cf37cb8db30f300f26f345cfdc0a3111310d949a20b86"
+  }
+}

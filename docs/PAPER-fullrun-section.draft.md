@@ -6,11 +6,17 @@
 > parameter-unit bug that had **inverted** the size finding, a survivorship-biased
 > reasoning defense, pseudoreplicated p-values, a wrong "512-token cap" premise, a
 > scenario-taxonomy mislabel, and over-stated equivalence/robustness claims. This
-> revision incorporates those fixes and reports every result honestly, but it is
-> **not yet promotable**: the primary data still lives outside the tracked tree and
-> the bundle is `provisional`, and magnitude claims still await a re-judge with the
-> paper's newer judges (see X.7). Reproduced by scripts in `deep-dive/`
-> (`FINDINGS.md` 15–24).
+> revision incorporates those fixes and reports every result honestly. The primary
+> data is now **reproducible from the tracked tree**: the analysis reads the durable,
+> content-addressed **locked bundle** (`data/completed-runs/<run>-dd262a5c…/`,
+> hash-bound by `bundle-manifest.json`, gate `passed`), and a compact **tracked
+> snapshot** (`data/snapshots/<run>.{results,judged}.csv`, ~3.5 MB) with a
+> **claim-lock manifest** (`data/analysis-manifest.<run>.json`) recomputes every
+> 152-run number offline — verified byte-identical to the bundle. The remaining
+> promotion gate is editorial, not data: the bundle's `claim_status` is still
+> **`provisional`** (promoting to a paper-final claim is a deliberate human decision),
+> and the exploratory cross-run rank note (§X.1) is retired under the standalone-152
+> framing (R10). Reproduced by scripts in `deep-dive/` (`FINDINGS.md` 15–24 + R1–R14).
 
 ## X.1 The full run and why it is the candidate primary dataset
 

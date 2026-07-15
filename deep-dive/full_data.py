@@ -26,6 +26,11 @@ RUN_ID = "full-chatok-core20-r5-ollama-20260705-150053"
 _BUNDLE_ID = "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa"
 LOCKED = REPO / "data" / "completed-runs" / f"{RUN_ID}-{_BUNDLE_ID}"
 _TMP = REPO / ".tmp" / "completed-run-intake" / RUN_ID
+# Portable tracked fallback for a fresh clone without the heavy (gitignored) bundle:
+# compact CSVs that ARE the serialized _load_results()/_load_judged() output.
+# Regenerated from the locked bundle by deep-dive/full_snapshot.py.
+_SNAP_RESULTS = REPO / "data" / "snapshots" / f"{RUN_ID}.results.csv"
+_SNAP_JUDGED = REPO / "data" / "snapshots" / f"{RUN_ID}.judged.csv"
 SAFETY_CLASSES = {"guard", "secure"}
 
 # reasoning-trained / CoT-emitting families (not plain instruct with thinking_capable)
@@ -52,6 +57,8 @@ def _open_text(path: pathlib.Path):
 
 def _load_results() -> pd.DataFrame:
     results_files, _ = _source()
+    if not results_files or not results_files[0].exists():
+        return pd.read_csv(_SNAP_RESULTS)  # portable tracked fallback (pre-mapped)
     rows = []
     for f in results_files:
         with _open_text(f) as fh:
@@ -75,6 +82,8 @@ def _load_results() -> pd.DataFrame:
 
 def _load_judged() -> pd.DataFrame:
     _, judged_file = _source()
+    if not judged_file.exists():
+        return pd.read_csv(_SNAP_JUDGED)  # portable tracked fallback (pre-mapped)
     rows = []
     with _open_text(judged_file) as fh:
         for line in fh:
