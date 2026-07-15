@@ -61,6 +61,19 @@ def main() -> None:
     print(b[b.n >= 2].to_string(float_format=lambda x: f"{x:.2f}"))
     print("  (single-model orgs dropped; the 3-4B band is where makers compete head-to-head)")
 
+    # de-dup: quant/format variants of one base inflate n -> collapse to distinct bases
+    def _basekey(m):
+        m = str(m).split("/")[-1]
+        return re.sub(r"[-:@]?(q\d_?[a-z0-9]*|iq\d.*|fp16|bf16|gguf|instruct|2507|thinking|it|chat).*$",
+                      "", m, flags=re.I)
+    band = band.assign(base=band.model.map(_basekey))
+    dedup = band.groupby(["maker", "base"]).quality.mean().reset_index()
+    d = dedup.groupby("maker").agg(n_bases=("base", "size"), quality=("quality", "mean")).sort_values(
+        "quality", ascending=False)
+    print("\n=== ADVERSARIAL 2: de-duplicated to distinct BASE models (kills quant-variant inflation) ===")
+    print(d[d.n_bases >= 2].to_string(float_format=lambda x: f"{x:.2f}"))
+    print("  (Qwen's raw 3-4B n was inflated by qwen3:4b quant variants; the lead survives de-dup but shrinks)")
+
     agg.to_csv(REPO / "deep-dive" / "out" / "org_effects.csv")
     print(f"\nsaved {REPO/'deep-dive'/'out'/'org_effects.csv'}")
 

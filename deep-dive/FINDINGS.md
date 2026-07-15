@@ -163,7 +163,10 @@ results the two-batch snapshot could not:
     (2.52), Meta (2.51), Google (2.48), Microsoft (2.40); code-specialist makers
     (BigCode/StarCoder) are worst at ops. This **refines the frozen "IBM tops org
     quality"** — IBM leads the small/efficient bands, but **Qwen leads at matched
-    size** on the full roster. (Instruction-tuning has no clean test here: the ops
+    size** on the full roster. *De-dup caveat (adversarial):* the raw n=16 was inflated
+    by `qwen3:4b` quant variants; collapsed to distinct bases the Qwen lead survives
+    but shrinks (2.75 over 6 bases), so the honest claim is "the qwen3:4b line leads,"
+    not broad Qwen superiority. (Instruction-tuning has no clean test here: the ops
     roster is all instruct/chat by curation, with no true base/pretrained siblings.)
 23. **Task difficulty vs discrimination (`full_task_difficulty.py`).** The suite has
     a strong **difficulty–discrimination tradeoff** (Spearman **+0.84**): the hardest
@@ -174,6 +177,19 @@ results the two-batch snapshot could not:
     scenarios (`detect-01-crashloop-triage`, `secure-14-injection-destructive`) carry
     little signal and should be revised. (Caveat: most classes have one scenario;
     `new`/`secure`/`foresee` have 6/4/2.)
+24. **Adversarial validation of the re-center (`full_adversarial_review.py`).** The
+    foundation was attacked and mostly holds: (a) the full run's two judges **agree**
+    (quad-κ **0.853**, within-1 98.6%, r 0.86 over 15,200 rows) — solid, though below
+    the frozen newer-judge 0.92, and with a disclosed systematic **claude 2.21 vs gpt
+    2.07 bias** (0.14; the consensus mean absorbs it); (b) the **energy axis is clean**
+    — `corr(thermal_start, energy) = +0.015` within-model (only 4/152 exceed |0.3|),
+    thermal start is stable 48–62°C, so quiesce works and energy is not order/thermal
+    confounded; (c) the org lead **survives de-duplication** (above). **Standing
+    limitations (honest):** MoE n=2 and the reasoning pairs (~4 lineages) are
+    underpowered; p-values across the ~8 axes are **not multiple-comparison-corrected**,
+    so the marginal ones (MoE p=0.043, tools p=0.018) are suggestive not confirmatory;
+    metadata covers 138/152 with name-heuristic fallbacks; the run is a single
+    environment / single collection and is still `provisional` (older judges).
 
 ## Methods (grounded)
 

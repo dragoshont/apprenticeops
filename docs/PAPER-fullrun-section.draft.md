@@ -22,8 +22,11 @@ across the same 152 models simultaneously (25 → 152 models with comparable ene
 
 The re-center does not overturn the prior ranking: on the 90 models shared with the frozen
 snapshot, the two rankings correlate at **Spearman 0.974** despite a judge-version change
-(4.6/5.4 vs 4.8/5.5) and a prompt-format change — the model ordering is robust to both.
-*(FINDINGS 15; `full_report.py`.)*
+(4.6/5.4 vs 4.8/5.5) and a prompt-format change — the model ordering is robust to both. The
+two full-run judges themselves agree substantially (quadratic-weighted κ = **0.853**, 98.6%
+within one point, r = 0.86 over 15,200 rows), with a small disclosed systematic bias
+(`claude-opus-4.6` mean 2.21 vs `gpt-5.4` 2.07) that the consensus mean absorbs.
+*(FINDINGS 15, 24; `full_report.py`, `full_adversarial_review.py`.)*
 
 ## X.2 Scale: the ~4B sweet spot, and diminishing returns
 
@@ -81,7 +84,10 @@ both 7–8B (the largest allowed). Within the 3–4B band, where makers compete 
 and Microsoft (2.40); code-specialist makers (BigCode/StarCoder) are worst at ops. This
 refines the pilot's "IBM tops org quality": IBM leads the small/efficient bands, but Qwen
 leads at matched size on the broader roster. Instruction-tuning could not be tested — the ops
-roster is entirely instruct/chat by curation, with no base/pretrained siblings.
+roster is entirely instruct/chat by curation, with no base/pretrained siblings. *De-dup
+caveat:* Qwen's raw band count was inflated by `qwen3:4b` quant variants; collapsed to
+distinct base models the Qwen lead survives (2.75, 6 bases) but narrows, so the honest claim
+is that the qwen3:4b line leads rather than broad Qwen superiority.
 *(FINDINGS 22; `full_org_effects.py`.)*
 
 ## X.6 The scenario suite: difficulty vs discrimination
@@ -110,6 +116,16 @@ differentiator of the suite. Two near-floor scenarios (`detect-01-crashloop-tria
 - **Reliability censoring.** 208 rows are DNF and 1,452 are length-censored across 21
   affected models; these are retained as separate strata, and the ongoing 21-model
   timeout-sensitivity follow-up addresses the timeout question directly.
+- **Energy integrity (validated).** Within one regime the energy axis is not order- or
+  thermally-confounded: thermal start is stable (48–62 °C) and the within-model correlation
+  between thermal start and energy is +0.015 (only 4/152 models exceed |0.3|), confirming the
+  quiesce-between-models control works.
+- **Multiple comparisons.** Roughly eight axes were tested without a family-wise correction;
+  the strongly-significant results (reasoning p≈10⁻⁶, quantization) are robust, but the marginal
+  ones (MoE p=0.043, tools p=0.018) should be read as suggestive, not confirmatory.
+- **Statistical power.** The MoE contrast (n=2 reliably-tagged) and the reasoning matched
+  pairs (~4 distinct lineages) are underpowered; they are reported directionally with the
+  confirmation run queued.
 
 ## X.8 Reproduce
 
