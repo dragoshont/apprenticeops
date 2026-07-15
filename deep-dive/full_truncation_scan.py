@@ -1,6 +1,6 @@
 """Truncation scan — separate BUDGET VICTIMS from GENUINELY WEAK heavy-truncators.
 
-A model that truncates a lot at the 512-token cap may be (a) a BUDGET VICTIM
+A model that truncates a lot at its small per-scenario token budget (400-700) may be
 (decent when it finishes -> its low overall score is an artifact of the cap) or
 (b) GENUINELY WEAK (bad even when it finishes). The non-truncated subset
 distinguishes them: a large positive `lift` (q_done - q_all) or a decent `q_done`

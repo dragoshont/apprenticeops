@@ -53,7 +53,7 @@ def main() -> None:
         print(f"  {name:8} n={len(g):3}  quality={g.quality.mean():.2f}  "
               f"energy_wh={g.energy_wh.mean():.3f}  best={g.quality.max():.2f} ({g.loc[g.quality.idxmax(),'model']})")
     t = mt.dropna(subset=["params_b", "quality"])
-    print(f"  Spearman(params, quality) over {len(t)} = {stats.spearmanr(t.params_b, t.quality).correlation:.3f}  (weak => size is not destiny)")
+    print(f"  Spearman(params, quality) over {len(t)} = {stats.spearmanr(t.params_b, t.quality).correlation:.3f}  (moderate positive -> bigger helps on average; ~4B is the efficiency knee)")
 
     # --- energy axis (comparable across ALL 152), properly normalized ---
     print("\n--- energy axis (comparable across ALL 152) ---")

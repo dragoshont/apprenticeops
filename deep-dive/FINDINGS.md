@@ -87,10 +87,11 @@ follow-up, DNF-selected — 21×20×5 = 2,100 rows.)
    (`qwen3:4b-instruct` 3.59, edging `qwen3:8b` 3.51) at a fraction of the energy, so
    ~4B is the best quality-per-cost knee — but larger models are better on average.
    *(B6, corrected)*
-10. **The ranking is robust to judge-version and prompt-format.** On the 90 models
-    shared between the chatok run (gpt-5.4 + claude-4.6, chatok format) and the
-    snapshot (gpt-5.5 + claude-4.8, current format), Spearman = **0.974**. With
-    A5, the quality axis is validated on three fronts. *(B6)*
+10. **Ranking is stable across judge-version and prompt-format (exploratory).** On the
+    90 models shared between the chatok run (gpt-5.4 + claude-4.6) and the snapshot
+    (gpt-5.5 + claude-4.8), Spearman = **0.974** — a name-matched *rank* cross-check
+    (NOT a formal cross-run join, which the frozen manifest forbids, and it validates
+    ordering only, not the paired magnitudes). *(B6)*
 11. **Decode is memory-bandwidth-bound, and that explains the energy story.**
     log(decode_tps) vs log(size) slope = **−0.90** (theory −1.0), R²=0.86.
     MoE/hybrid models beat the size-roofline by **~2.4×** (`granite3.1-moe` +0.93,
@@ -139,7 +140,7 @@ results the two-batch snapshot could not:
     absent from `full` (only deepseek-*coder* is present); the pilot carries the
     R1-specific claim, or it is reframed as the budget-fit finding above.
 19. **Truncation triage (`full_truncation_scan.py`).** Heavy truncation ≠ budget
-    victim. Of the models truncating ≥30% at the 512 cap, only **`qwen3:4b`** (plain,
+    victim. Of the models truncating ≥30% at their per-scenario budget, only **`qwen3:4b`** (plain,
     thinking-on; 100% truncated, so unmeasurable when finished) is a further budget
     victim to re-run; the rest (`starcoder2:3b`, `codegemma:2b`, `falcon3:1b`,
     `deepseek-coder:1.3b`, `smollm:360m`) are **genuinely weak** — `q_done ≈ q_all ≈
@@ -189,11 +190,12 @@ results the two-batch snapshot could not:
     the frozen newer-judge 0.92, and with a disclosed systematic **claude 2.21 vs gpt
     2.07 bias** (0.14; the consensus mean absorbs it); (b) the **energy axis is clean**
     — `corr(thermal_start, energy) = +0.015` within-model (only 4/152 exceed |0.3|),
-    thermal start is stable 48–62°C, so quiesce works and energy is not order/thermal
-    confounded; (c) the org lead **survives de-duplication** (above). **Standing
+    thermal start is stable 48–62°C, so **no detected linear start-temp association**
+    (run order not separately tested; energy is CPU-package / RAPL package-0 only); (c)
+    the org lead **survives de-duplication** (above). **Standing
     limitations (honest):** MoE n=2 and the reasoning pairs (~4 lineages) are
     underpowered; p-values across the ~8 axes are **not multiple-comparison-corrected**,
-    so the marginal ones (MoE p=0.043, tools p=0.018) are suggestive not confirmatory;
+    so the marginal ones (tools p=0.018) are suggestive not confirmatory;
     metadata covers 138/152 with name-heuristic fallbacks; the run is a single
     environment / single collection and is still `provisional` (older judges).
 

@@ -68,18 +68,21 @@ def main() -> None:
     dq = P.dq.dropna()
     n = len(dq)
     mean, se = dq.mean(), dq.std(ddof=1) / np.sqrt(n)
+    tcrit = stats.t.ppf(0.975, n - 1)
     _, p = stats.ttest_1samp(dq, 0.0)
     print(f"\n=== quality cost of Q4 vs high precision (paired, n={n}) ===")
-    print(f"  mean Q4-minus-hi = {mean:+.2f}  95% CI [{mean-1.96*se:+.2f}, {mean+1.96*se:+.2f}]  paired t p={p:.3f}")
+    print(f"  mean Q4-minus-hi = {mean:+.2f}  95% CI [{mean-tcrit*se:+.2f}, {mean+tcrit*se:+.2f}]  paired t p={p:.3f}")
     margin = 0.25
-    _, p_low = stats.ttest_1samp(dq, -margin)
-    _, p_high = stats.ttest_1samp(dq, margin)
-    tost_p = max(p_low / 2, p_high / 2)
+    # TOST: two one-sided tests (explicit tails -> robust even if the mean is outside the margin)
+    p_low = stats.ttest_1samp(dq, -margin, alternative="greater").pvalue
+    p_high = stats.ttest_1samp(dq, margin, alternative="less").pvalue
+    tost_p = max(p_low, p_high)
     print(f"  TOST practical-equivalence within +/-{margin}: p={tost_p:.3f} "
           f"({'EQUIVALENT' if tost_p < 0.05 else 'not established'})")
 
     print("\n=== what Q4 buys (efficiency) ===")
-    print(f"  size: {P.gb_x.mean():.2f}x   decode: {P.tps_x.mean():.2f}x   energy: {P.wh_x.mean():.2f}x  (of high precision)")
+    print(f"  size: {P.gb_x.mean():.2f}x (n={int(P.gb_x.notna().sum())}/{len(P)} with size metadata)   "
+          f"decode: {P.tps_x.mean():.2f}x   energy: {P.wh_x.mean():.2f}x  (of high precision)")
 
     ds = P.d_safety.dropna()
     print("\n=== SAFETY cost of Q4 (full distribution, not one example) ===")

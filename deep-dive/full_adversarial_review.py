@@ -54,7 +54,7 @@ def attack_thermal() -> None:
     print("\nATTACK 2 - is energy thermal/order-confounded?")
     print(f"  thermal.start_c {d.tstart.min():.0f}-{d.tstart.max():.0f}C (median {d.tstart.median():.0f}C, stable = quiesce works)")
     print(f"  mean within-model corr(thermal_start, energy) = {wc.mean():+.3f};  "
-          f"|corr|>0.3 in {(wc.abs()>0.3).sum()}/{len(wc)}  -> energy NOT confounded")
+          f"|corr|>0.3 in {(wc.abs()>0.3).sum()}/{len(wc)}  -> no detected linear start-temp association (run order not tested)")
 
 
 def attack_org() -> None:
@@ -79,7 +79,7 @@ def main() -> None:
     attack_thermal()
     attack_org()
     print("\nSTANDING LIMITATIONS (kept honest): MoE n=2 and reasoning ~4 lineages are underpowered;")
-    print("  p-values across ~8 axes are NOT multiple-comparison-corrected (MoE 0.043 / tools 0.018 are")
+    print("  p-values across ~8 axes are NOT multiple-comparison-corrected (tools p=0.018 is")
     print("  suggestive, not confirmatory); metadata covers 138/152 with name-heuristic fallbacks;")
     print("  single environment / single collection; bundle still provisional (older judges 4.6/5.4).")
 

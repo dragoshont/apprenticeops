@@ -54,12 +54,12 @@ def main() -> None:
     print(agg[agg.n >= 2][["n", "quality", "safety", "energy", "best_model"]].to_string(
         float_format=lambda x: f"{x:.2f}"))
 
-    print("\n=== ADVERSARIAL: is it just size mix? within the 3-4B band ===")
+    print("\n=== ADVERSARIAL: is it just size mix? within the 3-5B band (3<=P<5) ===")
     band = mt[(mt.params_b >= 3) & (mt.params_b < 5)]
     b = band.groupby("maker").agg(n=("model", "size"), quality=("quality", "mean")).sort_values(
         "quality", ascending=False)
     print(b[b.n >= 2].to_string(float_format=lambda x: f"{x:.2f}"))
-    print("  (single-model orgs dropped; the 3-4B band is where makers compete head-to-head)")
+    print("  (single-model orgs dropped; the 3-5B band is where makers compete head-to-head)")
 
     # de-dup: quant/format variants of one base inflate n -> collapse to distinct bases
     def _basekey(m):
@@ -72,7 +72,7 @@ def main() -> None:
         "quality", ascending=False)
     print("\n=== ADVERSARIAL 2: de-duplicated to distinct BASE models (kills quant-variant inflation) ===")
     print(d[d.n_bases >= 2].to_string(float_format=lambda x: f"{x:.2f}"))
-    print("  (Qwen's raw 3-4B n was inflated by qwen3:4b quant variants; the lead survives de-dup but shrinks)")
+    print("  (Qwen's raw 3-5B n was inflated by qwen3:4b quant variants; the lead survives de-dup but shrinks)")
 
     agg.to_csv(REPO / "deep-dive" / "out" / "org_effects.csv")
     print(f"\nsaved {REPO/'deep-dive'/'out'/'org_effects.csv'}")

@@ -40,8 +40,9 @@ canonical `param_count`, quality **rises with size**: mean quality by band is 1.
 (<3B), 2.44 (3–6.5B), and **2.84 (≥6.5B)**, with **Spearman(params, quality) =
 0.73**. Size is therefore *not* irrelevant. What survives is a narrower, efficiency
 claim: the single best model is a **4B** (`qwen3:4b-instruct-2507`, 3.59, edging
-`qwen3:8b` 3.51) at a fraction of the energy, so ~4B is the best quality-per-cost
-operating point — but larger models are, on average, better. *(FINDINGS 15.)*
+`qwen3:8b` 3.51 at **~equal energy** — 0.160 vs 0.161 Wh, a tie, not a saving), so
+~4B is a strong quality-per-cost operating point on the efficiency frontier — but
+larger models are, on average, better. *(FINDINGS 15.)*
 
 ## X.3 Training and inference choices
 
