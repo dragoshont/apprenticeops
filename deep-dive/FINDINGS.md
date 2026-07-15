@@ -155,6 +155,16 @@ results the two-batch snapshot could not:
     (+0.22) is confounded (different models) and is NOT the claim. *Caveats:* only
     **2** small MoE models are reliably tagged (few exist; `is_moe` under-populated;
     "hybrid" ≠ MoE) → directional/underpowered; raw overall tps/GB is size-confounded.
+22. **Org/maker effects must be size-controlled (`full_org_effects.py`).** The raw
+    per-maker quality ranking is a **size-mix artifact**: Cohere (2.76), LG (2.63),
+    DeepCogito, Mistral top it only because each contributed just 2 models, both
+    7–8B (the largest allowed). Controlling for size (the 3–4B band where makers
+    compete head-to-head), **Alibaba/Qwen dominates (2.85, n=16)**, ahead of IBM
+    (2.52), Meta (2.51), Google (2.48), Microsoft (2.40); code-specialist makers
+    (BigCode/StarCoder) are worst at ops. This **refines the frozen "IBM tops org
+    quality"** — IBM leads the small/efficient bands, but **Qwen leads at matched
+    size** on the full roster. (Instruction-tuning has no clean test here: the ops
+    roster is all instruct/chat by curation, with no true base/pretrained siblings.)
 
 ## Methods (grounded)
 
