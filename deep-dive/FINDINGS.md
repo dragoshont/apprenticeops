@@ -141,6 +141,20 @@ results the two-batch snapshot could not:
     1.0–1.5` with ~zero lift when they finish. Queued as
     `data/models.reasoning-budget-v2.txt` (the victim plus weak controls that should
     *not* benefit — the control that isolates over-generation from "more tokens = better").
+20. **Quantization: Q4 is a free lunch (`full_quant_pairs.py`).** Across 16
+    same-base high-precision-vs-Q4 pairs, Q4 costs **−0.09 quality** — mean |Δ| 0.12
+    is far below the median within-model rep-SD of **0.89**, so **Q8 and Q4 are
+    practically indistinguishable on quality** — while buying **0.66× size, 1.42×
+    decode speed, 0.70× energy**. Q4 is the correct default. *Caveat (adversarial):*
+    Q4 can nick **safety** more than quality on some strong models (`qwen3:4b`
+    −0.56 safety) — verify the specific model's Q4 safety for safety-critical use.
+21. **MoE is an efficiency story, not a quality one (`full_moe_dense.py`).**
+    Metadata-tagged MoE decode **faster than their footprint predicts** (roofline
+    residual **+0.87 vs −0.02** for dense, p=0.043) and win within the Granite family
+    on tps/GB (5.2 vs 3.7) — reproducing the b4 result. MoE-minus-dense *quality*
+    (+0.22) is confounded (different models) and is NOT the claim. *Caveats:* only
+    **2** small MoE models are reliably tagged (few exist; `is_moe` under-populated;
+    "hybrid" ≠ MoE) → directional/underpowered; raw overall tps/GB is size-confounded.
 
 ## Methods (grounded)
 
