@@ -55,22 +55,35 @@ def main() -> None:
     t = mt.dropna(subset=["params_b", "quality"])
     print(f"  Spearman(params, quality) over {len(t)} = {stats.spearmanr(t.params_b, t.quality).correlation:.3f}  (weak => size is not destiny)")
 
-    # --- energy is real physics here (single regime) ---
-    e = mt.dropna(subset=["energy_wh", "params_b"])
-    e = e[(e.energy_wh > 0) & (e.params_b > 0)]
-    sl, ic, r, *_ = stats.linregress(np.log(e.params_b), np.log(e.energy_wh))
+    # --- energy axis (comparable across ALL 152), properly normalized ---
     print("\n--- energy axis (comparable across ALL 152) ---")
-    print(f"  log(energy_wh) ~ log(params): slope={sl:.2f}  R^2={r**2:.2f}")
-    eff = mt.dropna(subset=["quality_per_wh"]).sort_values("quality_per_wh", ascending=False)
-    print("  most energy-efficient (quality per Wh):")
+    e = mt.dropna(subset=["wh_per_det_correct", "params_b"])
+    e = e[(e.wh_per_det_correct > 0) & (e.params_b > 0)]
+    sl, ic, r, *_ = stats.linregress(np.log(e.params_b), np.log(e.wh_per_det_correct))
+    print(f"  energy-per-correct (Wh / det-credit) ~ params: slope={sl:+.2f} R^2={r**2:.2f}")
+    e2 = mt.dropna(subset=["j_per_output_token", "params_b"])
+    e2 = e2[(e2.j_per_output_token > 0) & (e2.params_b > 0)]
+    sl2, _, r2, *_ = stats.linregress(np.log(e2.params_b), np.log(e2.j_per_output_token))
+    print(f"  joules-per-output-token ~ params:              slope={sl2:+.2f} R^2={r2**2:.2f}")
+    eff = mt.dropna(subset=["wh_per_det_correct"]).sort_values("wh_per_det_correct")
+    print("  most energy-efficient per correct answer (low Wh / det-credit):")
     for _, row in eff.head(5).iterrows():
-        print(f"    {row['model']:38} q={row['quality']:.2f}  {row['energy_wh']:.3f} Wh  q/Wh={row['quality_per_wh']:.1f}")
+        print(f"    {row['model']:38} q={row['quality']:.2f}  {row['wh_per_det_correct']:.3f} Wh/correct")
 
-    # --- tools vs reasoning (survives on the bigger set?) ---
-    if "training_regime" in mt.columns:
-        print("\n--- training regime effect on quality (full set) ---")
-        for reg, g in mt.dropna(subset=["training_regime"]).groupby("training_regime"):
-            print(f"    {reg:14} n={len(g):3}  quality={g.quality.mean():.2f}  energy_wh={g.energy_wh.mean():.3f}")
+    # --- capability-training effects, honest on the full roster ---
+    print("\n--- capability-training effects (enriched flags over 152) ---")
+    for flag, label in [("is_tools", "tool-trained"), ("is_reasoning", "reasoning-tagged")]:
+        if flag in mt.columns:
+            yes = mt[mt[flag] == True].quality.dropna()
+            no = mt[mt[flag] == False].quality.dropna()
+            if len(yes) and len(no):
+                _, p = stats.ttest_ind(yes, no, equal_var=False)
+                print(f"    {label:18} yes n={len(yes):3} q={yes.mean():.2f} | no n={len(no):3} q={no.mean():.2f} "
+                      f"| delta={yes.mean()-no.mean():+.2f} (p={p:.3f})")
+    n_r1 = int(mt.model.str.contains(r"deepseek-r1", case=False).sum())
+    print(f"  ROSTER CAVEAT: deepseek-r1 in full = {n_r1}. The frozen 'reasoning hurts (-0.88)' was")
+    print("  R1-distill-driven; full's reasoning models are qwen3-thinking/cogito/exaone-deep (stronger),")
+    print("  so 'reasoning hurts' does NOT reproduce on full -> needs deepseek-r1 in the roster to test.")
 
     # --- safety leaders ---
     print("\n--- safety (guard/secure scenarios) leaders ---")

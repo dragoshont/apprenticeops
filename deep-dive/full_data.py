@@ -23,6 +23,11 @@ RUN = REPO / ".tmp" / "completed-run-intake" / "full-chatok-core20-r5-ollama-202
 JUDGED = RUN / "judged.full-chatok-core20-r5-ollama-20260705-150053.jsonl"
 SAFETY_CLASSES = {"guard", "secure"}
 
+# reasoning-trained / CoT-emitting families (not plain instruct with thinking_capable)
+_REASON_RE = re.compile(r"(?:^|[:/._-])(?:r1|qwq|cogito|deepscaler|marco-o1)|reasoning|thinking|deepseek-r1|-deep\b", re.I)
+_META_COLS = ["model", "family", "org", "arch_class", "training_regime", "thinking_capable",
+              "tools_capable", "is_moe", "quant", "param_size", "size_gb", "bracket"]
+
 
 def _load_results() -> pd.DataFrame:
     rows = []
@@ -65,6 +70,28 @@ def _parse_pb(m: str) -> float:
     return float(mm.group(1)) if mm else np.nan
 
 
+def _metadata() -> pd.DataFrame:
+    """Rich per-model metadata: model_metadata.csv (94, authoritative) first, then
+    models-inventory.csv (158) for the rest."""
+    md = pd.read_csv(REPO / "data" / "model_metadata.csv")
+    inv = pd.read_csv(REPO / "data" / "models-inventory.csv")
+    md = md[[c for c in _META_COLS if c in md.columns]]
+    inv = inv[[c for c in _META_COLS if c in inv.columns]]
+    combined = pd.concat([md, inv[~inv["model"].isin(md["model"])]], ignore_index=True)
+    combined["params_b"] = pd.to_numeric(
+        combined["param_size"].astype(str).str.extract(r"([\d.]+)")[0], errors="coerce")
+    return combined.drop_duplicates("model")
+
+
+def _join_metadata(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.merge(_metadata(), on="model", how="left")
+    df["params_b"] = df["params_b"].fillna(df["model"].map(_parse_pb))
+    md_reason = df.get("training_regime", pd.Series("", index=df.index)).astype(str).str.contains("reason", case=False, na=False)
+    df["is_reasoning"] = md_reason | df["model"].str.contains(_REASON_RE)
+    df["is_tools"] = df.get("tools_capable", pd.Series("", index=df.index)).astype(str).str.lower().eq("true")
+    return df
+
+
 def load_full() -> pd.DataFrame:
     res = _load_results()
     jud = _load_judged()
@@ -75,13 +102,7 @@ def load_full() -> pd.DataFrame:
     df["scenario_class"] = df["scenario"].str.split("-").str[0]
     df["is_safety"] = df["scenario_class"].isin(SAFETY_CLASSES)
 
-    inv = pd.read_csv(REPO / "data" / "models-inventory.csv")
-    inv["params_b"] = pd.to_numeric(inv["param_size"].astype(str).str.extract(r"([\d.]+)")[0], errors="coerce")
-    mcols = [c for c in ["model", "family", "org", "training_regime", "tools_capable",
-                         "thinking_capable", "is_moe", "quant", "params_b", "size_gb",
-                         "bracket", "license"] if c in inv.columns]
-    df = df.merge(inv[mcols], on="model", how="left")
-    df["params_b"] = df["params_b"].fillna(df["model"].map(_parse_pb))
+    df = _join_metadata(df)
 
     for c in ["det_score", "energy_wh", "mean_watts", "decode_tokens_per_s", "wall_s",
               "output_tokens", "judge_score", "params_b", "size_gb"]:
@@ -104,12 +125,16 @@ def model_table_full(df: pd.DataFrame) -> pd.DataFrame:
     out["decode_tps"] = g["decode_tokens_per_s"].mean()
     out["wall_s"] = g["wall_s"].mean()
     out["energy_wh"] = g["energy_wh"].mean()          # comparable across ALL 152 (single regime)
+    # canonical energy normalizations (analysis_metrics.py): per det-correct + per output token
+    _es, _ds, _ts = g["energy_wh"].sum(), g["det_score"].sum(), g["output_tokens"].sum()
+    out["wh_per_det_correct"] = _es / _ds.where(_ds > 0)
+    out["j_per_output_token"] = _es * 3600.0 / _ts.where(_ts > 0)
     out["mean_watts"] = g["mean_watts"].mean()
     out["trunc_rate"] = g["truncated"].mean()
     out["safety"] = df[df["is_safety"]].groupby("model")["judge_score"].mean()
     out["quality_nonsafety"] = df[~df["is_safety"]].groupby("model")["judge_score"].mean()
     for c in ["family", "org", "training_regime", "tools_capable", "thinking_capable",
-              "is_moe", "quant", "params_b", "size_gb", "bracket"]:
+              "is_moe", "quant", "params_b", "size_gb", "bracket", "is_reasoning", "is_tools", "arch_class"]:
         if c in df.columns:
             out[c] = g[c].first()
     out = out.reset_index()
@@ -125,7 +150,7 @@ if __name__ == "__main__":
     print(f"rows={len(df)} | models={df.model.nunique()} | scenarios={df.scenario.nunique()} | reps={sorted(df.rep.unique())}")
     print(f"judge_score {df.judge_score.min():.2f}..{df.judge_score.max():.2f} (mean {df.judge_score.mean():.2f}) matched {df.judge_score.notna().mean()*100:.1f}%")
     print(f"det_score mean {df.det_score.mean():.3f} | energy_wh mean {df.energy_wh.mean():.4f} | energy_comparable {df.energy_comparable.mean()*100:.0f}%")
-    print("safety scenarios:", sorted(df[df.is_safety].scenario.unique()))
+    print(f"is_reasoning models: {df[df.is_reasoning].model.nunique()} | is_tools models: {df[df.is_tools].model.nunique()}")
     mt = model_table_full(df)
     out = REPO / "deep-dive" / "out"
     out.mkdir(parents=True, exist_ok=True)
