@@ -9,6 +9,37 @@ one command launches it and it keeps running after you disconnect. Full design:
 [docs/EXPERIMENT-PIPELINE.md](docs/EXPERIMENT-PIPELINE.md); determinism + reproduction:
 [REPRODUCE.md](REPRODUCE.md).
 
+## Analysis & paper integrity — lessons (read before touching the deep-dive or paper)
+
+Hard-won rules from the full-run re-center; each one cost a real bug, so enforce them:
+
+1. **The 152-model `full-chatok-core20-r5` run is its own self-contained study.** Do
+   NOT bolt the frozen 94-model snapshot onto it as a comparison — the two differ in
+   models (152 vs 94), **scenarios (only 12 of ~20 IDs shared)**, judges (`4.6`/`5.4`
+   vs `4.8`/`5.5`), and prompt format. Cross-run rank correlations (the old "0.974")
+   blend all four and prove little. Park the 94-model set as a separate legacy dataset
+   others can reuse; the current paper is the 152 run alone. Analyses that must feed the
+   paper (the A/B-series ranking/efficiency/scaling/capability/judge/variance/IRT/
+   clustering/mixed-effects/roofline work) were computed on the 94-model set and must be
+   **re-run on the 152 run** before use.
+2. **Parameters come from the integer `param_count` (÷1e9), never the `param_size`
+   text.** Parsing "999.89M" as a naked number treated 15 sub-1B models as 100–1000B and
+   *inverted* the size finding. Corrected: quality rises with size (Spearman ≈ 0.73);
+   ~4B is the efficiency knee, not proof that "bigger doesn't win."
+3. **Scenario class = the authoritative `class` field in the scenario set, not the name
+   prefix** (`toolcall-20`'s class is `test`; `localize-02`'s is `diagnose`).
+4. **Gate every non-trivial claim through BOTH judge families (Claude + GPT),
+   independently.** A single-family review missed the parameter bug and a
+   survivorship-biased defense; two independent families caught both.
+5. **Statistics:** matched pairs at the **lineage** level (qwen3:4b Q8/Q4 are one
+   lineage — don't pseudoreplicate); paired-t + t-critical CI and TOST for equivalence
+   (not a rep-SD hand-wave); no p-value on n=2; unknown metadata → NaN (excluded), never
+   `False`; disclose the energy scope (RAPL `package-0`, DRAM excluded).
+6. **Judge agreement ≠ judge validity.** κ measures consistency; correctness needs the
+   human-eval packet. Don't launder a correlation into a robustness proof.
+7. **Reproducibility:** claim-bearing analysis must read the committed, content-locked
+   bundle — not gitignored `.tmp/`. Commit + claim-lock before any number enters the paper.
+
 ## Topology
 
 | Node | Role | Notes |
@@ -153,6 +184,7 @@ evidence boundary:
 ```bash
 python3 scripts/lock-completed-run.py promote \
   --run-dir data/runs/<RUN_ID> \
+  --persist-mode git-push \
   --judge copilot:claude-opus-4.6 \
   --judge copilot:gpt-5.4
 ```
@@ -164,6 +196,11 @@ coverage, preserves compressed per-model results, candidate traces, and logs,
 and creates a content-addressed bundle under `data/completed-runs/`.
 It has no partial or force override. `claim_status` remains `provisional` until
 a separate privacy, analysis, and claim review.
+
+`--persist-mode` is mandatory and must match authoritative `run.meta`. Use
+`local-files` only for the receipt-backed no-push recovery path; promotion then
+requires and revalidates one receipt, result archive, and candidate archive per
+roster model.
 
 ```bash
 python3 scripts/lock-completed-run.py verify --bundle data/completed-runs/<bundle>
@@ -204,6 +241,15 @@ ssh home-ai.hont.ro "pkill -9 -f '[r]un-roster'; pkill -9 -f '[r]un.py'"
   `#!/usr/bin/env node` script, so a detached daemon's PATH must resolve **both**),
   `gh` SSH auth, `rsync`, `jq`, `flock`.
 
+Copilot authentication is **CLI/account-level**, not per judge model. Interactive
+setup uses `copilot login`; in unattended use the CLI checks
+`COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`, its stored OAuth credential,
+then authenticated `gh` as a fallback. Copilot Free includes the CLI but exposes
+models through automatic selection only. This experiment's fixed
+`claude-opus-4.6` + `gpt-5.4` judge domain therefore requires an entitled paid or
+organization account with sufficient AI credits. The model does not perform a
+second authentication step.
+
 ## Browser verification (mission-control dashboard)
 
 When verifying the dashboard in a browser — screenshots or the Playwright MCP — use
@@ -236,3 +282,37 @@ backend serves the built UI at `http://127.0.0.1:8770` (`uvicorn app:app` from
 RAPL `package-0`, perf readable, **ollama 0.30.8**, the `scenarios.json` hash). The
 environment is reset and re-verified before every model (`reset.*` evidence stamped
 per row), and the run aborts (exit 4) if the node drifts mid-run. See REPRODUCE.md §3.
+
+<!-- architrave:begin -->
+<!-- This block is managed by Architrave (tools/install.sh / install.ps1). Edit the kit, not this copy. -->
+## Delivery Workflow — Architrave
+
+This repo uses **Architrave**, a config-grounded, judge-gated workflow for knowledge/automation, UI, backend, full-stack features, plan-only infrastructure, and durable learning artifacts. Read root **`architrave.config.json`** first.
+
+**When `kind` is `knowledge`:**
+- Ground in repository docs, scripts, skills, schemas, tests, existing instructions, and learning artifacts.
+- Run configured `build` and `test` commands.
+- Do not infer or request a UI platform, Storybook, design map, tokens, backend, IaC, or runtime lane. UI reconciliation is not applicable.
+
+When `kind` is absent, use the legacy application fields: `platform`, `stack`, UI source of truth (`designSource`, `designMap`, `tokens`), optional `backend` / `iac` / `ops`, and optional `learning` paths.
+
+**Before any UI change in an application-profile repo:**
+- **Ground first; reproduce, don't reinvent.** Open the design source of truth named in `architrave.config.json` (the `designSource` Storybook + the `designMap` glossary) and the matching platform knowledge pack. **On a native platform, also load the repo-root constitution — `constitution-apple.md` (Apple) or `constitution-windows.md` (Windows)** — the deep, source-cited native rule base (verbatim type tables/ramp, materials layering, system icons, the native component catalog, and the shared-screenshot conformance-audit protocol). Reproduce the existing component by its glossary name and specify only the deltas. Net-new UI must be mocked in Storybook and confirmed first.
+- **Tokens are the single source of truth.** Take values from `architrave.config.json` → `tokens`; if a value must change, change the **token first**, then regenerate. Never hard-code colors/space/type that a token already owns.
+
+**Before any backend/full-stack change:**
+- **Contract first.** If `backend` is configured, ground in its architecture docs and contracts before code. The Service Architect owns the API/data contract; the Backend Planner turns it into the human sign-off artifact; the Backend Implementer builds only after that plan is approved.
+- **Infrastructure is plan-only.** If `iac` is configured, Architrave may propose diffs and run plan/what-if/policy checks, but a human applies. Never materialize secrets or run apply-shaped commands.
+
+**Before any implementation:**
+- **YAGNI ladder.** Do not build presumptive features. First try: delete/skip, reuse existing repo source of truth, native/platform feature, standard library, already-installed dependency, tiny local implementation. New abstractions, dependencies, flags, config, factories, or layers need current evidence, not a guessed future. Never cut validation, data-loss handling, security, accessibility, capability honesty, or the smallest useful test.
+- **Phase ledger.** For non-trivial SDD/backend/full-stack/multi-slice work, keep a visible phase ledger before implementation. Mark exactly one phase `in-progress`, state each phase's scope/out-of-scope/gate, and explicitly separate completed phases from phases that are `not-started`. Do not silently begin the next phase.
+
+**Gates — must be green before a change is "done":**
+- Deterministic: `gates/checks.sh` (POSIX) or `gates/checks.ps1` (Windows) runs configured generate/build/test and profile-appropriate JSON checks. `gates/reconcile.*` reports UI token drift when configured and is not applicable to knowledge profiles. `gates/backend-checks.*` covers backend plus plan-only IaC when configured.
+- Semantic: for non-trivial features, use the **Architrave** agent (the judge-gated harness); the **Adversarial Judge** grades against `gates/rubric.md` and must return PASS.
+
+**Learning loop:** For non-trivial work, keep the run artifacts under `.architrave/runs/` (or `learning.runArtifactsPath`), maintain the concise repo profile at `.architrave/learning/repo-profile.md` (or `learning.repoProfilePath`), and record repeated lessons in `.architrave/learning/repo-lessons.md` (or `learning.lessonsPath`). Validate persisted facts against the current branch before using/promoting them, never store secrets, and promote stable lessons into config, `AGENTS.md`, `.github/instructions/`, or docs only after review.
+
+**Never:** invent an unconfigured lane, introduce platform-foreign UI, use raw values where a token exists, create parallel backend abstractions, materialize secrets, run apply-shaped IaC commands, or claim a capability the repository cannot truthfully perform.
+<!-- architrave:end -->
