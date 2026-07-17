@@ -273,6 +273,19 @@ results the two-batch snapshot could not:
     so the marginal ones (tools p=0.018) are suggestive not confirmatory;
     metadata covers 138/152 with name-heuristic fallbacks; the run is a single
     environment / single collection and is still `provisional` (older judges).
+25. **Dropping the truncated models does not move the headline
+    (`full_truncation_sensitivity.py`).** The cheap alternative to a de-truncation
+    re-run: **92/152** models truncated ≥1 row (18 >20%, 2 at 100%); dropping every
+    model above a truncation threshold keeps **60** (0%), **103** (≤5%), **123**
+    (≤10%). Across full-152 → ≤10% → ≤5% → 0% the **relative findings stay put** —
+    same #1 (`qwen3:4b-instruct-2507-q8_0` q=3.59), tools **+0.44→+0.33**, scale
+    **ρ 0.73→0.74**, safety~quality **r 0.92→0.91** — and the **top-5 are all 0–1%
+    truncated**, so the best-model story never rested on the truncated set. The only
+    thing that moves is **absolute mean quality (2.14 → 2.44** at the strict cut),
+    because the dropped models are smaller (median 2.0B vs 3.0B) and lower-quality
+    (mean 1.94 vs 2.44) — the same "genuinely weak" population as finding 19, so the
+    drop is a **selection bias to disclose**, not a clean-up. **Use as a robustness
+    subset; keep the full 152 as primary.**
 
 ## Methods (grounded)
 
