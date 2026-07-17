@@ -48,6 +48,18 @@ Hard-won rules from the full-run re-center; each one cost a real bug, so enforce
    `provisional` until a human promotes it to paper-final. The heavy bundle is served
    **out-of-band from an Azure Blob**, fetched by content hash (`bundle_id`); the in-repo
    reproducibility path stays the snapshot + manifest, so git never carries the raw.
+8. **The `reasoning-budget-v1v2-nocap` re-run is a STANDALONE mechanism study, NOT a patch
+   for the 152.** It re-runs 14 models under a raised budget (`max_tokens` →4096,
+   `timeout_s`→600 via `core-current-nocap.json`, *only* those two fields changed; all else
+   — regime, judges `4.6`/`5.4`, temp 0.7, seed-base 1, ollama 0.30.8 — identical). Use it
+   ONLY **within-run**: instruct@4096 vs thinking@4096 (finding 17) and victim vs weak
+   controls (finding 19). Do NOT splice these rows into the 152 — mixing 14 models@4096 with
+   138 @per-scenario-budget is a worse confound than the truncation it removes. The 152 keeps
+   its **disclosed** per-scenario-budget premise as the primary dataset; its truncation is
+   covered by the finding-25 sensitivity (headline robust across drop-subsets). A *uniform*
+   no-truncation 152 would require re-running all **92** truncated models (the 60 clean are
+   cap-invariant — proven `512==4096`), ~1–2 weeks — deliberately NOT done (decision: keep
+   the disclosed-budget premise). Judge the re-run with the same 2-judge pair before any use.
 
 ## Topology
 
