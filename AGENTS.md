@@ -60,6 +60,19 @@ Hard-won rules from the full-run re-center; each one cost a real bug, so enforce
    no-truncation 152 would require re-running all **92** truncated models (the 60 clean are
    cap-invariant — proven `512==4096`), ~1–2 weeks — deliberately NOT done (decision: keep
    the disclosed-budget premise). Judge the re-run with the same 2-judge pair before any use.
+9. **The public site is claim-locked; NEVER push provisional evidence to it.** The public
+   Quarto site (`docs/analysis/`) **auto-publishes to GitHub Pages on every push to `main`**,
+   and `analysis_metrics.validate_analysis_manifest` REFUSES claim-bearing analysis unless
+   `claim_status == "locked"`. It currently serves the **locked 94-model** manifest via the
+   OLD notebook pipeline (`wave_analysis`/`judge_comparison`/`reviewer` read
+   `data/snapshots/{judged,results}_snapshot.csv` + `analysis-manifest.json`) — NOT the 152
+   `full-chatok-*` snapshots. Refreshing the public face to the 152 is gated, in order:
+   (1) the reasoning re-run completes + is judged; (2) a **human** promotes the 152
+   `provisional → locked` (paper-final decision); (3) migrate the site notebooks 94→152
+   (repoint + schema-reconcile + recompute the site's own controlled-front/Pareto on the 152)
+   and relabel scope to **≤5B** tiers (per `ceops-audit-cold.md`); (4) push once. Do NOT commit
+   a 152 site build to `main` before step 2 — it would publish provisional evidence publicly.
+   The internal `ceops.hont.ro` dashboard shares the same 94-model staleness but is LAN/Auth-gated.
 
 ## Topology
 
