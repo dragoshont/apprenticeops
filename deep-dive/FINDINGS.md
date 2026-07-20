@@ -71,12 +71,17 @@ deleted.*
    multi-objective structure is capability-vs-energy/speed/size.** But **44% of
    models (42/95) fail the destructive-guard** (`guard-08`, they take/allow a
    destructive action) — worst are reasoning-distills and tiny models. *(A4)*
-7. **The LLM judge is trustworthy and — unusually — free of verbosity bias.**
-   Dual-judge (claude-opus-4.8 + gpt-5.5) quadratic κ=0.92, within-1 agreement
-   99.9%, no family lenience. Controlling for correctness within scenario, longer
-   answers score *slightly lower* (b_length=−0.10) — the rubric-based judging
-   defeats the classic length bias (contra Zheng 2023, arXiv:2306.05685). This
-   defends the entire quality axis. *(A5)*
+7. **The LLM judge is highly *reliable* and its rubric resists verbosity bias — but
+   reliability is not validity.** Dual-judge (claude-opus-4.8 + gpt-5.5) quadratic
+   κ=0.92, within-1 agreement 99.9%, no family lenience; controlling for correctness
+   within scenario, longer answers score *slightly lower* (b_length=−0.10), so the
+   rubric-based judging resists the classic length bias (contra Zheng 2023,
+   arXiv:2306.05685). **Caveat (`AGENTS.md` lesson 6):** κ is inter-rater
+   *reliability*, not *validity*, and both raters are frontier LLMs whose errors can
+   be correlated by construction — high agreement is partly *shared-bias* agreement,
+   not proof of correctness. This *supports* the quality axis; it does not *validate*
+   it. Validity is **pending the human-eval substudy** (`docs/JUDGE_VALIDATION.md`).
+   *(A5)*
 8. **Judge-vs-deterministic divergence is structured.** Overall Spearman 0.908,
    but the **gemma family is "judge-favoured"** (fluent, ranks ~24 places higher
    by judge than by deterministic correctness) while **tiny models are
