@@ -216,6 +216,20 @@ results the two-batch snapshot could not:
     budget. **Honest claim:** poor fit for tight budgets; evidence it degrades
     *reasoning quality* is weak/underpowered → confirm with the queued
     budget-sensitivity re-run (`data/models.reasoning-budget-v1.txt`).
+    **UPDATE (re-run complete; standalone mechanism study — NOT spliced into the 152,
+    lesson 8):** the re-run `reasoning-budget-v1v2-nocap-20260717-112750` (14 models,
+    envelope **4096 tok / 600 s wall**, 1400 cells) shows a bigger budget does **not**
+    rescue completion — it converts token-truncation into wall-clock **timeout**.
+    Verbose reasoning lineages fail to *complete* **11–66 %** of assigned cells
+    (`qwen3:4b-thinking` 57–66 %, EXAONE-Deep 36 %, Phi-4-mini-reasoning 11 %;
+    `starcoder2:3b` base 41 %) while every instruct model completes **100 %** in
+    ~40–70 s; the matched within-lineage thinking−instruct **completion** gap averages
+    **−42 pp**. `smallthinker` (thinking) completes 100 %, so it is the *verbose*
+    lineages, not "thinking" as a label. This **completion** result is the primary,
+    **selection-free (ITT)** outcome — a completion/latency liability. Whether quality
+    *improves when a cell does finish* (conditional, with Manski/Lee bounds) is **pending
+    the 2-judge pass**. See `deep-dive/reasoning_budget_reanalysis.py` +
+    `deep-dive/reasoning-budget-reanalysis-plan.md`.
 18. **Reasoning roster gap:** deepseek-r1 (the frozen "reasoning hurts" driver) is
     absent from `full` (only deepseek-*coder* is present); the pilot carries the
     R1-specific claim, or it is reframed as the budget-fit finding above.
