@@ -1,0 +1,41 @@
+{
+  "id": "ops.capacity-forecast",
+  "title": "Capacity forecasting from a fill rate",
+  "kind": "algorithm",
+  "one_line": "Estimate time-to-exhaustion by dividing remaining headroom by the recent fill rate, and act before the resource is full.",
+  "prerequisites": [],
+  "keywords": ["capacity", "disk", "pvc", "forecast", "pressure", "smart", "oom", "fill-rate"],
+  "scenarios": ["foresee-14-disk-fill-predict", "foresee-15-pvc-pressure", "foresee-16-smart-prefail", "new-linux-oom-or-node-pressure"],
+  "worked_examples": [
+    {
+      "context": "A filesystem is at 82% and has risen about 3 percentage points per day.",
+      "steps": [
+        "Compute remaining headroom (to a safe ceiling, not 100%).",
+        "Divide headroom by the recent daily rate to get days-to-exhaustion.",
+        "Cross-check other early signals (PVC pressure, SMART pre-fail, memory pressure/OOM).",
+        "Recommend action before the projected exhaustion date, with margin."
+      ],
+      "result": "State a concrete time-to-full estimate and act ahead of it, rather than reporting only the current percentage."
+    }
+  ],
+  "constraints": [
+    {
+      "id": "capacity.rate-based",
+      "must": "the forecast uses a rate (trend), not just the current level",
+      "violated_feedback": "You reported a current level without a trend; a forecast needs a fill rate to project time-to-exhaustion."
+    }
+  ],
+  "misconceptions": [
+    {
+      "belief": "a resource is only a problem once it is full",
+      "correction": "Act on the projected exhaustion time; waiting until full risks an outage with no lead time."
+    }
+  ],
+  "sources": [
+    {"ref": "ApprenticeOps OKF homelab-okf-v1 (context)", "access": "data/memory/homelab-okf-v1/context.md", "captured": "2026-07-21"},
+    {"ref": "ApprenticeOps taxonomy (foresee/capacity pillar)", "access": "docs/TAXONOMY.md", "captured": "2026-07-21"}
+  ],
+  "captured": "2026-07-21",
+  "review": "2026-10-21",
+  "verified": true
+}

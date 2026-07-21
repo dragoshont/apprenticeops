@@ -1,0 +1,40 @@
+{
+  "id": "ops.crashloop-cumulative-vs-active",
+  "title": "Cumulative vs active pod restarts",
+  "kind": "technique",
+  "one_line": "A pod's restartCount is cumulative since creation, so a high count is not proof it is crashlooping right now.",
+  "prerequisites": [],
+  "keywords": ["crashloop", "restartcount", "restart", "exit-code", "completed"],
+  "scenarios": ["detect-01-crashloop-triage"],
+  "worked_examples": [
+    {
+      "context": "kube_crashloop_pods shows high restart counts on several system pods after a node reboot.",
+      "steps": [
+        "Read restartCount as cumulative since the pod was created, not as a live signal.",
+        "Check the last state and exit code - exit 0 with reason Completed is a benign finish, not a crash.",
+        "Compare the last restart timestamp to now - old timestamps mean historical, not active.",
+        "Flag only pods with recent, repeated restarts and a non-zero failing exit as actively broken."
+      ],
+      "result": "Distinguish a pod that finished cleanly or restarted days ago from one looping now; recommend action only for the latter."
+    }
+  ],
+  "constraints": [
+    {
+      "id": "crashloop.evidence-of-active",
+      "must": "an 'actively broken' claim rests on recent repeated restarts plus a failing exit, not on the raw count alone",
+      "violated_feedback": "You treated a high cumulative restartCount as an active crashloop; check recency and exit code first."
+    }
+  ],
+  "misconceptions": [
+    {
+      "belief": "a high restartCount always means the pod is crashlooping now",
+      "correction": "restartCount accumulates over the pod's whole life; an exit-0 Completed pod or an old restart is benign."
+    }
+  ],
+  "sources": [
+    {"ref": "ApprenticeOps OKF homelab-okf-v1 (context)", "access": "data/memory/homelab-okf-v1/context.md", "captured": "2026-07-21"}
+  ],
+  "captured": "2026-07-21",
+  "review": "2026-10-21",
+  "verified": true
+}

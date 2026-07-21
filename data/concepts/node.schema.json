@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprenticeops/concept-node.schema.json",
+  "title": "ApprenticeOps Concept Node",
+  "description": "One teachable operations concept/algorithm/technique/pitfall in the ApprenticeOps domain model (data/concepts/). Captures the ops knowledge that otherwise lives only in prose gold-answers and cited-but-not-embedded books, links it to the scenarios that exercise it, and gives the grounded-condition a structured retrieval target. Distinct from the top-level knowledge/ Architrave packs. Ported from the uoeo-msc ITS knowledge-capture schema; adds `scenarios`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "kind", "one_line", "sources", "captured"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$"},
+    "title": {"type": "string", "minLength": 2},
+    "kind": {"enum": ["concept", "algorithm", "technique", "pitfall"]},
+    "one_line": {"type": "string", "minLength": 10},
+    "prerequisites": {"type": "array", "items": {"type": "string"}},
+    "keywords": {"type": "array", "items": {"type": "string"}},
+    "scenarios": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "IDs of data/scenarios.json items this node underpins (reverse link; no edit to scenarios.json)."
+    },
+    "worked_examples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["context", "result"],
+        "properties": {
+          "context": {"type": "string"},
+          "steps": {"type": "array", "items": {"type": "string"}},
+          "result": {"type": "string"}
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "must"],
+        "properties": {
+          "id": {"type": "string"},
+          "must": {"type": "string"},
+          "violated_feedback": {"type": "string"}
+        }
+      }
+    },
+    "misconceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["belief", "correction"],
+        "properties": {
+          "belief": {"type": "string"},
+          "correction": {"type": "string"}
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "access", "captured"],
+        "properties": {
+          "ref": {"type": "string"},
+          "access": {"type": "string", "description": "Repo-relative path to an OWNED artifact (OKF, taxonomy, protocol)."},
+          "captured": {"type": "string"}
+        }
+      }
+    },
+    "captured": {"type": "string"},
+    "review": {"type": "string"},
+    "verified": {"type": "boolean"}
+  }
+}

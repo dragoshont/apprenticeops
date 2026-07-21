@@ -1,0 +1,40 @@
+{
+  "id": "ops.rca-layer-isolation",
+  "title": "Root-cause isolation by layer",
+  "kind": "technique",
+  "one_line": "Isolate a fault by testing components bottom-up: validate the dependency first, then blame the component that references it.",
+  "prerequisites": [],
+  "keywords": ["rca", "root-cause", "localize", "dependency", "externalsecret", "flux", "source"],
+  "scenarios": ["localize-02-externalsecret", "diagnose-26-sideport-installed-apps-rca", "new-flux-drift-source-not-ready"],
+  "worked_examples": [
+    {
+      "context": "An ExternalSecret is not syncing a secret into a namespace.",
+      "steps": [
+        "Check the referenced store first - is the SecretStore/ClusterSecretStore healthy and authenticated?",
+        "If the store is valid, the fault is above it - inspect the ExternalSecret's refresh, key mapping, and RBAC.",
+        "Only escalate to the provider or network once the local references are ruled out."
+      ],
+      "result": "Name the specific failing layer (store vs referencing object) rather than guessing; propose the narrowest fix."
+    }
+  ],
+  "constraints": [
+    {
+      "id": "rca.isolate-before-blame",
+      "must": "the referenced dependency is verified before the referencing component is blamed",
+      "violated_feedback": "You blamed a component without first confirming the thing it depends on; isolate bottom-up."
+    }
+  ],
+  "misconceptions": [
+    {
+      "belief": "the component showing the error is always the root cause",
+      "correction": "The surfacing symptom is often downstream of a broken dependency; test the dependency first."
+    }
+  ],
+  "sources": [
+    {"ref": "ApprenticeOps OKF homelab-okf-v1 (context)", "access": "data/memory/homelab-okf-v1/context.md", "captured": "2026-07-21"},
+    {"ref": "ApprenticeOps taxonomy (diagnose pillar)", "access": "docs/TAXONOMY.md", "captured": "2026-07-21"}
+  ],
+  "captured": "2026-07-21",
+  "review": "2026-10-21",
+  "verified": true
+}
