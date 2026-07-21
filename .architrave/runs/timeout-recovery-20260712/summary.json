@@ -1,0 +1,88 @@
+{
+  "schema": "architrave.run.v1",
+  "runId": "timeout-recovery-20260712",
+  "status": "in-progress",
+  "startedAt": "2026-07-12T11:31:49Z",
+  "artifacts": {
+    "intake": ".architrave/runs/timeout-recovery-20260712/intake.md",
+    "tournament": ".architrave/runs/timeout-recovery-20260712/tournament.md",
+    "recommendedPlan": ".architrave/runs/timeout-recovery-20260712/recommended-plan.md",
+    "phaseLedger": ".architrave/runs/timeout-recovery-20260712/phase-ledger.md",
+    "deterministicGates": ".architrave/runs/timeout-recovery-20260712/deterministic-gates.md",
+    "judgePre": ".architrave/runs/timeout-recovery-20260712/judge-pre.md",
+    "judgePost": ".architrave/runs/timeout-recovery-20260712/judge-post.md",
+    "runtimeObserver": ".architrave/runs/timeout-recovery-20260712/runtime-observer.md"
+  },
+  "learning": {
+    "repoProfile": ".architrave/learning/repo-profile.md",
+    "repoLessons": ".architrave/learning/repo-lessons.md",
+    "candidateLessons": 5,
+    "promotionsProposed": 0
+  },
+  "phases": [
+    {
+      "phase": 0,
+      "name": "Architrave bootstrap and specification",
+      "status": "completed",
+      "scope": "Knowledge profile, durable artifacts, one ledger, causal model, and frozen analysis/decision rules.",
+      "gate": "Config/run validators plus GPT-5.6 Sol and Claude Opus 4.8 proposal PASS",
+      "result": "PASS after repair: schema/run/checks and GPT-5.6 Sol + Claude 4.8 proposal gates"
+    },
+    {
+      "phase": 1,
+      "name": "Evidence lock",
+      "status": "completed",
+      "scope": "Historical promotion of immutable source evidence.",
+      "gate": "Bundle verify, privacy, and exact reconciliation",
+      "result": "PASS: bundle dd262a5c..., 15,200 results, 30,400 canonical, 41 retries"
+    },
+    {
+      "phase": 2,
+      "name": "Failure diagnosis",
+      "status": "completed",
+      "scope": "Historical cause, cohort, and recovery option analysis.",
+      "gate": "Analyzer hashes and independent count checks",
+      "result": "PASS: 204 timeout, 4 done-frame, 1,452 length, 21 affected models"
+    },
+    {
+      "phase": 3,
+      "name": "Pipeline hardening",
+      "status": "completed",
+      "scope": "Shared judge, privacy, analyzer, artifact, manifest, resume, and runtime locks.",
+      "gate": "Recovery matrix, real bundle gates, and dual implementation PASS",
+      "result": "PASS after human-approved loop 4; full gates and GPT-5.6 Sol + Claude 4.8 PASS"
+    },
+    {
+      "phase": 4,
+      "name": "Launch readiness",
+      "status": "completed",
+      "scope": "Tracked contracts, clean source identity, real AI zero-row preflight, and modern judge metadata proof.",
+      "gate": "Path/hash equivalence, zero rows/files, clean provenance, substituted judge rejection, and dual semantic PASS",
+      "result": "PASS: preflight6, full checks, GPT-5.6 Sol PASS, and Claude 4.8 PASS; no inference"
+    },
+    {
+      "phase": 5,
+      "name": "Timeout sensitivity execution",
+      "status": "in-progress",
+      "scope": "Preserve parent evidence, create an isolated Git-backed checkpoint, prove the established pipeline on a non-cohort smoke, then run 21 x 20 x 5; no parent mutation, claims, or merge to main.",
+      "gate": "Two verified parent copies, clean dedicated branch, smoke PASS, 2,100 rows, valid authoritative judge identities, 4,200 canonical judgements, verified bundle, and privacy PASS",
+      "result": "RUNNING: inference source e35ef3f; canonical judge recovery 00891db; 473/2,100 inference rows and 209/4,200 canonical unique judge rows at latest verified health snapshot; Mission Control HTTP 200; paper reliability disclosure synchronized and dual-family PASS"
+    },
+    {
+      "phase": 6,
+      "name": "Comparative analysis",
+      "status": "not-started",
+      "scope": "Paired two-way bootstrap and quality/latency/energy guards.",
+      "gate": "Analysis lock, deterministic gates, and dual judge PASS",
+      "result": "pending"
+    },
+    {
+      "phase": 7,
+      "name": "Timeout policy decision",
+      "status": "not-started",
+      "scope": "Apply frozen Adopt/Hold/Reject thresholds and record decision.",
+      "gate": "Threshold audit, decision artifact, and claim audit",
+      "result": "pending"
+    }
+  ]
+}

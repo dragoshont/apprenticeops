@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "./gates/quality-gate.sh --hook-json",
+        "timeout": 20
+      }
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "architrave.run.v1",
+  "runId": "literature-radar-20260713",
+  "status": "passed",
+  "startedAt": "2026-07-13T20:51:27Z",
+  "completedAt": "2026-07-13T23:14:56Z",
+  "artifacts": {
+    "intake": ".architrave/runs/literature-radar-20260713/intake.md",
+    "tournament": ".architrave/runs/literature-radar-20260713/tournament.md",
+    "recommendedPlan": ".architrave/runs/literature-radar-20260713/recommended-plan.md",
+    "phaseLedger": ".architrave/runs/literature-radar-20260713/phase-ledger.md",
+    "deterministicGates": ".architrave/runs/literature-radar-20260713/deterministic-gates.md",
+    "judgePre": ".architrave/runs/literature-radar-20260713/judge-pre.md",
+    "judgePost": ".architrave/runs/literature-radar-20260713/judge-post.md",
+    "runtimeObserver": ".architrave/runs/literature-radar-20260713/runtime-observer.md"
+  },
+  "learning": {
+    "repoProfile": ".architrave/learning/repo-profile.md",
+    "repoLessons": ".architrave/learning/repo-lessons.md",
+    "candidateLessons": 1,
+    "promotionsProposed": 0
+  },
+  "phases": [
+    {
+      "phase": 0,
+      "name": "Design and source reconciliation",
+      "status": "completed",
+      "scope": "Define outcome, canon boundary, identity model, coverage, security, and options.",
+      "gate": "GPT-family and Claude-family proposal PASS",
+      "result": "PASS after identity/lineage and routing repairs"
+    },
+    {
+      "phase": 1,
+      "name": "Deep external scan",
+      "status": "completed",
+      "scope": "Populate query/source/claim/scan evidence across fixed coverage; no synthesis, canon edits, or experiments.",
+      "gate": "Scan coverage and immutable-source audit",
+      "result": "PASS: 29 queries, 42 source versions, 42 claims, zero promotions"
+    },
+    {
+      "phase": 2,
+      "name": "Synthesis and skill",
+      "status": "completed",
+      "scope": "Dated report, protocol, skill, schemas, validator/tests, config/profile; no canon promotion.",
+      "gate": "Focused and configured deterministic checks",
+      "result": "PASS: configured checks, privacy, links, run validation, zero diagnostics"
+    },
+    {
+      "phase": 3,
+      "name": "Adversarial closeout",
+      "status": "completed",
+      "scope": "Review exact implementation and evidence quality; no new research or canon edits.",
+      "gate": "GPT-family and Claude-family implementation PASS",
+      "result": "PASS on exact tree e47cfeefdfcc899e86e33192e15c1ed5a37c9100; commit 27ab2c7"
+    },
+    {
+      "phase": 4,
+      "name": "Paper impact",
+      "status": "completed",
+      "scope": "Compare preserved evidence with the manuscript, reviewer guidance, and open gates; no canon edits or partial timeout results.",
+      "gate": "Source trace, deterministic checks, GPT-family PASS, and Claude-family PASS",
+      "result": "PASS on exact tree 8b4928d63cc72dd7553aeb78d8d4b5942488726b; commit 18ba9c9"
+    },
+    {
+      "phase": 5,
+      "name": "Human-approved paper promotion",
+      "status": "not-started",
+      "scope": "Promote approved citations and prose into canon; no new experiments.",
+      "gate": "Explicit approval, promotion records, claim audit, and HTML/PDF regeneration",
+      "result": "Not started"
+    }
+  ]
+}
