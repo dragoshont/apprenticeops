@@ -226,10 +226,19 @@ results the two-batch snapshot could not:
     ~40–70 s; the matched within-lineage thinking−instruct **completion** gap averages
     **−42 pp**. `smallthinker` (thinking) completes 100 %, so it is the *verbose*
     lineages, not "thinking" as a label. This **completion** result is the primary,
-    **selection-free (ITT)** outcome — a completion/latency liability. Whether quality
-    *improves when a cell does finish* (conditional, with Manski/Lee bounds) is **pending
-    the 2-judge pass**. See `deep-dive/reasoning_budget_reanalysis.py` +
-    `deep-dive/reasoning-budget-reanalysis-plan.md`.
+    **selection-free (ITT)** outcome — a completion/latency liability. **Conditional
+    quality (2-judge pass complete — `reasoning_budget_secondary.py`, claude-opus-4.6 +
+    gpt-5.4 over 1,132 completed cells):** on the cells they *do* finish, thinking is
+    comparable-to-slightly-better (naive Δ +0.15…+0.39; EXAONE-Deep −0.24), **but for the
+    heavily-censored lineages that edge is a survivorship artifact** — the Manski
+    selection bounds straddle 0 (qwen3-4B-Q4 [−1.24,+1.04]; Q8 [−1.64,+1.01]). The **only**
+    defensible quality edge is `phi4-mini-reasoning` (89 % complete, little missingness):
+    Manski [+0.18,+0.62]. End-to-end (ITT, DNF floored to 1) thinking is uniformly
+    **worse** (qwen3-thinking-q8 **1.92** vs instruct-q8 **3.56**). **Net:** no evidence
+    verbose reasoning improves quality at a *usable rate* — the completion liability
+    dominates and any completed-cell edge is unidentifiable under the censoring. See
+    `deep-dive/reasoning_budget_reanalysis.py` + `…_secondary.py` +
+    `reasoning-budget-reanalysis-plan.md`.
 18. **Reasoning roster gap:** deepseek-r1 (the frozen "reasoning hurts" driver) is
     absent from `full` (only deepseek-*coder* is present); the pilot carries the
     R1-specific claim, or it is reframed as the budget-fit finding above.

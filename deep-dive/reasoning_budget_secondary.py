@@ -29,13 +29,19 @@ from reasoning_budget_reanalysis import PAIRS, _mode  # noqa: E402
 
 CELLS = HERE / "reasoning-budget" / "primary-cells.csv"
 JUDGED = HERE / "reasoning-budget" / "judged.reasoning-budget-v1v2.jsonl"
+JUDGED_GZ = JUDGED.with_suffix(JUDGED.suffix + ".gz")  # committed compact reproduction artifact
 SCALE_LO, SCALE_HI = 1.0, 5.0
 FLOOR = 1.0  # DNF = no usable answer within the envelope -> task-failure floor
 
 
+def _open_judged():
+    import gzip
+    return open(JUDGED) if JUDGED.exists() else gzip.open(JUDGED_GZ, "rt")
+
+
 def _consensus() -> pd.DataFrame:
     rows = []
-    with open(JUDGED) as f:
+    with _open_judged() as f:
         for line in f:
             try:
                 r = json.loads(line)
@@ -67,8 +73,8 @@ def _lee_completed_delta(q_comp_think, instruct_scores, p_keep):
 
 
 def main() -> None:
-    if not JUDGED.exists():
-        sys.exit(f"judged file not found: {JUDGED}\nPull it once the home pass finishes:\n"
+    if not (JUDGED.exists() or JUDGED_GZ.exists()):
+        sys.exit(f"judged file not found: {JUDGED}[.gz]\nPull it once the home pass finishes:\n"
                  "  scp dragos@home.hont.ro:~/apprenticeops-main/judged.reasoning-budget-v1v2.jsonl "
                  f"{JUDGED.parent}/")
 

@@ -1,0 +1,15 @@
+model,mode,n,complete%,condQ,ITT_Q(DNF=1)
+codegemma:2b,base,100,100,1.08,1.08
+exaone3.5:7.8b,base,100,100,3.15,3.15
+phi4-mini,base,100,100,2.45,2.45
+starcoder2:3b-q6_K,base,100,59,1.09,1.06
+falcon3:1b-instruct-q8_0,instruct,100,100,1.54,1.54
+qwen2.5:3b-instruct-q4_K_M,instruct,100,100,2.55,2.55
+qwen3:4b-instruct-2507-q4_K_M,instruct,100,100,3.3,3.3
+qwen3:4b-instruct-2507-q8_0,instruct,100,100,3.56,3.56
+exaone-deep:7.8b,thinking,100,64,2.91,2.22
+phi4-mini-reasoning,thinking,100,89,2.84,2.64
+qwen3:4b,thinking,100,43,3.42,2.04
+qwen3:4b-thinking-2507-q4_K_M,thinking,100,43,3.45,2.06
+qwen3:4b-thinking-2507-q8_0,thinking,100,34,3.71,1.92
+smallthinker:3b-preview-q4_K_M,thinking,100,100,2.48,2.48
