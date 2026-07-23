@@ -1,0 +1,15 @@
+model,param_b,badge,med_tokens,complete_pct,verbose
+codegemma:2b,2.51,base,596,100,False
+exaone-deep:7.8b,7.82,thinking,1440,64,True
+exaone3.5:7.8b,7.82,base,210,100,False
+falcon3:1b-instruct-q8_0,1.67,instruct,528,100,False
+phi4-mini,3.84,base,186,100,False
+phi4-mini-reasoning,3.84,thinking,1078,89,True
+qwen2.5:3b-instruct-q4_K_M,3.09,instruct,312,100,False
+qwen3:4b,4.02,thinking,2278,43,True
+qwen3:4b-instruct-2507-q4_K_M,4.02,instruct,225,100,False
+qwen3:4b-instruct-2507-q8_0,4.02,instruct,226,100,False
+qwen3:4b-thinking-2507-q4_K_M,4.02,thinking,2277,43,True
+qwen3:4b-thinking-2507-q8_0,4.02,thinking,1866,34,True
+smallthinker:3b-preview-q4_K_M,3.4,thinking,606,100,False
+starcoder2:3b-q6_K,3.03,base,1163,59,True

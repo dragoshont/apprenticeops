@@ -223,9 +223,17 @@ results the two-batch snapshot could not:
     Verbose reasoning lineages fail to *complete* **11–66 %** of assigned cells
     (`qwen3:4b-thinking` 57–66 %, EXAONE-Deep 36 %, Phi-4-mini-reasoning 11 %;
     `starcoder2:3b` base 41 %) while every instruct model completes **100 %** in
-    ~40–70 s; the matched within-lineage thinking−instruct **completion** gap averages
-    **−42 pp**. `smallthinker` (thinking) completes 100 %, so it is the *verbose*
-    lineages, not "thinking" as a label. This **completion** result is the primary,
+    ~40–70 s. The matched within-lineage completion gap is reported **clean** (one
+    weight per lineage, **≤5B only**) and is **lineage-heterogeneous**, so it is a
+    **range, not a single −42 pp point**: **qwen3-4B thinking−instruct −62 pp**
+    (scenario-clustered 95 % [−76,−46]) but **Phi-4-mini −11 pp** [−24,−1] — only
+    **n=2 clean ≤5B lineages** (the earlier −42 pp double-weighted the qwen3-4B Q4+Q8
+    quant pair and folded in the **out-of-population EXAONE-7.8B** pair, now shown
+    separately at −36 pp [−52,−20]). The cliff tracks **measured verbosity** (median
+    output tokens ≥ 800, the threshold set at the natural 606→1078 token gap), **not
+    the "thinking" badge**: `smallthinker` (thinking badge, terse 606 tok) completes
+    100 % while `starcoder2:3b` (no badge, runaway 1163 tok) fails 41 % — the badge
+    mis-selects both ways. This **completion** result is the primary,
     **selection-free (ITT)** outcome — a completion/latency liability. **Conditional
     quality (2-judge pass complete — `reasoning_budget_secondary.py`, claude-opus-4.6 +
     gpt-5.4 over 1,132 completed cells):** on the cells they *do* finish, thinking is

@@ -1,0 +1,4 @@
+lineage,param_b,in_<=5B,thinking%,instruct%,contrast_pp,scen_cluster95
+qwen3-4b,4.02,yes,38,100,62,"[46,76]"
+phi4-mini,3.84,yes,89,100,11,"[1,24]"
+exaone-7.8b,7.82,no(>5B),64,100,36,"[20,52]"
