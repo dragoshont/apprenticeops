@@ -1,0 +1,201 @@
+/* ==========================================================================
+   CEOps design tokens — DTCG-style three-tier system (design-only preview)
+   Tier 1 reference (primitives)
+     -> Tier 2 system (semantic, theme-dependent)
+       -> Tier 3 component
+   Source of truth: docs/research/ceops-benchmark-site-research-2026-07-14.md §9
+   These are hand-authored preview tokens; production compiles DTCG JSON into
+   both Quarto and the experiment client (a single visual system, not two).
+   ========================================================================== */
+
+:root {
+  /* ---- Tier 1: reference — typography ---------------------------------- */
+  --ref-font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --ref-font-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+
+  /* ---- Tier 1: reference — neutral ramp (warm) ------------------------- */
+  --ref-white: #ffffff;
+  --ref-paper: #fbfbfa;
+  --ref-gray-50: #f4f4f2;
+  --ref-gray-100: #e9e9e6;
+  --ref-gray-200: #dcdbd7;
+  --ref-gray-300: #c3c2bd;
+  --ref-gray-400: #97968f;
+  --ref-gray-500: #6c6b64;
+  --ref-gray-600: #55544e;
+  --ref-gray-700: #3d3c38;
+  --ref-gray-800: #26251f;
+  --ref-ink: #1a1a17;
+
+  /* ---- Tier 1: reference — charcoal ramp (dark, not blue) -------------- */
+  --ref-charcoal-950: #121418;
+  --ref-charcoal-900: #16181d;
+  --ref-charcoal-850: #1b1e23;
+  --ref-charcoal-800: #21242a;
+  --ref-charcoal-700: #2a2e35;
+  --ref-charcoal-600: #343941;
+  --ref-charcoal-500: #434952;
+
+  /* ---- Tier 1: reference — evidence hues ------------------------------- */
+  --ref-teal-700: #0b5e57;
+  --ref-teal-600: #0f766e;
+  --ref-teal-300: #5eead4;
+  --ref-teal-200: #99f6e4;
+  --ref-teal-tint-l: #e4f1ef;
+  --ref-teal-tint-d: rgba(94, 234, 212, 0.14);
+
+  --ref-amber-800: #834608;
+  --ref-amber-700: #a75a09;
+  --ref-amber-400: #f6ad3f;
+  --ref-amber-tint-l: #f9efdd;
+  --ref-amber-tint-d: rgba(246, 173, 63, 0.16);
+
+  --ref-red-700: #b21f1f;
+  --ref-red-600: #c92a2a;
+  --ref-red-400: #f77272;
+  --ref-red-tint-l: #f9e8e8;
+  --ref-red-tint-d: rgba(247, 114, 114, 0.16);
+
+  /* ---- Tier 1: reference — spacing scale ------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---- Tier 1: reference — type scale (size / line-height) ------------- */
+  --type-title-size: 48px;
+  --type-title-lh: 54px;
+  --type-title-size-m: 36px;
+  --type-title-lh-m: 42px;
+  --type-question-size: 32px;
+  --type-question-lh: 38px;
+  --type-question-size-m: 26px;
+  --type-question-lh-m: 32px;
+  --type-section-size: 22px;
+  --type-section-lh: 28px;
+  --type-body-size: 15px;
+  --type-body-lh: 23px;
+  --type-control-size: 14px;
+  --type-control-lh: 20px;
+  --type-data-size: 14px;
+  --type-data-lh: 20px;
+  --type-meta-size: 13px;
+  --type-meta-lh: 18px;
+
+  /* ---- Tier 1: reference — geometry ------------------------------------ */
+  --measure-reading: 720px;
+  --measure-evidence: 1120px;
+  --measure-shell: 1280px;
+
+  /* ---- Tier 3: component — geometry ------------------------------------ */
+  --radius-control: 4px;
+  --radius-record: 8px;
+  --control-min-h: 44px;
+  --row-h: 48px;
+  --strip-pad-y: 12px;
+  --strip-pad-x: 16px;
+  --edge-pad: 48px;
+  --gutter: 24px;
+  --section-rhythm: 64px;
+}
+
+/* ==========================================================================
+   Tier 2: system semantic — LIGHT (neutral)
+   ========================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: var(--ref-paper);
+  --color-surface: var(--ref-white);
+  --color-surface-sunken: var(--ref-gray-50);
+  --color-text: var(--ref-ink);
+  --color-text-muted: #57564f;
+  --color-text-faint: #7d7c74;
+  --color-border: var(--ref-gray-200);
+  --color-border-strong: var(--ref-gray-300);
+  --color-focus: var(--ref-ink);
+  --color-link: var(--ref-teal-700);
+
+  --state-verified-line: var(--ref-teal-600);
+  --state-verified-tint: var(--ref-teal-tint-l);
+  --state-verified-text: var(--ref-teal-700);
+
+  --state-qualified-line: var(--ref-amber-700);
+  --state-qualified-tint: var(--ref-amber-tint-l);
+  --state-qualified-text: var(--ref-amber-800);
+
+  --state-withdrawn-line: var(--ref-red-700);
+  --state-withdrawn-tint: var(--ref-red-tint-l);
+  --state-withdrawn-text: var(--ref-red-700);
+
+  --state-unavailable-line: var(--ref-gray-400);
+  --state-unavailable-tint: var(--ref-gray-50);
+  --state-unavailable-text: var(--ref-gray-600);
+
+  /* A recommendation is a preference-dependent operating point, not universal
+     truth: it is rendered in strong neutral, never in verified teal. */
+  --rec-line: var(--ref-ink);
+  --rec-tint: var(--ref-gray-50);
+
+  --chart-grid: var(--ref-gray-200);
+  --chart-axis: var(--ref-gray-500);
+  --chart-front: var(--ref-teal-600);
+  --chart-front-fill: rgba(15, 118, 110, 0.14);
+  --chart-dominated: #7a796f; /* >= 3:1 on paper */
+  --chart-dominated-fill: rgba(122, 121, 111, 0.12);
+  --chart-rec: var(--ref-ink);
+
+  --shadow-strip: inset 0 -1px 0 var(--color-border);
+}
+
+/* ==========================================================================
+   Tier 2: system semantic — DARK (charcoal)
+   ========================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: var(--ref-charcoal-950);
+  --color-surface: var(--ref-charcoal-850);
+  --color-surface-sunken: var(--ref-charcoal-900);
+  --color-text: #f1f1ee;
+  --color-text-muted: #b6b8bd;
+  --color-text-faint: #8a8d93;
+  --color-border: var(--ref-charcoal-600);
+  --color-border-strong: var(--ref-charcoal-500);
+  --color-focus: #f1f1ee;
+  --color-link: var(--ref-teal-200);
+
+  --state-verified-line: var(--ref-teal-300);
+  --state-verified-tint: var(--ref-teal-tint-d);
+  --state-verified-text: var(--ref-teal-200);
+
+  --state-qualified-line: var(--ref-amber-400);
+  --state-qualified-tint: var(--ref-amber-tint-d);
+  --state-qualified-text: var(--ref-amber-400);
+
+  --state-withdrawn-line: var(--ref-red-400);
+  --state-withdrawn-tint: var(--ref-red-tint-d);
+  --state-withdrawn-text: var(--ref-red-400);
+
+  --state-unavailable-line: var(--ref-charcoal-500);
+  --state-unavailable-tint: var(--ref-charcoal-800);
+  --state-unavailable-text: #9a9ea5;
+
+  --rec-line: #f1f1ee;
+  --rec-tint: var(--ref-charcoal-800);
+
+  --chart-grid: var(--ref-charcoal-700);
+  --chart-axis: #8a8d93;
+  --chart-front: var(--ref-teal-300);
+  --chart-front-fill: rgba(94, 234, 212, 0.16);
+  --chart-dominated: #9a9ea5; /* >= 3:1 on charcoal */
+  --chart-dominated-fill: rgba(154, 158, 165, 0.14);
+  --chart-rec: #f1f1ee;
+
+  --shadow-strip: inset 0 -1px 0 var(--color-border);
+}

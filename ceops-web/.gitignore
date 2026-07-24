@@ -1,0 +1,13 @@
+node_modules
+dist
+storybook-static
+*.log
+.DS_Store
+
+# local design-preview screenshot helper (machine-specific path)
+tools/
+
+# TypeScript build outputs
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

@@ -8,6 +8,8 @@ full guide is [`REVIEWER.md`](https://github.com/dragoshont/apprenticeops/blob/m
 If you read nothing else, read **the claim**, **what to check**, and **how to give
 feedback**.
 
+{{< include _evidence-lock.md >}}
+
 ## The claim, in one breath
 
 A reproducible benchmark and CPU-telemetry method that profiles small
@@ -37,13 +39,13 @@ We map onto the NeurIPS dimensions so your assessment ports to the venue.
 | **Limitations / ethics** | Are n=1, judge egress, Linux-only telemetry, and the thin safety arm stated up front? |
 
 **The most useful review** names the *single result or change that would raise
-your score*. "The safety arm is n=60 on two models — deepen it or soften the
+your score*. "The reasoning arm is four models (n=120) — deepen it or soften the
 claim" is gold; "needs more experiments" is hard to act on.
 
 ## Where we most want pushback
 
 1. Is the contribution **differentiated enough** from existing AIOps / agent-safety benchmarks?
-2. Is **any claim over-scoped** versus the evidence (especially the n=60 safety arm)?
+2. Is **any claim over-scoped** versus the evidence (especially the four-model, n=120 reasoning arm)?
 3. **Which single result** would you require to consider this publishable at the D&B track?
 4. Is the honesty framing (safety = corroboration, not discovery) convincing, or does it under/oversell?
 5. Is the **energy axis** a real contribution or a nice-to-have?

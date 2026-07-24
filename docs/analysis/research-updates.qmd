@@ -1,0 +1,78 @@
+---
+title: "Research updates"
+subtitle: "What changed around ApprenticeOps, without changing the paper's evidence lock"
+code-tools: false
+---
+
+{{< include _evidence-lock.md >}}
+
+::: {.callout-warning appearance="simple"}
+### Candidate evidence, not paper claims
+
+This page summarizes a research radar. It is **not** the bibliography, a paper
+amendment, or an experiment result. The scan records **zero promotions**. Any
+citation or manuscript change requires a separate human-approved promotion and
+claim audit.
+:::
+
+## Scan status
+
+The initial radar covers work observed from **2025-01-01 through 2026-07-13**:
+**29 query records**, **42 immutable source versions**, **42 scoped claim
+versions**, and **zero promotions**. Company reports remain first-party evidence;
+practitioner posts remain leads.
+
+## What changed around the paper
+
+### Recovery-aware operations evaluation raises the task-depth bar
+
+Recent operations benchmarks increasingly separate evidence, diagnosis,
+admissible action, postcondition, and observed recovery. That does not occupy
+ApprenticeOps' sovereign CPU quality/refusal/energy intersection, but it narrows
+the current artifact honestly: ApprenticeOps evaluates deployment selection over
+static diagnosis, planning, and refusal responses. It does **not** claim executed
+recovery or restored service health.
+
+### Compression evidence reinforces condition identity
+
+Recent quantization and edge studies support the correction already encoded in
+analysis `v1`: q4 is a useful local prior, not a universal optimum; compression
+loss varies by capability; and active parameters do not determine resident
+memory or realized edge cost. Model revision, quantization, runtime, template,
+parser, task, and hardware remain part of the deployment condition.
+
+### Adaptation remains a separate study
+
+Fine-tuning, LoRA, distillation, and specialist routing are credible next
+experiments, but a valid result needs base/adapted lineage, incident-disjoint
+utility, retention, contamination, safety, latency, memory, energy, and routing
+errors. Adding one tuned model to the frozen roster would not answer that causal
+question.
+
+### Timeout sensitivity remains unavailable
+
+The active 21-model timeout study contributes no partial result here. It becomes
+eligible only after all **2,100 inference rows** and **4,200 canonical
+judgements** are complete, locked, privacy-checked, and independently reviewed.
+
+## Disposition
+
+| Disposition | What belongs there |
+|---|---|
+| **Promotion review later** | Recovery-aware operations, compression/deployment identity, and adaptation-risk literature. |
+| **After the current run** | Timeout/failure-stratum sensitivity; answer-stability risk coverage only if held-out evaluation succeeds. |
+| **Separate studies** | Executed recovery, preregistered adaptation, multi-hardware quantization, and specialist routing. |
+| **Monitor** | New first-party small-model and runtime releases without independent ops/CPU-energy evidence. |
+| **Reject as paper evidence** | Uncorroborated social threads, unresolved issue reports, and partial timeout outcomes. |
+
+## Read the preserved evidence
+
+- [Full dated radar report](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/research-radar/2026-07-13.md)
+- [Paper-impact packet](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/research-radar/2026-07-13-paper-impact.md)
+- [Radar protocol and evidence rules](https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/research-radar/README.md)
+
+<div class="research-boundary">
+The current manuscript remains grounded in the locked analysis `v1` bundle. The
+research radar can qualify positioning and propose experiments; it cannot replace
+frozen results by implication.
+</div>

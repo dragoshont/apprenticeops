@@ -1,0 +1,358 @@
+/*============================================================================
+  CEOps — Quarto theme (production shell)
+  Ports the signed-off design system (docs/research/ceops-benchmark-site-
+  research-2026-07-14.md §9; validated in ceops-web/) onto the ApprenticeOps
+  Quarto portal. CEOps is the umbrella brand; ApprenticeOps is the first
+  release. Editorial-scientific, not SaaS: evidence state is carried by word +
+  icon + border in addition to color. Light and charcoal are equal themes,
+  driven by Quarto's `.quarto-light` / `.quarto-dark` toggle.
+============================================================================*/
+
+/*-- scss:defaults --*/
+
+// Source Serif 4 (titles) + Source Sans 3 (text/data). Loaded from Google
+// Fonts; falls back to system serif/sans offline. Self-hosting is a later
+// privacy-hardening follow-up, tracked in the site brief.
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap");
+
+$font-family-sans-serif: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !default;
+$font-family-serif: "Source Serif 4", Georgia, "Times New Roman", serif !default;
+$font-family-base: $font-family-sans-serif !default;
+$headings-font-family: $font-family-serif !default;
+
+$font-size-root: 16px !default;
+$body-bg: #fbfbfa !default;
+$body-color: #1a1a17 !default;
+$link-color: #0b5e57 !default;
+$link-decoration: none !default;
+
+$primary: #0f766e !default;
+$border-radius: 4px !default;
+$border-radius-lg: 8px !default;
+
+// Navbar (CEOps masthead) — light, editorial, not the old dark bar.
+$navbar-bg: #ffffff !default;
+$navbar-light-color: #57564f !default;
+$navbar-light-hover-color: #1a1a17 !default;
+$navbar-light-active-color: #1a1a17 !default;
+
+/*-- scss:rules --*/
+
+/*----------------------------------------------------------------------------
+  Tier 1-3 design tokens. Light defaults on :root; charcoal overrides under
+  the .quarto-dark toggle (Quarto sets it on <html>/<body>).
+----------------------------------------------------------------------------*/
+:root {
+  --ref-font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --ref-font-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --ref-white: #ffffff;
+  --ref-paper: #fbfbfa;
+  --ref-gray-50: #f4f4f2;
+  --ref-gray-100: #e9e9e6;
+  --ref-gray-200: #dcdbd7;
+  --ref-gray-300: #c3c2bd;
+  --ref-gray-400: #97968f;
+  --ref-gray-500: #6c6b64;
+  --ref-gray-600: #55544e;
+  --ref-gray-700: #3d3c38;
+  --ref-ink: #1a1a17;
+
+  --ref-teal-700: #0b5e57;
+  --ref-teal-600: #0f766e;
+  --ref-teal-300: #5eead4;
+  --ref-teal-200: #99f6e4;
+  --ref-amber-800: #834608;
+  --ref-amber-700: #a75a09;
+  --ref-amber-400: #f6ad3f;
+  --ref-red-700: #b21f1f;
+  --ref-red-400: #f77272;
+
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+  --measure-reading: 720px;
+  --measure-evidence: 1120px;
+  --measure-shell: 1280px;
+  --radius-control: 4px;
+  --radius-record: 8px;
+
+  /* Tier 2 semantic — LIGHT */
+  --color-bg: var(--ref-paper);
+  --color-surface: var(--ref-white);
+  --color-surface-sunken: var(--ref-gray-50);
+  --color-text: var(--ref-ink);
+  --color-text-muted: #57564f;
+  --color-text-faint: #7d7c74;
+  --color-border: var(--ref-gray-200);
+  --color-border-strong: var(--ref-gray-300);
+  --color-focus: var(--ref-ink);
+  --color-link: var(--ref-teal-700);
+
+  --state-verified-line: var(--ref-teal-600);
+  --state-verified-tint: #e4f1ef;
+  --state-verified-text: var(--ref-teal-700);
+  --state-qualified-line: var(--ref-amber-700);
+  --state-qualified-tint: #f9efdd;
+  --state-qualified-text: var(--ref-amber-800);
+  --state-withdrawn-line: var(--ref-red-700);
+  --state-withdrawn-tint: #f9e8e8;
+  --state-withdrawn-text: var(--ref-red-700);
+  --state-unavailable-line: var(--ref-gray-400);
+  --state-unavailable-tint: var(--ref-gray-50);
+  --state-unavailable-text: var(--ref-gray-600);
+
+  --rec-line: var(--ref-ink);
+  --rec-tint: var(--ref-gray-50);
+
+  --chart-grid: var(--ref-gray-200);
+  --chart-axis: var(--ref-gray-500);
+  --chart-front: var(--ref-teal-600);
+  --chart-front-fill: rgba(15, 118, 110, 0.14);
+  --chart-dominated: #7a796f;
+  --chart-dominated-fill: rgba(122, 121, 111, 0.12);
+}
+
+.quarto-dark {
+  color-scheme: dark;
+  --color-bg: #121418;
+  --color-surface: #1b1e23;
+  --color-surface-sunken: #16181d;
+  --color-text: #f1f1ee;
+  --color-text-muted: #b6b8bd;
+  --color-text-faint: #8a8d93;
+  --color-border: #343941;
+  --color-border-strong: #434952;
+  --color-focus: #f1f1ee;
+  --color-link: var(--ref-teal-200);
+
+  --state-verified-line: var(--ref-teal-300);
+  --state-verified-tint: rgba(94, 234, 212, 0.14);
+  --state-verified-text: var(--ref-teal-200);
+  --state-qualified-line: var(--ref-amber-400);
+  --state-qualified-tint: rgba(246, 173, 63, 0.16);
+  --state-qualified-text: var(--ref-amber-400);
+  --state-withdrawn-line: var(--ref-red-400);
+  --state-withdrawn-tint: rgba(247, 114, 114, 0.16);
+  --state-withdrawn-text: var(--ref-red-400);
+  --state-unavailable-line: #434952;
+  --state-unavailable-tint: #21242a;
+  --state-unavailable-text: #9a9ea5;
+
+  --rec-line: #f1f1ee;
+  --rec-tint: #21242a;
+
+  --chart-grid: #2a2e35;
+  --chart-axis: #8a8d93;
+  --chart-front: var(--ref-teal-300);
+  --chart-front-fill: rgba(94, 234, 212, 0.16);
+  --chart-dominated: #9a9ea5;
+  --chart-dominated-fill: rgba(154, 158, 165, 0.14);
+}
+
+/*----------------------------------------------------------------------------
+  Base surfaces + typography
+----------------------------------------------------------------------------*/
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--ref-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .quarto-title h1, #title-block-header .title {
+  font-family: var(--ref-font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+a { color: var(--color-link); }
+a:hover { color: var(--color-link); text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.u-tnum { font-variant-numeric: tabular-nums; }
+.visually-hidden-focusable, .u-vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/*----------------------------------------------------------------------------
+  Masthead (CEOps brand + release)
+----------------------------------------------------------------------------*/
+.navbar {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface) !important;
+  box-shadow: none;
+}
+.navbar .navbar-brand {
+  font-family: var(--ref-font-serif);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--color-text) !important;
+}
+.navbar .navbar-brand::after {
+  content: "· ApprenticeOps release";
+  font-family: var(--ref-font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+  margin-inline-start: 8px;
+}
+.navbar .nav-link {
+  font-size: 14px;
+  color: var(--color-text-muted) !important;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: var(--color-text) !important;
+}
+
+/*----------------------------------------------------------------------------
+  First-viewport hero
+----------------------------------------------------------------------------*/
+.ceops-hero { max-width: var(--measure-evidence); }
+.ceops-hero__def {
+  font-size: 17px; line-height: 26px; color: var(--color-text-muted);
+  max-width: var(--measure-reading); margin: 0 0 var(--space-4);
+}
+.ceops-hero__def b { color: var(--color-text); font-weight: 600; }
+.ceops-hero__q {
+  font-family: var(--ref-font-serif); font-weight: 600;
+  font-size: 32px; line-height: 38px; letter-spacing: -0.015em;
+  max-width: 22ch; margin: 0 0 var(--space-5);
+}
+.ceops-scopes { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-5); margin: 0 0 var(--space-5); padding: 0; list-style: none; }
+.ceops-scope { display: flex; flex-direction: column; gap: 2px; padding-right: var(--space-5); border-right: 1px solid var(--color-border); }
+.ceops-scope:last-child { border-right: 0; }
+.ceops-scope b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.ceops-scope span { font-size: 13px; color: var(--color-text-muted); }
+
+/* Explorer: chart (9) + recommendation (3) */
+.ceops-explorer { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(260px, 1fr); gap: var(--space-6); align-items: start; margin: var(--space-5) 0; }
+.ceops-chartcard { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-record); background: var(--color-surface); padding: var(--space-4); }
+.ceops-chartcard__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-2); }
+.ceops-chartcard__title { font-weight: 600; }
+.ceops-chartcard__axes { font-size: 12px; color: var(--color-text-muted); }
+
+/*----------------------------------------------------------------------------
+  Accessible Pareto SVG (bound to real data by scripts/render-ceops-figure.py)
+----------------------------------------------------------------------------*/
+.ceops-pareto { width: 100%; height: auto; display: block; }
+.ceops-pareto .grid-line { stroke: var(--chart-grid); stroke-width: 1; }
+.ceops-pareto .axis-line { stroke: var(--chart-axis); stroke-width: 1.25; }
+.ceops-pareto .tick { fill: var(--color-text-faint); font-size: 11px; font-family: var(--ref-font-sans); }
+.ceops-pareto .axis-label { fill: var(--color-text-muted); font-size: 12px; font-family: var(--ref-font-sans); }
+.ceops-pareto .front-line { fill: none; stroke: var(--chart-front); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.8; }
+.ceops-pareto .pt-label { fill: var(--color-text); font-size: 11px; font-family: var(--ref-font-sans); font-variant-numeric: tabular-nums; }
+.ceops-pareto .pt-focus-ring { fill: none; stroke: transparent; stroke-width: 2; }
+.ceops-pareto .pt-group:focus-visible { outline: none; }
+.ceops-pareto .pt-group:focus-visible .pt-focus-ring { stroke: var(--color-focus); }
+.ceops-chartlegend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); font-size: 12px; color: var(--color-text-muted); align-items: center; }
+.ceops-chartlegend .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--chart-front); background: var(--chart-front-fill); vertical-align: -1px; margin-right: 5px; }
+.ceops-chartlegend .swatch.dominated { border-color: var(--chart-dominated); background: var(--chart-dominated-fill); }
+@media (prefers-reduced-motion: no-preference) {
+  .ceops-pareto .pt-group { transition: opacity 120ms ease; }
+}
+
+/*----------------------------------------------------------------------------
+  Recommendation rule (preference-dependent operating point — neutral, not teal)
+----------------------------------------------------------------------------*/
+.ceops-rec { border: 1px solid var(--rec-line); border-radius: var(--radius-record); background: var(--rec-tint); padding: var(--space-4); }
+.ceops-rec__eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-faint); margin: 0 0 6px; }
+.ceops-rec__model { font-family: var(--ref-font-serif); font-size: 18px; font-weight: 600; margin: 0 0 var(--space-3); word-break: break-word; }
+.ceops-rec__rule { font-size: 13px; color: var(--color-text-muted); margin: 0 0 var(--space-3); }
+.ceops-rec__constraints { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: 4px; }
+.ceops-rec__constraints li { display: flex; justify-content: space-between; gap: var(--space-3); font-size: 13px; border-bottom: 1px dotted var(--color-border); padding-bottom: 4px; }
+.ceops-rec__constraints .v { font-variant-numeric: tabular-nums; color: var(--color-text); }
+.ceops-rec__note { font-size: 12px; color: var(--color-text-faint); margin: 0; }
+
+/*----------------------------------------------------------------------------
+  Evidence state badges
+----------------------------------------------------------------------------*/
+.ceops-badge { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: 12px; line-height: 18px; border: 1px solid; white-space: nowrap; }
+.ceops-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.ceops-badge--verified { color: var(--state-verified-text); border-color: var(--state-verified-line); background: var(--state-verified-tint); }
+.ceops-badge--verified::before { background: var(--state-verified-line); }
+.ceops-badge--qualified { color: var(--state-qualified-text); border-color: var(--state-qualified-line); background: var(--state-qualified-tint); }
+.ceops-badge--qualified::before { background: var(--state-qualified-line); }
+.ceops-badge--withdrawn { color: var(--state-withdrawn-text); border-color: var(--state-withdrawn-line); background: var(--state-withdrawn-tint); }
+.ceops-badge--withdrawn::before { background: var(--state-withdrawn-line); }
+.ceops-badge--unavailable { color: var(--state-unavailable-text); border-color: var(--state-unavailable-line); background: var(--state-unavailable-tint); }
+.ceops-badge--unavailable::before { background: var(--state-unavailable-line); }
+
+/*----------------------------------------------------------------------------
+  Evidence result table
+----------------------------------------------------------------------------*/
+.ceops-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-record); margin: var(--space-5) 0; }
+table.ceops-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 0; }
+table.ceops-table th, table.ceops-table td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+table.ceops-table thead th { position: sticky; top: 0; background: var(--color-surface-sunken); color: var(--color-text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; z-index: 1; }
+/* Row headers carry case-sensitive model identifiers (e.g. q4_K_M): never
+   transform their case, and keep them readable at body weight. */
+table.ceops-table tbody th { font-weight: 400; text-transform: none; background: transparent; }
+table.ceops-table th:first-child, table.ceops-table td:first-child { text-align: left; white-space: normal; }
+table.ceops-table td { font-variant-numeric: tabular-nums; color: var(--color-text); }
+table.ceops-table tr.is-front td { background: var(--state-verified-tint); }
+table.ceops-table tr.is-pick td { box-shadow: inset 3px 0 0 var(--rec-line); }
+table.ceops-table code { background: transparent; color: var(--color-text); font-size: 12px; overflow-wrap: anywhere; }
+.ceops-table__na { color: var(--color-text-faint); }
+
+/*----------------------------------------------------------------------------
+  Product narrative: lede, trust line, "how you use CEOps"
+----------------------------------------------------------------------------*/
+.ceops-lede { max-width: var(--measure-reading); font-size: 16px; line-height: 25px; color: var(--color-text-muted); margin: 0 0 var(--space-5); }
+.ceops-lede b, .ceops-lede strong { color: var(--color-text); font-weight: 600; }
+
+.ceops-trustline { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; margin: 0 0 var(--space-5); font-size: 12px; color: var(--color-text-faint); }
+.ceops-trustline__lock { color: var(--state-verified-text); border: 1px solid var(--state-verified-line); background: var(--state-verified-tint); border-radius: 999px; padding: 1px 9px; font-size: 11px; }
+
+.ceops-uses { margin: var(--space-8) 0 var(--space-6); }
+.ceops-uses__h { font-family: var(--ref-font-serif); font-size: 22px; margin: 0 0 var(--space-4); }
+.ceops-uses__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+.ceops-use { border: 1px solid var(--color-border); border-radius: var(--radius-record); background: var(--color-surface); padding: var(--space-4); }
+.ceops-use h3 { font-family: var(--ref-font-serif); font-size: 17px; margin: 0 0 var(--space-2); }
+.ceops-use p { font-size: 14px; line-height: 21px; color: var(--color-text-muted); margin: 0 0 var(--space-2); }
+.ceops-use p:last-child { margin-bottom: 0; }
+.ceops-use b { color: var(--color-text); font-weight: 600; }
+
+/*----------------------------------------------------------------------------
+  Primary actions + filters
+----------------------------------------------------------------------------*/
+.ceops-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-5) 0; }
+.ceops-actions .btn, a.ceops-btn { font-size: 14px; border-radius: var(--radius-control); padding: 9px 16px; min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; border: 1px solid var(--color-border-strong); color: var(--color-text); background: var(--color-surface); }
+a.ceops-btn--primary { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+a.ceops-btn:hover { border-color: var(--color-text); text-decoration: none; }
+.ceops-boundary { display: flex; gap: var(--space-2); align-items: flex-start; max-width: var(--measure-reading); margin: var(--space-5) 0 0; padding: var(--space-3) var(--space-4); border-left: 3px solid var(--state-qualified-line); background: var(--state-qualified-tint); color: var(--state-qualified-text); font-size: 13px; border-radius: 0 var(--radius-control) var(--radius-control) 0; }
+
+.ceops-filters { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: var(--space-4) 0 var(--space-5); }
+.ceops-filter { display: flex; flex-direction: column; gap: 4px; }
+.ceops-filter label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-faint); }
+.ceops-filter select { min-height: 40px; padding: 6px 10px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text); font-size: 13px; }
+.ceops-preview-note { font-size: 12px; color: var(--color-text-faint); margin-top: 4px; }
+
+/*----------------------------------------------------------------------------
+  Footer
+----------------------------------------------------------------------------*/
+.nav-footer { border-top: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); font-size: 13px; }
+.nav-footer a { color: var(--color-link); }
+
+/*----------------------------------------------------------------------------
+  Responsive
+----------------------------------------------------------------------------*/
+@media (max-width: 991.98px) {
+  .ceops-explorer { grid-template-columns: 1fr; }
+  .ceops-uses__grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 575.98px) {
+  .ceops-hero__q { font-size: 26px; line-height: 32px; }
+  .ceops-scope { border-right: 0; padding-right: 0; }
+}

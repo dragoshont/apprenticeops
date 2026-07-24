@@ -24,10 +24,21 @@ concurrency:
 jobs:
   verify-analysis-v1:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # Cached notebook/PNG artifacts are byte- and pixel-locked to the macOS arm64
+    # correction environment. Portable schema/claim checks still run here; only
+    # exact artifact reproduction needs the reference platform.
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify archival history
+        run: git cat-file -e '36fc989^{commit}'
+
+      - name: Verify reference platform
+        run: test "$(uname -s)/$(uname -m)" = "Darwin/arm64"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,6 +61,10 @@ jobs:
           .venv/bin/python scripts/check-doc-links.py
           .venv/bin/python scripts/privacy-scan.py
           .venv/bin/python scripts/validate-croissant.py --official
+          .venv/bin/python scripts/test-portal.py
+
+      - name: Warm reference plotting cache
+        run: .venv/bin/python -c 'import matplotlib.pyplot'
 
       - name: Reproduce analysis v1 without mutation
         run: PY=.venv/bin/python scripts/build-analysis-site.sh --verify
@@ -67,6 +82,20 @@ jobs:
       - name: Render site (committed outputs; execute disabled)
         run: quarto render docs/analysis
 
+      - name: Stamp and verify portal provenance
+        env:
+          PORTAL_COMMIT: ${{ github.sha }}
+          PORTAL_BUILD_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/write-portal-build.py \
+            --site-dir docs/analysis/_site \
+            --commit "$PORTAL_COMMIT" \
+            --built-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --workflow-run-url "$PORTAL_BUILD_URL"
+          python3 scripts/verify-portal.py \
+            --site-dir docs/analysis/_site \
+            --expected-commit "$PORTAL_COMMIT"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -79,6 +108,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout verification script
+        uses: actions/checkout@v4
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployed portal truth
+        run: |
+          python3 scripts/verify-portal.py \
+            --base-url "${{ steps.deployment.outputs.page_url }}" \
+            --expected-commit "${{ github.sha }}" \
+            --attempts 12 \
+            --delay 10

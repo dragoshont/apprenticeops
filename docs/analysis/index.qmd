@@ -1,9 +1,44 @@
 ---
-title: "ApprenticeOps"
-subtitle: "Which small, offline LLM do you actually run? Choose on quality × safety × energy — not a proxy."
+title: "Which local model deployment is good enough at a cost your hardware can sustain?"
+subtitle: "CEOps benchmarks small, locally sovereign model deployments — quality × safety × energy, on commodity offline hardware. First release: ApprenticeOps."
 ---
 
+<p class="ceops-lede">Each result is a decision under explicit constraints — set a quality floor, a safety floor, and an energy or latency ceiling, and the controlled front returns a defensible choice and the boundary where it stops holding. Every number traces to its raw rows and a pinned reproduction command.</p>
+
+{{< include _ceops-release.md >}}
+
+<ul class="ceops-scopes">
+<li class="ceops-scope"><b class="u-tnum">7 of 24</b><span>controlled three-axis front</span></li>
+<li class="ceops-scope"><b class="u-tnum">2 of 94</b><span>breadth quality–safety front</span></li>
+<li class="ceops-scope"><b>Single node</b><span>i5-8350U · offline · n = 1</span></li>
+</ul>
+
+::::: {.ceops-explorer}
+
+:::: {.ceops-chartcard}
+<div class="ceops-chartcard__head"><span class="ceops-chartcard__title">Controlled selection</span> <span class="ceops-chartcard__axes">quality × energy · bubble area = safety</span></div>
+
+{{< include _ceops-pareto.md >}}
+
+::::
+
+{{< include _ceops-rec.md >}}
+
+:::::
+
+<div class="ceops-actions">
+<a class="ceops-btn ceops-btn--primary" href="selection.html">Inspect the evidence</a>
+<a class="ceops-btn" href="paper.html">Read the paper</a>
+<a class="ceops-btn" href="https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md">Reproduce on your hardware</a>
+</div>
+
+<p class="ceops-boundary">Results hold for one measured environment and one preference rule. They do not rank models universally, and they do not imply readiness for autonomous operations.</p>
+
+{{< include _ceops-uses.md >}}
+
 ## The question
+
+{{< include _evidence-lock.md >}}
 
 For a **locally-sovereign** ops assistant — offline, CPU-only, and capped at
 **5B parameters** for the doctoral track — every proxy a practitioner reaches for
@@ -50,30 +85,45 @@ power regime.
 | `smollm2:360m` | 0-1B | 27.8% | 65.6% | 23 |
 
 : Ordered by the controlled balanced pick first. The 94-model quality-safety
-front is separate: `unsloth/Qwen3-4B` and `qwen3:4b-instruct-2507-q8_0`.
+front is separate: `hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M` and `qwen3:4b-instruct-2507-q8_0`.
 
-## Read it
+## Choose your path
 
-- [**The full paper →**](paper.html) — the manuscript: method, results, the five
-  figures, limitations, ethics, and a verification statement ([PDF](paper.pdf)).
-- [**The sovereign selection →**](wave_analysis.ipynb) — the executable analysis:
-  quality, safety, energy, and the integrated Pareto, with the systems context.
-- [**Judge agreement →**](judge_comparison.ipynb) — how much the two LLM judges
-  agree (Cohen's κ, ICC, Bland–Altman).
-- [**Reviewer queries →**](reviewer.ipynb) — run and **edit** the prebaked queries
-  behind every headline number, in your browser via
-  [Binder](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb),
-  [Colab](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb),
-  or [Kaggle](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb)
-  (no install; on Kaggle enable *Settings → Internet* first).
-- [**For reviewers →**](reviewers.html) — what we are asking you to check, and a
-  one-click way to send structured feedback.
+<div class="portal-actions">
+<section>
+<h3>Read the paper</h3>
+<p>Start with the manuscript, its limitations, and the verification statement.</p>
+<p><a class="btn btn-primary" href="paper.html">Read paper</a>
+<a class="btn btn-outline-secondary" href="paper.pdf">PDF</a></p>
+</section>
+<section>
+<h3>Review the evidence</h3>
+<p>Inspect the controlled selection, judge agreement, and reviewer rubric.</p>
+<p><a href="wave_analysis.html">Selection results</a> ·
+<a href="judge_comparison.html">Judge agreement</a> ·
+<a href="reviewers.html">Review guide</a></p>
+</section>
+<section>
+<h3>Reproduce the result</h3>
+<p>Run the twelve reviewer queries or inspect the machine-readable exports.</p>
+<p><a href="reviewer.html">Query lab</a> ·
+<a href="https://github.com/dragoshont/apprenticeops/tree/main/data/site">Exports</a> ·
+<a href="https://github.com/dragoshont/apprenticeops/blob/main/REPRODUCE.md">Guide</a></p>
+</section>
+</div>
 
-Machine-readable exports live in [`data/site/`](https://github.com/dragoshont/apprenticeops/tree/main/data/site);
-the dataset has [Croissant 1.0 metadata](https://github.com/dragoshont/apprenticeops/blob/main/data/croissant.json)
-and an explicit [mixed-rights statement](https://github.com/dragoshont/apprenticeops/blob/main/data/DATA_RIGHTS.md);
-the pre-registration and full threats-to-validity table are in
-[`docs/PAPER.md`](https://github.com/dragoshont/apprenticeops/blob/main/docs/PAPER.md).
+The query notebook also opens in
+[Binder](https://mybinder.org/v2/gh/dragoshont/apprenticeops/main?labpath=docs%2Fanalysis%2Freviewer.ipynb),
+[Colab](https://colab.research.google.com/github/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb),
+or [Kaggle](https://kaggle.com/kernels/welcome?src=https://github.com/dragoshont/apprenticeops/blob/main/docs/analysis/reviewer.ipynb).
+The dataset has [Croissant 1.0 metadata](https://github.com/dragoshont/apprenticeops/blob/main/data/croissant.json)
+and an explicit [mixed-rights statement](https://github.com/dragoshont/apprenticeops/blob/main/data/DATA_RIGHTS.md).
+
+## Research status
+
+[**Research updates →**](research-updates.html) summarizes the latest candidate
+evidence and paper-impact review. It is deliberately separate from the locked
+paper result: candidate evidence is not a manuscript claim.
 
 ::: {.callout-tip appearance="simple"}
 **Every current number and figure is regenerated under analysis schema v1.** The

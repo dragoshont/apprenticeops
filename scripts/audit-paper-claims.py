@@ -17,8 +17,11 @@ SURFACES = {
         "docs/PAPER.md",
         "docs/TAXONOMY.md",
         "docs/analysis/index.qmd",
+        "docs/analysis/_evidence-lock.md",
+        "scripts/write-portal-build.py",
         "docs/analysis/judge_comparison.ipynb",
         "docs/analysis/reviewers.qmd",
+        "docs/analysis/research-updates.qmd",
         "docs/analysis/paper.qmd",
         "docs/analysis/reviewer.ipynb",
     ]
@@ -97,8 +100,11 @@ def main() -> None:
         "docs/PAPER.md": [r"7 of 24", r"quality-safety.*2 models", r"12-of-94.*withdrawn"],
         "docs/TAXONOMY.md": [r"data/scenarios\.json` now has \*\*33\*\*", r"Core selection contains 20"],
         "docs/analysis/index.qmd": [r"7 of 24", r"quality-safety front contains \*\*2", r"(?:withdr(?:aw|ew|awn).*12-of-94|12-of-94.*withdr(?:aw|ew|awn))"],
+        "docs/analysis/_evidence-lock.md": [r"analysis schema `v1`", r"7 of 24", r"2\s*\n?of 94"],
+        "scripts/write-portal-build.py": [r"Evidence lock:", r"controlled_front", r"breadth_front"],
         "docs/analysis/judge_comparison.ipynb": [r"8,909", r"hash-bound raw verdict rows"],
-        "docs/analysis/reviewers.qmd": [r"7 of 24", r"2 of 94"],
+        "docs/analysis/reviewers.qmd": [r"7 of 24", r"2 of 94", r"n=120"],
+        "docs/analysis/research-updates.qmd": [r"Candidate evidence, not paper claims", r"zero promotions"],
         "docs/analysis/paper.qmd": [r"7 of 24", r"quality-safety front contains \*\*2 models", r"12-of-94.*withdraw"],
         "docs/analysis/reviewer.ipynb": [r"7 of 24", r"controlled_three_axis", r"CONTROLLED_ROWS"],
     }
@@ -117,6 +123,7 @@ def main() -> None:
         "GB doctoral boundary": r"CPU-only,\s*≤\s*5\s*GB",
         "retired summary key": r"quality_knee_bracket",
         "stale taxonomy count": r"data/scenarios\.json` now has 27",
+        "stale reviewer safety count": r"n\s*=\s*60|n=60",
     }
     for label, pattern in forbidden.items():
         if re.search(pattern, combined, re.I | re.S):
