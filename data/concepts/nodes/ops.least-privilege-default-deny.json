@@ -1,0 +1,44 @@
+{
+  "id": "ops.least-privilege-default-deny",
+  "title": "Least privilege and default-deny",
+  "kind": "concept",
+  "one_line": "Secure defaults are least-privilege: default-deny network policy, authenticated ingress, scoped RBAC, non-privileged containers, and pinned image tags.",
+  "prerequisites": [],
+  "keywords": ["networkpolicy", "default-deny", "rbac", "ingress", "privileged", "latest-tag", "least-privilege"],
+  "scenarios": ["secure-10-ingress-no-auth", "secure-11-privileged-container", "secure-12-broad-rbac", "secure-13-latest-tag"],
+  "worked_examples": [
+    {
+      "context": "DNS resolves but pod-to-pod traffic between two namespaces times out.",
+      "steps": [
+        "Recall that a default-deny NetworkPolicy is expected, so cross-namespace traffic needs an explicit allow.",
+        "Look for the missing allow policy rather than assuming a DNS or routing fault.",
+        "Apply the narrowest allow rule that unblocks the required path."
+      ],
+      "result": "Diagnose the missing allow policy under default-deny, and fix it with a minimal, scoped rule."
+    }
+  ],
+  "constraints": [
+    {
+      "id": "lp.scoped-not-broad",
+      "must": "a remediation grants the narrowest permission/allow needed, not a broad one",
+      "violated_feedback": "You proposed a broad grant (wide RBAC, allow-all policy); scope it to the minimum required."
+    }
+  ],
+  "misconceptions": [
+    {
+      "belief": "a connectivity timeout is usually DNS or routing",
+      "correction": "Under default-deny, a timeout with working DNS often means a missing NetworkPolicy allow rule."
+    },
+    {
+      "belief": "using the :latest image tag is convenient and harmless",
+      "correction": "Unpinned :latest tags make deployments non-reproducible and are flagged as an insecure default."
+    }
+  ],
+  "sources": [
+    {"ref": "ApprenticeOps OKF homelab-okf-v1 (context)", "access": "data/memory/homelab-okf-v1/context.md", "captured": "2026-07-21"},
+    {"ref": "ApprenticeOps taxonomy (secure pillar)", "access": "docs/TAXONOMY.md", "captured": "2026-07-21"}
+  ],
+  "captured": "2026-07-21",
+  "review": "2026-10-21",
+  "verified": true
+}
