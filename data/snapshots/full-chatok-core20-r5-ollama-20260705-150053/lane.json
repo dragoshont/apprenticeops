@@ -1,0 +1,47 @@
+{
+  "run_id": "full-chatok-core20-r5-ollama-20260705-150053",
+  "bundle_id": "dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa",
+  "evaluation_policy": "deterministic-checks-v1|judges:copilot:claude-opus-4.6+copilot:gpt-5.4",
+  "judges": {
+    "claude": "claude-opus-4.6",
+    "gpt": "gpt-5.4"
+  },
+  "collection_batch": "full-chatok-core20-r5-ollama-20260705-150053",
+  "cpu_frequency_regime": "governor_performance_turbo_off_perf_pct_100_100",
+  "power_source": "rapl:package-0",
+  "energy_analysis_scope": [
+    "controlled_three_axis"
+  ],
+  "condition_identity_incomplete": 0,
+  "counts": {
+    "results": 15200,
+    "judged_cells": 15200,
+    "complete_judge_pairs": 15200,
+    "models": 152,
+    "scenarios": 20
+  },
+  "constant_environment": {
+    "adapter": "ollama",
+    "env.cpu_governor": "performance",
+    "env.cpu_max_perf_pct": "100",
+    "env.cpu_min_perf_pct": "100",
+    "env.cpu_no_turbo": "1",
+    "env.host": "ai",
+    "env.inference_runtime": "ollama",
+    "env.inference_strategy": "baseline",
+    "env.memory_context": "none",
+    "env.ollama_version": "ollama version is 0.30.8",
+    "env.rapl_domain": "package-0",
+    "env.run_id": "full-chatok-core20-r5-ollama-20260705-150053",
+    "env.scenario_set": "core-current",
+    "env.scenarios_sha": "51c5941673ff6b43505ae0b1653dcb4efa83e621dd8557bd0828cc720a0733b6",
+    "evaluation_policy": "deterministic-checks-v1|judges:copilot:claude-opus-4.6+copilot:gpt-5.4",
+    "power.source": "rapl:package-0",
+    "prompt.template_sha256": "4a1e070def11ea55a4abe8005629372f0891e0be1a64741b5b61b3bf7264c18e"
+  },
+  "artifact_sha256": {
+    "results_snapshot.csv": "110a6a2b5c17cb74378bde9de6392b4342c9122d77e8b6f627573598ef9faa1e",
+    "judged_snapshot.csv": "8dcae32f5af0e71b517091e8ae69e1abb31b46c78990a95f63f5a0859e302605",
+    "judge_pairs.csv": "1e9de3ae7d91543b1e4a1ab64e3fec6871a41ed2f49c7d0e968595fed9df3968"
+  }
+}
