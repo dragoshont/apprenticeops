@@ -518,6 +518,55 @@ results the two-batch snapshot could not:
     **(f) Venue, honestly:** TMLR ~45–55% or a workshop/dataset release ~60–75% **after**
     (e); NeurIPS D&B 10–30%; main tracks and MLSys **<10%**. **No second paper exists** —
     all three reviewers judged a split to be salami-slicing.
+35. **Phase-4 repairs: two more of our own defects found and fixed — and the central
+    result got STRONGER (`phase4_repairs.py`).**
+    **(a) The action-safety check set was incomplete; finding 28's correlations are
+    superseded.** `safety_construct_validity.py` counted only
+    `{must_exclude, must_not_endorse}` as action safety and **omitted `must_exclude_action`
+    — 6,840 occurrences, more than the other two combined (3,040 + 1,520)**. Recomputed
+    over the complete set (3,040/3,800 safety cells now carry ≥1 action-safety check;
+    `secure-09` still has **none**):
+
+    | correlation | finding 28 (incomplete) | **corrected** |
+    |---|---|---|
+    | r(action_safety, content_recall) | +0.220 | **−0.264** |
+    | r(action_safety, quality) | +0.411 | **−0.101** |
+    | r(content_recall, quality) | +0.783 | +0.783 |
+
+    **This strengthens the conclusion.** True action-safety is **not positively associated
+    with capability at all** — it is ~orthogonal (r = −0.101) and mildly *anti*-correlated
+    with recall. So the long-reported "safety ≈ quality collinearity" (r ≈ 0.78–0.97) is
+    **entirely an artifact of metric composition**, not a property of models. The
+    vacuous-pass mechanism is unchanged (**empty output ⇒ action-safety 1.000**, n=10;
+    P(pass | responsive) = 0.786).
+    **(b) The checkpoint-identity rule was unsound; finding 29's counts are superseded.**
+    Grouping by (family × parameter_count) merged genuinely different models — e.g.
+    `qwen2-math:1.5b`, `qwen2.5-coder:1.5b`, `qwen2:1.5b` and `qwen2.5:1.5b` all share
+    `param_count` 1,543,714,304. Recomputed three defensible ways: **152 tags → 133
+    distinct ollama digests (artifacts) → ~100 distinct weight-sets** (name-stem ×
+    param_count), *not* the 90/73 previously reported. So the honest inflation is **~1.5
+    tags per model**, not 2.1×. The headline remains robust: Spearman(params, quality)
+    **0.762 (tags) → 0.797 (weight-sets)**.
+    **(c) ≤5B primary population + clustered intervals + threshold sensitivity.** On the
+    **≤5B** primary population (137 tags, 13,700 cells) with **scenario-clustered
+    bootstrap** CIs (the intervals neither finding had):
+
+    | usable-threshold | mean-good % | all-5-good % | gap (pp) | 95% CI |
+    |---|---|---|---|---|
+    | 2.5 | 31.2 | 17.5 | **13.7** | [10.8, 16.5] |
+    | **3.0** | 18.0 | 11.5 | **6.5** | **[4.5, 8.4]** |
+    | 3.5 | 7.7 | 3.1 | 4.6 | [2.7, 6.4] |
+    | 4.0 | 3.2 | 1.5 | 1.8 | [0.7, 2.7] |
+
+    The reliability gap (finding 33) **survives** at every threshold with a CI excluding
+    zero, and is **not a single-judge artifact** (claude-opus-4.6 6.0 pp; gpt-5.4 4.9 pp).
+    **(d) The energy inversion (finding 32) is threshold-sensitive and must be softened.**
+    ρ(Wh/attempt, Wh/correct) on ≤5B = **0.387** [0.240, 0.504] at 2.5, **0.116**
+    [−0.007, 0.325] at 3.0, −0.067 [−0.146, 0.229] at 3.5, 0.063 [−0.037, 0.432] at 4.0.
+    The correlation is **consistently low (|ρ| ≤ 0.39) so per-attempt energy remains a poor
+    proxy for per-usable-answer cost**, but the **+0.154 point estimate must not be quoted
+    as if precise** — the CI spans zero at the primary threshold. Report the range and the
+    threshold dependence.
 
 ## Methods (grounded)
 
