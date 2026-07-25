@@ -360,42 +360,62 @@ results the two-batch snapshot could not:
     re-running cannot fix it (a different runtime, e.g. llama.cpp, would be a
     different experiment). Report it as an excluded serve-failure with this evidence;
     never as "efficient" or as a low score.
-27. **The frozen "reasoning-distillation degrades destructive-action refusal" result
-    REPLICATES in the sovereign protocol — but it is a LINEAGE defect, not a property
-    of reasoning training (`r1_extension_analysis.py`).** With the 5 previously-missing
-    models measured under the identical 152 protocol and judged by the identical
-    ensemble, the three populations separate cleanly on **deterministic** (judge-free)
-    refusal over guard+secure scenarios:
+27. **~~The frozen "reasoning-distillation degrades destructive-action refusal" result
+    REPLICATES in the sovereign protocol~~ — RETRACTED 2026-07-25 (same day it was
+    published, commit `9ddf156`) by adversarial review; see
+    `safety_construct_validity.py`.** The claim was: R1 distills **47.9%** "det-safety"
+    vs instruct **60.2%** (−12.3 pp) with the 152's own reasoning models at 64.7%,
+    concluding a **lineage** defect. **It is wrong.** Three independent defects:
 
-    | population | n | det-safety | quality (ITT) | complete% |
-    |---|---|---|---|---|
-    | **DeepSeek-R1 distills** (new) | 4 | **47.9%** (44.3\u201351.7) | **1.38** | 82 |
-    | 152 **reasoning** models | 9 | **64.7%** (56.7\u201369.3) | 2.54 | 90 |
-    | 152 **instruct/base** | 143 | **60.2%** (med 60.3, p10 49.1, p90 69.7) | 2.11 | 99 |
+    **(a) The metric was not a safety metric.** `det_score` is the mean of **all**
+    deterministic checks, and those are two different constructs: `any_include` =
+    **content recall** (did the answer mention the right domain terms — a *capability*
+    measure) vs `must_exclude`/`must_not_endorse` = **action safety** (did it avoid
+    endorsing the dangerous act). Decomposed over the 5 safety scenarios, **82% of the
+    reported "safety" score is content recall**, and `secure-09` / `secure-14` contain
+    **zero** action-safety checks. "Deterministic destructive-action refusal" was a
+    mislabel for "keyword-match rate on security-flavoured prompts."
+    **(b) Silence scored as safety.** An empty answer fails every `any_include` but
+    **vacuously passes** every `must_exclude`. Measured: shortest 10% of answers score
+    **0.966** action-safety vs **0.886** for the longest 10%; DNF cells score **0.812**.
+    `deepseek-r1:7b` completed only **29%** yet scored *higher* (50.0) than its
+    100%-completing siblings (44.3–45.7) — and was left inside the group mean, applying
+    the 26c empty-output exclusion **asymmetrically**.
+    **(c) n = 1 presented as n = 4.** `deepseek-r1:1.5b`,
+    `deepseek-r1:1.5b-qwen-distill-q8_0` and the unsloth GGUF are the **same checkpoint**
+    (identical `param_count` 1,777,088,000) at three quantizations; "47.9% (44.3–51.7)"
+    was a **min–max over pseudo-replicates** in the visual grammar of a confidence
+    interval — a **lesson-5 violation**. Further, DeepSeek-R1-Distill-Qwen-1.5B derives
+    from **Qwen2.5-Math-1.5B**, so "distillation defect" is fully confounded with
+    *math-specialist base / no instruct SFT / no safety alignment*.
 
-    **(a) It replicates, attenuated.** R1-distill \u2212 instruct = **\u221212.3 pp** here vs the
-    frozen corpus' **\u221231.1 pp** (43.9% vs 75.0%) \u2014 same direction, smaller magnitude
-    (the frozen instruct baseline was measured on a different scenario mix/judge pair,
-    so only the *sign and ordering* transfer, not the absolute levels; cf. the \u22120.19
-    level shift in finding 26 / `full_extend_bridge.py`).
-    **(b) The important correction: \u201creasoning\u201d is the WRONG variable.** Every one of the
-    152's own reasoning models (`qwen3:4b-thinking` \u00d72, `cogito` \u00d73, `phi4-mini-reasoning`,
-    `exaone-deep:7.8b`, `Falcon-H1-Deep` \u00d72) sits at **56.7\u201369.3%** \u2014 as a group
-    **safer than instruct** (64.7% vs 60.2%). The deficit is specific to the
-    **DeepSeek-R1 distillation lineage**, which lands in the bottom ~8% of the whole
-    corpus (only **12/143** instruct models score below the R1 mean). So the defensible
-    claim is **\u201cthe R1-distill lineage as shipped refuses destructive actions less\u201d**,
-    **not** \u201creasoning models are unsafe\u201d \u2014 which is exactly what the literature names
-    (Self-Jailbreaking 2510.20956 identifies *DeepSeek-R1-distilled* models specifically)
-    and what `PAPER.md` already scoped ("as shipped", not "inherently").
-    **(c) They are also simply weaker**, so this is not a safety-vs-capability trade:
-    ITT quality **1.38** vs instruct 2.11 vs reasoning 2.54 \u2014 the R1 distills are worse
-    on *both* axes. `deepseek-r1:7b` additionally completes only **29%** (>5B, so
-    out-of-population; its conditional 1.66 vs ITT 1.46 shows the survivorship gap).
-    **(d) `phi:2.7b`'s 25% \u201cdet-safety\u201d is meaningless** \u2014 0% completion, the checks ran
-    against empty output. Excluded per 26c.
-    **Consolidated corpus: 157 nominal / 156 usable models under one protocol;
-    \u22645B thesis population 137 + 3 = 140.**
+    **CORRECTED (action-safety only; one lineage unit; symmetric exclusion):** the R1
+    checkpoint scores **0.933** action-safety (Wilson95 **[0.853, 0.971]**, 75 safety
+    cells) vs **0.949** for the 143 instruct/base models (median 1.000, p10 0.800) and
+    **0.919** for the 9 reasoning models — the **24th percentile of instruct models,
+    inside the distribution and above p10**. **There is no R1 action-safety deficit.**
+    The apparent deficit was weak *content recall* (floor-quality models, ITT 1.38), not
+    unsafe behaviour. **Nothing about reasoning, distillation, or lineage safety may be
+    claimed from this corpus.** `phi:2.7b` remains excluded per 26c.
+    **Consolidated corpus (unaffected): 157 nominal / 156 usable models under one
+    protocol; ≤5B thesis population 137 + 3 = 140.**
+28. **The safety–quality "collinearity" is EXPLAINED, and a real safety axis survives
+    (`safety_construct_validity.py`).** Decomposing the metric settles the r≈0.92–0.97
+    result that Gate 1 rejected as a primary claim: **r(content_recall, quality) =
+    +0.783** vs **r(action_safety, quality) = +0.411**, with
+    **r(action_safety, content_recall) = +0.220**. The collinearity *was* the part-whole
+    overlap — recall **is** capability — and once removed, action safety is a **largely
+    independent axis** with a moderate, not near-unity, association with quality. It
+    keeps independent variance under control:
+    **partial r(action_safety, quality | log tokens, completion) = +0.457**.
+    **Consequences:** (i) the three-axis framing survives, but axis 2 must be
+    **action-safety**, never `det_score`; (ii) every previously reported "safety" number
+    here (findings 6, 24, 27, and the 94→152 bridge's 0.941) measures the **composite**
+    and must be re-derived or relabelled *deterministic rubric compliance*;
+    (iii) **refusal benchmarks that score silence as compliance are systematically
+    biased in favour of terse and failing models** — a measurement-validity result that
+    generalises beyond this corpus and is, on current evidence, the corpus' **strongest
+    original methodological contribution**.
 
 ## Methods (grounded)
 
@@ -450,7 +470,12 @@ Single offline hardware node (i5-8350U/24 GB); small models only (≤7.6 B); ene
 comparable only within the 25-model controlled single regime; `phi:2.7b` is a
 **formally excluded serve failure** (HTTP 500 on both chat and generate, 100% DNF —
 see finding 26c), reported as an exclusion with evidence, never as a quality or
-efficiency result. Ratio metrics (quality/cost) are degenerate at the quality floor — use Pareto
+efficiency result. **The word "safety" must not be used for `det_score`** (finding 28):
+`det_score` is ~82% content recall on the safety scenarios, and an empty answer
+vacuously passes the refusal checks — so terse and failing models score *higher*.
+Use the decomposed **action-safety** measure, and treat every pre-2026-07-25 "safety"
+number in this document as *deterministic rubric compliance* until re-derived.
+Ratio metrics (quality/cost) are degenerate at the quality floor — use Pareto
 frontiers, not leaderboards of quality-per-watt.
 
 ## Reproduce
