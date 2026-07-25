@@ -87,3 +87,15 @@ The final `human-review-subset.csv` keeps the majority value except for these ni
 
 The reconciled file remains complete at 66/66 with all 26 safety fields populated and all
 40 non-safety fields blank in the fourth column.
+
+## Current location (2026-07-26)
+
+The reconciled labels now live in **`machine-panel-labels.csv`**, not
+`human-review-subset.csv`. The operator decided not to hand-label this packet, so
+`human-review-subset.csv` was reset to its blank triage-generated state to keep the
+human slot empty and prevent these machine labels from being scored as human validation.
+
+Two of the three raters (`gpt-5.6-sol`, `claude-opus-5`) are the same models whose
+agreement selected these 66 items in the first place; they reproduce their own prior
+triage labels on 77% and 70% of `usable`. These labels therefore cannot test the ≥3
+cutoff and must not be passed to `human_validation_packet.py score`.
