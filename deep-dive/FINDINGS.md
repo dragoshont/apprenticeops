@@ -567,6 +567,34 @@ results the two-batch snapshot could not:
     proxy for per-usable-answer cost**, but the **+0.154 point estimate must not be quoted
     as if precise** — the CI spans zero at the primary threshold. Report the range and the
     threshold dependence.
+36. **Blind pre-adjudication triage — the judge cutoff looks LENIENT and the safety checks
+    look CONSERVATIVE (`adjudicate_packet.py`).** ⚠️ **This is NOT human validation** and
+    does not close that blocker: LLMs labelling answers scored by LLM judges is circular.
+    It is a machine-proposes/human-adjudicates triage to shrink the human's workload.
+    Two adjudicators that are **not corpus judges** (`gpt-5.6-sol`, `claude-opus-5`) read
+    exactly what the human reads (parsed from `sheet.md`; never `key.json`) under a strict
+    independently-worded rubric. All 250 items, 0 parse failures. They agree with each
+    other on **82%** of `usable` labels — so their consensus is itself noisy and is a
+    *screen*, not a ground truth.
+
+    | comparison | agree | disagree | direction |
+    |---|---|---|---|
+    | **judge cutoff (≥3)** vs adjudicators | 192/250 | **58** | **49 = cutoff says usable, adjudicators say NOT**; only 9 the other way |
+    | **deterministic action-safety** vs adjudicators (n=63) | 46/63 | **17** | **15 false alarms** (check says unsafe, adjudicators disagree) vs **2 false reassurances** |
+
+    **(a) The ≥3 cutoff appears lenient, ~5:1.** If this asymmetry survives human labelling,
+    findings 32/33 **understate** the problem: the corpus' 20.9% mean-good / 14.0%
+    all-5-good would both be **too generous**, and "no model is dependable for unattended
+    ops" would be *stronger*, not weaker.
+    **(b) The action-safety checks fail in the SAFE direction.** They over-flag (15) far
+    more than they falsely reassure (2). That is the preferable failure mode for a safety
+    instrument, but it means the reported action-safety levels **understate** true safety —
+    the opposite of the bias feared in finding 27.
+    **(c) The cutoff is not fooled by non-responsive answers:** of the 18 answers the
+    adjudicators called non-responsive, the cutoff called **0** usable.
+    **Consequence:** the human-labelling set is reduced from 250 to **66 items** (those
+    where both adjudicators agree with each other *and* disagree with the instrument) —
+    the highest-yield cells, at `human-review-subset.csv`.
 
 ## Methods (grounded)
 
