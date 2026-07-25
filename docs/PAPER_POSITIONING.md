@@ -1,16 +1,90 @@
 # Paper positioning — decision: one sovereign-first paper
 
-> **Status:** Accepted 2026-06-19. **Amended 2026-07-23** (see
-> [Amendment below](#amendment-2026-07-23--two-dual-family-gates-refine-the-framing)):
-> two dual-family (GPT + Claude) adversarial gates refined the framing — the
-> *collinearity-as-primary* claim was **REJECTED**, and the *"sovereign
-> deployability"* relabel + ΔE-flagship was **REVISED**. The paper keeps the
-> three-axis **selection** spine but promotes the **survivorship-robust completion
-> cliff** as the empirical headline and demotes ΔE to future-work.
-> Supersedes the implicit "safety is the spine"
-> framing introduced in the [`PAPER.md`](./PAPER.md) Abstract/§1 rewrite (commit
-> `1d4845f`) and the "two-paper" idea. This is a positioning ADR; it tells
-> [`PAPER_PHASES.md`](./PAPER_PHASES.md) and `PAPER.md` how to frame the claim.
+> **Status:** Accepted 2026-06-19 · **Amended 2026-07-23** · **SUPERSEDED IN PART
+> 2026-07-25** (see [Amendment 2026-07-25](#amendment-2026-07-25--the-paper-is-a-measurement-validity-artifact-paper),
+> which is now the governing framing). Three independent reviewers (Claude Opus 5,
+> GPT-5.6 Sol, Gemini 3.1 Pro) each returned **REVISE** and each concluded this is
+> **not a main-conference paper**. The "completion cliff as empirical headline" of the
+> 2026-07-23 amendment is **demoted**; the paper is now an **artifact + measurement-validity**
+> paper. This is a positioning ADR; it tells [`PAPER_PHASES.md`](./PAPER_PHASES.md) and
+> `PAPER.md` how to frame the claim.
+
+## Amendment 2026-07-25 — the paper is a measurement-validity + artifact paper
+
+A three-model gate (Opus 5 / GPT-5.6 Sol / Gemini 3.1 Pro), followed by verification
+against the data, changed what this corpus can honestly claim. **Six findings were
+corrected or retracted, five of them our own.** Full evidence in
+[`deep-dive/FINDINGS.md`](../deep-dive/FINDINGS.md) findings 26–35.
+
+### What was retracted or corrected
+
+| # | Claim | Outcome |
+|---|---|---|
+| 27 | "DeepSeek-R1 distills are a safety-deficient lineage" | **RETRACTED** the same day it was published. The metric was 82% keyword recall; empty output **vacuously passes** refusal checks; the "4 models" were **one checkpoint** at 3 quantizations, based on `Qwen2.5-Math-1.5B` (confounded with math-base / no instruct SFT / no safety tuning). Corrected: **no deficit** (0.933 vs 0.949, 24th percentile — inside the distribution). |
+| 28 | "Refusal benchmarks are systematically biased toward terse models" | **Corrected twice.** The mechanism is real (**empty ⇒ action-safety 1.000**) but affects only **0.4%** of passing cells, and *truncated* answers score **lower** (0.688–0.740) than completed (0.793). Then the check set itself was found **incomplete** (omitted `must_exclude_action`, 6,840 occurrences). |
+| 29 | "152 tags = 90 checkpoints = 73 lineages" | **Corrected.** `(family × param_count)` merged different models. True: **152 tags → 133 digests → ~100 weight-sets** (~1.5×, not 2.1×). |
+| 30 | "Completion cliff" | **Demoted to a nomogram.** Completion is `tokens/decode_rate < wall` (99.3% agreement); the `is_reasoning` badge adds **nothing** (p=0.462). An earlier version reported a tautological "100%" caused by dropping DNF rows. |
+| 32 | "Energy-per-correct re-ranks cost" | **Corrected + softened.** Wrong model named (`gemma3:270m` is cheapest, inflation **50×**, not 11×), and ρ is threshold-sensitive (0.387→0.116→−0.067); the CI spans zero at the primary cutoff. |
+| 33 | "Reliability gap" | **Survives**, but it is **pass^k** (τ-bench 2406.12045) — a replication, not a new metric. On ≤5B with clustered CIs: **6.5 pp [4.5, 8.4]**, not a single-judge artifact. |
+
+### The one honest result of the correction pass
+
+**Decomposing the metric explains the corpus' longest-standing puzzle.** The reported
+safety≈quality collinearity (r ≈ 0.78–0.97) is **entirely metric composition**:
+r(content_recall, quality) = **+0.783** while r(action_safety, quality) = **−0.101**.
+True action-safety is **~orthogonal to capability**. The three-axis framing survives, but
+**axis 2 must be action-safety, never `det_score`**.
+
+### Prior art that occupies our claims (cite; never present as new)
+
+τ-bench **2406.12045** (pass^k) · TokenArena **2605.00300** and Cost-of-Pass **2504.13359**
+and Energy-per-Successful-Goal **2605.22883** (per-correct cost) · EdgeReasoning
+**2511.01866** and Rethinking-Scale **2604.19299** (completion under edge budgets) ·
+Safetywashing **2407.21792** (safety tracks capability) · StrongREJECT **2402.10260**
+(degenerate output inflates scores) · ENAMEL **2406.06647** (right-censored execution
+time) · PalmBench **2410.05315**, SLM-Bench **2508.15478**, BRACE **2511.07698**,
+MESS+ **2411.00889** (quality × energy × harm model selection).
+
+### Scope language retired as false
+
+- **Not** "20 real incidents" — `source_trace`: **3 row-derived, 17 synthetic**.
+- **Not** "157 independent models" — 152 tags ≈ **100 distinct weight-sets**.
+- **Not** "245 fields" — **~216 populated**.
+- Correct: *"20 repo-grounded GitOps/SRE scenarios (3 from live captures, 17 synthetic)
+  over 152 deployment tags (~100 distinct weight-sets) on one CPU node."*
+
+### The paper this corpus should become
+
+> **An artifact + measurement-validity case study.** A released, fully-instrumented,
+> single-regime CPU-local ops corpus (15,200 cells × ~216 populated fields, measured RAPL
+> energy, 30,400 dual-judge ratings, deterministic checks), *plus* a demonstration that
+> **metric composition and non-completion corrupt safety, cost, and reliability reporting
+> on the same cells** — evidenced by a lineage-safety claim this corpus **manufactured and
+> retracted within a day**.
+
+**Claims:** (1) exclusion-based refusal predicates are not invariant to non-completion and
+mix recall with action safety; (2) the fix is decomposition, which recovers an independent
+action-safety axis; (3) the same cells show mean-vs-pass^k and per-attempt-vs-per-correct
+reporting gaps. **Non-claims:** nothing about reasoning, distillation or lineage safety;
+no new metric; no causal claims; no generalization beyond one node, one runtime, one judge
+pair, 20 scenarios, ≤8B, one snapshot.
+
+### Blocking before submission
+
+1. **Human validation** of the judge cutoff *and* the action-safety checks — packet built
+   at `data/human_eval/paper-152-model-v1-250` (250 blind items; pre-adjudication triage
+   in `deep-dive/adjudicate_packet.py` reduces the human set to the disagreements).
+2. A **second hardware point** (all three reviewers: the single 2018 CPU is the most
+   damaging remaining attack).
+3. Re-derivation on **≤5B** with digest-level identity and scenario-clustered intervals.
+4. A **new analysis lock** — the 152 bundle is still `provisional`.
+
+### Venue, honestly
+
+TMLR **~45–55%** or a workshop/dataset release **~60–75%** *after* the above; NeurIPS D&B
+**10–30%**; ICLR/NeurIPS/ACL main and MLSys **<10%**. **No second paper** — all three
+reviewers judged a split to be salami-slicing; fold the reasoning-budget study in as the
+mechanism section.
 
 ## Amendment 2026-07-23 — two dual-family gates refine the framing
 
