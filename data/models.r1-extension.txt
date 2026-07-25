@@ -1,0 +1,15 @@
+# R1-extension roster — the 5 models present in the frozen 94-model corpus but ABSENT
+# from the 152-model chat-ok roster (excluded by roster-validate-20260705-104107; see
+# data/models.ollama-chat-faults.json). Re-measured 2026-07-24 under the EXACT 152
+# protocol (locked preflight: turbo-off, RAPL package-0, ollama 0.30.8, core-current
+# sha 51c5941673ff…, R5, temp 0.7, think=off) to close the one gap the 94->152 bridge
+# could not test: the reasoning-distillation safety mechanism. See deep-dive/FINDINGS.md
+# findings 26-27 and deep-dive/r1_extension_analysis.py.
+#
+# NOTE: phi:2.7b is a documented SERVE FAILURE (HTTP 500 on both chat and generate,
+# 100% DNF) and is excluded from analysis as an engine failure, not a quality result.
+deepseek-r1:1.5b
+deepseek-r1:1.5b-qwen-distill-q8_0
+hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M
+deepseek-r1:7b
+phi:2.7b

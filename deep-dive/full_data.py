@@ -101,8 +101,32 @@ def _load_judged() -> pd.DataFrame:
 
 
 def _parse_pb(m: str) -> float:
-    mm = re.search(r"(\d+(?:\.\d+)?)\s*b\b", str(m), re.I)
-    return float(mm.group(1)) if mm else np.nan
+    """Last-resort: parse a size out of the MODEL NAME, unit-aware ('4b' -> 4.0, '270m' -> 0.27).
+
+    Previously this matched only `b`, so every M-suffixed name (gemma3:270m,
+    granite4:350m, LFM2-350M/700M) silently became NaN and dropped out of every
+    size-based analysis -- which biased size correlations by deleting the small end.
+    """
+    mm = re.search(r"(\d+(?:\.\d+)?)\s*([mb])\b", str(m), re.I)
+    if not mm:
+        return np.nan
+    v = float(mm.group(1))
+    return v / 1000.0 if mm.group(2).lower() == "m" else v
+
+
+def _run_param_counts() -> pd.Series:
+    """Per-model parameter_count AS REPORTED BY THE RUN ITSELF (`ollama.parameter_count`).
+
+    This is the authoritative source -- it is what the engine actually loaded -- and it
+    covers all 152 models, unlike the curated CSVs (which left 11 models, mostly the
+    sub-1B end plus phi3:mini, without any parameter metadata). Extracted from the locked
+    bundle into a compact tracked snapshot so offline reproduction keeps working.
+    """
+    path = REPO / "data" / "snapshots" / f"{RUN_ID}.model-params.csv"
+    if not path.exists():
+        return pd.Series(dtype=float)
+    mp = pd.read_csv(path)
+    return (pd.to_numeric(mp["param_count"], errors="coerce") / 1e9).set_axis(mp["model"])
 
 
 def _param_size_to_b(s) -> float:
@@ -131,6 +155,8 @@ def _metadata() -> pd.DataFrame:
 
 def _join_metadata(df: pd.DataFrame) -> pd.DataFrame:
     df = df.merge(_metadata(), on="model", how="left")
+    # authoritative run-reported parameter_count first, then the model-name fallback
+    df["params_b"] = df["params_b"].fillna(df["model"].map(_run_param_counts()))
     df["params_b"] = df["params_b"].fillna(df["model"].map(_parse_pb))
     md_reason = df.get("training_regime", pd.Series("", index=df.index)).astype(str).str.contains("reason", case=False, na=False)
     df["is_reasoning"] = md_reason | df["model"].str.contains(_REASON_RE)

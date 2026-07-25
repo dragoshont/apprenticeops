@@ -307,7 +307,8 @@ results the two-batch snapshot could not:
     limitations (honest):** MoE n=2 and the reasoning pairs (~4 lineages) are
     underpowered; p-values across the ~8 axes are **not multiple-comparison-corrected**,
     so the marginal ones (tools p=0.018) are suggestive not confirmatory;
-    metadata covers 138/152 with name-heuristic fallbacks; the run is a single
+    metadata covers 152/152 (**corrected 2026-07-25**, finding 26; was 138/152 with
+    name-heuristic fallbacks) and the run is a single
     environment / single collection and is still `provisional` (older judges).
 25. **Dropping the truncated models does not move the headline
     (`full_truncation_sensitivity.py`).** The cheap alternative to a de-truncation
@@ -322,6 +323,79 @@ results the two-batch snapshot could not:
     (mean 1.94 vs 2.44) — the same "genuinely weak" population as finding 19, so the
     drop is a **selection bias to disclose**, not a clean-up. **Use as a robustness
     subset; keep the full 152 as primary.**
+26. **Corpus completeness audit + the R1 extension (`field_coverage_audit.py`,
+    2026-07-25).** Auditing *populated* fields (not just schema keys) across all
+    15,200 rows: the union schema is **245 fields**, of which **216 are populated on
+    ≥50% of all rows**, 10 partial, and **19 never** — and the 19 are **structurally
+    N/A, not missing data** (`env.llama_cpp_*` because the runtime was Ollama;
+    `env.memory_context_*` because memory was `none`; `env.strategy_prompt_*` because
+    the strategy was `baseline`; `gen_ai.thinking` / `phase.think_s` because
+    `think=off`; `http.exception` / `socket_exception` / `warmup_err` because they only
+    populate on failures). Per model **211–223 fields** are populated. Judging is
+    **complete**: 30,400 rows = 152 models × 20 × 5 × **both** judges, zero gaps.
+    Telemetry coverage is high (power 100%, membw 99.8%, perf 99.3%, prompt/distill
+    100%). **Honest claim: ~216 populated fields per model, not 245.**
+    **(a) Parameter-metadata gap FIXED.** 11 models (mostly the sub-1B end —
+    `gemma3:270m*`, `granite4:350m*`, `LFM2-350M/700M`, `granite4:micro-h`, plus
+    `phi3:mini*`) had **no** `params_b`: absent/unenriched in both curated CSVs *and*
+    the name-regex fallback matched only `b`, so every **M**-suffixed name silently
+    became NaN. They were therefore dropped from every size-based analysis —
+    **deleting the small end and biasing size correlations**. Fixed at the root by
+    taking the **run's own `ollama.parameter_count`** (authoritative — what the engine
+    loaded) into a tracked snapshot, plus a unit-aware name fallback. Coverage
+    **141 → 152/152**; ≤5B thesis population **126 → 137**; the scale finding is
+    **robust** to the correction (Spearman(params, quality) **+0.752 → +0.762**).
+    **(b) The 5 frozen-only models were re-measured** (`results.r1ext.jsonl`, 500
+    cells) under the **exact** 152 protocol (locked preflight passed: turbo-off
+    `no_turbo=1`, `performance`/100%, ~1700 MHz, RAPL `package-0`, ollama 0.30.8,
+    `core-current` sha `51c5941…`, R5, temp 0.7, `think=off`) — closing the one gap
+    the 94→152 bridge (`full_extend_bridge.py`) could not test: the
+    reasoning-distillation safety mechanism. Their rows carry the same 245-field
+    schema (215–219 populated), so they **pool cleanly** with the 152.
+    **(c) `phi:2.7b` is FORMALLY EXCLUDED** — not a data point. Evidence:
+    `data/models.ollama-chat-faults.json` records `overall_reason="served_failure"`
+    (chat **and** generate return HTTP **500**, 0 chars, historical DNF **100%**), and
+    the re-measurement reproduced it exactly: **100/100 DNF**, only 188 populated
+    fields. This is an **engine/runtime serve failure, not a model-quality result**;
+    re-running cannot fix it (a different runtime, e.g. llama.cpp, would be a
+    different experiment). Report it as an excluded serve-failure with this evidence;
+    never as "efficient" or as a low score.
+27. **The frozen "reasoning-distillation degrades destructive-action refusal" result
+    REPLICATES in the sovereign protocol — but it is a LINEAGE defect, not a property
+    of reasoning training (`r1_extension_analysis.py`).** With the 5 previously-missing
+    models measured under the identical 152 protocol and judged by the identical
+    ensemble, the three populations separate cleanly on **deterministic** (judge-free)
+    refusal over guard+secure scenarios:
+
+    | population | n | det-safety | quality (ITT) | complete% |
+    |---|---|---|---|---|
+    | **DeepSeek-R1 distills** (new) | 4 | **47.9%** (44.3\u201351.7) | **1.38** | 82 |
+    | 152 **reasoning** models | 9 | **64.7%** (56.7\u201369.3) | 2.54 | 90 |
+    | 152 **instruct/base** | 143 | **60.2%** (med 60.3, p10 49.1, p90 69.7) | 2.11 | 99 |
+
+    **(a) It replicates, attenuated.** R1-distill \u2212 instruct = **\u221212.3 pp** here vs the
+    frozen corpus' **\u221231.1 pp** (43.9% vs 75.0%) \u2014 same direction, smaller magnitude
+    (the frozen instruct baseline was measured on a different scenario mix/judge pair,
+    so only the *sign and ordering* transfer, not the absolute levels; cf. the \u22120.19
+    level shift in finding 26 / `full_extend_bridge.py`).
+    **(b) The important correction: \u201creasoning\u201d is the WRONG variable.** Every one of the
+    152's own reasoning models (`qwen3:4b-thinking` \u00d72, `cogito` \u00d73, `phi4-mini-reasoning`,
+    `exaone-deep:7.8b`, `Falcon-H1-Deep` \u00d72) sits at **56.7\u201369.3%** \u2014 as a group
+    **safer than instruct** (64.7% vs 60.2%). The deficit is specific to the
+    **DeepSeek-R1 distillation lineage**, which lands in the bottom ~8% of the whole
+    corpus (only **12/143** instruct models score below the R1 mean). So the defensible
+    claim is **\u201cthe R1-distill lineage as shipped refuses destructive actions less\u201d**,
+    **not** \u201creasoning models are unsafe\u201d \u2014 which is exactly what the literature names
+    (Self-Jailbreaking 2510.20956 identifies *DeepSeek-R1-distilled* models specifically)
+    and what `PAPER.md` already scoped ("as shipped", not "inherently").
+    **(c) They are also simply weaker**, so this is not a safety-vs-capability trade:
+    ITT quality **1.38** vs instruct 2.11 vs reasoning 2.54 \u2014 the R1 distills are worse
+    on *both* axes. `deepseek-r1:7b` additionally completes only **29%** (>5B, so
+    out-of-population; its conditional 1.66 vs ITT 1.46 shows the survivorship gap).
+    **(d) `phi:2.7b`'s 25% \u201cdet-safety\u201d is meaningless** \u2014 0% completion, the checks ran
+    against empty output. Excluded per 26c.
+    **Consolidated corpus: 157 nominal / 156 usable models under one protocol;
+    \u22645B thesis population 137 + 3 = 140.**
 
 ## Methods (grounded)
 
@@ -374,8 +448,9 @@ results the two-batch snapshot could not:
 
 Single offline hardware node (i5-8350U/24 GB); small models only (≤7.6 B); energy
 comparable only within the 25-model controlled single regime; `phi:2.7b` is a
-broken outlier (100% DNF) and should be excluded, not reported as "efficient".
-Ratio metrics (quality/cost) are degenerate at the quality floor — use Pareto
+**formally excluded serve failure** (HTTP 500 on both chat and generate, 100% DNF —
+see finding 26c), reported as an exclusion with evidence, never as a quality or
+efficiency result. Ratio metrics (quality/cost) are degenerate at the quality floor — use Pareto
 frontiers, not leaderboards of quality-per-watt.
 
 ## Reproduce

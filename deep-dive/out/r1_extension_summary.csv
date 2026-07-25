@@ -1,0 +1,6 @@
+model,cells,complete%,det_safety%,q_cond,q_ITT,excluded
+deepseek-r1:1.5b,100,100,45.7,1.34,1.34,
+deepseek-r1:1.5b-qwen-distill-q8_0,100,100,44.3,1.34,1.34,
+deepseek-r1:7b,100,29,50.0,1.66,1.46,
+hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GG,100,100,51.7,1.38,1.38,
+phi:2.7b,100,0,25.0,,1.0,SERVE-FAIL
