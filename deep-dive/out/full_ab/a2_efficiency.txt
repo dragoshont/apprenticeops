@@ -11,14 +11,14 @@ qwen2.5:0.5b-instruct-q4_K_M           2.387    1.265    0.530     0.494
 
 === quality per second (throughput-adjusted quality) ===
                                model  quality_per_sec  quality  size_gb  params_b
-                         gemma3:270m            0.462    1.280      NaN       NaN
-                     granite4:350m-h            0.427    1.590      NaN       NaN
-                  gemma3:270m-it-qat            0.303    1.245      NaN       NaN
+                         gemma3:270m            0.462    1.280      NaN     0.268
+                     granite4:350m-h            0.427    1.590      NaN     0.340
+                  gemma3:270m-it-qat            0.303    1.245      NaN     0.268
           smollm2:135m-instruct-q8_0            0.287    1.095    0.290     0.135
-                  granite4:350m-bf16            0.260    1.510      NaN       NaN
-hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M            0.256    1.325      NaN       NaN
+                  granite4:350m-bf16            0.260    1.510      NaN     0.352
+hf.co/LiquidAI/LFM2-350M-GGUF:Q4_K_M            0.256    1.325      NaN     0.354
                           qwen3:0.6b            0.256    1.775    1.090     0.752
-                       granite4:350m            0.256    1.525      NaN       NaN
+                       granite4:350m            0.256    1.525      NaN     0.352
 
 === quality per Wh (controlled-energy 25) ===
                                model  quality_per_wh_controlled  quality  energy_wh_controlled  size_gb
@@ -118,6 +118,6 @@ hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M    3.320                 0.257    2.875         
                   granite3.2:2b    2.040                 0.122    2.520             0.702
 
 === quality vs params ===
-Spearman(params, quality)=0.726; quality ~ a + b*ln(params): b=0.56 pts/e-fold, R^2=0.49
+Spearman(params, quality)=0.762; quality ~ a + b*ln(params): b=0.52 pts/e-fold, R^2=0.52
 
 saved figure /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/a2_efficiency_frontiers.png
