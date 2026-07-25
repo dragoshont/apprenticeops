@@ -412,10 +412,17 @@ results the two-batch snapshot could not:
     **action-safety**, never `det_score`; (ii) every previously reported "safety" number
     here (findings 6, 24, 27, and the 94→152 bridge's 0.941) measures the **composite**
     and must be re-derived or relabelled *deterministic rubric compliance*;
-    (iii) **refusal benchmarks that score silence as compliance are systematically
-    biased in favour of terse and failing models** — a measurement-validity result that
-    generalises beyond this corpus and is, on current evidence, the corpus' **strongest
-    original methodological contribution**.
+    (iii) **CORRECTED 2026-07-25 (Phase 3, finding 34):** the mechanism is real but its
+    magnitude here is **negligible**, and for *truncated* output the bias runs the other
+    way. Stratifying the safety cells: **empty (0 chars) → action-safety 1.000** (n=10,
+    the vacuous pass, exactly as predicted), but *DNF-with-content* **0.688** and
+    *truncated-at-cap* **0.740** score **below** normally-completed cells (**0.793**),
+    because a rambling truncated answer can still trip a `must_exclude` pattern. Only
+    **0.4% (10/2392)** of all passing safety cells are non-responsive. The earlier
+    "DNF = 0.812" figure was an undecomposed **mixture**. **Honest claim:** exclusion-based
+    refusal predicates are *not invariant to non-completion* and are **vacuously satisfied
+    by empty output** — a genuine structural defect in the metric class — but in this
+    corpus it inflates almost nothing, and truncation actually penalises models.
 29. **The honest denominator: 152 tags = 90 checkpoints = 73 lineages
     (`phase2_hardening.py` §A).** "157 models" counts *tags*. Collapsing tags that share a
     family and an identical `parameter_count` gives **90 distinct checkpoints**; collapsing
@@ -450,15 +457,22 @@ results the two-batch snapshot could not:
 32. **Energy-per-*correct*-answer almost completely re-ranks cost
     (`phase2_hardening.py` §D).** Cost-per-attempt is the wrong denominator for selection:
     **Spearman(Wh/attempt, Wh/correct) = +0.154** — near-orthogonal. A model that is cheap
-    per attempt but usually wrong is expensive per *usable* answer: `granite4:350m-h` is the
-    cheapest per attempt (**0.0081 Wh**) but costs **0.0895 Wh** per good answer (11×),
-    while `gemma4:e2b-it-qat` costs 0.0505/attempt and only **0.0701** per good answer.
+    per attempt but usually wrong is expensive per *usable* answer: **`gemma3:270m` is the
+    cheapest per attempt (0.0053 Wh) but costs 0.2633 Wh per good answer — a 50×
+    inflation**, and `smollm2:135m-instruct-q8_0` inflates **100×** (0.0081 → 0.8140);
+    `granite4:350m-h` is the mildest of the cheap models at 11× (0.0081 → 0.0895), while
+    `gemma4:e2b-it-qat` costs 0.0505/attempt and only **0.0701** per good answer.
+    *(Corrected 2026-07-25: an earlier version of this finding named `granite4:350m-h` as
+    the cheapest per attempt; it is third. The true inflation is far larger than first
+    reported.)*
     The **Pareto front on (quality, Wh-per-correct) is just 4 models**:
     `qwen3:4b-instruct-2507-q8_0` (q 3.59), `qwen3:4b-q8_0`, `unsloth/Qwen3-4B-Q4_K_M`, and
     `gemma4:e2b-it-qat` (q 3.19 at **2.8× less energy per correct answer** than the leader).
     **Any efficiency leaderboard built on per-attempt energy is misleading.**
 33. **The reliability bar nobody clears: mean quality overstates dependability by ~a third
-    (`phase2_hardening.py` §E).** Ops needs the worst case, not the average. Scoring a
+    (`phase2_hardening.py` §E).** *This is **pass^k**, introduced for agent reliability by
+    **τ-bench (arXiv 2406.12045)**; what follows is a **replication** in a CPU-local ops
+    regime, not a new metric.* Ops needs the worst case, not the average. Scoring a
     (model, scenario) pair as *reliable* only when **all 5 reps** reach a usable answer
     (judge ≥ 3): **20.9%** of pairs are good *on average* but only **14.0%** are good on
     every rep — so **a third of apparently-good pairs fail at least once in five**.
@@ -469,6 +483,41 @@ results the two-batch snapshot could not:
     `exaone-deep:7.8b` (2.13) and `Llama-3.2-3B-Instruct-Q6_K` (2.42) rank mid-corpus on
     the mean yet are reliable on **zero** scenarios, with within-scenario SD 0.50–0.68.
     **For unattended ops use, no model in this corpus is dependable.**
+34. **Phase-3 tri-family gate (Claude Opus 5 + GPT-5.6 Sol + Gemini 3.1 Pro, 2026-07-25):
+    three independent REVISE verdicts, three verified self-corrections, and a much smaller
+    honest contribution.** All three reviewers independently concluded this is **not a
+    main-conference paper**. Their converging attributions, all verified:
+    **(a) Prior art occupies most of it.** F33 is **pass^k** (τ-bench **2406.12045**);
+    F32 is **joules/dollars per correct answer** (TokenArena **2605.00300**, Cost-of-Pass
+    **2504.13359**, Energy-per-Successful-Goal **2605.22883**); F30 is an identity already
+    covered by EdgeReasoning **2511.01866** / Rethinking-Scale **2604.19299**; the
+    "safety tracks capability" frame is **Safetywashing 2407.21792** and degenerate-output
+    score inflation is **StrongREJECT 2402.10260**. **These must be cited; none may be
+    presented as discoveries.**
+    **(b) Three of my own claims were wrong and are corrected above:** finding 28(iii)
+    (mechanism real, magnitude negligible, truncation reverses the sign), finding 32 (wrong
+    model named; true inflation 50–100×, not 11×), and finding 30's first version (a
+    tautological "100% agreement" caused by dropping the DNF rows).
+    **(c) Scope language was false and is retired.** The corpus is **not** "20 real
+    incidents": `source_trace` shows **3 row-derived** (`row-reviewed`) and **17
+    synthetic** scenarios. It is **not** "157 independent models": 152 primary tags = 90
+    checkpoints = **73 lineages** (finding 29). Say *"20 repo-grounded GitOps/SRE
+    scenarios, 3 derived from live captures and 17 synthetic, over 152 deployment tags"*.
+    **(d) The remaining honest contribution** is the **released artifact** (15,200 cells ×
+    ~216 populated fields, one locked CPU regime, measured RAPL energy, 30,400 dual-judge
+    ratings, deterministic checks) **plus a measurement-validity case study**: non-completion
+    and metric composition corrupt safety, cost, and reliability reporting on the *same
+    cells*, evidenced by a lineage-safety claim this corpus **manufactured and retracted
+    within a day** (finding 27).
+    **(e) Blocking work before any submission**, per the gate: human validation of both the
+    judge threshold (`consensus ≥ 3`) and the action-safety checks (~200–400 blind
+    stratified cells — the single highest-value outstanding task); a second hardware point
+    to show the completion result is not a 2018-DDR4 artifact; re-derivation on the ≤5B
+    population with digest-level identity and scenario-clustered intervals; and a new
+    analysis lock (the 152 bundle is still `provisional`).
+    **(f) Venue, honestly:** TMLR ~45–55% or a workshop/dataset release ~60–75% **after**
+    (e); NeurIPS D&B 10–30%; main tracks and MLSys **<10%**. **No second paper exists** —
+    all three reviewers judged a split to be salami-slicing.
 
 ## Methods (grounded)
 
