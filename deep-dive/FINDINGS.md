@@ -416,6 +416,59 @@ results the two-batch snapshot could not:
     biased in favour of terse and failing models** — a measurement-validity result that
     generalises beyond this corpus and is, on current evidence, the corpus' **strongest
     original methodological contribution**.
+29. **The honest denominator: 152 tags = 90 checkpoints = 73 lineages
+    (`phase2_hardening.py` §A).** "157 models" counts *tags*. Collapsing tags that share a
+    family and an identical `parameter_count` gives **90 distinct checkpoints**; collapsing
+    to family × size-class gives **73 lineages** — a **2.1× inflation**. The largest single
+    group is **6 tags of Qwen3-4B** (`qwen3:4b`, two `-instruct-2507-` quants, two HF
+    repackagings, …), all measuring the same weights. **Every model-level p-value should
+    use n ≈ 73, not 152.** Reassuringly the headline is *robust* to the correction: the
+    size–quality association **strengthens** at lineage level
+    (**Spearman 0.762 → 0.805**, n=73, p=9.6e-18) — pseudoreplication was inflating n, not
+    manufacturing the effect.
+30. **The completion "cliff" is largely a NOMOGRAM, and the reasoning badge adds nothing
+    (`phase2_hardening.py` §B).** A cell completes iff `tokens / decode_rate < wall`.
+    Predicting each model's completion from its verbosity and decode rate *measured on
+    completed cells* and scoring against **all** assigned cells: **99.3%** binary agreement,
+    **Spearman(predicted seconds, actual completion) = −0.456** (n=152, p=3.6e-09). After
+    regressing completion on `log(tokens) + log(decode rate)`, the **`is_reasoning` badge
+    carries no residual signal** (reasoning −0.068 vs non +0.004, Welch **p=0.462**).
+    *(Methodological caution recorded: an earlier version of this test dropped rows with
+    missing tokens/rate, which silently deletes exactly the DNF cells and produced a
+    tautological "100% agreement". Fixed.)* **Honest framing:** this is not a discovery,
+    it is a **predictive nomogram** — *given a model's typical output length and your
+    machine's decode rate, here is your completion rate* — which is genuinely useful
+    selection guidance, and it retires "reasoning" as a selection variable.
+31. **Multiplicity resolved: the headline family survives FDR control
+    (`phase2_hardening.py` §C).** Benjamini–Hochberg over the 8 headline tests — the
+    correction this corpus has owed since finding 24 — leaves **all 8 significant at
+    FDR 5%**: params~quality (lineage) BH 2.6e-17, params~energy 8.7e-29, det~quality
+    8.0e-54, quality~energy 6.7e-15, params~completion 6.7e-07, reasoning quality 3.6e-03,
+    tool-training 7.1e-03, verbosity~completion 8.8e-03. The "uncorrected multiplicity"
+    objection is therefore **answered for this family** (it does not license the marginal
+    exploratory tests elsewhere).
+32. **Energy-per-*correct*-answer almost completely re-ranks cost
+    (`phase2_hardening.py` §D).** Cost-per-attempt is the wrong denominator for selection:
+    **Spearman(Wh/attempt, Wh/correct) = +0.154** — near-orthogonal. A model that is cheap
+    per attempt but usually wrong is expensive per *usable* answer: `granite4:350m-h` is the
+    cheapest per attempt (**0.0081 Wh**) but costs **0.0895 Wh** per good answer (11×),
+    while `gemma4:e2b-it-qat` costs 0.0505/attempt and only **0.0701** per good answer.
+    The **Pareto front on (quality, Wh-per-correct) is just 4 models**:
+    `qwen3:4b-instruct-2507-q8_0` (q 3.59), `qwen3:4b-q8_0`, `unsloth/Qwen3-4B-Q4_K_M`, and
+    `gemma4:e2b-it-qat` (q 3.19 at **2.8× less energy per correct answer** than the leader).
+    **Any efficiency leaderboard built on per-attempt energy is misleading.**
+33. **The reliability bar nobody clears: mean quality overstates dependability by ~a third
+    (`phase2_hardening.py` §E).** Ops needs the worst case, not the average. Scoring a
+    (model, scenario) pair as *reliable* only when **all 5 reps** reach a usable answer
+    (judge ≥ 3): **20.9%** of pairs are good *on average* but only **14.0%** are good on
+    every rep — so **a third of apparently-good pairs fail at least once in five**.
+    **70/152 models never clear the bar on a single scenario**; the corpus median
+    all-5-good rate is **0.05**; and the **best model in the corpus**
+    (`qwen3:4b-instruct-2507-q8_0`) manages **0.65**. Mean-based leaderboards
+    (`Spearman(mean, all-5-good) = +0.911`) hide this: `phi3:mini` (mean 2.18),
+    `exaone-deep:7.8b` (2.13) and `Llama-3.2-3B-Instruct-Q6_K` (2.42) rank mid-corpus on
+    the mean yet are reliable on **zero** scenarios, with within-scenario SD 0.50–0.68.
+    **For unattended ops use, no model in this corpus is dependable.**
 
 ## Methods (grounded)
 
