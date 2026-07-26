@@ -68,6 +68,7 @@ if [[ "$MODE" == "--verify" ]]; then
   }
 
   copy_path "analysis_metrics.py"
+  copy_path "analysis_lane.py"
   copy_path "data/analysis.schema.json"
   copy_path "data/analysis-manifest.json"
   copy_path "data/scenarios.json"

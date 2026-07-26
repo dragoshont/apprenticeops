@@ -35,6 +35,8 @@ FROZEN_ID = "paper-94-model-corrected-v1"
 
 # The frozen lane's labels are themselves frozen; they are not re-derived.
 FROZEN_CONTROLLED_SCOPE = "var_base_clock_1700_turbo_off_package0"
+FROZEN_BRACKET_ORDER = ("0-1B", "1-2B", "2-3B", "3-4B", "4-5GB")
+TIER_ORDER = ("T1", "T2", "T3", "T4", "T5")
 
 
 @dataclass(frozen=True)
@@ -53,11 +55,37 @@ class Lane:
     #: `legacy_footprint_bracket` ("4-5B" is parameters, "4-5GB" is disk
     #: footprint), so completed-run lanes group on the clean parameter tier.
     grouping_axis: str
+    #: Ordered categories of `grouping_axis`, low to high.
+    grouping_order: tuple[str, ...]
     notes: tuple[str, ...] = field(default=())
 
     @property
     def is_frozen(self) -> bool:
         return self.source_kind == "frozen_snapshot"
+
+    @property
+    def site_dir(self) -> Path:
+        """Where this lane's website exports belong.
+
+        Only the lane that currently holds the claim writes to `data/site`.
+        Any other lane exports beside it under its own id, so re-running a
+        non-claim lane can never overwrite the published artifacts.
+        """
+        site = REPO / "data" / "site"
+        return site if self.holds_claim else site / self.lane_id
+
+    @property
+    def manifest_path(self) -> Path:
+        """The manifest describing this lane."""
+        sidecar = REPO / "data" / f"analysis-manifest.{self.lane_id}.json"
+        return sidecar if sidecar.exists() else MANIFEST
+
+    @property
+    def holds_claim(self) -> bool:
+        if not MANIFEST.exists():
+            return self.is_frozen
+        manifest = json.loads(MANIFEST.read_text())
+        return manifest.get("source_id") == self.lane_id
 
     def describe(self) -> str:
         return (f"lane={self.lane_id} kind={self.source_kind} "
@@ -80,6 +108,7 @@ def _frozen_lane() -> Lane:
         controlled_scope=FROZEN_CONTROLLED_SCOPE,
         claim_status=claim_status,
         grouping_axis="legacy_footprint_bracket",
+        grouping_order=FROZEN_BRACKET_ORDER,
         notes=(
             "Two collection batches; only the var batch is energy-comparable.",
             "Rows predate complete canonical condition identity.",
@@ -110,6 +139,7 @@ def _completed_run_lane(directory: Path) -> Lane:
         controlled_scope=f"{meta['collection_batch']}_{meta['cpu_frequency_regime']}",
         claim_status=claim_status,
         grouping_axis="parameter_tier",
+        grouping_order=TIER_ORDER,
         notes=(
             "Single collection batch; every row is energy-comparable.",
             "legacy_footprint_bracket mixes units on this lane "
