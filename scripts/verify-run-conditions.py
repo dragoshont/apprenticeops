@@ -47,6 +47,120 @@ CONDITION_FIELDS = {
 # Analysis-critical fields that must never be null on a non-DNF row.
 REQUIRED_NUMERIC = ["det_score", "wall_s", "power.energy_wh"]
 
+# Default record of the candidate-roster screen that produced the run roster.
+DEFAULT_FAULTS = REPO / "data/models.ollama-chat-faults.json"
+
+
+def read_model_list(path: Path) -> list[str]:
+    return [line.strip() for line in path.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")]
+
+
+def _resolve_screen_path(relative: str, faults_path: Path) -> Path:
+    """Roster paths in the screen record are repo-relative, but a screen shipped
+    beside its rosters should also resolve."""
+    for base in (REPO, faults_path.parent):
+        candidate = base / relative
+        if candidate.exists():
+            return candidate
+    return REPO / relative
+
+
+def verify_roster_screen(report: "Report", bundle_roster: list[str],
+                         models_in_results: set[str], faults_path: Path) -> dict:
+    """Check the candidate-roster screen that decided who got to run at all.
+
+    A run can be internally perfect and still mislead if the roster it ran was
+    filtered on something correlated with the outcome. This does not fail such a
+    screen - excluding a model that will not serve is correct - but it proves the
+    screen is consistent with the roster that actually ran, and it surfaces every
+    model that was dropped DESPITE working, which is the class that needs
+    disclosing in prose.
+    """
+    if not faults_path.exists():
+        report.check("candidate-roster screen is recorded", False,
+                     f"{faults_path} not found - roster provenance unverified")
+        return {}
+
+    screen = json.loads(faults_path.read_text())
+    counts = screen.get("counts", {})
+    excluded = screen.get("excluded_models", [])
+
+    total, ok = counts.get("total"), counts.get("ok")
+    n_excluded = counts.get("excluded")
+    report.check("screen counts reconcile",
+                 total == (ok or 0) + (n_excluded or 0)
+                 and n_excluded == len(excluded)
+                 and (counts.get("fail", 0) + counts.get("warn", 0)) == n_excluded,
+                 f"total={total} = ok={ok} + excluded={n_excluded} "
+                 f"(fail={counts.get('fail')} warn={counts.get('warn')})")
+
+    source_path = _resolve_screen_path(screen["source_roster"], faults_path)
+    ok_path = _resolve_screen_path(screen["ok_roster"], faults_path)
+    candidates = read_model_list(source_path) if source_path.exists() else []
+    screened_ok = read_model_list(ok_path) if ok_path.exists() else []
+
+    report.check("candidate roster file matches the screen's total",
+                 len(candidates) == total,
+                 f"{screen['source_roster']}={len(candidates)} total={total}")
+    report.check("screened roster file matches the screen's ok count",
+                 len(screened_ok) == ok,
+                 f"{screen['ok_roster']}={len(screened_ok)} ok={ok}")
+
+    # The roster that ran must be exactly the roster the screen approved.
+    report.check("bundle roster == screened roster",
+                 set(bundle_roster) == set(screened_ok),
+                 f"{len(set(bundle_roster) ^ set(screened_ok))} models differ")
+
+    excluded_ids = {str(row.get("model")) for row in excluded}
+    leaked = excluded_ids & models_in_results
+    report.check("no excluded model produced results", not leaked,
+                 f"leaked: {sorted(leaked)}" if leaked else "none")
+    report.check("every excluded model has a recorded reason",
+                 all(row.get("overall_reason") for row in excluded),
+                 f"{sum(1 for r in excluded if not r.get('overall_reason'))} unexplained")
+
+    # Split the exclusions by whether the model actually worked.
+    unservable, served_but_excluded = [], []
+    for row in excluded:
+        chat = str(row.get("chat_status"))
+        (served_but_excluded if chat == "200" else unservable).append(row)
+
+    report.note(f"candidate-roster screen: {total} candidates -> {ok} ran "
+                f"({n_excluded} excluded); policy: {screen.get('policy', '')[:70]}")
+    report.note(f"exclusions that could not be served at all: {len(unservable)} "
+                "(HTTP 500 or pull failure) - uncontroversial")
+
+    if served_but_excluded:
+        report.note(
+            f"MUST DISCLOSE - {len(served_but_excluded)} models served fine "
+            "(HTTP 200 on chat and generate) and were still excluded:")
+        for row in served_but_excluded:
+            findings = "; ".join(row.get("findings") or [])
+            report.note(f"    {row['model']} - {row.get('overall_reason')}"
+                        + (f" [{findings}]" if findings else ""))
+        report.note("    A screen that removes working models on an output-shape "
+                    "criterion can be correlated with the outcome under study; "
+                    "state it as a limitation rather than reporting the roster as "
+                    "an arbitrary sample.")
+
+    return {
+        "validation_id": screen.get("validation_id"),
+        "policy": screen.get("policy"),
+        "candidates": total,
+        "ran": ok,
+        "excluded": n_excluded,
+        "reason_counts": screen.get("reason_counts"),
+        "unservable": [r["model"] for r in unservable],
+        "served_but_excluded": [
+            {"model": r["model"], "reason": r.get("overall_reason"),
+             "findings": r.get("findings"),
+             "chat_output_chars": r.get("chat_output_chars"),
+             "generate_output_chars": r.get("generate_output_chars")}
+            for r in served_but_excluded
+        ],
+    }
+
 
 class Report:
     def __init__(self) -> None:
@@ -99,7 +213,7 @@ def load_scenarios(bundle: Path) -> list[str]:
     return [s["id"] for s in data["scenarios"]]
 
 
-def verify(bundle: Path, lane: Path | None) -> tuple[Report, dict]:
+def verify(bundle: Path, lane: Path | None, faults: Path | None = None) -> tuple[Report, dict]:
     report = Report()
     manifest = json.loads((bundle / "bundle-manifest.json").read_text())
     expected = manifest["expected"]
@@ -287,6 +401,11 @@ def verify(bundle: Path, lane: Path | None) -> tuple[Report, dict]:
                 f"({100*truncated/max(rows,1):.2f}%) - output-budget censoring")
     report.note(f"judges: {', '.join(judges)}")
 
+    screen_summary = {}
+    if faults is not None:
+        screen_summary = verify_roster_screen(
+            report, roster, {m for m, _, _ in cells}, faults)
+
     summary = {
         "run_id": manifest.get("source_id"),
         "bundle_id": manifest.get("bundle_id"),
@@ -302,6 +421,7 @@ def verify(bundle: Path, lane: Path | None) -> tuple[Report, dict]:
         "condition": {f: sorted(condition[f])[0].strip("'")
                       for f in all_condition_fields if len(condition[f]) == 1},
         "lane": lane_summary,
+        "roster_screen": screen_summary,
         "checks_run": len(report.checks),
         "checks_failed": len(report.failed),
     }
@@ -312,6 +432,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle", required=True)
     parser.add_argument("--lane", default="")
+    parser.add_argument("--faults", default=str(DEFAULT_FAULTS),
+                        help="candidate-roster screen record (empty string to skip)")
     parser.add_argument("--json", action="store_true", help="emit the summary as JSON")
     args = parser.parse_args()
 
@@ -329,7 +451,13 @@ def main() -> None:
         if not (lane / "lane.json").exists():
             raise SystemExit(f"ERROR: not an analysis lane: {lane}")
 
-    report, summary = verify(bundle, lane)
+    faults = None
+    if args.faults:
+        faults = Path(args.faults)
+        if not faults.is_absolute():
+            faults = REPO / faults
+
+    report, summary = verify(bundle, lane, faults)
 
     if args.json:
         print(json.dumps(summary, indent=2))

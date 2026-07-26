@@ -232,6 +232,121 @@ def test_tampered_bytes_are_caught() -> None:
     assert "bundle bytes match bundle-manifest.json" in bad, bad
 
 
+# --- candidate-roster screen -------------------------------------------------
+
+EXCLUDED_BROKEN = "model-broken"
+EXCLUDED_WORKING = "model-working-but-dropped"
+
+
+def build_screen(root, *, ok_models=None, excluded=None, counts=None):
+    """A screen record plus the two roster files it references."""
+    root = pathlib.Path(root)
+    ok_models = MODELS if ok_models is None else ok_models
+    if excluded is None:
+        excluded = [
+            {"model": EXCLUDED_BROKEN, "overall_status": "fail",
+             "overall_reason": "served_failure", "chat_status": "500",
+             "generate_status": "500", "findings": ["server error"]},
+            {"model": EXCLUDED_WORKING, "overall_status": "fail",
+             "overall_reason": "empty_completion", "chat_status": "200",
+             "generate_status": "200", "chat_output_chars": 0,
+             "generate_output_chars": 0,
+             "findings": ["both chat and generate returned empty visible text"]},
+        ]
+    (root / "models.txt").write_text(
+        "\n".join(ok_models + [r["model"] for r in excluded]) + "\n")
+    (root / "models.ok.txt").write_text("\n".join(ok_models) + "\n")
+    record = {
+        "validation_id": "test-validation",
+        "policy": "keep only ok",
+        "source_roster": "models.txt",
+        "ok_roster": "models.ok.txt",
+        "counts": counts or {
+            "total": len(ok_models) + len(excluded), "ok": len(ok_models),
+            "excluded": len(excluded),
+            "fail": len(excluded), "warn": 0,
+        },
+        "reason_counts": {},
+        "excluded_models": excluded,
+    }
+    path = root / "faults.json"
+    path.write_text(json.dumps(record))
+    return path
+
+
+def screen_failures(bundle, faults):
+    report, _ = verifier.verify(bundle, None, faults)
+    return {name for name, ok, _ in report.checks if not ok}
+
+
+def test_clean_screen_passes() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        faults = build_screen(tmp)
+        assert screen_failures(bundle, faults) == set()
+
+
+def test_screen_counts_must_reconcile() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        faults = build_screen(tmp, counts={"total": 99, "ok": 2, "excluded": 2,
+                                           "fail": 2, "warn": 0})
+        bad = screen_failures(bundle, faults)
+    assert "screen counts reconcile" in bad, bad
+
+
+def test_roster_edited_after_screening_is_caught() -> None:
+    """The roster that ran must be exactly the roster the screen approved."""
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        faults = build_screen(tmp, ok_models=[MODELS[0], "some-other-model"])
+        bad = screen_failures(bundle, faults)
+    assert "bundle roster == screened roster" in bad, bad
+
+
+def test_excluded_model_leaking_into_results_is_caught() -> None:
+    rows = [_result_row(m, s, r)
+            for m in MODELS for s in SCENARIOS for r in range(REPS)]
+    rows += [_result_row(EXCLUDED_BROKEN, s, r) for s in SCENARIOS for r in range(REPS)]
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp, results=rows)
+        faults = build_screen(tmp)
+        bad = screen_failures(bundle, faults)
+    assert "no excluded model produced results" in bad, bad
+
+
+def test_unexplained_exclusion_is_caught() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        faults = build_screen(tmp, excluded=[
+            {"model": EXCLUDED_BROKEN, "overall_status": "fail",
+             "overall_reason": "", "chat_status": "500"},
+        ], counts={"total": 3, "ok": 2, "excluded": 1, "fail": 1, "warn": 0})
+        bad = screen_failures(bundle, faults)
+    assert "every excluded model has a recorded reason" in bad, bad
+
+
+def test_working_but_excluded_is_disclosed_not_failed() -> None:
+    """Dropping a model that served fine is legal - but it must be surfaced."""
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        faults = build_screen(tmp)
+        report, summary = verifier.verify(bundle, None, faults)
+    assert not report.failed, report.failed
+    disclosed = [n for n in report.notes if "MUST DISCLOSE" in n]
+    assert disclosed, report.notes
+    dropped = summary["roster_screen"]["served_but_excluded"]
+    assert [d["model"] for d in dropped] == [EXCLUDED_WORKING], dropped
+    assert summary["roster_screen"]["unservable"] == [EXCLUDED_BROKEN]
+
+
+def test_missing_screen_record_is_reported() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = build_bundle(tmp)
+        bad = screen_failures(bundle, pathlib.Path(tmp) / "absent.json")
+    assert "candidate-roster screen is recorded" in bad, bad
+
+
 def main() -> None:
     tests = [value for name, value in globals().items()
              if name.startswith("test_") and callable(value)]
