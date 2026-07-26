@@ -71,8 +71,12 @@ class Lane:
         Any other lane exports beside it under its own id, so re-running a
         non-claim lane can never overwrite the published artifacts.
         """
-        site = REPO / "data" / "site"
-        return site if self.holds_claim else site / self.lane_id
+        if self.holds_claim:
+            return REPO / "data" / "site"
+        # Deliberately OUTSIDE data/site: the site build compares that directory
+        # against the committed bundle, so a lane exporting into it would be
+        # reported as unexpected content and weaken the gate.
+        return REPO / "data" / "site-lanes" / self.lane_id
 
     @property
     def manifest_path(self) -> Path:

@@ -69,3 +69,4 @@ docs/analysis/*_files/
 feedback.md
 docs/analysis/paper.docx
 .venv-lock/
+data/site-lanes/
