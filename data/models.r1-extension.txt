@@ -1,0 +1,5 @@
+deepseek-r1:1.5b
+deepseek-r1:1.5b-qwen-distill-q8_0
+hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M
+deepseek-r1:7b
+phi:2.7b
