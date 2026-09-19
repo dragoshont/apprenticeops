@@ -17,8 +17,8 @@ review -> submission package. This prevents scope drift and over-claiming.
   (the 5-rep × 2-judge variance pass is integrated; every headline number now
   traces to a frozen, published artifact).
 - Manuscript status: DRAFT / WIP (not submitted). First full draft assembled in
-  [`../paper/paper.qmd`](../paper/paper.qmd) (Quarto → HTML + Typst PDF), with
-  [`../paper/references.bib`](../paper/references.bib).
+  [`analysis/paper.qmd`](analysis/paper.qmd) (Quarto → HTML + Typst PDF), with
+  [`analysis/references.bib`](analysis/references.bib).
 - Phase-4 decisions (made autonomously; pending operator review):
   - **Format:** Quarto single-source — HTML + Typst PDF now (PDF needs **no**
     LaTeX; Typst is bundled), drop in a NeurIPS/arXiv LaTeX template at submission.
@@ -34,6 +34,7 @@ review -> submission package. This prevents scope drift and over-claiming.
 - Experiment status: **consolidated 94-model dataset locked** (waves 1+2 merged 2026-06-22).
 - Submission intent: arXiv preprint → **NeurIPS Datasets & Benchmarks** track.
 - Intent memo: [`PAPER_INTENT.md`](./PAPER_INTENT.md)
+- Paper/data completion inventory: [`PAPER_DATA_COMPLETION_PLAN.md`](./PAPER_DATA_COMPLETION_PLAN.md)
 
 ## Phase model
 

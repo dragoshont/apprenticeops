@@ -20,25 +20,29 @@ reason safely and usefully on real operations tasks without cloud fallback.
 > literature, so it cannot lead).
 
 For a **locally-sovereign** ops assistant — offline (no frontier to escalate to),
-CPU-only, ≤5 GB, the last line — **model selection is the whole game, and every
-proxy a practitioner reaches for (parameter count, benchmark score, a “reasoning”
-badge, perplexity) misleads on a *different* axis.** We profile **quality × safety
-× energy together** on commodity offline hardware and reduce the choice to a
-**measured Pareto front**. The three axes: a judged-quality knee at ~3-4B (where
-*quantization*, not parameters, carries the lift); **safety** as the judge-free
-deterministic refusal axis, governed by *training type, not size* — a result that
-**corroborates** a saturated agent-/SLM-safety literature rather than discovering
-it; and **energy** (Wh/answer, tok/s-per-watt) you pay to run it yourself. The
-contribution is the **integration**: on the front, the “biggest” and “reasoning”
-picks come out **dominated**.
+CPU-only, and, for the doctoral track, **≤5B parameters**, the last line — **deployment selection is the whole game, and
+every proxy a practitioner reaches for (parameter count, benchmark score, a
+“reasoning” badge, perplexity) misleads on a *different* axis.** We profile
+**quality × safety × energy together** on commodity offline hardware and reduce
+the choice to a **measured Pareto front**. The evaluated object is a deployment,
+not an isolated model: model + runtime + hardware + quantization + prompt + memory
++ inference strategy + evaluation policy. The three axes: a judged-quality knee
+at ~2-3B (where *quantization*, not parameters, carries the lift); **safety** as
+the judge-free deterministic refusal axis, governed by *training type, not size*
+— a result that **corroborates** a saturated agent-/SLM-safety literature rather
+than discovering it; and **energy** (Wh/answer, tok/s-per-watt) you pay to run it
+yourself. The contribution is the **integration**: on the front, the “biggest” and
+“reasoning” picks come out **dominated**.
 
 ## Top contributions (proposed)
 
-1. ApprenticeOps benchmark artifact (scenario corpus + scoring + telemetry schema).
-2. Controlled empirical results across 25 local models and 19 scenarios on one
-   commodity node, with explicit uncertainty/statistical treatment.
+1. ApprenticeOps benchmark artifact (scenario corpus + scoring + telemetry schema)
+   as the first deployment-centric scenario pack for homelab/ops tasks.
+2. Controlled empirical results across the consolidated 94-functional-model,
+   19-scenario snapshot on one commodity node, with explicit
+   uncertainty/statistical treatment.
 3. **The three-axis selection map and its Pareto front** — quality × safety ×
-   energy measured *together* for the offline/CPU model-selection decision, a
+   energy measured *together* for the offline/CPU deployment-selection decision, a
    regime no prior benchmark targets whole. Safety is **one axis** of three
    (judge-free deterministic refusal, governed by training type not size) and is
    presented as **corroboration** of the agent-/SLM-safety literature, not
@@ -51,9 +55,9 @@ refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality 
 — κ_quad ≈ 0.91 over 8,909 pairs — that supersedes the original single-judge pass):
 
 1. **Knee at 2-3B.** Judged %-of-frontier rises 32 / 38 / 51 / 52 / 57 % across
-   the 0-1B→4-5GB brackets; the 2-3B→3-4B step is **flat** (+0.8 pt, the knee) and
-   the 4-5GB bracket adds a **small +4.6 pt** lift (non-overlapping CIs but under
-   the pre-registered 5-pt gate → **marginal HOLD 4-5GB**). Best small model ≈ 71 %.
+   the legacy 0-1B→4-5GB footprint brackets; the 2-3B→3-4B step is **flat** (+0.8 pt, the knee) and
+   the 4-5GB footprint bracket adds a **small +4.6 pt** lift (non-overlapping CIs but under
+   the pre-registered 5-pt gate → **marginal HOLD on the legacy 4-5GB footprint bracket**). Best small model ≈ 71 %.
 2. **Quant beats parameters at the knee.** A 4B at q4 (`hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M`,
    71.4 %) edges the best q8 4B (`qwen3:4b-instruct-2507-q8_0`, 71.3 %); the 2507
    q4 (68.6 %) and q8 are mutually non-dominated.
@@ -82,7 +86,7 @@ refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality 
   shipped*” — RealSafe-R1 (2504.10081) / SAFEPATH (2505.14667) show it is fixable.
 - **Non-monotonic safety:** Inverse Scaling (2306.09479), Perez model-written
   evals (2212.09251). **Pre-empt:** U-shaped scaling (2211.02011) → scope the
-  claim to 0.5-8B and our task mix.
+   claim to the legacy 0.5-8B snapshot and our task mix; the doctoral target is <=5B parameters.
 - **Scale isn’t destiny:** Chinchilla (2203.15556), ThinkSLM (2502.11569, quant
   preserves reasoning). **Emergence objection to defuse:** Wei (2206.07682) vs
   Schaeffer “Mirage” (2304.15004) → use graded, not binary, scoring.
@@ -134,6 +138,13 @@ refusal/check scores across 5 repeats, plus a 5-rep × 2-judge ensemble quality 
 2. Statistical reporting and limitations sections are complete and consistent.
 3. Reproduction path runs from clean checkout.
 4. Artifact package inventory is complete and link-stable.
+
+## Current completion control plane
+
+The active paper/data completion inventory is
+[`PAPER_DATA_COMPLETION_PLAN.md`](PAPER_DATA_COMPLETION_PLAN.md). It separates
+locked paper-result work from external dev follow-ups and from future Architrave
+Eval / CEOps extraction, so the paper does not absorb every useful next idea.
 
 ## Peer feedback requested now
 

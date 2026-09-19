@@ -1,10 +1,13 @@
-# Downloadable Model List — by size bracket
+# Downloadable Model List — legacy roster notes by size/footprint bracket
 
 > Vetted June 2026 against the Ollama library (sizes = q4_K_M / default unless
 > noted; **GB = on-disk**, resident is ~GB + KV cache). All are **self-hostable,
 > open-weight, free, pull-with-`ollama pull`** unless flagged. Brackets are by
 > **parameter count**; the **4–5 GB** bracket is by *footprint* (per your "check
 > larger quant if it fits" — that's where quantized 7–8B models land).
+> This file is historical roster research. The current thesis eligibility gate is
+> `data/models.lock.jsonl`, which excludes models above 5B parameters from the
+> `thesis_5b_candidate` track.
 >
 > `tools` column = does the Ollama packaging declare tool-calling (`ollama show`
 > → Capabilities). **Irrelevant to the reasoning eval** (tool-less by design) but

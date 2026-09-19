@@ -1,6 +1,9 @@
 # AGENTS.md — how to run the ApprenticeOps experiment pipeline
 
-This repo benchmarks ≤8B CPU-only local LLMs as homelab ops assistants. The
+This repo benchmarks CPU-only local LLM deployments as homelab ops assistants.
+The doctoral target is open-weight models up to **5B parameters**; older
+footprint-bounded experiment snapshots may include larger 7B/8B models and must
+be labelled as legacy evidence. The
 experiment is a **two-node, two-scheduler pipeline** that runs **autonomously**:
 one command launches it and it keeps running after you disconnect. Full design:
 [docs/EXPERIMENT-PIPELINE.md](docs/EXPERIMENT-PIPELINE.md); determinism + reproduction:
@@ -11,11 +14,18 @@ one command launches it and it keeps running after you disconnect. Full design:
 | Node | Role | Notes |
 |---|---|---|
 | **home** (hostname `home`) | orchestrator + judge + git | runs the schedulers, judges via the Copilot CLI, commits to GitHub |
-| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, ollama **0.30.8**, Turbo off, governor performance |
+| **ai** (`home-ai.home.domain`, hostname `ai`) | **locked inference only** | i5-8350U, Ollama **0.30.8** retained for service/legacy runs, llama.cpp provisioned as preferred future experiment runtime, Turbo off, governor performance |
 
 `home → ai` is **passwordless SSH**. `home` holds the repo clone at
 `~/apprenticeops`, has `gh` SSH auth, and the Copilot CLI. **After launch the pipeline
 runs entirely on home + ai — no workstation/Mac is in the loop.**
+
+Runtime policy: `data/runtime-policy.json` keeps **Ollama** as the service/API and
+legacy snapshot runtime, and sets **llama.cpp** as the preferred runtime for future
+locked thesis experiments. The adapter is `INFERENCE_RUNTIME=llama_cpp` via the
+non-interactive llama.cpp subprocess backend (default `llama-completion`) for
+direct local GGUF files. Do not label broad thesis results as llama.cpp-produced
+until a locked full-run artifact exists.
 
 ## Run it — the ONE command (from `home`, in `~/apprenticeops`)
 

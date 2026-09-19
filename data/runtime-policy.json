@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "service_runtime": "ollama",
+  "experiment_runtime": "llama_cpp",
+  "legacy_snapshot_runtime": "ollama",
+  "runner_adapter_status": "implemented",
+  "adapter_kind": "llama_cpp_subprocess_direct_gguf",
+  "notes": "Ollama remains supported for LAN/API service use and legacy snapshot reproducibility. llama.cpp is the preferred runtime for future thesis experiments. The adapter uses a non-interactive llama.cpp subprocess backend (default: llama-completion) with direct local GGUF files. The bounded llama-cpp-smoke-5 run is runtime proof only; locked thesis runs still require the full R=5 protocol."
+}

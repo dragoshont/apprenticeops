@@ -54,7 +54,7 @@ export function CurrentRunSection({
   user: string;
   progress?: Progress;
   reliability?: ReliabilityReport | null;
-  inputSelection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string };
+  inputSelection: { modelSet: string; scenarioSet: string; memoryContext: string; inferenceStrategy?: string; inferenceRuntime?: string };
   consumer?: Consumer;
   producerAlive: boolean;
   models: ModelStage[];
@@ -315,6 +315,7 @@ function ScopeHeader({
         <span>{scope?.model_set ?? analyticsScope?.model_set ?? "models"} × {scope?.scenario_set ?? analyticsScope?.scenario_set ?? "scenarios"}</span>
         <span className="font-mono">memory_context={scope?.memory_context ?? analyticsScope?.memory_context ?? "none"}</span>
         <span className="font-mono">inference_strategy={scope?.inference_strategy ?? analyticsScope?.inference_strategy ?? "baseline"}</span>
+        <span className="font-mono">inference_runtime={scope?.inference_runtime ?? analyticsScope?.inference_runtime ?? "ollama"}</span>
         <span>{persistenceLabel(persistence)}</span>
         <span className="text-faint">by {user}</span>
       </div>

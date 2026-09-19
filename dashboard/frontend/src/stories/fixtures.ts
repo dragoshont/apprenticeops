@@ -8,9 +8,15 @@ export const runMatrix: RunMatrix = {
     scenario_set: "strategy-pilot-6",
     memory_context: "none",
     inference_strategy: "best_of_3_detcheck",
+    inference_runtime: "llama_cpp",
   },
+  runtime_options: [
+    { id: "llama_cpp", label: "llama.cpp direct GGUF", kind: "experiment" },
+    { id: "ollama", label: "Ollama service runtime", kind: "service_legacy" },
+  ],
   model_sets: [
     { id: "dryrun", label: "Dry run", path: "data/models.dryrun.txt", kind: "smoke", model_count: 2 },
+    { id: "llama-cpp-smoke-5", label: "llama.cpp smoke", path: "data/models.llama-cpp-smoke-5.txt", kind: "validation", runtime: "llama_cpp", model_count: 5, llama_cpp_model_map: "data/llama-cpp-smoke-5.model-map.json", llama_cpp_artifacts: "data/llama-cpp-smoke-5.artifacts.json", run_repeats: 1, max_tokens_cap: 96, run_allow_unlocked: true },
     { id: "strategy-pilot-2", label: "Strategy pilot", path: "data/models.strategy-pilot-2.txt", kind: "pilot", model_count: 2 },
     { id: "full", label: "Full roster", path: "data/models.txt", kind: "experiment", model_count: 158 },
   ],
@@ -46,6 +52,7 @@ export const sessions: Session[] = [
     scenario_set: "strategy-pilot-6",
     memory_context: "none",
     inference_strategy: "best_of_3_detcheck",
+    inference_runtime: "llama_cpp",
     user: "dragos",
     state: "done",
     started_at: now - 4200,
@@ -68,6 +75,7 @@ export const sessions: Session[] = [
     scenario_set: "strategy-pilot-6",
     memory_context: "homelab-okf-v1",
     inference_strategy: "baseline",
+    inference_runtime: "ollama",
     user: "user",
     state: "canceled",
     started_at: now - 68000,
@@ -90,6 +98,7 @@ export const sessions: Session[] = [
     scenario_set: "core-current",
     memory_context: "none",
     inference_strategy: "baseline",
+    inference_runtime: "ollama",
     user: "dragos",
     state: "done",
     started_at: now - 172000,
@@ -159,6 +168,7 @@ export const analyticsScope: AnalyticsScope = {
   scenario_set: "strategy-pilot-6",
   memory_context: "none",
   inference_strategy: "best_of_3_detcheck",
+  inference_runtime: "llama_cpp",
 };
 
 export const selectedScope: SelectedScope = {
@@ -172,6 +182,7 @@ export const selectedScope: SelectedScope = {
   scenario_set: "strategy-pilot-6",
   memory_context: "none",
   inference_strategy: "best_of_3_detcheck",
+  inference_runtime: "llama_cpp",
 };
 
 export const runBatch: RunBatch = {
@@ -244,5 +255,5 @@ export const scores: Scores = {
 
 export const nodes: { home: NodeInfo; ai: NodeInfo } = {
   home: { reachable: true, lines: ["home · orchestrator", "judge workers: ready", "git branch: experiment/strategy-pilot"] },
-  ai: { reachable: true, lines: ["home-ai · i5-8350U", "ollama 0.30.8", "governor: performance"] },
+  ai: { reachable: true, lines: ["home-ai · i5-8350U", "ollama 0.30.8", "runtime=llama_cpp/ollama", "llama.cpp=b9871", "governor: performance"] },
 };

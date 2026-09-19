@@ -25,8 +25,9 @@ export async function fetchConfig(): Promise<{ auth_enabled: boolean; user: stri
   return res.json();
 }
 
-export async function fetchInputs(modelSet: string, scenarioSet: string, memoryContext: string, inferenceStrategy = "baseline"): Promise<InputDetails> {
+export async function fetchInputs(modelSet: string, scenarioSet: string, memoryContext: string, inferenceStrategy = "baseline", inferenceRuntime?: string): Promise<InputDetails> {
   const q = new URLSearchParams({ model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext, inference_strategy: inferenceStrategy });
+  if (inferenceRuntime) q.set("inference_runtime", inferenceRuntime);
   const res = await fetch(`/api/inputs?${q.toString()}`);
   if (!res.ok) throw new Error(`inputs → ${res.status}`);
   return res.json();
@@ -45,10 +46,10 @@ export async function fetchTexts(runId: string): Promise<{ run_id: string; outpu
 }
 
 export const control = {
-  start: (modelSet: string, scenarioSet: string, memoryContext: string, inferenceStrategy = "baseline") =>
-    jpost("/api/control/start", { model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext, inference_strategy: inferenceStrategy }),
-  startBatch: (modelSet: string, scenarioSet: string, memoryContexts: string[], inferenceStrategy = "baseline") =>
-    jpost("/api/control/start-batch", { model_set: modelSet, scenario_set: scenarioSet, memory_contexts: memoryContexts, inference_strategy: inferenceStrategy }),
+  start: (modelSet: string, scenarioSet: string, memoryContext: string, inferenceStrategy = "baseline", inferenceRuntime?: string) =>
+    jpost("/api/control/start", { model_set: modelSet, scenario_set: scenarioSet, memory_context: memoryContext, inference_strategy: inferenceStrategy, inference_runtime: inferenceRuntime ?? null }),
+  startBatch: (modelSet: string, scenarioSet: string, memoryContexts: string[], inferenceStrategy = "baseline", inferenceRuntime?: string) =>
+    jpost("/api/control/start-batch", { model_set: modelSet, scenario_set: scenarioSet, memory_contexts: memoryContexts, inference_strategy: inferenceStrategy, inference_runtime: inferenceRuntime ?? null }),
   startPhase: (planId: string, phaseId: string, modelSet: string, scenarioSet: string, experimentId?: string | null) =>
     jpost("/api/control/start-phase", { plan_id: planId, phase_id: phaseId, model_set: modelSet, scenario_set: scenarioSet, experiment_id: experimentId ?? null }),
   stop: (runId?: string | null) => jpost("/api/control/stop", { run_id: runId ?? null }),

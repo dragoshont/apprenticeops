@@ -15,9 +15,10 @@ alias on the Mac, or a mounted key + ssh-config in the container). Do not expose
 it to an untrusted network.
 
 Injection safety: the browser can only pick a *model_set* id, a *scenario_set* id,
-and a *memory_context* id from the server-side allowlist loaded from
-``data/run-matrix.json``. RUN_IDs for new runs are generated server-side. Shell
-environment values are server-resolved and quoted before being sent to ``home``.
+a *memory_context* id, an *inference_strategy* id, and an *inference_runtime* id
+from the server-side allowlist loaded from ``data/run-matrix.json``. RUN_IDs for
+new runs are generated server-side. Shell environment values are server-resolved
+and quoted before being sent to ``home``.
 
 Env:
   HOME_SSH    SSH destination for the home node     (default: "homelab")
@@ -318,7 +319,22 @@ def resolve_model_set(raw):
     if not ID_RE.match(str(mid or "")):
         fail(f"invalid model_set id: {mid!r}")
     path = safe_path(raw.get("path"), ".txt")
-    return {**raw, "model_count": model_count(path), "sha256": sha(path)}
+    item = {**raw, "model_count": model_count(path), "sha256": sha(path)}
+    if raw.get("llama_cpp_model_map"):
+        map_path = safe_path(raw.get("llama_cpp_model_map"), ".json")
+        item["llama_cpp_model_map_sha256"] = sha(map_path)
+    if raw.get("llama_cpp_artifacts"):
+        artifact_path = safe_path(raw.get("llama_cpp_artifacts"), ".json")
+        item["llama_cpp_artifacts_sha256"] = sha(artifact_path)
+    return item
+
+def resolve_runtime_option(raw):
+    rid = raw.get("id") if isinstance(raw, dict) else None
+    if not ID_RE.match(str(rid or "")):
+        fail(f"invalid runtime id: {rid!r}")
+    if rid not in {"ollama", "llama_cpp"}:
+        fail(f"unsupported runtime id: {rid!r}")
+    return dict(raw)
 
 def resolve_scenario_set(raw):
     sid = raw.get("id") if isinstance(raw, dict) else None
@@ -372,6 +388,7 @@ model_sets = [resolve_model_set(item) for item in matrix.get("model_sets", [])]
 scenario_sets = [resolve_scenario_set(item) for item in matrix.get("scenario_sets", [])]
 memory_contexts = [resolve_memory_context(item) for item in matrix.get("memory_contexts", [])]
 inference_strategies = [resolve_inference_strategy(item) for item in matrix.get("inference_strategies", [])]
+runtime_options = [resolve_runtime_option(item) for item in matrix.get("runtime_options", [])]
 if len({m["id"] for m in model_sets}) != len(model_sets):
     fail("duplicate model_set id")
 if len({s["id"] for s in scenario_sets}) != len(scenario_sets):
@@ -380,6 +397,8 @@ if len({m["id"] for m in memory_contexts}) != len(memory_contexts):
     fail("duplicate memory_context id")
 if len({s["id"] for s in inference_strategies}) != len(inference_strategies):
     fail("duplicate inference_strategy id")
+if len({r["id"] for r in runtime_options}) != len(runtime_options):
+    fail("duplicate runtime id")
 
 scenario_rows = {}
 for scenario_set in scenario_sets:
@@ -402,6 +421,7 @@ print(json.dumps({
     "scenario_sets": scenario_sets,
     "memory_contexts": memory_contexts,
     "inference_strategies": inference_strategies,
+    "runtime_options": runtime_options,
     "experiment_plans": matrix.get("experiment_plans", []),
     "scenarios": sorted(scenario_rows.values(), key=lambda row: row["id"]),
 }))
@@ -538,8 +558,8 @@ print(json.dumps({
 '''
 
 
-def _input_details(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline") -> dict:
-    _resolve_run_selection(model_set, scenario_set, memory_context, inference_strategy)
+def _input_details(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline", inference_runtime: str | None = None) -> dict:
+    matrix, model, _, _, _, runtime = _resolve_run_selection(model_set, scenario_set, memory_context, inference_strategy, inference_runtime)
     cp = _ssh(_home_cmd("python3 - " + " ".join(_q(arg) for arg in (model_set, scenario_set, memory_context, inference_strategy)) + " <<'PY'\n" + _INPUTS_SCRIPT + "\nPY"), timeout=30)
     if cp.returncode != 0:
         detail = (cp.stderr or cp.stdout or "input details failed").strip()[:800]
@@ -550,10 +570,12 @@ def _input_details(model_set: str, scenario_set: str, memory_context: str, infer
         raise HTTPException(500, f"input details were not JSON: {exc}") from exc
     if data.get("error"):
         raise HTTPException(500, data["error"])
+    data["inference_runtime"] = runtime
+    data["runtime_config"] = _runtime_env(model, runtime)
     return data
 
 
-def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline") -> tuple[dict, dict, dict, dict, dict]:
+def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: str, inference_strategy: str = "baseline", inference_runtime: str | None = None) -> tuple[dict, dict, dict, dict, dict, dict]:
     if not _ID_RE.match(model_set or ""):
         raise HTTPException(400, "invalid model_set id")
     if not _ID_RE.match(scenario_set or ""):
@@ -562,6 +584,8 @@ def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: st
         raise HTTPException(400, "invalid memory_context id")
     if not _ID_RE.match(inference_strategy or ""):
         raise HTTPException(400, "invalid inference_strategy id")
+    if inference_runtime and not _ID_RE.match(inference_runtime):
+        raise HTTPException(400, "invalid inference_runtime id")
     matrix = _run_matrix()
     model = next((item for item in matrix.get("model_sets", []) if item.get("id") == model_set), None)
     scenarios = next((item for item in matrix.get("scenario_sets", []) if item.get("id") == scenario_set), None)
@@ -575,11 +599,37 @@ def _resolve_run_selection(model_set: str, scenario_set: str, memory_context: st
         raise HTTPException(404, f"unknown memory_context '{memory_context}'")
     if not strategy:
         raise HTTPException(404, f"unknown inference_strategy '{inference_strategy}'")
+    runtime_id = inference_runtime or model.get("runtime") or (matrix.get("defaults") or {}).get("inference_runtime") or "ollama"
+    runtime = next((item for item in matrix.get("runtime_options", []) if item.get("id") == runtime_id), None)
+    if not runtime:
+        raise HTTPException(404, f"unknown inference_runtime '{runtime_id}'")
+    if model.get("runtime") and model.get("runtime") != runtime_id:
+        raise HTTPException(400, f"model_set '{model_set}' requires inference_runtime={model.get('runtime')}")
+    if runtime_id == "llama_cpp" and not model.get("llama_cpp_model_map"):
+        raise HTTPException(400, f"model_set '{model_set}' does not declare llama_cpp_model_map")
     if not model.get("model_count"):
         raise HTTPException(400, f"model_set '{model_set}' contains no models")
     if not scenarios.get("scenario_count"):
         raise HTTPException(400, f"scenario_set '{scenario_set}' contains no scenarios")
-    return matrix, model, scenarios, memory, strategy
+    return matrix, model, scenarios, memory, strategy, runtime
+
+
+def _runtime_env(model_set: dict, runtime: dict) -> dict[str, object]:
+    runtime_id = runtime["id"]
+    env: dict[str, object] = {"INFERENCE_RUNTIME": runtime_id}
+    if runtime_id == "llama_cpp":
+        env["LLAMA_CPP_MODEL_MAP"] = model_set["llama_cpp_model_map"]
+        if model_set.get("llama_cpp_extra_args"):
+            env["LLAMA_CPP_EXTRA_ARGS"] = model_set["llama_cpp_extra_args"]
+        if model_set.get("max_tokens_cap") is not None:
+            env["MAX_TOKENS_CAP"] = model_set["max_tokens_cap"]
+        if model_set.get("run_repeats") is not None:
+            env["RUN_REPEATS"] = model_set["run_repeats"]
+        if model_set.get("run_temp") is not None:
+            env["RUN_TEMP"] = model_set["run_temp"]
+        if model_set.get("run_allow_unlocked"):
+            env["RUN_ALLOW_UNLOCKED"] = "1"
+    return env
 
 
 def _read_run_meta(run_id: str) -> dict:
@@ -613,6 +663,13 @@ def _validate_run_meta_for_resume(meta: dict) -> None:
         got = (cp.stdout or "").strip()
         if cp.returncode != 0 or got != memory_sha:
             raise HTTPException(409, "run.meta memory context hash mismatch; start a new run")
+    model_map = meta.get("llama_cpp_model_map")
+    model_map_sha = meta.get("llama_cpp_model_map_sha256")
+    if model_map and model_map_sha:
+        cp = _ssh(_home_cmd(f"python3 - <<'PY'\nimport hashlib, pathlib\np=pathlib.Path({_q(model_map)!r})\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\nPY"), timeout=15)
+        got = (cp.stdout or "").strip()
+        if cp.returncode != 0 or got != model_map_sha:
+            raise HTTPException(409, "run.meta llama.cpp model map hash mismatch; start a new run")
 
 
 # ----------------------------------------------------------------------------- api
@@ -621,12 +678,14 @@ class StartReq(BaseModel):
     scenario_set: str
     memory_context: str = "none"
     inference_strategy: str = "baseline"
+    inference_runtime: str | None = None
 
 
 class BatchStartReq(BaseModel):
     model_set: str
     scenario_set: str
     inference_strategy: str = "baseline"
+    inference_runtime: str | None = None
     memory_contexts: list[str]
 
 
@@ -920,8 +979,8 @@ def api_run_matrix():
 
 
 @app.get("/api/inputs")
-def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none", inference_strategy: str = "baseline"):
-    return JSONResponse(_input_details(model_set, scenario_set, memory_context, inference_strategy))
+def api_inputs(model_set: str, scenario_set: str, memory_context: str = "none", inference_strategy: str = "baseline", inference_runtime: str | None = None):
+    return JSONResponse(_input_details(model_set, scenario_set, memory_context, inference_strategy, inference_runtime))
 
 
 @app.get("/api/run/{run_id}/doodles")
@@ -936,8 +995,8 @@ def api_run_texts(run_id: str):
 
 @app.post("/api/control/start")
 def api_start(req: StartReq, request: Request):
-    _, model_set, scenario_set, memory_context, inference_strategy = _resolve_run_selection(
-        req.model_set, req.scenario_set, req.memory_context, req.inference_strategy
+    _, model_set, scenario_set, memory_context, inference_strategy, runtime = _resolve_run_selection(
+        req.model_set, req.scenario_set, req.memory_context, req.inference_strategy, req.inference_runtime
     )
     models = model_set["path"]
     scenarios = scenario_set["path"]
@@ -954,7 +1013,9 @@ def api_start(req: StartReq, request: Request):
     # who started it: the Authentik user when gated, else a generic "user".
     user = (request.headers.get(AUTH_HEADER) if AUTH_ENABLED else None) or "user"
     user = re.sub(r"[^A-Za-z0-9._@-]", "", user)[:40] or "user"
-    run_id = f"{req.model_set}-{req.scenario_set}-{req.memory_context}-{req.inference_strategy}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    runtime_env = _runtime_env(model_set, runtime)
+    runtime_id = runtime["id"]
+    run_id = f"{req.model_set}-{req.scenario_set}-{req.memory_context}-{req.inference_strategy}-{runtime_id}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     env = _env_assign({
         "RUN_ID": run_id,
         "MODELS": models,
@@ -968,6 +1029,7 @@ def api_start(req: StartReq, request: Request):
         "AI": AI_SSH,
         "AI_REPO": AI_REPO,
         "RUN_USER": user,
+        **runtime_env,
     })
     inner = (_SYNC + env + " "
              f"setsid nohup ./scripts/run-e2e.sh >{_q(f'/tmp/e2e.{run_id}.boot')} 2>&1 </dev/null & "
@@ -979,6 +1041,8 @@ def api_start(req: StartReq, request: Request):
             "model_set": req.model_set, "scenario_set": req.scenario_set,
             "memory_context": req.memory_context,
             "inference_strategy": req.inference_strategy,
+            "inference_runtime": runtime_id,
+            "runtime_env": runtime_env,
             "models": models, "scenarios": scenarios, "memory_context_file": memory_path, "strategy_prompt_file": strategy_path, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
@@ -993,9 +1057,11 @@ def api_start_batch(req: BatchStartReq, request: Request):
             seen.append(memory_context)
     if len(seen) != len(req.memory_contexts):
         raise HTTPException(400, "memory contexts must be unique")
-    resolved = [_resolve_run_selection(req.model_set, req.scenario_set, memory_context, req.inference_strategy) for memory_context in seen]
+    resolved = [_resolve_run_selection(req.model_set, req.scenario_set, memory_context, req.inference_strategy, req.inference_runtime) for memory_context in seen]
     models = resolved[0][1]["path"]
     scenarios = resolved[0][2]["path"]
+    runtime = resolved[0][5]
+    runtime_env = _runtime_env(resolved[0][1], runtime)
     cur = status(None, max_age=0.0, force=True)
     active = (cur.get("state") in ("running", "paused")
               or (cur.get("producer") or {}).get("run_py_alive"))
@@ -1020,13 +1086,14 @@ def api_start_batch(req: BatchStartReq, request: Request):
         "--model-set", req.model_set,
         "--scenario-set", req.scenario_set,
         "--inference-strategy", req.inference_strategy,
+        "--inference-runtime", runtime["id"],
         "--user", user,
     ]
     for memory_context in seen:
         args.extend(["--memory-context", memory_context])
     boot = f"/tmp/ao-batch.{batch_id}.boot"
     inner = (_SYNC + " "
-             + _env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO}) + " "
+             + _env_assign({"AI": AI_SSH, "AI_REPO": AI_REPO, **runtime_env}) + " "
              f"setsid nohup {' '.join(_q(arg) for arg in args)} >{_q(boot)} 2>&1 </dev/null & "
              f"echo launched {_q(batch_id)}")
     cp = _ssh(_home_cmd(inner), timeout=40)
@@ -1041,6 +1108,8 @@ def api_start_batch(req: BatchStartReq, request: Request):
     _invalidate_status(None)
     return {"ok": True, "batch_id": batch_id, "model_set": req.model_set, "scenario_set": req.scenario_set,
             "inference_strategy": req.inference_strategy,
+            "inference_runtime": runtime["id"],
+            "runtime_env": runtime_env,
             "memory_contexts": seen, "models": models, "scenarios": scenarios, "user": user,
             "detail": (cp.stdout or cp.stderr).strip()[:400]}
 
@@ -1184,6 +1253,13 @@ def api_resume(req: RunReq):
         "MEMORY_CONTEXT_FILE": meta.get("memory_context_file") or "",
         "INFERENCE_STRATEGY": meta.get("inference_strategy") or "baseline",
         "STRATEGY_PROMPT_FILE": meta.get("strategy_prompt_file") or "",
+        "INFERENCE_RUNTIME": meta.get("inference_runtime") or "ollama",
+        "LLAMA_CPP_MODEL_MAP": meta.get("llama_cpp_model_map") or "",
+        "LLAMA_CPP_EXTRA_ARGS": meta.get("llama_cpp_extra_args") or "",
+        "MAX_TOKENS_CAP": meta.get("max_tokens_cap") or "",
+        "RUN_REPEATS": meta.get("run_repeats_override") or "",
+        "RUN_TEMP": meta.get("run_temp_override") or "",
+        "RUN_ALLOW_UNLOCKED": "1" if meta.get("run_allow_unlocked") else "",
         "AI": AI_SSH,
         "AI_REPO": AI_REPO,
         "RUN_USER": meta.get("user") or "user",

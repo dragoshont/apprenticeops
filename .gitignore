@@ -27,10 +27,12 @@ results.*.jsonl
 results/
 outputs/
 logs/
+data/collected/
 data/run-batches/
 .tmp/
 
 # Released evidence artifacts — tracked despite the broad *.jsonl ignore above.
+!data/models.lock.jsonl
 !data/pilot/results.pilot.jsonl
 !docs/gold-review.jsonl
 !docs/gold-review-recheck.jsonl

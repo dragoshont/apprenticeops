@@ -17,7 +17,7 @@ export default function App() {
   const { status, error, loading, refresh } = usePipeline(4000);
   const { theme, toggle } = useTheme();
   const [auth, setAuth] = useState<{ auth_enabled: boolean; user: string | null } | null>(null);
-  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[], inferenceStrategy: "baseline" });
+  const [controlSelection, setControlSelection] = useState({ modelSet: "", scenarioSet: "", memoryContext: "", memoryContexts: [] as string[], inferenceStrategy: "baseline", inferenceRuntime: "llama_cpp" });
   const [sessionScope, setSessionScope] = useState<"matching" | "all">("matching");
   const [sessionSearch, setSessionSearch] = useState("");
   const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
@@ -50,6 +50,7 @@ export default function App() {
       session.model_set === controlSelection.modelSet &&
       session.scenario_set === controlSelection.scenarioSet &&
       (session.inference_strategy ?? "baseline") === (controlSelection.inferenceStrategy || "baseline") &&
+      (session.inference_runtime ?? "ollama") === (controlSelection.inferenceRuntime || "ollama") &&
       (controlSelection.memoryContexts.length
         ? controlSelection.memoryContexts.includes(session.memory_context ?? "none")
         : (session.memory_context ?? "none") === (controlSelection.memoryContext || "none")),
@@ -57,7 +58,7 @@ export default function App() {
   const scopedSessions = sessionScope === "matching" ? matchingSessions : sessions;
   const visibleSessions = scopedSessions.filter((session) => {
     const query = sessionSearch.trim().toLowerCase();
-    const text = [session.run_id, session.model_set, session.scenario_set, session.memory_context, session.inference_strategy, session.state, session.user]
+    const text = [session.run_id, session.model_set, session.scenario_set, session.memory_context, session.inference_strategy, session.inference_runtime, session.state, session.user]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -77,6 +78,7 @@ export default function App() {
     scenario_set: status?.meta?.scenario_set ?? null,
     memory_context: status?.meta?.memory_context ?? "none",
     inference_strategy: status?.meta?.inference_strategy ?? "baseline",
+    inference_runtime: status?.meta?.inference_runtime ?? "ollama",
   };
   const selectedRunInBatch = displayBatch?.runs.find((run) => run.run_id === status?.run_id);
   const batchStillRunning = !!selectedBatch && !!selectedRunInBatch && selectedBatch.status === "running" && status?.state === "done";
@@ -88,6 +90,7 @@ export default function App() {
     scenarioSet: analyticsScope.scenario_set ?? controlSelection.scenarioSet,
     memoryContext: analyticsScope.memory_context ?? controlSelection.memoryContext ?? "none",
     inferenceStrategy: analyticsScope.inference_strategy ?? controlSelection.inferenceStrategy ?? "baseline",
+    inferenceRuntime: analyticsScope.inference_runtime ?? controlSelection.inferenceRuntime ?? "ollama",
   };
   const latestSession = sessions[0] ?? null;
   const activeRunId = activeSession?.run_id ?? null;

@@ -48,7 +48,7 @@ function NodeCard({
 export function NodeCards({ nodes }: { nodes?: { home: NodeInfo; ai: NodeInfo } }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row">
-      <NodeCard name="ai" role="i5-8350U · locked inference · ollama 0.30.8" info={nodes?.ai} accent="ai" />
+      <NodeCard name="ai" role="i5-8350U · locked inference · ollama + llama.cpp" info={nodes?.ai} accent="ai" />
       <NodeCard name="home" role="orchestrator · judge · git" info={nodes?.home} accent="home" />
     </div>
   );

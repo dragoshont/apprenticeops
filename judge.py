@@ -418,6 +418,7 @@ def main():
         if not args.out:
             sys.exit("--judge needs --out")
         memory_context_by_unit = {}
+        runtime_by_unit = {}
         # resume: skip (model, scenario, rep, memory_context, inference_strategy, judge_model) already
         # written to --out, so paired no-memory/memory runs can be judged together
         # without one condition suppressing the other.
@@ -467,7 +468,9 @@ def main():
             rep = row.get("rep", 0)
             memory_context = row.get("env.memory_context") or "none"
             inference_strategy = row.get("env.inference_strategy") or row.get("strategy.id") or "baseline"
+            inference_runtime = row.get("env.inference_runtime") or row.get("adapter") or "ollama"
             memory_context_by_unit[(row["model"], sid, str(rep), memory_context, inference_strategy)] = memory_context
+            runtime_by_unit[(row["model"], sid, str(rep), memory_context, inference_strategy)] = inference_runtime
             if all((row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done for _, mo in specs):
                 continue
             base = f"{row['model'].replace('/', '_').replace(':', '_')}__{sid}"
@@ -484,12 +487,12 @@ def main():
             for be, mo in specs:
                 if (row["model"], sid, str(rep), memory_context, inference_strategy, mo) in done:
                     continue
-                tasks.append((row["model"], sid, rep, memory_context, inference_strategy, answer, be, mo))
+                tasks.append((row["model"], sid, rep, memory_context, inference_strategy, inference_runtime, answer, be, mo))
 
         def _judge_task(t):
-            model, sid, rep, memory_context, inference_strategy, answer, be, mo = t
+            model, sid, rep, memory_context, inference_strategy, inference_runtime, answer, be, mo = t
             if not answer:
-                return (model, sid, rep, memory_context, inference_strategy, be, mo, normalize_judgement(
+                return (model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, normalize_judgement(
                     {},
                     fallback_score=1,
                     fallback_verdict="empty",
@@ -500,7 +503,7 @@ def main():
             for attempt in range(4):
                 try:
                     j = normalize_judgement(judge_one(jg, scen[sid], answer))
-                    return (model, sid, rep, memory_context, inference_strategy, be, mo, j, jg.last_usage)
+                    return (model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, j, jg.last_usage)
                 except Exception as e:  # noqa: BLE001
                     if attempt == 3:
                         sys.stderr.write(f"judge[{mo}] {model} {sid} r{rep} "
@@ -517,15 +520,18 @@ def main():
                 res = fut.result()
                 if res is None:
                     continue
-                model, sid, rep, memory_context, inference_strategy, be, mo, j, u = res
+                model, sid, rep, memory_context, inference_strategy, inference_runtime, be, mo, j, u = res
                 if u:
                     cost["calls"] += 1
                     for k in ("ai_credits", "tokens_in", "tokens_out", "cache_read", "cache_write"):
                         cost[k] += u.get(k) or 0
                 memory_context = memory_context_by_unit.get((model, sid, str(rep), memory_context, inference_strategy), memory_context)
+                inference_runtime = runtime_by_unit.get((model, sid, str(rep), memory_context, inference_strategy), inference_runtime)
                 f.write(json.dumps({"model": model, "scenario": sid, "rep": rep,
                                     "memory_context": memory_context,
                                     "inference_strategy": inference_strategy,
+                                    "inference_runtime": inference_runtime,
+                                    "adapter": inference_runtime,
                                     "scenarios_path": scen_path,
                                     "scenarios_sha256": scen_sha,
                                     "judge_backend": be, "judge_model": mo,

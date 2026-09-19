@@ -79,22 +79,27 @@ def by_id(items: list[dict], key: str) -> dict[str, dict]:
     return out
 
 
-def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_ids: list[str], inference_strategy_id: str) -> tuple[dict, dict, list[dict], dict]:
+def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_ids: list[str], inference_strategy_id: str, inference_runtime_id: str) -> tuple[dict, dict, list[dict], dict, dict]:
     if not ID_RE.match(model_set_id) or not ID_RE.match(scenario_set_id):
         fail("invalid model or scenario set id")
     if not ID_RE.match(inference_strategy_id):
         fail("invalid inference_strategy id")
+    if not ID_RE.match(inference_runtime_id):
+        fail("invalid inference_runtime id")
     matrix = load_matrix()
     model_sets = by_id(matrix.get("model_sets", []), "model_set")
     scenario_sets = by_id(matrix.get("scenario_sets", []), "scenario_set")
     memory_contexts = by_id(matrix.get("memory_contexts", []), "memory_context")
     inference_strategies = by_id(matrix.get("inference_strategies", []), "inference_strategy")
+    runtime_options = by_id(matrix.get("runtime_options", []), "inference_runtime")
     if model_set_id not in model_sets:
         fail(f"unknown model_set: {model_set_id}")
     if scenario_set_id not in scenario_sets:
         fail(f"unknown scenario_set: {scenario_set_id}")
     if inference_strategy_id not in inference_strategies:
         fail(f"unknown inference_strategy: {inference_strategy_id}")
+    if inference_runtime_id not in runtime_options:
+        fail(f"unknown inference_runtime: {inference_runtime_id}")
     selected_memories = []
     seen = set()
     for memory_id in memory_context_ids:
@@ -109,8 +114,16 @@ def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_id
     if not selected_memories:
         fail("at least one memory context is required")
     model_set = dict(model_sets[model_set_id])
+    if model_set.get("runtime") and model_set.get("runtime") != inference_runtime_id:
+        fail(f"model_set {model_set_id!r} requires inference_runtime={model_set.get('runtime')}")
+    if inference_runtime_id == "llama_cpp" and not model_set.get("llama_cpp_model_map"):
+        fail(f"model_set {model_set_id!r} does not declare llama_cpp_model_map")
     scenario_set = dict(scenario_sets[scenario_set_id])
     model_set["_path"] = str(safe_path(model_set.get("path"), ".txt").relative_to(REPO))
+    if model_set.get("llama_cpp_model_map"):
+        model_set["_llama_cpp_model_map"] = str(safe_path(model_set.get("llama_cpp_model_map"), ".json").relative_to(REPO))
+    if model_set.get("llama_cpp_artifacts"):
+        model_set["_llama_cpp_artifacts"] = str(safe_path(model_set.get("llama_cpp_artifacts"), ".json").relative_to(REPO))
     scenario_set["_path"] = str(safe_path(scenario_set.get("path"), ".json").relative_to(REPO))
     for memory in selected_memories:
         if memory.get("path"):
@@ -122,7 +135,7 @@ def resolve_selection(model_set_id: str, scenario_set_id: str, memory_context_id
         strategy["_prompt_path"] = str(safe_path(strategy.get("prompt_path"), ".md").relative_to(REPO))
     else:
         strategy["_prompt_path"] = ""
-    return model_set, scenario_set, selected_memories, strategy
+    return model_set, scenario_set, selected_memories, strategy, dict(runtime_options[inference_runtime_id])
 
 
 def write_json_atomic(path: Path, payload: dict) -> None:
@@ -140,7 +153,7 @@ def run_ids(batch_id: str, count: int) -> list[str]:
     return [f"{batch_id}-m{index}" for index in range(1, count + 1)]
 
 
-def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, memories: list[dict], strategy: dict) -> dict:
+def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, memories: list[dict], strategy: dict, runtime: dict) -> dict:
     ids = run_ids(args.batch_id, len(memories))
     return {
         "schema_version": 1,
@@ -148,6 +161,7 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
         "model_set": args.model_set,
         "scenario_set": args.scenario_set,
         "inference_strategy": args.inference_strategy,
+        "inference_runtime": args.inference_runtime,
         "memory_contexts": [memory["id"] for memory in memories],
         "status": "running",
         "runner": args.runner,
@@ -165,6 +179,7 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
                 "memory_context": memory["id"],
                 "memory_context_file": memory.get("_path") or None,
                 "inference_strategy": args.inference_strategy,
+                "inference_runtime": args.inference_runtime,
                 "strategy_prompt_file": strategy.get("_prompt_path") or None,
                 "status": "pending",
                 "started_at": None,
@@ -180,6 +195,18 @@ def build_state(args: argparse.Namespace, model_set: dict, scenario_set: dict, m
             "models": model_set["_path"],
             "scenarios": scenario_set["_path"],
             "strategy_prompt": strategy.get("_prompt_path") or "",
+            "llama_cpp_model_map": model_set.get("_llama_cpp_model_map") or "",
+            "llama_cpp_artifacts": model_set.get("_llama_cpp_artifacts") or "",
+        },
+        "runtime": {
+            "id": runtime.get("id"),
+            "label": runtime.get("label"),
+            "kind": runtime.get("kind"),
+            "llama_cpp_extra_args": model_set.get("llama_cpp_extra_args") or "",
+            "max_tokens_cap": model_set.get("max_tokens_cap"),
+            "run_repeats": model_set.get("run_repeats"),
+            "run_temp": model_set.get("run_temp"),
+            "run_allow_unlocked": bool(model_set.get("run_allow_unlocked")),
         },
         "strategy": {
             "id": strategy.get("id"),
@@ -236,6 +263,13 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         "memory_context_file": run.get("memory_context_file"),
         "memory_context_sha256": sha256(memory_path),
         "inference_strategy": run.get("inference_strategy") or "baseline",
+        "inference_runtime": run.get("inference_runtime") or state.get("inference_runtime") or os.environ.get("INFERENCE_RUNTIME") or "ollama",
+        "llama_cpp_model_map": state.get("paths", {}).get("llama_cpp_model_map") or os.environ.get("LLAMA_CPP_MODEL_MAP") or None,
+        "llama_cpp_extra_args": state.get("runtime", {}).get("llama_cpp_extra_args") or os.environ.get("LLAMA_CPP_EXTRA_ARGS") or None,
+        "max_tokens_cap": state.get("runtime", {}).get("max_tokens_cap"),
+        "run_repeats_override": state.get("runtime", {}).get("run_repeats"),
+        "run_temp_override": state.get("runtime", {}).get("run_temp"),
+        "run_allow_unlocked": bool(state.get("runtime", {}).get("run_allow_unlocked")),
         "strategy_candidate_count": int(state.get("strategy", {}).get("candidate_count") or 1),
         "strategy_prompt_file": run.get("strategy_prompt_file"),
         "strategy_prompt_sha256": sha256(strategy_path),
@@ -245,7 +279,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         "class_counts": {},
         "difficulty_counts": {},
         "grounding_counts": {},
-        "reps": int(os.environ.get("REPS", "5")),
+        "reps": int(os.environ.get("RUN_REPEATS") or os.environ.get("REPS", "5")),
         "judges": int(os.environ.get("NJUDGES", "2")),
         "expect": model_count(models_path),
         "user": state.get("user") or "user",
@@ -261,7 +295,7 @@ def ensure_run_meta(state: dict, run: dict) -> None:
         payload[key] = counts
     if meta_path.exists():
         existing = json.loads(meta_path.read_text())
-        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "strategy_prompt_sha256")
+        keys = ("models", "models_sha256", "scenarios", "scenarios_sha256", "memory_context", "memory_context_sha256", "inference_strategy", "inference_runtime", "strategy_prompt_sha256", "llama_cpp_model_map", "llama_cpp_extra_args")
         mismatches = [key for key in keys if existing.get(key) != payload.get(key)]
         if mismatches:
             raise RuntimeError(f"existing run.meta for {run['run_id']} does not match this batch: {', '.join(mismatches)}")
@@ -297,6 +331,7 @@ def local_roster_done(state: dict, run_id: str) -> bool:
     expected_memory = meta.get("memory_context")
     expected_memory_sha = meta.get("memory_context_sha256")
     expected_strategy = meta.get("inference_strategy") or "baseline"
+    expected_runtime = meta.get("inference_runtime") or "ollama"
     expected_strategy_sha = meta.get("strategy_prompt_sha256")
     expected_scenario_sha = meta.get("scenarios_sha256")
     expected_models = {
@@ -334,6 +369,8 @@ def local_roster_done(state: dict, run_id: str) -> bool:
                 raise RuntimeError(f"result memory hash mismatch for {run_id}")
             if (row.get("env.inference_strategy") or "baseline") != expected_strategy:
                 raise RuntimeError(f"result inference_strategy mismatch for {run_id}")
+            if (row.get("env.inference_runtime") or row.get("adapter") or "ollama") != expected_runtime:
+                raise RuntimeError(f"result inference_runtime mismatch for {run_id}")
             if row.get("env.strategy_prompt_sha") != expected_strategy_sha:
                 raise RuntimeError(f"result strategy prompt hash mismatch for {run_id}")
             if row.get("env.scenarios_sha") != expected_scenario_sha:
@@ -375,6 +412,13 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
         "MEMORY_CONTEXT": run["memory_context"],
         "MEMORY_CONTEXT_FILE": run.get("memory_context_file") or "",
         "INFERENCE_STRATEGY": run.get("inference_strategy") or state.get("inference_strategy") or "baseline",
+        "INFERENCE_RUNTIME": run.get("inference_runtime") or state.get("inference_runtime") or os.environ.get("INFERENCE_RUNTIME", "ollama"),
+        "LLAMA_CPP_MODEL_MAP": state.get("paths", {}).get("llama_cpp_model_map") or os.environ.get("LLAMA_CPP_MODEL_MAP", ""),
+        "LLAMA_CPP_EXTRA_ARGS": state.get("runtime", {}).get("llama_cpp_extra_args") or os.environ.get("LLAMA_CPP_EXTRA_ARGS", ""),
+        "MAX_TOKENS_CAP": state.get("runtime", {}).get("max_tokens_cap") or os.environ.get("MAX_TOKENS_CAP", ""),
+        "RUN_REPEATS": state.get("runtime", {}).get("run_repeats") or os.environ.get("RUN_REPEATS", ""),
+        "RUN_TEMP": state.get("runtime", {}).get("run_temp") or os.environ.get("RUN_TEMP", ""),
+        "RUN_ALLOW_UNLOCKED": "1" if state.get("runtime", {}).get("run_allow_unlocked") else os.environ.get("RUN_ALLOW_UNLOCKED", ""),
         "STRATEGY_PROMPT_FILE": run.get("strategy_prompt_file") or state.get("paths", {}).get("strategy_prompt") or "",
         "RUN_USER": state.get("user") or "user",
     })
@@ -383,7 +427,7 @@ def launch_run(state: dict, run_index: int, batch_dir: Path, poll_s: int) -> Non
     state["current_index"] = run_index
     state["updated_at"] = utc_now()
     write_json_atomic(batch_dir / "batch-state.json", state)
-    append_log(batch_dir, f"launching {run['run_id']} memory_context={run['memory_context']} inference_strategy={run.get('inference_strategy') or state.get('inference_strategy') or 'baseline'}")
+    append_log(batch_dir, f"launching {run['run_id']} memory_context={run['memory_context']} inference_strategy={run.get('inference_strategy') or state.get('inference_strategy') or 'baseline'} inference_runtime={run.get('inference_runtime') or state.get('inference_runtime') or os.environ.get('INFERENCE_RUNTIME', 'ollama')}")
     ensure_run_meta(state, run)
     command = ["./scripts/run-e2e.sh"] if state.get("runner") == "e2e" else ["./scripts/run-roster.sh"]
     with (batch_dir / f"{run['run_id']}.boot.log").open("a") as out:
@@ -473,7 +517,7 @@ def active(_: argparse.Namespace) -> None:
 def launch(args: argparse.Namespace) -> None:
     if not RUN_ID_RE.match(args.batch_id) or len(args.batch_id) > 70:
         fail("invalid batch_id")
-    model_set, scenario_set, memories, strategy = resolve_selection(args.model_set, args.scenario_set, args.memory_context, args.inference_strategy)
+    model_set, scenario_set, memories, strategy, runtime = resolve_selection(args.model_set, args.scenario_set, args.memory_context, args.inference_strategy, args.inference_runtime)
     ids = run_ids(args.batch_id, len(memories))
     if any(not RUN_ID_RE.match(run_id) or len(run_id) > 80 for run_id in ids):
         fail("generated run_id is invalid")
@@ -484,9 +528,9 @@ def launch(args: argparse.Namespace) -> None:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             fail("another memory batch is already active", code=3)
-        state = build_state(args, model_set, scenario_set, memories, strategy)
+        state = build_state(args, model_set, scenario_set, memories, strategy, runtime)
         write_json_atomic(batch_dir / "batch-state.json", state)
-        append_log(batch_dir, f"batch started model_set={args.model_set} scenario_set={args.scenario_set} inference_strategy={args.inference_strategy} memory_contexts={','.join(state['memory_contexts'])}")
+        append_log(batch_dir, f"batch started model_set={args.model_set} scenario_set={args.scenario_set} inference_strategy={args.inference_strategy} inference_runtime={args.inference_runtime} memory_contexts={','.join(state['memory_contexts'])}")
         run_batch(state, batch_dir, args.poll_s)
 
 
@@ -547,6 +591,7 @@ def parse_args() -> argparse.Namespace:
     launch_p.add_argument("--model-set", required=True)
     launch_p.add_argument("--scenario-set", required=True)
     launch_p.add_argument("--inference-strategy", default="baseline")
+    launch_p.add_argument("--inference-runtime", default="ollama")
     launch_p.add_argument("--memory-context", action="append", required=True)
     launch_p.add_argument("--runner", choices=("e2e", "local-roster"), default="e2e",
                           help="e2e drives the full home+ai pipeline; local-roster runs scripts/run-roster.sh on this node")

@@ -3,6 +3,7 @@ import {
   Activity,
   CheckCircle2,
   Clock,
+  Cpu,
   Database,
   Loader2,
   Rocket,
@@ -22,6 +23,7 @@ type ControlResult = {
   memory_context?: string | null;
   memory_contexts?: string[];
   inference_strategy?: string | null;
+  inference_runtime?: string | null;
 };
 
 export function RunControlCenter({
@@ -34,12 +36,13 @@ export function RunControlCenter({
   runMatrix?: RunMatrix | null;
   runBatches: RunBatch[];
   activeSession?: Session | null;
-  onSelectionChange?: (selection: { modelSet: string; scenarioSet: string; memoryContext: string; memoryContexts: string[]; inferenceStrategy: string }) => void;
+  onSelectionChange?: (selection: { modelSet: string; scenarioSet: string; memoryContext: string; memoryContexts: string[]; inferenceStrategy: string; inferenceRuntime: string }) => void;
   onAfter: (runId?: string | null) => void;
 }) {
   const [modelSet, setModelSet] = useState("");
   const [scenarioSet, setScenarioSet] = useState("");
   const [inferenceStrategy, setInferenceStrategy] = useState("baseline");
+  const [inferenceRuntime, setInferenceRuntime] = useState("llama_cpp");
   const [selectedMemoryContexts, setSelectedMemoryContexts] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ tone: "good" | "bad" | "info"; text: string } | null>(null);
@@ -47,6 +50,7 @@ export function RunControlCenter({
   const modelSets = runMatrix?.model_sets ?? [];
   const scenarioSets = runMatrix?.scenario_sets ?? [];
   const memoryContexts = runMatrix?.memory_contexts ?? [];
+  const runtimeOptions = runMatrix?.runtime_options ?? [];
   const selectableMemoryContexts = memoryContexts.filter((item) => item.kind !== "strategy");
   const inferenceStrategies = runMatrix?.inference_strategies ?? [];
 
@@ -68,24 +72,34 @@ export function RunControlCenter({
     if (inferenceStrategies.length && !inferenceStrategies.some((item) => item.id === inferenceStrategy)) {
       setInferenceStrategy(runMatrix?.defaults?.inference_strategy ?? inferenceStrategies[0].id);
     }
+    if (runtimeOptions.length && !runtimeOptions.some((item) => item.id === inferenceRuntime)) {
+      setInferenceRuntime(runMatrix?.defaults?.inference_runtime ?? runtimeOptions[0].id);
+    }
   }, [
     modelSets,
     scenarioSets,
     memoryContexts,
     inferenceStrategies,
+    runtimeOptions,
     modelSet,
     scenarioSet,
     inferenceStrategy,
+    inferenceRuntime,
     selectedMemoryContexts,
     runMatrix?.defaults?.model_set,
     runMatrix?.defaults?.scenario_set,
     runMatrix?.defaults?.memory_context,
     runMatrix?.defaults?.inference_strategy,
+    runMatrix?.defaults?.inference_runtime,
   ]);
 
   const chosenModel = modelSets.find((item) => item.id === modelSet) ?? modelSets[0];
   const chosenScenario = scenarioSets.find((item) => item.id === scenarioSet) ?? scenarioSets[0];
   const chosenStrategy = inferenceStrategies.find((item) => item.id === inferenceStrategy) ?? inferenceStrategies[0];
+  const chosenRuntime = runtimeOptions.find((item) => item.id === inferenceRuntime) ?? runtimeOptions[0];
+  const requiredRuntime = chosenModel?.runtime;
+  const runtimeMismatch = !!requiredRuntime && !!chosenRuntime && requiredRuntime !== chosenRuntime.id;
+  const cppMissingMap = chosenRuntime?.id === "llama_cpp" && !chosenModel?.llama_cpp_model_map;
   const orderedMemoryContexts = selectableMemoryContexts.filter((item) => selectedMemoryContexts.includes(item.id));
   const orderedMemoryContextIds = orderedMemoryContexts.map((item) => item.id);
   const memorySelectionKey = orderedMemoryContextIds.join("|");
@@ -93,8 +107,9 @@ export function RunControlCenter({
   const modelCount = chosenModel?.model_count ?? 0;
   const scenarioCount = chosenScenario?.scenario_count ?? 0;
   const candidateCount = Math.max(chosenStrategy?.candidate_count ?? 1, 1);
+  const runRepeats = chosenModel?.run_repeats ?? 5;
   const memoryCount = Math.max(orderedMemoryContexts.length, 1);
-  const answerRows = modelCount * scenarioCount * 5 * memoryCount;
+  const answerRows = modelCount * scenarioCount * runRepeats * memoryCount;
   const inferenceUnits = answerRows * candidateCount;
   const judgeUnits = answerRows * 2;
   const totalWorkUnits = inferenceUnits + judgeUnits;
@@ -110,8 +125,14 @@ export function RunControlCenter({
     : "Only this memory context will run. Select another checkbox to queue a memory-axis comparison.";
 
   useEffect(() => {
-    onSelectionChange?.({ modelSet, scenarioSet, memoryContext: primaryMemoryContext, memoryContexts: orderedMemoryContextIds, inferenceStrategy });
-  }, [modelSet, scenarioSet, primaryMemoryContext, memorySelectionKey, inferenceStrategy, onSelectionChange]);
+    onSelectionChange?.({ modelSet, scenarioSet, memoryContext: primaryMemoryContext, memoryContexts: orderedMemoryContextIds, inferenceStrategy, inferenceRuntime });
+  }, [modelSet, scenarioSet, primaryMemoryContext, memorySelectionKey, inferenceStrategy, inferenceRuntime, onSelectionChange]);
+
+  useEffect(() => {
+    if (requiredRuntime && requiredRuntime !== inferenceRuntime) {
+      setInferenceRuntime(requiredRuntime);
+    }
+  }, [requiredRuntime, inferenceRuntime]);
 
   async function run(action: string, fn: () => Promise<ControlResult>) {
     setBusy(action);
@@ -140,7 +161,7 @@ export function RunControlCenter({
       );
       if (!ok) return;
     }
-    void run("start", () => control.start(chosenModel.id, chosenScenario.id, chosenMemory.id, inferenceStrategy));
+    void run("start", () => control.start(chosenModel.id, chosenScenario.id, chosenMemory.id, inferenceStrategy, inferenceRuntime));
   }
 
   function startMemoryBatch() {
@@ -151,7 +172,7 @@ export function RunControlCenter({
       );
       if (!ok) return;
     }
-    void run("batch", () => control.startBatch(chosenModel.id, chosenScenario.id, orderedMemoryContextIds, inferenceStrategy));
+    void run("batch", () => control.startBatch(chosenModel.id, chosenScenario.id, orderedMemoryContextIds, inferenceStrategy, inferenceRuntime));
   }
 
   const spin = (key: string, icon: React.ReactNode) =>
@@ -166,12 +187,12 @@ export function RunControlCenter({
     });
   }
 
-  const startDisabled = !chosenModel || !chosenScenario || !chosenStrategy || !orderedMemoryContexts.length || busy != null || activeLocked || !!activeBatch;
+  const startDisabled = !chosenModel || !chosenScenario || !chosenStrategy || !chosenRuntime || runtimeMismatch || cppMissingMap || !orderedMemoryContexts.length || busy != null || activeLocked || !!activeBatch;
   const startTitle = runLocked
     ? "A run or memory batch is already active. Only one job can own the ai node."
     : undefined;
   const startLabel = orderedMemoryContexts.length > 1 ? `Start queued memory runs (${orderedMemoryContexts.length})` : "Start selected run";
-  const compactSummary = `${modelCount} models · ${scenarioCount} scenarios · ${memoryCount} memory ${memoryCount === 1 ? "run" : "runs"} · ${chosenStrategy?.id ?? "baseline"} · ${judgeUnits.toLocaleString()} judge rows`;
+  const compactSummary = `${modelCount} models · ${scenarioCount} scenarios · R=${runRepeats} · ${chosenRuntime?.id ?? "runtime"} · ${chosenStrategy?.id ?? "baseline"}`;
 
   return (
     <Card
@@ -186,7 +207,7 @@ export function RunControlCenter({
           </div>
         )}
 
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <RunShapePicker
             modelSets={modelSets}
             modelSet={modelSet}
@@ -203,6 +224,12 @@ export function RunControlCenter({
             selected={selectedMemoryContexts}
             onToggle={toggleMemoryContext}
           />
+          <RuntimePicker
+            runtimes={runtimeOptions}
+            runtime={inferenceRuntime}
+            onRuntime={setInferenceRuntime}
+            chosenModel={chosenModel}
+          />
         </div>
 
         <div className="grid gap-1.5 rounded-xl border border-line bg-panel2/30 p-2 sm:grid-cols-2 md:grid-cols-5">
@@ -210,7 +237,7 @@ export function RunControlCenter({
             icon={<Scale className="h-3.5 w-3.5" />}
             label="Answer rows"
             value={answerRows.toLocaleString()}
-            sub={`${modelCount} models × ${scenarioCount} scenarios × 5 reps × ${memoryCount} memory`}
+            sub={`${modelCount} models × ${scenarioCount} scenarios × ${runRepeats} reps × ${memoryCount} memory`}
           />
           <EstimateMetric
             icon={<Timer className="h-3.5 w-3.5" />}
@@ -248,6 +275,8 @@ export function RunControlCenter({
                 <span className="rounded-lg border border-accent/30 bg-panel px-2 py-1 text-xs font-semibold text-fg">{launchMode}</span>
                 <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">{launchEndpoint}</span>
                 <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_strategy={inferenceStrategy}</span>
+                <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">inference_runtime={inferenceRuntime}</span>
+                {chosenModel?.llama_cpp_model_map && <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">model_map={chosenModel.llama_cpp_model_map}</span>}
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {orderedMemoryContexts.map((context) => (
@@ -277,6 +306,7 @@ export function RunControlCenter({
               <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-accent" />Safety</span>
               <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-accent" />Energy</span>
               <span className="inline-flex items-center gap-1"><Workflow className="h-3 w-3 text-accent" />{inferenceStrategy}</span>
+              <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-accent" />{inferenceRuntime}</span>
               <span className="inline-flex items-center gap-1"><Database className="h-3 w-3 text-accent" />{orderedMemoryContexts.map((item) => item.id).join(" + ") || "none"}</span>
             </span>
             {msg && (
@@ -294,6 +324,8 @@ export function RunControlCenter({
                 Run already active - use Current Run controls below.
               </span>
             )}
+            {runtimeMismatch && <span className="rounded bg-bad/10 px-2 py-1 text-[11px] text-bad">Model set requires {requiredRuntime}</span>}
+            {cppMissingMap && <span className="rounded bg-bad/10 px-2 py-1 text-[11px] text-bad">llama.cpp requires a model map</span>}
             <button
               type="button"
               disabled={startDisabled}
@@ -381,10 +413,10 @@ function formatOneDecimal(value: number) {
 function launchReceipt(action: string, result: ControlResult) {
   if (action === "batch" || result.batch_id) {
     const contexts = result.memory_contexts?.join(" + ") || "selected contexts";
-    return `Launched memory batch ${result.batch_id ?? ""} · ${contexts} · ${result.inference_strategy ?? "baseline"}`;
+    return `Launched memory batch ${result.batch_id ?? ""} · ${contexts} · ${result.inference_strategy ?? "baseline"} · ${result.inference_runtime ?? "ollama"}`;
   }
   if (action === "start" || result.run_id) {
-    return `Launched single run ${result.run_id ?? ""} · memory_context=${result.memory_context ?? "selected"} · ${result.inference_strategy ?? "baseline"}`;
+    return `Launched single run ${result.run_id ?? ""} · memory_context=${result.memory_context ?? "selected"} · ${result.inference_strategy ?? "baseline"} · ${result.inference_runtime ?? "ollama"}`;
   }
   return "Control action accepted.";
 }
@@ -455,6 +487,52 @@ function StrategyMemoryPicker({
         <InferenceStrategyPicker strategies={strategies} value={strategy} onChange={onStrategy} />
         <MemoryContextPicker contexts={contexts} selected={selected} onToggle={onToggle} />
       </div>
+    </div>
+  );
+}
+
+function RuntimePicker({
+  runtimes,
+  runtime,
+  onRuntime,
+  chosenModel,
+}: {
+  runtimes: NonNullable<RunMatrix["runtime_options"]>;
+  runtime: string;
+  onRuntime: (id: string) => void;
+  chosenModel?: NonNullable<RunMatrix["model_sets"]>[number];
+}) {
+  const required = chosenModel?.runtime;
+  return (
+    <div className="rounded-xl border border-line bg-panel2/30 p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="label">Runtime adapter</div>
+        <span className="rounded bg-panel px-2 py-1 font-mono text-[10px] text-faint">deployment runtime</span>
+      </div>
+      <div className="space-y-1.5">
+        {runtimes.map((option) => {
+          const checked = runtime === option.id;
+          const disabled = !!required && required !== option.id;
+          return (
+            <label key={option.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 transition ${checked ? "border-accent/50 bg-accent/10" : "border-line/60 bg-panel/50 hover:border-accent/40"} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}>
+              <input type="radio" checked={checked} disabled={disabled} onChange={() => onRuntime(option.id)} className="mt-0.5 h-4 w-4 border-line bg-panel text-accent focus:ring-accent" />
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-fg">
+                  {option.label}
+                  {option.kind && <span className="rounded bg-info/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-info">{option.kind}</span>}
+                </span>
+                <span className="mt-0.5 block font-mono text-[10px] text-faint">inference_runtime={option.id}</span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {chosenModel?.llama_cpp_artifacts && (
+        <p className="mt-2 break-all font-mono text-[10px] text-faint">artifacts={chosenModel.llama_cpp_artifacts}</p>
+      )}
+      {chosenModel?.run_allow_unlocked && (
+        <p className="mt-2 text-xs leading-relaxed text-warn">Smoke mode: non-canonical R={chosenModel.run_repeats ?? 1}; audit-run must reject this as thesis evidence.</p>
+      )}
     </div>
   );
 }

@@ -1,0 +1,64 @@
+# Hardware Profile
+
+Status: active hardware note, created 2026-07-03.
+
+## Target Class Versus Measured Node
+
+The doctoral target is **commodity CPU-only laptop hardware**, roughly a
+T14s/T480s-class older laptop with about 24 GiB RAM and no dedicated GPU. The
+current measured node is narrower:
+
+| Role | Current value |
+|---|---|
+| Measured node | ThinkPad T480s / `home-ai`, hostname `ai` |
+| CPU class | Intel i5-8350U class, 4C/8T, 15 W mobile CPU |
+| RAM | about 24 GiB |
+| Inference runtimes | Ollama 0.30.8 for service/legacy rows; llama.cpp provisioned as preferred future experiment runtime |
+| GPU use | none for graded inference |
+| OS | Linux, observed kernel `7.0.0-22-generic` in committed v1 run rows |
+
+Machine-readable profile: `data/hardware-profile.home-ai.json`.
+
+## Locked Systems Settings
+
+The reproducible systems pass expects:
+
+- governor `performance`;
+- turbo disabled (`cpu_no_turbo=1`);
+- `min_perf_pct=max_perf_pct=100`;
+- RAPL domain `package-0`;
+- perf counters available (`perf_event_paranoid <= 2`);
+- memory-bandwidth and core perf sampling enabled;
+- sample interval 0.5 s;
+- Ollama 0.30.8 for committed legacy rows;
+- llama.cpp installed/provisioned on the AI node for future thesis experiments;
+- context length 8192.
+
+These settings are checked by `run.py --preflight-only` against
+`data/run-manifest.json` for locked Linux runs.
+
+## What Is Node-Bound
+
+Quality and safety scores can be recomputed from committed rows on any machine.
+Systems metrics are node-bound:
+
+- RAPL energy;
+- CPU frequency and thermal behavior;
+- memory bandwidth and perf counters;
+- RSS/swap/page-fault behavior;
+- wall-time and throughput under the locked CPU state.
+
+The paper should not generalize these systems numbers to all laptops. It should
+state: single-node measurement, released harness, invite reruns.
+
+## Harness Dirty Semantics
+
+Older rows only had `env.harness_dirty`, which could become true after generated
+artifacts appeared in the worktree. New rows split this into:
+
+- `env.harness_source_dirty`: tracked/source files changed;
+- `env.harness_artifact_dirty`: generated run artifacts such as `results.*`,
+  `logs/`, `outputs/`, `calibration.json`, or `data/runs/` changed;
+- `env.harness_dirty`: backward-compatible aggregate of the two.
+
+Use `env.harness_source_dirty` for source reproducibility checks on future rows.

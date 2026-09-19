@@ -57,12 +57,12 @@ SCEN, REPS = 19, 5
 EXPECT = SCEN * REPS  # 95 rows per complete model
 
 RESULT_COLS = [
-    "model", "bracket", "scenario", "rep", "det_score", "decode_tok_s",
+    "model", "adapter", "bracket", "scenario", "rep", "det_score", "decode_tok_s",
     "prefill_tok_s", "wall_s", "membw_peak_mb_s", "energy_wh", "param_count",
     "param_size", "quant", "size_bytes", "expert_count", "expert_used_count",
     "dnf", "finish_reason",
 ]
-JUDGED_COLS = ["model", "bracket", "scenario", "rep", "judge_score"]
+JUDGED_COLS = ["model", "adapter", "bracket", "scenario", "rep", "judge_score"]
 CANON_BRACKETS = ("0-1B", "1-2B", "2-3B", "3-4B", "4-5GB")
 
 # snapshot column -> raw-jsonl key (only where they differ from the column name)
@@ -95,6 +95,8 @@ def num(x) -> float:
 
 def cell(r: dict, col: str):
     """Render one results cell from a raw row (null -> '', bool -> 'True'/'False')."""
+    if col == "adapter":
+        return r.get("adapter") or r.get("env.inference_runtime") or "ollama"
     if col == "dnf":
         return str(bool(r.get("dnf")))
     if col == "finish_reason":
@@ -105,7 +107,7 @@ def cell(r: dict, col: str):
 
 
 def key_of(row: dict) -> tuple:
-    return (row["model"], row["scenario"], str(row["rep"]))
+    return (row.get("adapter") or "ollama", row["model"], row["scenario"], str(row["rep"]))
 
 
 def read_csv(path: str) -> list[dict]:
@@ -132,7 +134,7 @@ def dedup_results(raw_rows: list[dict]) -> dict:
     for r in raw_rows:
         if is_stub(r):
             continue
-        k = (r["model"], r["scenario"], str(r["rep"]))
+        k = (cell(r, "adapter"), r["model"], r["scenario"], str(r["rep"]))
         cur = best.get(k)
         if cur is None or num(r.get("det_score")) > num(cur.get("det_score")):
             best[k] = r
@@ -230,19 +232,26 @@ def main() -> None:
                 continue
             if jr["model"] in exclude:
                 continue
+            adapter = jr.get("adapter") or jr.get("inference_runtime") or jr.get("env.inference_runtime")
             scores[(jr["model"], jr["scenario"], str(jr.get("rep", 0)))].append(jr["score"])
+            if adapter:
+                scores[(adapter, jr["model"], jr["scenario"], str(jr.get("rep", 0)))].append(jr["score"])
         n_judges = max((len(v) for v in scores.values()), default=0)
         jnew, need_judge = [], 0
         for k, r in sorted(best.items()):
-            m, scen, _ = k
-            if k in scores:
-                js = sum(scores[k]) / len(scores[k])
+            adapter, m, scen, _ = k
+            score_key = (m, scen, str(r.get("rep", 0)))
+            adapter_score_key = (adapter, m, scen, str(r.get("rep", 0)))
+            if adapter_score_key in scores:
+                js = sum(scores[adapter_score_key]) / len(scores[adapter_score_key])
+            elif score_key in scores:
+                js = sum(scores[score_key]) / len(scores[score_key])
             elif r.get("dnf"):
                 js = 1.0  # empty answer -> judge.py scores 1
             else:
                 need_judge += 1
                 continue
-            jnew.append({"model": m, "bracket": brk.get(m), "scenario": scen,
+            jnew.append({"model": m, "adapter": adapter, "bracket": brk.get(m), "scenario": scen,
                          "rep": r.get("rep"), "judge_score": js})
         jexisting = read_csv(args.judged_csv)
         jadded, jreplaced = upsert(jexisting, jnew, better=lambda nw, cur: True)  # re-judge is authoritative

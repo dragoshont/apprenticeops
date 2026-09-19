@@ -31,8 +31,8 @@ def load_status_module():
 
 def test_resolve_and_state():
     module = load_module()
-    model_set, scenario_set, memories, strategy = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
+    model_set, scenario_set, memories, strategy, runtime = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline", "ollama"
     )
     assert model_set["_path"] == "data/models.dryrun.txt"
     assert scenario_set["_path"] == "data/scenario_sets/core-current.json"
@@ -42,12 +42,14 @@ def test_resolve_and_state():
         model_set="dryrun",
         scenario_set="core-current",
         inference_strategy="baseline",
+        inference_runtime="ollama",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories, strategy)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy, runtime)
     assert state["runner"] == "local-roster"
+    assert state["inference_runtime"] == "ollama"
     assert state["status"] == "running"
     assert [run["memory_context"] for run in state["runs"]] == ["none", "homelab-okf-v1"]
     assert all(len(run["run_id"]) <= 80 for run in state["runs"])
@@ -55,19 +57,20 @@ def test_resolve_and_state():
 
 def test_run_meta_creation_is_portable():
     module = load_module()
-    model_set, scenario_set, memories, strategy = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
+    model_set, scenario_set, memories, strategy, runtime = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline", "ollama"
     )
     args = argparse.Namespace(
         batch_id="batch-dryrun-core-test",
         model_set="dryrun",
         scenario_set="core-current",
         inference_strategy="baseline",
+        inference_runtime="ollama",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories, strategy)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy, runtime)
     with tempfile.TemporaryDirectory() as tmp:
         old_runs = module.RUNS
         module.RUNS = Path(tmp) / "runs"
@@ -81,6 +84,7 @@ def test_run_meta_creation_is_portable():
             assert meta["memory_context"] == "homelab-okf-v1"
             assert meta["memory_context_file"] == "data/memory/homelab-okf-v1/context.md"
             assert meta["inference_strategy"] == "baseline"
+            assert meta["inference_runtime"] == "ollama"
             assert meta["strategy_candidate_count"] == 1
             assert meta["models_count"] == 2
             assert meta["scenario_count"] == 20
@@ -91,19 +95,20 @@ def test_run_meta_creation_is_portable():
 
 def test_existing_run_meta_must_match_selection():
     module = load_module()
-    model_set, scenario_set, memories, strategy = module.resolve_selection(
-        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline"
+    model_set, scenario_set, memories, strategy, runtime = module.resolve_selection(
+        "dryrun", "core-current", ["none", "homelab-okf-v1"], "baseline", "ollama"
     )
     args = argparse.Namespace(
         batch_id="batch-dryrun-core-test",
         model_set="dryrun",
         scenario_set="core-current",
         inference_strategy="baseline",
+        inference_runtime="ollama",
         runner="local-roster",
         stall_timeout_s=7200,
         user="test",
     )
-    state = module.build_state(args, model_set, scenario_set, memories, strategy)
+    state = module.build_state(args, model_set, scenario_set, memories, strategy, runtime)
     with tempfile.TemporaryDirectory() as tmp:
         old_runs = module.RUNS
         module.RUNS = Path(tmp) / "runs"
@@ -194,6 +199,7 @@ def test_local_roster_done_requires_result_rows():
                 "memory_context": "none",
                 "memory_context_sha256": None,
                 "inference_strategy": "baseline",
+                "inference_runtime": "ollama",
                 "strategy_prompt_sha256": None,
                 "reps": 1,
                 "expect": 2,

@@ -22,6 +22,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import sys
 
 VOLATILE = ["env.cpu_no_turbo", "env.cpu_governor", "env.cpu_min_perf_pct",
@@ -56,6 +57,11 @@ def finish_of(r):
     if r.get("fatal"):
         return f"fatal:{r['fatal']}"
     return r.get("finish_reason") or "?"
+
+
+def normalize_version(value):
+    match = re.search(r"\d+\.\d+\.\d+", str(value or ""))
+    return match.group(0) if match else str(value or "").strip()
 
 
 def main():
@@ -140,27 +146,37 @@ def main():
         v = next(iter(vers))
         notes.append(f"ollama version: {v}")
         pinned = man.get("expected", {}).get("ollama_version")
-        if pinned and pinned != v:
+        if pinned and normalize_version(pinned) != normalize_version(v):
             problems.append(f"ollama version {v!r} != manifest pin {pinned!r}")
         elif not pinned:
             notes.append("  (manifest expected.ollama_version is null — pin it to this once confirmed)")
 
     # 7) scenarios.json hash (inputs unchanged)
-    want_sha = man.get("protocol", {}).get("scenarios_sha256")
+    protocol = man.get("protocol", {})
+    scenario_sets = protocol.get("scenario_sets") or {}
+    scenario_key = next(
+        (item for item in scenario_sets.values() if item.get("path") == args.scenarios),
+        None,
+    )
+    want_sha = (scenario_key or {}).get("sha256") or protocol.get("scenarios_sha256")
     if want_sha and os.path.exists(args.scenarios):
         got = hashlib.sha256(open(args.scenarios, "rb").read()).hexdigest()
         if got != want_sha:
-            problems.append(f"scenarios.json changed since wave1: {got[:12]}… != {want_sha[:12]}…")
+            problems.append(f"{args.scenarios} changed since manifest: {got[:12]}… != {want_sha[:12]}…")
         else:
-            notes.append("scenarios.json sha256 matches wave1")
+            notes.append(f"{args.scenarios} sha256 matches manifest")
 
     # 8) protocol args as recorded in the rows
     temps = {r.get("temp") for r in real if r.get("temp") is not None}
     thinks = {r.get("think") for r in real if r.get("think") is not None}
+    reps = {r.get("rep") for r in real if r.get("rep") is not None}
     if temps and temps != {man.get("protocol", {}).get("temperature", 0.7)}:
         problems.append(f"temperature in rows = {temps} (manifest {man.get('protocol', {}).get('temperature')})")
     if thinks and thinks != {man.get("protocol", {}).get("think", False)}:
         problems.append(f"think in rows = {thinks} (manifest {man.get('protocol', {}).get('think')})")
+    want_repeats = int(man.get("protocol", {}).get("repeats", 5))
+    if reps and reps != set(range(want_repeats)):
+        problems.append(f"reps in rows = {sorted(reps)} (manifest requires 0..{want_repeats - 1})")
 
     # finish-reason mix (informational)
     notes.append("finish: " + ", ".join(f"{k}={v}" for k, v in
@@ -172,7 +188,7 @@ def main():
         for p in problems:
             print(f"  ✗ {p}")
         sys.exit(1)
-    print("\nAUDIT: PASS — regime is single, matches the manifest, and is wave1-identical.")
+    print("\nAUDIT: PASS — regime and protocol match the manifest.")
 
 
 if __name__ == "__main__":

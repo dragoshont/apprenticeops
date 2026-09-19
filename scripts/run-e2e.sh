@@ -29,6 +29,13 @@ SCENARIO_SET="${SCENARIO_SET:-all}"
 MEMORY_CONTEXT="${MEMORY_CONTEXT:-none}"
 MEMORY_CONTEXT_FILE="${MEMORY_CONTEXT_FILE:-}"
 INFERENCE_STRATEGY="${INFERENCE_STRATEGY:-baseline}"
+INFERENCE_RUNTIME="${INFERENCE_RUNTIME:-ollama}"
+LLAMA_CPP_MODEL_MAP="${LLAMA_CPP_MODEL_MAP:-}"
+LLAMA_CPP_EXTRA_ARGS="${LLAMA_CPP_EXTRA_ARGS:-}"
+MAX_TOKENS_CAP="${MAX_TOKENS_CAP:-}"
+RUN_REPEATS="${RUN_REPEATS:-}"
+RUN_TEMP="${RUN_TEMP:-}"
+RUN_ALLOW_UNLOCKED="${RUN_ALLOW_UNLOCKED:-}"
 STRATEGY_PROMPT_FILE="${STRATEGY_PROMPT_FILE:-}"
 AI="${AI:-dragos@home-ai.home.domain}"
 AI_REPO="${AI_REPO:-/home/dragos/apprenticeops}"
@@ -38,7 +45,7 @@ LOG="${WORK}/e2e.log"
 mkdir -p "$WORK"
 # consumer exits cleanly once EXPECT models are judged; default = model count in MODELS
 EXPECT="${EXPECT:-$(grep -cvE '^[[:space:]]*(#|$)' "$MODELS" 2>/dev/null || echo 0)}"
-export RUN_ID MODELS MODEL_SET SCENARIOS SCENARIO_SET MEMORY_CONTEXT MEMORY_CONTEXT_FILE INFERENCE_STRATEGY STRATEGY_PROMPT_FILE RUN_USER EXPECT
+export RUN_ID MODELS MODEL_SET SCENARIOS SCENARIO_SET MEMORY_CONTEXT MEMORY_CONTEXT_FILE INFERENCE_STRATEGY INFERENCE_RUNTIME LLAMA_CPP_MODEL_MAP LLAMA_CPP_EXTRA_ARGS MAX_TOKENS_CAP RUN_REPEATS RUN_TEMP RUN_ALLOW_UNLOCKED STRATEGY_PROMPT_FILE RUN_USER EXPECT
 if [ ! -f "$WORK/run.meta" ]; then
 python3 - "$WORK/run.meta" <<'PY'
 import json, os, sys, tempfile
@@ -50,6 +57,7 @@ models_path = Path(os.environ.get("MODELS", "data/models.dryrun.txt"))
 scenarios_path = Path(os.environ.get("SCENARIOS", "data/scenarios.json"))
 memory_path = Path(os.environ["MEMORY_CONTEXT_FILE"]) if os.environ.get("MEMORY_CONTEXT_FILE") else None
 strategy_path = Path(os.environ["STRATEGY_PROMPT_FILE"]) if os.environ.get("STRATEGY_PROMPT_FILE") else None
+llama_cpp_model_map = Path(os.environ["LLAMA_CPP_MODEL_MAP"]) if os.environ.get("LLAMA_CPP_MODEL_MAP") else None
 
 def sha256(p):
   import hashlib
@@ -93,6 +101,14 @@ obj = {
   "memory_context_file": str(memory_path) if memory_path else None,
   "memory_context_sha256": sha256(memory_path) if memory_path else None,
   "inference_strategy": strategy_id,
+  "inference_runtime": os.environ.get("INFERENCE_RUNTIME", "ollama"),
+  "llama_cpp_model_map": str(llama_cpp_model_map) if llama_cpp_model_map else None,
+  "llama_cpp_model_map_sha256": sha256(llama_cpp_model_map) if llama_cpp_model_map else None,
+  "llama_cpp_extra_args": os.environ.get("LLAMA_CPP_EXTRA_ARGS") or None,
+  "max_tokens_cap": int(os.environ["MAX_TOKENS_CAP"]) if os.environ.get("MAX_TOKENS_CAP") else None,
+  "run_repeats_override": int(os.environ["RUN_REPEATS"]) if os.environ.get("RUN_REPEATS") else None,
+  "run_temp_override": float(os.environ["RUN_TEMP"]) if os.environ.get("RUN_TEMP") else None,
+  "run_allow_unlocked": os.environ.get("RUN_ALLOW_UNLOCKED") == "1",
   "strategy_candidate_count": strategy_candidate_count(strategy_id),
   "strategy_prompt_file": str(strategy_path) if strategy_path else None,
   "strategy_prompt_sha256": sha256(strategy_path) if strategy_path else None,
@@ -102,7 +118,7 @@ obj = {
   "class_counts": dict(Counter(s.get("class") or "unknown" for s in items if isinstance(s, dict))),
   "difficulty_counts": dict(Counter(s.get("difficulty") or "unknown" for s in items if isinstance(s, dict))),
   "grounding_counts": dict(Counter(s.get("grounding") or "unknown" for s in items if isinstance(s, dict))),
-  "reps": int(os.environ.get("REPS", "5")),
+  "reps": int(os.environ.get("RUN_REPEATS") or os.environ.get("REPS", "5")),
   "judges": int(os.environ.get("NJUDGES", "2")),
   "expect": int(os.environ.get("EXPECT", "0") or "0"),
   "user": os.environ.get("RUN_USER", "user"),
@@ -119,7 +135,7 @@ os.replace(tmp, path)
 json.loads(path.read_text())
 PY
 else
-python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" <<'PY'
+python3 - "$WORK/run.meta" "$MODELS" "$SCENARIOS" "$MEMORY_CONTEXT" "$MEMORY_CONTEXT_FILE" "$INFERENCE_STRATEGY" "$STRATEGY_PROMPT_FILE" "$INFERENCE_RUNTIME" "$LLAMA_CPP_MODEL_MAP" "$LLAMA_CPP_EXTRA_ARGS" "$MAX_TOKENS_CAP" "$RUN_REPEATS" "$RUN_TEMP" "$RUN_ALLOW_UNLOCKED" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 meta = json.loads(Path(sys.argv[1]).read_text())
@@ -142,6 +158,13 @@ memory_context = sys.argv[4]
 memory_file = sys.argv[5]
 inference_strategy = sys.argv[6]
 strategy_file = sys.argv[7]
+inference_runtime = sys.argv[8]
+llama_cpp_model_map = sys.argv[9]
+llama_cpp_extra_args = sys.argv[10]
+max_tokens_cap = sys.argv[11]
+run_repeats = sys.argv[12]
+run_temp = sys.argv[13]
+run_allow_unlocked = sys.argv[14]
 if meta.get("memory_context", "none") != memory_context:
   raise SystemExit(f"run.meta memory_context={meta.get('memory_context')!r} does not match launch {memory_context!r}")
 if (meta.get("memory_context_file") or "") != memory_file:
@@ -153,6 +176,25 @@ if memory_file:
     raise SystemExit("run.meta memory context hash mismatch; start a new run")
 if (meta.get("inference_strategy") or "baseline") != inference_strategy:
   raise SystemExit(f"run.meta inference_strategy={meta.get('inference_strategy')!r} does not match launch {inference_strategy!r}")
+if (meta.get("inference_runtime") or "ollama") != inference_runtime:
+  raise SystemExit(f"run.meta inference_runtime={meta.get('inference_runtime')!r} does not match launch {inference_runtime!r}")
+if (meta.get("llama_cpp_model_map") or "") != llama_cpp_model_map:
+  raise SystemExit("run.meta llama.cpp model map mismatch; start a new run")
+if llama_cpp_model_map:
+  map_path = Path(llama_cpp_model_map)
+  got = hashlib.sha256(map_path.read_bytes()).hexdigest()
+  if meta.get("llama_cpp_model_map_sha256") and meta["llama_cpp_model_map_sha256"] != got:
+    raise SystemExit("run.meta llama.cpp model map hash mismatch; start a new run")
+if (meta.get("llama_cpp_extra_args") or "") != llama_cpp_extra_args:
+  raise SystemExit("run.meta llama.cpp extra args mismatch; start a new run")
+if str(meta.get("max_tokens_cap") or "") != max_tokens_cap:
+  raise SystemExit("run.meta max token cap mismatch; start a new run")
+if run_repeats and int(meta.get("reps") or 0) != int(run_repeats):
+  raise SystemExit("run.meta repeat override mismatch; start a new run")
+if str(meta.get("run_temp_override") or "") != run_temp:
+  raise SystemExit("run.meta temperature override mismatch; start a new run")
+if ("1" if meta.get("run_allow_unlocked") else "") != run_allow_unlocked:
+  raise SystemExit("run.meta unlocked-run flag mismatch; start a new run")
 if (meta.get("strategy_prompt_file") or "") != strategy_file:
   raise SystemExit("run.meta strategy prompt file mismatch; start a new run")
 if strategy_file:
@@ -162,7 +204,7 @@ if strategy_file:
     raise SystemExit("run.meta strategy prompt hash mismatch; start a new run")
 PY
 fi
-ts() { date -uIs; }
+ts() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 elog() { echo "[$(ts)] $*" | tee -a "$LOG"; }
 
 shell_env() {
@@ -203,7 +245,7 @@ esac
 
 elog "=== E2E LAUNCH  RUN_ID=$RUN_ID  models=$MODELS  scenarios=$SCENARIOS  memory=$MEMORY_CONTEXT strategy=$INFERENCE_STRATEGY expect=$EXPECT ==="
 elog "launching PRODUCER on ai (detached) ..."
-PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "INFERENCE_STRATEGY=$INFERENCE_STRATEGY" "STRATEGY_PROMPT_FILE=$STRATEGY_PROMPT_FILE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
+PROD_ENV=$(shell_env "RUN_ID=$RUN_ID" "MODELS=$MODELS" "MODEL_SET=$MODEL_SET" "SCENARIOS=$SCENARIOS" "SCENARIO_SET=$SCENARIO_SET" "MEMORY_CONTEXT=$MEMORY_CONTEXT" "MEMORY_CONTEXT_FILE=$MEMORY_CONTEXT_FILE" "INFERENCE_STRATEGY=$INFERENCE_STRATEGY" "INFERENCE_RUNTIME=$INFERENCE_RUNTIME" "LLAMA_CPP_MODEL_MAP=$LLAMA_CPP_MODEL_MAP" "LLAMA_CPP_EXTRA_ARGS=$LLAMA_CPP_EXTRA_ARGS" "MAX_TOKENS_CAP=$MAX_TOKENS_CAP" "RUN_REPEATS=$RUN_REPEATS" "RUN_TEMP=$RUN_TEMP" "RUN_ALLOW_UNLOCKED=$RUN_ALLOW_UNLOCKED" "STRATEGY_PROMPT_FILE=$STRATEGY_PROMPT_FILE" "HOME_AI=$AI" "REMOTE_DIR=$AI_REPO")
 setsid bash -c "$PROD_ENV ./scripts/run-from-homelab.sh >>$(shell_quote "$LOG") 2>&1" </dev/null &
 elog "launching CONSUMER on home (detached, flock-guarded) ..."
 RUN_ID="$RUN_ID" AI="$AI" AI_REPO="$AI_REPO" EXPECT="$EXPECT" POLL_S="$POLL_S" SCENARIOS="$SCENARIOS" SCENARIO_SET="$SCENARIO_SET" \

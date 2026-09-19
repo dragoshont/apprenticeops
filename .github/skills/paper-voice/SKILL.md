@@ -28,7 +28,7 @@ trusts it AND a homelab operator can read it.
 
 - **First-person plural, active voice:** "We present", "we measure", "we report".
 - **Confident but humble:** name the probable/uncomfortable outcome up front, e.g.
-  "A ≤5 GB model will not match the frontier at homelab diagnosis — the realistic
+  "A ≤5B-parameter model will not match the frontier at homelab diagnosis — the realistic
   win is …". Pre-empting the let-down *is* the credibility.
 - **Dry wit only in the intro/framing**, never in methods/results. One wry, true
   line is allowed (e.g. "the 2018 ThinkPad is not a weakness; it is the

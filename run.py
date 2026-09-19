@@ -2,7 +2,9 @@
 """
 run.py — node-side small-model eval runner (stdlib only, runs ON home-ai).
 
-Talks to the local Ollama (127.0.0.1:11434), so it must run on the node:
+Runs against the configured local inference runtime: Ollama for legacy/service
+evidence, or llama.cpp direct-GGUF subprocesses for the experiment runtime. It
+must run on the node:
     scp -r scripts/ai-node/small-model-eval dragos@home-ai.home.domain:/tmp/sme
     ssh dragos@home-ai.home.domain 'cd /tmp/sme && python3 run.py --models models.txt'
 
@@ -33,6 +35,8 @@ import re
 import glob
 import hashlib
 import random
+import shlex
+import shutil
 import socket
 import ssl
 import subprocess
@@ -43,6 +47,12 @@ import urllib.error
 import urllib.request
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
+INFERENCE_RUNTIME = os.environ.get("INFERENCE_RUNTIME", "ollama")
+LLAMA_CPP_CLI = os.environ.get("LLAMA_CPP_CLI") or (shutil.which("llama-completion") or "llama-cli")
+LLAMA_CPP_MODELS_DIR = os.environ.get("LLAMA_CPP_MODELS", os.environ.get("LLAMA_CPP_MODEL_DIR", "/srv/llama.cpp/models"))
+LLAMA_CPP_MODEL_MAP = os.environ.get("LLAMA_CPP_MODEL_MAP", "")
+LLAMA_CPP_EXTRA_ARGS = os.environ.get("LLAMA_CPP_EXTRA_ARGS", "")
+RUNTIMES = {"ollama", "llama_cpp"}
 
 # ---- power metering (optional) -------------------------------------------
 # Reads instantaneous wall power (watts) from the node's smart plug over the LAN.
@@ -73,6 +83,7 @@ _DIRIGERA_SSL.verify_mode = ssl.CERT_NONE
 DEFAULT_TIMEOUT_S = 180      # hard wall-clock per request
 DEFAULT_STALL_S = 60         # no new token for this long -> DNF:stall
 DEFAULT_MAX_TOKENS = 512     # num_predict cap
+MAX_TOKENS_CAP = int(os.environ.get("MAX_TOKENS_CAP", "0") or "0")
 DEFAULT_TIMEOUT_POLICY_ID = os.environ.get("TIMEOUT_POLICY_ID", "ceops-v2-zero-stall-retry")
 DEFAULT_INFERENCE_STRATEGY = os.environ.get("INFERENCE_STRATEGY", "baseline")
 ZERO_OUTPUT_RETRIES = int(os.environ.get("ZERO_OUTPUT_RETRIES", "1"))
@@ -779,8 +790,25 @@ class Sampler(threading.Thread):
 
 
 # --------------------------------------------------------------------------
-# Ollama calls
+# Runtime calls (Ollama + llama.cpp)
 # --------------------------------------------------------------------------
+def _load_model_lock() -> dict[str, dict]:
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "models.lock.jsonl")
+    rows = {}
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    row = json.loads(line)
+                    rows[row["model_id"]] = row
+    except OSError:
+        pass
+    return rows
+
+
+MODEL_LOCK = _load_model_lock()
+
+
 def _post_json(path, payload, timeout):
     req = urllib.request.Request(
         OLLAMA + path, data=json.dumps(payload).encode(),
@@ -789,11 +817,75 @@ def _post_json(path, payload, timeout):
 
 
 def model_present(model):
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return resolve_llama_cpp_model_path(model)[0] is not None
     try:
         with _post_json("/api/show", {"model": model}, 30) as r:
             return r.status == 200
     except Exception:
         return False
+
+
+def _safe_env_name(model: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]", "_", model).upper()
+
+
+def _load_llama_cpp_model_map() -> dict[str, str]:
+    if not LLAMA_CPP_MODEL_MAP:
+        return {}
+    try:
+        with open(LLAMA_CPP_MODEL_MAP, encoding="utf-8") as handle:
+            return json.load(handle)
+    except OSError:
+        return {}
+
+
+def _candidate_gguf_paths(model: str) -> list[str]:
+    paths = []
+    row = MODEL_LOCK.get(model) or {}
+    quant = (row.get("quantization") or "").lower()
+    needles = []
+    if model.startswith("hf.co/"):
+        body = model.removeprefix("hf.co/").split(":", 1)[0]
+        repo = body.split("/")[-1]
+        needles.extend([repo.lower(), repo.lower().replace("-gguf", "")])
+    else:
+        needles.append(model.lower().replace(":", "-"))
+    root = LLAMA_CPP_MODELS_DIR
+    try:
+        for current, _, filenames in os.walk(root):
+            for filename in filenames:
+                if not filename.lower().endswith(".gguf"):
+                    continue
+                low = filename.lower()
+                if quant and quant.lower() not in low:
+                    continue
+                if any(needle and needle in low for needle in needles):
+                    paths.append(os.path.join(current, filename))
+    except OSError:
+        pass
+    return sorted(paths)
+
+
+def resolve_llama_cpp_model_path(model: str) -> tuple[str | None, str | None]:
+    if os.path.exists(model):
+        return model, None
+    env_path = os.environ.get(f"LLAMA_CPP_MODEL_{_safe_env_name(model)}")
+    if env_path:
+        return (env_path, None) if os.path.exists(env_path) else (None, f"mapped path missing: {env_path}")
+    model_map = _load_llama_cpp_model_map()
+    if model in model_map:
+        path = model_map[model]
+        return (path, None) if os.path.exists(path) else (None, f"mapped path missing: {path}")
+    row = MODEL_LOCK.get(model) or {}
+    if row.get("llama_cpp_status") != "direct_gguf":
+        return None, f"model is {row.get('llama_cpp_status') or 'not_in_model_lock'}, not direct_gguf"
+    candidates = _candidate_gguf_paths(model)
+    if len(candidates) == 1:
+        return candidates[0], None
+    if len(candidates) > 1:
+        return None, f"multiple GGUF candidates found under {LLAMA_CPP_MODELS_DIR}: {candidates[:5]}"
+    return None, f"no GGUF file found under {LLAMA_CPP_MODELS_DIR}; set LLAMA_CPP_MODEL_MAP or LLAMA_CPP_MODEL_{_safe_env_name(model)}"
 
 
 def _get_json(path, timeout=10):
@@ -824,6 +916,12 @@ def ollama_ps_snapshot():
     return {"models": out}
 
 
+def runtime_ps_snapshot():
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return {"runtime": "llama_cpp"}
+    return ollama_ps_snapshot()
+
+
 def classify_stall_phase(*, http_connected_at, first_byte_at, first_json_at,
                          first_content_at, done_at, finish):
     if not finish or not str(finish).startswith("DNF"):
@@ -845,6 +943,16 @@ def model_meta(model):
     """Ollama-native model metadata from /api/show (no model load): the EXACT
     parameter count, quantization, native context length and architecture. Makes
     `params` a real feature instead of a bracket guess. Best-effort {}."""
+    if INFERENCE_RUNTIME == "llama_cpp":
+        row = MODEL_LOCK.get(model) or {}
+        return {
+            "llama_cpp.status": row.get("llama_cpp_status"),
+            "llama_cpp.runtime_options": row.get("runtime_options"),
+            "model_lock.params_b": row.get("params_b"),
+            "model_lock.tier": row.get("tier"),
+            "model_lock.license": row.get("license"),
+            "model_lock.license_class": row.get("license_class"),
+        }
     try:
         with _post_json("/api/show", {"model": model}, 30) as r:
             d = json.loads(r.read())
@@ -889,6 +997,16 @@ def model_runtime(model):
     """Ollama /api/ps view of the loaded model: total size, VRAM bytes (0 = pure
     CPU) and the CPU/GPU split. `size_vram=0` is Ollama's OWN proof that nothing
     is offloaded to the iGPU. Best-effort {}."""
+    if INFERENCE_RUNTIME == "llama_cpp":
+        path, error = resolve_llama_cpp_model_path(model)
+        size = os.path.getsize(path) if path and os.path.exists(path) else None
+        return {
+            "llama_cpp.model_path": path,
+            "llama_cpp.model_error": error,
+            "llama_cpp.size_bytes": size,
+            "llama_cpp.cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
+            "llama_cpp.version": _sh_out([LLAMA_CPP_CLI, "--version"]),
+        }
     try:
         d = _get_json("/api/ps", 10)
     except Exception:  # noqa: BLE001
@@ -914,6 +1032,13 @@ def ensure_pulled(model, retries=4, backoff_s=10):
     ("Error: EOF"); a single attempt then marks the model pull_failed and skips
     it. Retry with linear backoff so a flaky network doesn't DNF a model that is
     actually available (the wave-2 'Error: EOF' fix)."""
+    if INFERENCE_RUNTIME == "llama_cpp":
+        path, error = resolve_llama_cpp_model_path(model)
+        if path:
+            return True
+        sys.stderr.write(f"  llama.cpp model unavailable for {model}: {error}\n")
+        sys.stderr.flush()
+        return False
     if model_present(model):
         return True
     env = {**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")}
@@ -931,6 +1056,8 @@ def ensure_pulled(model, retries=4, backoff_s=10):
 
 
 def unload(model):
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return
     try:
         _post_json("/api/chat", {"model": model, "keep_alive": 0, "messages": []}, 30).read()
     except Exception:
@@ -941,6 +1068,8 @@ def remove_model(model):
     """Delete a model from disk (`ollama rm`). Best-effort. Used by --rm-after to
     bound disk during large sweeps: pull -> test -> rm, so the models dir never
     grows past ~one model at a time (the wave-2 'no space left on device' fix)."""
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return
     try:
         subprocess.run(["ollama", "rm", model],
                        env={**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")},
@@ -951,6 +1080,8 @@ def remove_model(model):
 
 def warmup(model, think):
     """Cold-load the model; return load seconds (warmup phase span)."""
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return llama_cpp_warmup(model)
     t0 = time.time()
     try:
         with _post_json("/api/chat", {
@@ -970,6 +1101,9 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     Streaming chat under the watchdog. Returns a telemetry dict aligned to
     OTel gen_ai.* plus our phase timings and the raw text.
     """
+    if INFERENCE_RUNTIME == "llama_cpp":
+        return run_llama_cpp(model, system, user, max_tokens=max_tokens, timeout_s=timeout_s,
+                             stall_s=stall_s, temperature=temperature, seed=seed)
     opts = {"num_predict": max_tokens, "num_ctx": NUM_CTX, "temperature": temperature}
     if seed is not None:
         opts["seed"] = seed  # reproducibility: fixed seed per repetition
@@ -989,7 +1123,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     last_tok = t_start
     http_connected_at = first_byte_at = first_json_at = first_content_at = done_at = None
     http_exception = None
-    ps_before = ollama_ps_snapshot()
+    ps_before = runtime_ps_snapshot()
     ps_after = None
     try:
         # socket read timeout = stall window; total wall-clock checked in-loop.
@@ -1059,7 +1193,7 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
     text = "".join(out)
     wall = round(time.time() - t_start, 2)
     if finish and str(finish).startswith("DNF"):
-        ps_after = ollama_ps_snapshot()
+        ps_after = runtime_ps_snapshot()
     stall_phase = classify_stall_phase(
         http_connected_at=http_connected_at,
         first_byte_at=first_byte_at,
@@ -1122,6 +1256,143 @@ def run_chat(model, system, user, *, max_tokens, timeout_s, stall_s, think,
         "ollama.load_duration_s": round(load_dur / 1e9, 3) if load_dur else None,
         "_text": text,
         "_think": "".join(think),
+    }
+
+
+def _llama_cpp_prompt(system: str, user: str) -> str:
+    parts = []
+    if system:
+        parts.append(f"System:\n{system.strip()}")
+    parts.append(f"User:\n{user.strip()}\n\nAssistant:\n")
+    return "\n\n".join(parts)
+
+
+def _llama_cpp_cmd(model_path: str, prompt: str, *, max_tokens: int, temperature: float, seed: int | None) -> list[str]:
+    cmd = [
+        LLAMA_CPP_CLI,
+        "-m", model_path,
+        "-p", prompt,
+        "-n", str(max_tokens),
+        "-c", str(NUM_CTX),
+        "--temp", str(temperature),
+        "--no-display-prompt",
+        "-no-cnv",
+        "--simple-io",
+    ]
+    if seed is not None:
+        cmd.extend(["--seed", str(seed)])
+    if LLAMA_CPP_EXTRA_ARGS:
+        cmd.extend(shlex.split(LLAMA_CPP_EXTRA_ARGS))
+    return cmd
+
+
+def llama_cpp_warmup(model: str) -> tuple[float, str | None]:
+    path, error = resolve_llama_cpp_model_path(model)
+    if not path:
+        return 0.0, f"llama_cpp_model_unavailable:{error}"
+    t0 = time.time()
+    try:
+        subprocess.run(
+            _llama_cpp_cmd(path, "ok", max_tokens=1, temperature=0, seed=1),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=300,
+            check=False,
+        )
+        return round(time.time() - t0, 2), None
+    except Exception as exc:  # noqa: BLE001
+        return round(time.time() - t0, 2), f"warmup_error:{type(exc).__name__}:{str(exc)[:160]}"
+
+
+def run_llama_cpp(model: str, system: str, user: str, *, max_tokens: int,
+                  timeout_s: int, stall_s: int, temperature: float, seed: int | None) -> dict:
+    path, error = resolve_llama_cpp_model_path(model)
+    prompt = _llama_cpp_prompt(system, user)
+    t_start = time.time()
+    if not path:
+        return {
+            "gen_ai.request.model": model,
+            "gen_ai.operation.name": "completion",
+            "gen_ai.request.max_tokens": max_tokens,
+            "gen_ai.request.temperature": temperature,
+            "gen_ai.request.seed": seed,
+            "gen_ai.usage.input_tokens": max(1, len(prompt) // 4),
+            "gen_ai.usage.output_tokens": 0,
+            "gen_ai.usage.output_chars": 0,
+            "gen_ai.response.finish_reasons": ["DNF:runtime_unsupported"],
+            "gen_ai.server.time_to_first_token_s": None,
+            "phase.prefill_s": None,
+            "phase.decode_s": None,
+            "prefill_tok_s": None,
+            "decode_tok_s": None,
+            "wall_s": 0.0,
+            "dnf": True,
+            "stall.phase": "before_runtime",
+            "stall_phase": "before_runtime",
+            "http.exception": None,
+            "socket_exception": None,
+            "ollama.ps.before": {"runtime": "llama_cpp"},
+            "ollama.ps.after": {"runtime": "llama_cpp", "error": error},
+            "llama_cpp.model_error": error,
+            "progress_trace": [],
+            "phase.think_s": None,
+            "gen_ai.thinking.chars": 0,
+            "decode.dt_p50_ms": None,
+            "decode.dt_p95_ms": None,
+            "decode.dt_max_ms": None,
+            "_text": "",
+            "_think": "",
+        }
+    cmd = _llama_cpp_cmd(path, prompt, max_tokens=max_tokens, temperature=temperature, seed=seed)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, check=False)
+        wall = round(time.time() - t_start, 2)
+        text = proc.stdout.strip()
+        finish = "stop" if proc.returncode == 0 else f"DNF:error:llama_cpp_rc_{proc.returncode}"
+        stderr_tail = "\n".join((proc.stderr or "").splitlines()[-20:]) or None
+    except subprocess.TimeoutExpired as exc:
+        wall = round(time.time() - t_start, 2)
+        text = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
+        finish = "DNF:timeout"
+        stderr_tail = "timeout"
+    out_tok = max(1, len(text) // 4) if text else 0
+    in_tok = max(1, len(prompt) // 4)
+    decode_s = wall if out_tok else None
+    return {
+        "gen_ai.request.model": model,
+        "gen_ai.operation.name": "completion",
+        "gen_ai.request.max_tokens": max_tokens,
+        "gen_ai.request.temperature": temperature,
+        "gen_ai.request.seed": seed,
+        "gen_ai.usage.input_tokens": in_tok,
+        "gen_ai.usage.output_tokens": out_tok,
+        "gen_ai.usage.output_chars": len(text),
+        "gen_ai.response.finish_reasons": [finish],
+        "gen_ai.server.time_to_first_token_s": None,
+        "phase.prefill_s": None,
+        "phase.decode_s": decode_s,
+        "prefill_tok_s": None,
+        "decode_tok_s": round(out_tok / decode_s, 2) if decode_s and out_tok else None,
+        "wall_s": wall,
+        "dnf": finish.startswith("DNF"),
+        "stall.phase": "subprocess_timeout" if finish == "DNF:timeout" else None,
+        "stall_phase": "subprocess_timeout" if finish == "DNF:timeout" else None,
+        "http.exception": None,
+        "socket_exception": None,
+        "ollama.ps.before": {"runtime": "llama_cpp"},
+        "ollama.ps.after": {"runtime": "llama_cpp"},
+        "llama_cpp.model_path": path,
+        "llama_cpp.cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
+        "llama_cpp.stderr_tail": stderr_tail,
+        "progress_trace": [[wall, len(text)]] if text else [],
+        "phase.think_s": None,
+        "gen_ai.thinking.chars": 0,
+        "decode.dt_p50_ms": None,
+        "decode.dt_p95_ms": None,
+        "decode.dt_max_ms": None,
+        "_text": text,
+        "_think": "",
     }
 
 
@@ -1230,6 +1501,8 @@ def resolve_policy(s, *, model, memory_context_id, strategy_id):
     timeout_s = int(s.get("timeout_s") or DEFAULT_TIMEOUT_S)
     stall_s = int(s.get("stall_s") or DEFAULT_STALL_S)
     max_tokens = int(s.get("max_tokens") or DEFAULT_MAX_TOKENS)
+    if MAX_TOKENS_CAP > 0:
+        max_tokens = min(max_tokens, MAX_TOKENS_CAP)
     reasons = ["scenario_or_default"]
     model_low = model.lower()
     if memory_context_id != "none":
@@ -1250,6 +1523,7 @@ def resolve_policy(s, *, model, memory_context_id, strategy_id):
         "timeout_s": min(timeout_s, 600),
         "stall_s": min(stall_s, 120),
         "max_tokens": max_tokens,
+        "max_tokens_cap": MAX_TOKENS_CAP or None,
         "timeout_policy_id": DEFAULT_TIMEOUT_POLICY_ID,
         "policy_reasons": reasons,
     }
@@ -1550,20 +1824,54 @@ def _env_static():
         kernel = os.uname().release
     except Exception:  # noqa: BLE001
         kernel = None
+    repo = os.path.dirname(os.path.abspath(__file__))
+    git_status = _sh_out(["git", "-C", repo, "status", "--short", "--untracked-files=all"])
+    source_dirty, artifact_dirty = _classify_git_status(git_status)
     return {
         "env.host": socket.gethostname(),
         "env.kernel": kernel,
         "env.ollama_version": _sh_out(["ollama", "--version"]),
-        "env.harness_git": _sh_out(
-            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "rev-parse", "--short", "HEAD"]),
-        "env.harness_dirty": bool(_sh_out(
-            ["git", "-C", os.path.dirname(os.path.abspath(__file__)), "status", "--short"])),
+        "env.inference_runtime": INFERENCE_RUNTIME,
+        "env.llama_cpp_cli": shutil.which(LLAMA_CPP_CLI) or LLAMA_CPP_CLI,
+        "env.llama_cpp_version": _sh_out([LLAMA_CPP_CLI, "--version"]) if INFERENCE_RUNTIME == "llama_cpp" else None,
+        "env.harness_git": _sh_out(["git", "-C", repo, "rev-parse", "--short", "HEAD"]),
+        "env.harness_dirty": source_dirty or artifact_dirty,
+        "env.harness_source_dirty": source_dirty,
+        "env.harness_artifact_dirty": artifact_dirty,
         "env.num_ctx": NUM_CTX,
         "env.sample_interval_s": SAMPLE_INTERVAL_S,
         "env.perf_membw": PERF_MEMBW,
         "env.perf_core": PERF_CORE,
         "env.run_id": os.environ.get("RUN_ID"),
     }
+
+
+ARTIFACT_STATUS_PREFIXES = (
+    "calibration.json",
+    "logs/",
+    "outputs/",
+    "results.",
+    "data/runs/",
+    "data/run-batches/",
+    "data/experiments/",
+)
+
+
+def _classify_git_status(status_text: str | None) -> tuple[bool, bool]:
+    """Return (source_dirty, artifact_dirty) for porcelain git status text."""
+    source_dirty = False
+    artifact_dirty = False
+    for raw in (status_text or "").splitlines():
+        if not raw.strip():
+            continue
+        path = raw[3:].strip() if len(raw) > 3 else raw.strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path.startswith(ARTIFACT_STATUS_PREFIXES):
+            artifact_dirty = True
+        else:
+            source_dirty = True
+    return source_dirty, artifact_dirty
 
 
 def _env_volatile():
@@ -1637,8 +1945,9 @@ def preflight(models, fp, manifest_path, require_models_present=False, protocol=
             problems.append(f"cpu freq {max(cur)} MHz > ceiling {ceil} MHz "
                             "(Turbo appears ON — run scripts/node-power.sh setup)")
 
+    runtime = (protocol or {}).get("inference_runtime") or INFERENCE_RUNTIME
     wantver = man.get("expected", {}).get("ollama_version")
-    if wantver:
+    if wantver and runtime == "ollama":
         got_raw = fp.get("env.ollama_version") or ""
         _gm = re.search(r"\d+\.\d+\.\d+", got_raw)
         _wm = re.search(r"\d+\.\d+\.\d+", str(wantver))
@@ -1726,6 +2035,9 @@ def main():
                          "env.* with scripts/audit-run.py, then launch the full sweep).")
     args = ap.parse_args()
 
+    if INFERENCE_RUNTIME not in RUNTIMES:
+        sys.exit(f"unknown INFERENCE_RUNTIME={INFERENCE_RUNTIME!r}; expected one of {sorted(RUNTIMES)}")
+
     os.makedirs(args.outputs_dir, exist_ok=True)
     scen = json.load(open(args.scenarios))["scenarios"]
     memory_context_id = args.memory_context or os.environ.get("MEMORY_CONTEXT") or "none"
@@ -1758,13 +2070,15 @@ def main():
     env_fp = env_fingerprint()
     _protocol = {"temperature": args.temp, "repeats": args.repeats,
                  "seed_base": args.seed_base, "think": args.think,
-                 "inference_strategy": inference_strategy_id}
+                 "inference_strategy": inference_strategy_id,
+                 "inference_runtime": INFERENCE_RUNTIME}
     problems = preflight(models, env_fp, args.manifest, require_models_present=args.no_pull,
                          protocol=_protocol, scenarios_path=args.scenarios)
     if args.preflight_only:
         if problems:
-            sys.stderr.write("PREFLIGHT: FAIL\n" + "\n".join(f"  - {p}" for p in problems) + "\n")
-            sys.exit(3)
+            tag = "WARN (unlocked)" if args.allow_unlocked else "FAIL"
+            sys.stderr.write(f"PREFLIGHT: {tag}\n" + "\n".join(f"  - {p}" for p in problems) + "\n")
+            sys.exit(0 if args.allow_unlocked else 3)
         sys.stderr.write(f"PREFLIGHT: OK \u2014 node matches {args.manifest}\n"
                          + json.dumps(env_fp, indent=2) + "\n")
         sys.exit(0)
@@ -1807,7 +2121,7 @@ def main():
     }
 
     sys.stderr.write(f"== {len(models)} models x {len(scen)} scenarios "
-                     f"(shuffle={args.shuffle}, sample={SAMPLE_INTERVAL_S}s, "
+                     f"(shuffle={args.shuffle}, sample={SAMPLE_INTERVAL_S}s, runtime={INFERENCE_RUNTIME}, "
                      f"cool_temp={COOL_TEMP_C}, fan_max={FAN_MAX and _fan_control_on()}, "
                      f"drop_caches={DROP_CACHES}, reset_swap={RESET_SWAP}) ==\n")
     idle_w = measure_idle_watts()
@@ -1881,7 +2195,8 @@ def main():
             # was the model on disk before this run? (decides --rm-after cleanup)
             was_present = model_present(model)
             if not args.no_pull and not ensure_pulled(model):
-                row = {"model": model, "bracket": bracket, "fatal": "pull_failed",
+                fatal = "runtime_model_unavailable" if INFERENCE_RUNTIME == "llama_cpp" else "pull_failed"
+                row = {"model": model, "bracket": bracket, "fatal": fatal,
                        "ts": time.time(), **env_fp}
                 fout.write(json.dumps(row) + "\n"); fout.flush()
                 continue
@@ -1964,6 +2279,7 @@ def main():
                     _disk = [s.get("disk_mb_s") for s in sampler.samples if isinstance(s.get("disk_mb_s"), (int, float))]
                     row = {
                         "ts": time.time(), "model": model, "bracket": bracket,
+                        "adapter": INFERENCE_RUNTIME,
                         "scenario": s["id"], "class": s["class"],
                         "aiopslab_task": s.get("aiopslab_task"),
                         "grounding": s.get("grounding"),

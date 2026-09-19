@@ -52,7 +52,9 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 |---|---|---|---|
 | `ts` | float (epoch s) | `run.py` | Row write time |
 | `model` | str | models.txt | Ollama model tag under test |
-| `bracket` | str | models.txt | Size bracket (`0-1B`…`4-5GB`) — the well-powered grouping |
+| `adapter` | str | `run.py`; snapshots / dataset exports | Runtime adapter label (`ollama` or `llama_cpp`). Existing paper-era snapshots are backfilled as `ollama`; current raw rows stamp this directly. |
+| `bracket` | str | models.txt | Legacy roster bracket (`0-1B`…`4-5GB` footprint). Current thesis eligibility is defined by `data/models.lock.jsonl` tiers T1-T5 up to 5B parameters. |
+| `env.inference_runtime` | str | run.py env | Raw-row runtime adapter (`ollama` or `llama_cpp`). |
 | `env.memory_context` | str | run.py env | Run-level memory/context condition (`none`, `homelab-okf-v1`, …). This is an experimental comparison axis, not a scenario label. |
 | `env.memory_context_file` | str\|null | run.py args | Markdown memory file injected into prompts for memory-conditioned runs; null for `none`. |
 | `env.memory_context_sha` | str\|null | run.py | SHA256 of the injected memory file, so reruns can prove the memory bytes did not drift. |
@@ -69,6 +71,9 @@ judge runs **off the node** and is the only deliberate egress (disclosed; PAPER
 | `seed` | int | run.py | Sampling seed (fixed per rep for reproducibility) |
 | `temp` | float | run.py | Sampling temperature (0 = deterministic pass) |
 | `think` | bool | run.py | Reasoning/think mode requested |
+| `env.harness_source_dirty` | bool | run.py | Future rows: source/tracked files were dirty at row-stamp time. Use this for source reproducibility checks. |
+| `env.harness_artifact_dirty` | bool | run.py | Future rows: generated artifacts (`results.*`, `logs/`, `outputs/`, `calibration.json`, `data/runs/`, etc.) were present/dirty. |
+| `env.harness_dirty` | bool | run.py | Backward-compatible aggregate of source/artifact dirtiness. Older rows only have this field. |
 
 `memory_context` is deliberately separate from `grounding`. `grounding` describes
 whether a scenario itself supplies reference material; `env.memory_context`
