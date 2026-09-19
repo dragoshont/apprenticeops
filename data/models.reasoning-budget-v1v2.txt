@@ -1,0 +1,14 @@
+qwen3:4b-instruct-2507-q8_0
+qwen3:4b-thinking-2507-q8_0
+qwen3:4b-instruct-2507-q4_K_M
+qwen3:4b-thinking-2507-q4_K_M
+phi4-mini
+phi4-mini-reasoning
+qwen2.5:3b-instruct-q4_K_M
+smallthinker:3b-preview-q4_K_M
+exaone3.5:7.8b
+exaone-deep:7.8b
+qwen3:4b
+starcoder2:3b-q6_K
+codegemma:2b
+falcon3:1b-instruct-q8_0
