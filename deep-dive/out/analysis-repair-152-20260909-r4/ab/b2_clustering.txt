@@ -1,0 +1,50 @@
+Exploratory metric clustering: 137 deployments. Median-imputed missing values per feature: {'quality': 0, 'safety': 0, 'det_score': 0, 'decode_tps': 0, 'wall_s': 0, 'quality_sd': 0, 'trunc_rate': 0, 'dnf_rate': 0, 'size_gb': 52, 'params_b': 0}
+Clusters are descriptive tags, not independent weight families or validated archetypes.
+=== metric correlation structure (Pearson, standardized) ===
+            quality  safety  det_score  decode_tps  wall_s  quality_sd  trunc_rate  dnf_rate  size_gb  params_b
+quality        1.00    0.95       0.87       -0.60    0.46        0.90       -0.03      0.07     0.55      0.72
+safety         0.95    1.00       0.81       -0.58    0.50        0.86        0.07      0.07     0.52      0.69
+det_score      0.87    0.81       1.00       -0.56    0.48        0.78        0.03      0.07     0.44      0.57
+decode_tps    -0.60   -0.58      -0.56        1.00   -0.54       -0.61       -0.11     -0.13    -0.53     -0.75
+wall_s         0.46    0.50       0.48       -0.54    1.00        0.29        0.74      0.34     0.44      0.62
+quality_sd     0.90    0.86       0.78       -0.61    0.29        1.00       -0.19      0.05     0.50      0.61
+trunc_rate    -0.03    0.07       0.03       -0.11    0.74       -0.19        1.00      0.13    -0.01      0.17
+dnf_rate       0.07    0.07       0.07       -0.13    0.34        0.05        0.13      1.00     0.37      0.16
+size_gb        0.55    0.52       0.44       -0.53    0.44        0.50       -0.01      0.37     1.00      0.63
+params_b       0.72    0.69       0.57       -0.75    0.62        0.61        0.17      0.16     0.63      1.00
+
+notable:
+  quality~safety     +0.95 (collinear -> not an independent tradeoff)
+  quality~size_gb    +0.55
+  quality~decode_tps -0.60 (bigger/better = slower)
+  size~decode_tps    -0.53 (bigger = slower decode)
+  quality~quality_sd +0.90 (are better models more stochastic?)
+
+=== PCA: explained variance [0.55 0.18 0.11 0.07] ===
+             PC1   PC2   PC3
+quality     0.40 -0.19 -0.09
+safety      0.39 -0.13 -0.14
+det_score   0.36 -0.14 -0.16
+decode_tps -0.33 -0.05 -0.01
+wall_s      0.28  0.52 -0.15
+quality_sd  0.36 -0.30 -0.01
+trunc_rate  0.06  0.66 -0.40
+dnf_rate    0.09  0.34  0.74
+size_gb     0.30  0.06  0.47
+params_b    0.36  0.09  0.03
+
+=== archetypes: k=4 (silhouette=0.41) ===
+
+cluster 0 (n=64): quality=1.53 size=1.42GB decode=18.3tps  [trunc_rate+, decode_tps+; quality-, size_gb-]
+  members: hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M, qwen3:0.6b-q8_0, gemma3:1b-it-qat, qwen2.5-coder:1.5b, hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0, qwen2.5-coder:1.5b-instruct-q8_0
+
+cluster 1 (n=66): quality=2.51 size=3.14GB decode=6.9tps  [quality+, size_gb+; decode_tps-, trunc_rate-]
+  members: qwen3:4b-instruct-2507-q8_0, qwen3:4b-q8_0, hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-instruct-2507-q4_K_M, gemma4:e2b-it-qat, granite4:micro-h
+
+cluster 2 (n=6): quality=2.75 size=3.32GB decode=5.4tps  [wall_s+, trunc_rate+; decode_tps-, dnf_rate-]
+  members: qwen3:4b-thinking-2507-q8_0, hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-thinking-2507-q4_K_M, qwen3:4b, smallthinker:3b-preview-q4_K_M, phi4-mini-reasoning
+
+cluster 3 (n=1): quality=2.56 size=5.93GB decode=4.3tps  [size_gb+, dnf_rate+; decode_tps-, trunc_rate-]
+  members: phi3.5:3.8b-mini-instruct-q8_0
+
+saved figure deep-dive/out/analysis-repair-152-20260909-r4/ab/figures/b2_archetypes.png and out/b2_clusters.csv

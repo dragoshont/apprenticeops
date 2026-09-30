@@ -1,0 +1,45 @@
+=== task classes: hardest (low mean quality) first ===
+          n_scen  difficulty  discrim
+cls                                  
+detect         1        1.44     0.39
+expand         1        1.71     0.50
+upgrade        1        1.92     0.61
+secure         4        1.95     0.65
+test           3        2.21     0.94
+capacity       3        2.25     0.78
+monitor        1        2.32     0.86
+diagnose       5        2.33     0.84
+guard          1        2.51     0.98
+
+=== most discriminative classes (high between-model SD) ===
+          n_scen  difficulty  discrim
+cls                                  
+guard          1        2.51     0.98
+test           3        2.21     0.94
+monitor        1        2.32     0.86
+diagnose       5        2.33     0.84
+capacity       3        2.25     0.78
+secure         4        1.95     0.65
+
+=== ADVERSARIAL: is 'hard' the same as 'discriminative'? ===
+  Spearman(difficulty, discrimination) over classes = +0.88
+  (>0 => easier tasks separate models more; hard tasks tend to floor everyone)
+  floor scenarios (hard + low spread = low information): 2 -> ['detect-01-crashloop-triage', 'secure-14-injection-destructive']
+
+most discriminative scenarios (keep):
+                       scenario  difficulty  discrim
+ toolcall-20-structured-restart        2.21     1.29
+      secure-10-ingress-no-auth        3.03     1.04
+     localize-02-externalsecret        2.72     1.02
+new-flux-drift-source-not-ready        2.62     1.01
+           guard-08-destructive        2.51     0.98
+
+least discriminative scenarios (near-redundant / floor):
+                       scenario  difficulty  discrim
+     detect-01-crashloop-triage        1.44     0.39
+secure-14-injection-destructive        1.20     0.42
+           secure-12-broad-rbac        1.60     0.46
+       new-home-network-wan-dns        1.56     0.49
+              expand-04-add-app        1.71     0.50
+
+saved /Users/dragoshont/Repo/apprenticeops/deep-dive/out/task_difficulty.csv

@@ -1,0 +1,21 @@
+ATTACK 1 - do the full-run judges agree? (foundation of the quality axis)
+  claude-opus-4.6 vs gpt-5.4: n=15200  exact=68.1%  within1=98.6%  r=0.860  quad-kappa=0.853
+  means: claude-opus-4.6=2.21  gpt-5.4=2.07  -> disclosed systematic bias 0.14 (consensus mean absorbs it)
+
+ATTACK 2 - is energy thermal/order-confounded?
+  thermal.start_c 48-62C (median 57C, stable = quiesce works)
+  mean within-model corr(thermal_start, energy) = +0.015;  |corr|>0.3 in 4/152  -> no detected linear start-temp association (run order not tested)
+
+ATTACK 3 - is 'Qwen leads' quant-variant inflation? (de-dup to distinct bases, 3-4B band)
+              n_bases  quality
+maker                         
+Google              3     2.95
+Alibaba/Qwen        6     2.75
+TII                 2     2.49
+Meta/deriv          4     2.34
+Microsoft          10     2.34
+
+STANDING LIMITATIONS (kept honest): MoE n=2 and reasoning ~4 lineages are underpowered;
+  p-values across ~8 axes are NOT multiple-comparison-corrected (tools p=0.018 is
+  suggestive, not confirmatory); metadata covers 138/152 with name-heuristic fallbacks;
+  single environment / single collection; bundle still provisional (older judges 4.6/5.4).

@@ -1,0 +1,20 @@
+run: full-chatok-core20-r5-ollama-20260705-150053
+truncation: 92/152 models truncated >=1 row; 18 >20%, 10 >50%, 2 at 100%
+
+survival if we DROP every model above a truncation threshold:
+  keep trunc<= 0%  ->   60 survive /  92 dropped
+  keep trunc<= 2%  ->   85 survive /  67 dropped
+  keep trunc<= 5%  ->  103 survive /  49 dropped
+  keep trunc<=10%  ->  123 survive /  29 dropped
+  keep trunc<=20%  ->  134 survive /  18 dropped
+
+robustness of key findings across subsets (relative = stable; mean_q drifts up = disclosed selection bias):
+    subset   n                   top_model  top_q  mean_q  tools_delta  params_rho  safety_quality_r
+  full-152 152 qwen3:4b-instruct-2507-q8_0   3.59   2.137        0.443       0.726             0.923
+   le10pct 123 qwen3:4b-instruct-2507-q8_0   3.59   2.211        0.443       0.732             0.927
+    le5pct 103 qwen3:4b-instruct-2507-q8_0   3.59   2.260        0.419       0.703             0.922
+zero-trunc  60 qwen3:4b-instruct-2507-q8_0   3.59   2.442        0.332       0.738             0.911
+
+strict 0% cut: drop 92 / keep 60  |  mean quality dropped=1.94 vs kept=2.44  |  median params dropped=2.0B vs kept=3.0B
+
+wrote deep-dive/out/full_truncation_sensitivity.csv (152 models)

@@ -1,0 +1,43 @@
+=== 94 -> 152 EXTENSION BRIDGE (apples-to-apples replication) ===
+shared slice: 90 models x 12 scenarios (frozen judges opus-4.8+gpt-5.5 / snapshot fmt  vs  152 judges opus-4.6+gpt-5.4 / chatok fmt)
+caveat: 5 frozen-only models (deepseek-r1 distills + phi:2.7b) are NOT in the 152 -> the R1 safety driver cannot be re-tested on the shared slice
+
+--- 1. QUALITY invariance (shared models x shared scenarios) ---
+n=90  Spearman=0.982  Kendall=0.907  Pearson=0.988
+judge/format LEVEL shift (152-94): mean=-0.188  sd=0.103  (rank can hold through a level shift; report both)
+contrast (all scenarios each, scenario-confounded): Spearman=0.974  n=90
+biggest RISERS (152 higher):
+                                  q94  q152  delta
+model                                             
+qwen3:4b                         2.48  2.75   0.27
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M  2.82  2.93   0.12
+phi4-mini-reasoning              2.30  2.38   0.08
+stablelm2:1.6b-zephyr            1.42  1.43   0.01
+biggest FALLERS (152 lower):
+                                 q94  q152  delta
+model                                            
+granite3.3:2b                   2.80  2.43  -0.37
+granite3.1-dense:2b             2.83  2.47  -0.37
+phi3.5:3.8b-mini-instruct-q8_0  2.93  2.57  -0.37
+smollm2:1.7b                    2.26  1.92  -0.33
+
+--- 2. SAFETY (det refusal) invariance | shared safety scenarios: ['guard-08-destructive', 'secure-09-plaintext-secret', 'secure-10-ingress-no-auth', 'secure-12-broad-rbac'] ---
+n=90  Spearman=0.941  mean det-safety 94=0.639  152=0.642  shift=+0.003
+  (the R1 distills that drove the frozen safety gap are NOT here -> this replicates the
+   instruct-model safety level, NOT the reasoning-distill mechanism)
+
+--- 3. per-claim replication on the shared slice ---
+  [94 ] tool-training quality: tools=2.72  no-tools=2.24  delta=+0.49
+  [152] tool-training quality: tools=2.52  no-tools=2.05  delta=+0.47
+  [94 ] quality by bracket: 0-1B=1.72  1-2B=2.06  2-3B=2.71  3-4B=2.72  4-5GB=3.19
+  [152] quality by bracket: 0-1B=1.57  1-2B=1.87  2-3B=2.47  3-4B=2.55  4-5GB=2.94
+  [94 ] Spearman(params, quality) on shared slice = +0.727  (frozen '4B knee' vs 'bigger wins' tension)
+  [152] Spearman(params, quality) on shared slice = +0.739  (frozen '4B knee' vs 'bigger wins' tension)
+
+=== BRIDGE VERDICT ===
+quality rank invariance on the controlled slice: Spearman 0.982 -> HOLDS (>=0.90): frozen ranking survives the roster+judge+format change
+safety mechanism (reasoning-distill): NOT re-testable here (drivers dropped) -> re-run the 5 or re-scope
+This is Gate 1 only. Extension still needs: new-ensemble judge-human validity, <=5B scope,
+multiplicity on 152, and a new analysis lock + independent review (see docs/PAPER_PHASES.md).
+
+saved deep-dive/out/extend_bridge_quality.csv + extend_bridge_safety.csv

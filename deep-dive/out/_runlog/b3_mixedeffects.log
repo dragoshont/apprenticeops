@@ -1,0 +1,26 @@
+/Users/dragoshont/Repo/apprenticeops/deep-dive/.venv/lib/python3.14/site-packages/statsmodels/regression/mixed_linear_model.py:2261: ConvergenceWarning: The Hessian matrix at the estimated parameter values is not positive definite.
+  warnings.warn(msg, ConvergenceWarning)
+=== OLS judge_score ~ model factors + scenario FE, SE clustered by model ===
+n=8930 runs, 95 model clusters, R^2=0.438
+
+                         coef  ci_lo  ci_hi      p  sig
+C(regime)[T.code_math] +0.008 -0.239 +0.255 +0.949   ns
+C(regime)[T.reasoning] -0.881 -1.318 -0.445 +0.000  ***
+C(quant_grp)[T.Q8]     +0.100 -0.079 +0.279 +0.275   ns
+C(quant_grp)[T.hi]     +0.470 +0.175 +0.765 +0.002   **
+tools                  +0.294 +0.111 +0.477 +0.002   **
+moe                    -0.197 -0.453 +0.058 +0.130   ns
+log_params             +0.625 +0.513 +0.738 +0.000  ***
+
+reading: tools = partial effect of tool-training holding params/regime/quant/scenario fixed.
+
+=== crossed mixed model (random intercepts: model + scenario) cross-check ===
+  tools                      +0.294  (p=0.000)
+  moe                        -0.197  (p=0.141)
+  C(regime)[T.reasoning]     -0.881  (p=0.000)
+  C(quant_grp)[T.Q8]         +0.100  (p=0.009)
+  log_params                 +0.625  (p=0.000)
+
+(mixed model cross-check skipped: IndexError index 0 is out of bounds for axis 0 with size 0 )
+
+between-model SD of quality = 0.65 pts (1-5). tools partial effect = +0.29 = 0.45 model-SD.

@@ -1,0 +1,8 @@
+{
+  "a3_scaling_arch": "NOT IDENTIFIABLE: heuristic lineage and independent-tag resampling cannot support quantization/training inference.",
+  "b1_irt": "EXCLUDED: unvalidated det>=0.5 construct; no convergence/identifiability gate for joint 2PL fit. No task-pruning claim retained.",
+  "b3_mixedeffects": "Population audit only; old coefficient/CIs and nested-as-crossed cross-check withdrawn.",
+  "b4_roofline": "EXCLUDED: no measured memory-bandwidth axis; no new hardware evidence.",
+  "b5_regime": "NOT IDENTIFIABLE: single regime.",
+  "b6_chatok": "Candidate screen is a separate selection process, not random sampling of models."
+}

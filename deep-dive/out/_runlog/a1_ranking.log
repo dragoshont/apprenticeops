@@ -1,0 +1,53 @@
+=== quality ranking (judge 1-5) with scenario-clustered 95% CI ===
+                             model  quality  ci_lo  ci_hi   det  rank
+hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.568  3.216  3.921 0.868     1
+       qwen3:4b-instruct-2507-q8_0    3.563  3.132  3.968 0.940     2
+                     qwen3:4b-q8_0    3.547  3.174  3.921 0.875     3
+     qwen3:4b-instruct-2507-q4_K_M    3.432  3.037  3.774 0.913     4
+                        qwen2.5:7b    3.321  2.937  3.689 0.884     5
+                   granite4:tiny-h    3.174  2.789  3.558 0.841     6
+                   qwen3:1.7b-fp16    3.132  2.742  3.547 0.835     7
+                   qwen3:1.7b-q8_0    3.105  2.684  3.563 0.862     8
+                        qwen3:1.7b    3.074  2.642  3.521 0.812     9
+                    granite4:micro    3.074  2.763  3.368 0.864    10
+                    ministral-3:3b    2.968  2.584  3.347 0.876    11
+ granite3.1-dense:2b-instruct-q8_0    2.947  2.584  3.321 0.851    12
+                         gemma3:4b    2.932  2.579  3.289 0.821    13
+               gemma3:4b-it-q4_K_M    2.932  2.579  3.300 0.821    14
+                     granite3.3:2b    2.921  2.558  3.274 0.834    15
+...
+                     model  quality  ci_lo  ci_hi   det  rank
+          deepseek-r1:1.5b    1.258  1.137  1.384 0.448    91
+              smollm2:135m    1.174  1.089  1.274 0.500    92
+smollm2:135m-instruct-q8_0    1.142  1.063  1.232 0.455    93
+               smollm:360m    1.084  1.011  1.195 0.485    94
+                  phi:2.7b    1.000  1.000  1.000 0.168    95
+
+#1 = hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M (quality 3.568, CI 3.216-3.921)
+statistical co-leaders (CI overlaps #1): 18 models
+   hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-instruct-2507-q8_0, qwen3:4b-q8_0, qwen3:4b-instruct-2507-q4_K_M, qwen2.5:7b, granite4:tiny-h, qwen3:1.7b-fp16, qwen3:1.7b-q8_0, qwen3:1.7b, granite4:micro
+
+=== Friedman test: 95 models over 19 complete scenarios ===
+chi2=908.8, p=2.10e-181, Kendall's W=0.509 (0=no agreement,1=perfect ordering across scenarios)
+mean-rank best = hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M (6.76); CD(0.05)=39.29
+models within CD of the best mean-rank (statistical co-top): 43
+   hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-q8_0, qwen3:4b-instruct-2507-q8_0, qwen3:4b-instruct-2507-q4_K_M, qwen2.5:7b, granite4:tiny-h, granite4:micro, qwen3:1.7b-fp16, qwen3:1.7b-q8_0, granite3.1-dense:2b-instruct-q8_0
+
+=== quality(judge) vs det_score ranking agreement ===
+Spearman rho=0.908 (p=6.5e-37); Kendall tau=0.741
+judge-favoured (judge rank >> det rank):
+                     model  quality  det  q_rank  d_rank
+                  gemma:2b     1.87 0.58   60.00   85.00
+             granite4:1b-h     2.26 0.66   43.00   67.00
+         gemma3:4b-it-q8_0     2.77 0.76   22.00   46.00
+                falcon3:3b     2.08 0.64   52.00   73.50
+falcon3:3b-instruct-q4_K_M     2.05 0.64   53.00   73.50
+det-favoured (det rank >> judge rank):
+                      model  quality  det  q_rank  d_rank
+tinyllama:1.1b-chat-v1-q8_0     1.43 0.73   81.00   49.00
+ qwen2.5:0.5b-instruct-q8_0     1.44 0.70   80.00   52.00
+        stablelm2:1.6b-chat     1.49 0.72   77.00   50.50
+      stablelm2:1.6b-zephyr     1.35 0.67   87.00   61.00
+             tinyllama:1.1b     1.34 0.67   88.00   62.00
+
+saved a1_ranking.csv

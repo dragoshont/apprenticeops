@@ -1,0 +1,19 @@
+=== matched instruct vs thinking pairs (same-(scenario,rep)-cell deltas) ===
+                     pair    lineage  instruct_q  think_q  d_all  think_trunc  n_done  d_done
+         Qwen3-4B 2507 Q8   qwen3-4b        3.59     3.04  -0.56         0.99       1    0.00
+         Qwen3-4B 2507 Q4   qwen3-4b        3.36     2.87  -0.49         1.00       0     NaN
+               Phi-4-mini  phi4-mini        2.46     2.46   0.00         0.92       8    0.00
+Qwen2.5-3B->SmallThinker* qwen2.5-3b        2.52     2.47  -0.05         0.66      34   -0.15
+        EXAONE-3.5->Deep*     exaone        3.14     2.12  -1.01         0.12      88   -0.80
+
+=== significance at the LINEAGE level (honest n; qwen3 Q8/Q4 collapse to one) ===
+  full per-scenario budget:  mean delta = -0.40 over 4 lineages, t p=0.19  (3/4 lineages worse)
+  MATCHED non-truncated:     mean delta = -0.24 over 4 lineages, t p=0.30  (2/4 lineages worse)
+
+MECHANISM: per-scenario budgets are 400-700 tokens (NOT a single 512 cap);
+  the thinking variant truncates 74% of cells (exhausts the budget mid-reasoning).
+HONEST CLAIM (directional, ~4 lineages): thinking underperforms at the small per-scenario
+  budget, but on MATCHED non-truncated cells the gap largely closes -> mostly fit-to-budget,
+  not degraded reasoning. Confirm with the queued budget-sensitivity run (higher max_tokens).
+
+saved /Users/dragoshont/Repo/apprenticeops/deep-dive/out/reasoning_pairs.csv

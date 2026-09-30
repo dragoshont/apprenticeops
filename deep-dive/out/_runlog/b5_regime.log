@@ -1,0 +1,17 @@
+=== two-batch role structure (controlled vs breadth), not a confound ===
+var   = pre-registered CONTROLLED first batch (base_clock 1.7GHz, turbo-off, energy-comparable): 25 tags
+wave2 = BREADTH-extension second batch (dynamic turbo-on, energy descriptive-only): 70 tags
+overlap: 0 models  ->  disjoint batches by design
+energy is confined to the controlled var batch BY DESIGN; quality/det are
+regime-invariant so the full 94-functional quality ranking is valid.
+
+=== DNF / timeout by regime (the one regime-sensitive outcome) ===
+DNF rate:       var(base)=7.5%  wave2(turbo)=0.0%
+timeout events: var=83  wave2=0
+truncation:     var=9.7%  wave2=12.6%
+
+=== the 25 energy-controlled (var) models — the only ones with a comparable energy axis ===
+deepseek-r1:1.5b, deepseek-r1:7b, gemma2:2b, gemma3:4b-it-qat, granite4:1b-h, granite4:micro, granite4:tiny-h, llama3.2:1b, llama3.2:3b, ministral-3:3b, mistral:7b-instruct-q4_K_M, phi4-mini, phi:2.7b, qwen2.5:0.5b, qwen2.5:1.5b, qwen2.5:3b, qwen2.5:7b, qwen3:0.6b, qwen3:1.7b, qwen3:4b, qwen3:4b-instruct-2507-q4_K_M, qwen3:4b-instruct-2507-q8_0, smollm2:1.7b, smollm2:360m, stablelm2:1.6b
+
+OPTIONAL ENHANCEMENT (not a fix): run a bridge subset (~10 models) under BOTH regimes
+to PRICE the CPU power-policy effect on energy/latency (ties to the homelab EPP finding).

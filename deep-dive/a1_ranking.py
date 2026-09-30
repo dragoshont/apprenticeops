@@ -5,8 +5,8 @@ Demsar 2006 (Friedman + Nemenyi critical difference for many systems over many
 tasks). Answers: which models are *really* different, or just noise?
 
 * per-model quality (judge 1-5) with scenario-clustered bootstrap 95% CI;
-* Friedman test across all models over the 19 scenarios + Kendall's W effect size;
-* Nemenyi critical difference -> how many models are statistical co-leaders;
+* Friedman test across deployments over observed scenarios + Kendall's W;
+* descriptive overlap and Bonferroni-Dunn-style rank distance (not equivalence);
 * Spearman agreement between the LLM-judge ranking and the deterministic-score ranking.
 """
 
@@ -31,6 +31,11 @@ def cluster_bootstrap_ci(pivot: pd.DataFrame, model: str, b: int = B):
     return np.percentile(means, [2.5, 97.5])
 
 
+def friedman_models(model_by_scenario):
+    """Each argument is one treatment/model over paired scenario blocks."""
+    return stats.friedmanchisquare(*model_by_scenario.to_numpy())
+
+
 def main() -> None:
     df = load_runs()
     # per (model, scenario) mean over reps = the paired, scenario-level matrix
@@ -51,33 +56,31 @@ def main() -> None:
     print("...")
     print(R.tail(5).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
-    # statistical co-leaders: models whose CI overlaps the #1's CI
+    # Marginal CI overlap is descriptive, not evidence of equivalence.
     top = R.iloc[0]
     coleaders = R[R["ci_hi"] >= top["ci_lo"]]
     print(f"\n#1 = {top['model']} (quality {top['quality']:.3f}, CI {top['ci_lo']:.3f}-{top['ci_hi']:.3f})")
-    print(f"statistical co-leaders (CI overlaps #1): {len(coleaders)} models")
+    print(f"descriptive CI overlap with #1: {len(coleaders)} deployments (not an equivalence test)")
     print("  ", ", ".join(coleaders["model"].head(10)))
 
     # Friedman across all models over scenarios (need complete matrix)
     M = ms.dropna(axis=1)  # scenarios present for all models
     print(f"\n=== Friedman test: {M.shape[0]} models over {M.shape[1]} complete scenarios ===")
-    chi2, p = stats.friedmanchisquare(*[M[c].values for c in M.columns])
+    chi2, p = friedman_models(M)
     n, k = M.shape[1], M.shape[0]  # blocks=scenarios, treatments=models
     W = chi2 / (n * (k - 1))  # Kendall's W
     print(f"chi2={chi2:.1f}, p={p:.2e}, Kendall's W={W:.3f} (0=no agreement,1=perfect ordering across scenarios)")
 
-    # Nemenyi critical difference on mean ranks
+    # Bonferroni-Dunn-style critical distance on mean ranks.
     ranks = M.rank(axis=0, ascending=False)  # per scenario (column), rank models
     mean_rank = ranks.mean(axis=1).sort_values()
-    q_alpha = 3.354  # studentized range /sqrt2 approx for alpha=0.05, large k (Demsar table asymptote ~ from normal)
-    # use the standard Nemenyi CD with q for infinite k (0.05) ~ 3.219? use conservative normal approx:
     from math import sqrt
     q05 = stats.norm.ppf(1 - 0.05 / (k * (k - 1)))  # Bonferroni-Dunn style critical z for all pairs
     CD = q05 * sqrt(k * (k + 1) / (6 * n))
     best_rank = mean_rank.iloc[0]
     within = mean_rank[mean_rank <= best_rank + CD]
     print(f"mean-rank best = {mean_rank.index[0]} ({best_rank:.2f}); CD(0.05)={CD:.2f}")
-    print(f"models within CD of the best mean-rank (statistical co-top): {len(within)}")
+    print(f"deployments within Bonferroni-Dunn-style CD: {len(within)} (not equivalence)")
     print("  ", ", ".join(within.index[:10]))
 
     # judge vs deterministic ranking agreement

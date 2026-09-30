@@ -1,0 +1,54 @@
+=== rep-to-rep stability (mean within-(model,scenario) SD of judge_score) ===
+most STABLE models:
+model
+phi:2.7b                             0.000
+smollm:360m                          0.090
+smollm2:135m-instruct-q8_0           0.204
+gemma3:4b-it-q8_0                    0.260
+hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M   0.282
+most STOCHASTIC models:
+model
+falcon3:3b                   0.717
+falcon3:3b-instruct-q4_K_M   0.694
+granite4:1b-h                0.676
+falcon3:3b-instruct-q8_0     0.666
+qwen3:0.6b-q8_0              0.662
+overall mean within-cell SD: 0.478 (on a 1-5 scale)
+
+=== variance decomposition of judge_score ===
+  model (who)                         35.8%
+  scenario (task)                     21.4%
+  model x scenario (specialisation)   19.8%
+  rep (noise)                         22.9%
+  -> 'model' = how much variance is the model identity; 'scenario' = task difficulty;
+     'interaction' = models having different strengths; 'rep' = irreducible sampling noise
+
+=== split-half rank reproducibility (reps 0-2 vs 3-4): Spearman=0.984 ===
+
+=== DNF / timeout concentration ===
+overall DNF rate: 2.0%
+scenarios with most DNF (timeout/error):
+scenario
+upgrade-05-helmrelease         2.9%
+expand-19-add-app-closedbook   2.7%
+expand-04-add-app              2.5%
+secure-12-broad-rbac           2.3%
+augment-07-events-to-json      2.1%
+models with most DNF:
+model
+phi:2.7b                     100.0%
+deepseek-r1:7b                74.7%
+mistral:7b-instruct-q4_K_M     8.4%
+qwen2.5:7b                     4.2%
+
+=== truncation (finish_reason=length) ===
+overall truncation rate: 11.8%
+models that most often run to the token cap (verbose / non-terminating):
+model
+qwen3:4b                                                  100.0%
+phi4-mini-reasoning                                        98.9%
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M                            96.8%
+deepseek-r1:1.5b                                           60.0%
+deepseek-r1:1.5b-qwen-distill-q8_0                         58.9%
+hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M    54.7%
+quality when truncated=1.80 vs not=2.26

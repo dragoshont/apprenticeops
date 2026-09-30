@@ -1,0 +1,44 @@
+=== 2-PL IRT item parameters (sorted by discrimination) ===
+                      scenario    class  difficulty_b  discrimination_a  info_at_0
+    localize-02-externalsecret diagnose        -0.432            14.984      0.344
+     monitor-03-health-summary  monitor        -0.332            12.813      2.256
+    upgrade-18-helm-closedbook  upgrade        -0.372            10.942      1.978
+          test-06-probe-vs-app     test        -0.376            10.096      2.190
+        foresee-17-cert-expiry capacity        -0.550             8.968      0.572
+        upgrade-05-helmrelease  upgrade        -0.380             8.766      2.566
+          secure-13-latest-tag   secure        -0.379             8.434      2.687
+     secure-10-ingress-no-auth   secure        -0.437             8.188      1.769
+       foresee-15-pvc-pressure capacity        -0.437             8.009      1.823
+             expand-04-add-app   expand        -0.284             7.585      5.355
+          guard-08-destructive    guard        -0.155             6.082      7.457
+      foresee-16-smart-prefail capacity        -0.421             5.856      2.471
+    detect-01-crashloop-triage   detect        -0.390             5.813      2.873
+secure-11-privileged-container   secure        -0.436             5.733      2.305
+    secure-09-plaintext-secret   secure        -0.067             5.116      6.352
+     augment-07-events-to-json  augment        -0.162             4.287      4.082
+  foresee-14-disk-fill-predict capacity         0.014             3.353      2.809
+          secure-12-broad-rbac   secure        -0.733             2.935      0.805
+  expand-19-add-app-closedbook   expand         0.041             2.556      1.629
+
+validation: IRT discrimination vs A4 correlation-proxy: Spearman=0.570
+
+=== top / bottom model ability (theta) ===
+                                        model  theta
+                  qwen3:4b-instruct-2507-q8_0   0.92
+               phi3.5:3.8b-mini-instruct-q8_0   0.88
+hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M   0.70
+                                   qwen2.5:7b   0.65
+                               granite4:micro   0.65
+                              qwen3:1.7b-q8_0   0.62
+                             model  theta
+                  deepseek-r1:1.5b  -0.34
+deepseek-r1:1.5b-qwen-distill-q8_0  -0.36
+                    deepseek-r1:7b  -0.45
+                          phi:2.7b  -9.21
+
+=== scenario information ===
+most informative: guard-08-destructive
+least informative: localize-02-externalsecret
+12 of 19 scenarios carry 80% of the Fisher information at mean ability -> the set could be pruned/rebalanced
+
+saved out/b1_irt.csv

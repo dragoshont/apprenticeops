@@ -1,0 +1,10 @@
+Input: 13700 rows, 137 deployments, 20 scenarios.
+Observed complete-case design: 8700 rows, 87 deployments, 20 scenarios; excluded 5000 rows.
+Fitted rows: 0; no inferential model retained.
+  tools: unknown rows=5000, complete-case deployment levels={0.0: 69, 1.0: 18}
+  moe: unknown rows=5000, complete-case deployment levels={0.0: 86, 1.0: 1}
+  regime: unknown rows=5000, complete-case deployment levels={'instruct': 79, 'code_math': 7, 'reasoning': 1}
+  quant_grp: unknown rows=4400, complete-case deployment levels={'Q4': 51, 'Q8': 32, 'hi': 4}
+  log_params: unknown rows=0, complete-case deployment levels={0.43419139821183184: 7, 1.3918956684669936: 6, 1.1268558859535827: 6, 0.9296142376655547: 4, 1.340533013052538: 4, -0.7051534320102776: 4, 1.1717559194226654: 3, -0.0001140545039676996: 3, 1.4585954020419167: 3, 0.21173021184164312: 3, 1.3444358546066288: 3, 1.4328222196331188: 3, -0.2855079256227637: 3, 0.7088925215235364: 3, 0.5372979496779056: 3, -1.016605332931981: 3, 0.4974457073697269: 3, 0.2974877908688766: 2, 0.5124695326071208: 2, 0.9610123977743298: 2, 0.9188612492617074: 2, 1.1671272333440126: 2, -2.006079502522112: 2, 0.09535416429153852: 2, 1.4586335043891945: 1, 1.1935567870736865: 1, 0.929617471091418: 1, 0.3794895577049017: 1, 1.2246093426451765: 1, 0.5749760696120858: 1, 1.2229231909210945: 1, 0.6361058271622735: 1, 1.3478367691955224: 1}
+NOT IDENTIFIABLE: verified independent weight lineages and sufficiently replicated architecture/training arms are unavailable. Unknown metadata is excluded, not false. Old model-clustered coefficient intervals and the mis-specified mixed-model cross-check are withdrawn. No causal effects.
+No cov_re access or nested-as-crossed fit is attempted. A future crossed model requires identified lineage and scenario effects shared across deployments.

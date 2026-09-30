@@ -1,0 +1,32 @@
+{
+  "dimension": "served-failure-policy selection sensitivity",
+  "status": "NOT_IDENTIFIABLE",
+  "screened": 173,
+  "selected_full_run": 152,
+  "excluded": 21,
+  "excluded_full_run_rows": 0,
+  "excluded_models": [
+    "deepscaler:1.5b",
+    "deepseek-r1:1.5b",
+    "deepseek-r1:1.5b-qwen-distill-q8_0",
+    "deepseek-r1:7b",
+    "deepseek-r1:8b",
+    "deepseek-r1:8b-0528-qwen3-q4_K_M",
+    "exaone-deep:2.4b",
+    "exaone3.5:2.4b",
+    "exaone3.5:2.4b-instruct-q4_K_M",
+    "exaone3.5:2.4b-instruct-q8_0",
+    "granite-code:3b",
+    "granite-code:3b-instruct-q6_K",
+    "granite-code:3b-instruct-q8_0",
+    "granite3.1-moe:1b",
+    "granite3.1-moe:1b-instruct-q8_0",
+    "hf.co/google/gemma-3-1b-it-qat-q4_0-gguf:Q4_0",
+    "hf.co/google/gemma-3-4b-it-qat-q4_0-gguf:Q4_0",
+    "hf.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF:Q4_K_M",
+    "phi:2.7b",
+    "stable-code:3b",
+    "stablelm-zephyr:3b"
+  ],
+  "reason": "Screen outcomes are not comparable 20-scenario/five-repeat quality/energy rows. The 21 excluded tags cannot be ranked or assigned failed-attempt energy. No imputation or additional measurement is performed."
+}

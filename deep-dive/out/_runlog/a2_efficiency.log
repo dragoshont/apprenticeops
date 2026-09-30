@@ -1,0 +1,109 @@
+=== quality per GB (all models) ===
+                       model  quality_per_gb  quality  size_gb  params_b
+  smollm2:135m-instruct-q8_0           3.938    1.142    0.290     0.135
+                 smollm:360m           3.614    1.084    0.300     0.362
+                smollm2:135m           2.863    1.174    0.410     0.135
+                qwen2.5:0.5b           2.612    1.384    0.530     0.494
+qwen2.5:0.5b-instruct-q4_K_M           2.602    1.379    0.530     0.494
+  qwen2.5:0.5b-instruct-q8_0           2.152    1.442    0.670     0.494
+  smollm2:360m-instruct-q8_0           2.046    1.268    0.620     0.362
+                   gemma3:1b           2.028    1.926    0.950     1.000
+
+=== quality per second (throughput-adjusted quality) ===
+                                          model  quality_per_sec  quality  size_gb  params_b
+                                       phi:2.7b            0.467    1.000      NaN       NaN
+                     smollm2:135m-instruct-q8_0            0.448    1.142    0.290     0.135
+                                qwen3:0.6b-q8_0            0.340    2.089    1.400     0.752
+                                   smollm2:135m            0.321    1.174    0.410     0.135
+hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M            0.298    1.811    1.090     1.236
+                               gemma3:1b-it-qat            0.274    2.026    1.140     1.000
+                                     qwen3:0.6b            0.268    1.832    1.090     0.752
+                     smollm2:360m-instruct-q8_0            0.260    1.268    0.620     0.362
+
+=== quality per Wh (controlled-energy 25) ===
+          model  quality_per_wh_controlled  quality  energy_wh_controlled  size_gb
+       phi:2.7b                    456.687    1.000                 0.002      NaN
+     qwen3:0.6b                    121.689    1.832                 0.015    1.090
+     qwen3:1.7b                     86.052    3.074                 0.036    1.970
+  granite4:1b-h                     75.918    2.263                 0.030    1.750
+    llama3.2:1b                     69.865    1.784                 0.026    1.600
+   smollm2:360m                     59.166    1.389                 0.023    0.960
+granite4:tiny-h                     58.825    3.174                 0.054    4.430
+   qwen2.5:0.5b                     44.778    1.384                 0.031    0.530
+
+=== Quality vs size (GB): 16/92 Pareto-optimal (17% frontier) ===
+                             model  quality  size_gb
+hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.568    3.320
+     qwen3:4b-instruct-2507-q4_K_M    3.432    3.320
+                   qwen3:1.7b-q8_0    3.105    2.830
+                        qwen3:1.7b    3.074    1.970
+                         gemma2:2b    2.563    1.960
+                     granite4:1b-h    2.263    1.750
+                      qwen2.5:1.5b    2.205    1.250
+      qwen2.5:1.5b-instruct-q4_K_M    2.168    1.250
+                qwen2.5-coder:1.5b    2.158    1.250
+                  gemma3:1b-it-qat    2.026    1.140
+                         gemma3:1b    1.926    0.950
+        qwen2.5:0.5b-instruct-q8_0    1.442    0.670
+                      qwen2.5:0.5b    1.384    0.530
+      qwen2.5:0.5b-instruct-q4_K_M    1.379    0.530
+                      smollm2:135m    1.174    0.410
+        smollm2:135m-instruct-q8_0    1.142    0.290
+
+=== Quality vs latency (wall_s): 12/95 Pareto-optimal (13% frontier) ===
+                                          model  quality  wall_s
+             hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M    3.568  28.325
+                                granite4:tiny-h    3.174  23.467
+                                qwen3:1.7b-q8_0    3.105  17.723
+                                     qwen3:1.7b    3.074  15.495
+                                  granite4:1b-h    2.263  12.275
+                              granite3.1-moe:3b    2.111  11.253
+                                qwen3:0.6b-q8_0    2.089   6.147
+hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:Q4_K_M    1.811   6.069
+                     smollm2:360m-instruct-q8_0    1.268   4.887
+                                   smollm2:135m    1.174   3.659
+                     smollm2:135m-instruct-q8_0    1.142   2.548
+                                       phi:2.7b    1.000   2.142
+
+=== Quality vs energy (controlled 25): 7/25 Pareto-optimal (28% frontier) ===
+                        model  quality  energy_wh_controlled
+  qwen3:4b-instruct-2507-q8_0    3.563                 0.155
+qwen3:4b-instruct-2507-q4_K_M    3.432                 0.106
+              granite4:tiny-h    3.174                 0.054
+                   qwen3:1.7b    3.074                 0.036
+                granite4:1b-h    2.263                 0.030
+                   qwen3:0.6b    1.832                 0.015
+                     phi:2.7b    1.000                 0.002
+
+=== 3-axis Pareto (quality up, safety up, energy down), controlled 25 ===
+Pareto-optimal: 8  |  dominated: 17
+                        model  quality  safety  energy_wh_controlled
+  qwen3:4b-instruct-2507-q8_0    3.563   3.767                 0.155
+qwen3:4b-instruct-2507-q4_K_M    3.432   3.583                 0.106
+              granite4:tiny-h    3.174   3.467                 0.054
+                   qwen3:1.7b    3.074   3.200                 0.036
+                granite4:1b-h    2.263   2.667                 0.030
+                   qwen3:0.6b    1.832   1.700                 0.015
+                  llama3.2:1b    1.784   2.067                 0.026
+                     phi:2.7b    1.000   1.000                 0.002
+
+=== energy ~ size scaling (log-log): slope=1.00, R^2=0.60 ===
+most energy-EFFICIENT beyond size (negative residual):
+          model  size_gb  energy_wh_controlled  quality  log_energy_resid
+granite4:tiny-h    4.430                 0.054    3.174            -0.922
+     qwen3:0.6b    1.090                 0.015    1.832            -0.799
+    llama3.2:1b    1.600                 0.026    1.784            -0.653
+  granite4:1b-h    1.750                 0.030    2.263            -0.588
+     qwen3:1.7b    1.970                 0.036    3.074            -0.525
+most energy-HUNGRY beyond size (positive residual):
+           model  size_gb  energy_wh_controlled  quality  log_energy_resid
+        qwen3:4b    3.320                 0.235    2.616             0.838
+deepseek-r1:1.5b    1.380                 0.087    1.258             0.721
+  deepseek-r1:7b    5.220                 0.324    1.589             0.706
+    qwen2.5:0.5b    0.530                 0.031    1.384             0.641
+  ministral-3:3b    2.850                 0.131    2.968             0.405
+
+=== quality vs params ===
+Spearman(params, quality)=0.690; quality ~ a + b*ln(params): b=0.56 pts/e-fold, R^2=0.48
+
+saved figure /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/a2_efficiency_frontiers.png
