@@ -32,6 +32,8 @@ _TMP = REPO / ".tmp" / "completed-run-intake" / RUN_ID
 _SNAP_RESULTS = REPO / "data" / "snapshots" / f"{RUN_ID}.results.csv"
 _SNAP_JUDGED = REPO / "data" / "snapshots" / f"{RUN_ID}.judged.csv"
 SAFETY_CLASSES = {"guard", "secure"}
+EXPECTED_JUDGES = frozenset({"claude-opus-4.6", "gpt-5.4"})
+EVALUATION_POLICY = "deterministic-checks-v1|judges:copilot:claude-opus-4.6+copilot:gpt-5.4"
 # Canonical per-observation cell key. The whole analysis is keyed on it, so the
 # results<->judged join MUST be 1-to-1 on exactly these columns (see _assert_join_integrity).
 _CELL = ["model", "scenario", "rep"]
@@ -91,6 +93,9 @@ def _load_judged() -> pd.DataFrame:
     with _open_text(judged_file) as fh:
         for line in fh:
             r = json.loads(line)
+            if (r.get("judge_backend") != "copilot" or r.get("judge_model") not in EXPECTED_JUDGES
+                    or r.get("evaluation_policy") != EVALUATION_POLICY):
+                raise ValueError("judgment does not match the fixed named judge policy")
             try:
                 s = float(r.get("score"))
             except (TypeError, ValueError):
@@ -126,7 +131,12 @@ def _run_param_counts() -> pd.Series:
     if not path.exists():
         return pd.Series(dtype=float)
     mp = pd.read_csv(path)
-    return (pd.to_numeric(mp["param_count"], errors="coerce") / 1e9).set_axis(mp["model"])
+    if mp["model"].duplicated().any():
+        raise ValueError("duplicate model in run parameter snapshot")
+    count = pd.to_numeric(mp["param_count"], errors="raise")
+    if ((count.notna()) & ((count <= 0) | (count % 1 != 0))).any():
+        raise ValueError("run parameter counts must be positive integers or missing")
+    return (count / 1e9).set_axis(mp["model"])
 
 
 def _param_size_to_b(s) -> float:
@@ -146,23 +156,64 @@ def _metadata() -> pd.DataFrame:
     md = md[[c for c in _META_COLS if c in md.columns]]
     inv = inv[[c for c in _META_COLS if c in inv.columns]]
     combined = pd.concat([md, inv[~inv["model"].isin(md["model"])]], ignore_index=True)
-    # params_b: use the clean integer param_count (bug-free); only fall back to the
-    # param_size TEXT WITH unit conversion -- never the naked number (999M != 999B).
+    # Retain curated integers for auditing, never use text/name estimates for eligibility.
     combined["params_b"] = pd.to_numeric(combined.get("param_count"), errors="coerce") / 1e9
-    combined["params_b"] = combined["params_b"].fillna(combined.get("param_size").map(_param_size_to_b))
     return combined.drop_duplicates("model")
 
 
 def _join_metadata(df: pd.DataFrame) -> pd.DataFrame:
     df = df.merge(_metadata(), on="model", how="left")
-    # authoritative run-reported parameter_count first, then the model-name fallback
-    df["params_b"] = df["params_b"].fillna(df["model"].map(_run_param_counts()))
-    df["params_b"] = df["params_b"].fillna(df["model"].map(_parse_pb))
-    md_reason = df.get("training_regime", pd.Series("", index=df.index)).astype(str).str.contains("reason", case=False, na=False)
-    df["is_reasoning"] = md_reason | df["model"].str.contains(_REASON_RE)
+    # Actual run integers outrank curated metadata. Absence is unknown, not a tag estimate.
+    df["curated_params_b"] = df["params_b"]
+    df["params_b"] = df["model"].map(_run_param_counts())
+    df["curated_param_count"] = df.get("param_count", np.nan)
+    df["param_count"] = (df.params_b * 1e9).round().astype("Int64")
+    # Training, capability and actual runtime thinking mode are different axes.
+    # A name is a search hint, not verified training metadata.
+    regime = df.get("training_regime", pd.Series(index=df.index, dtype="string"))
+    df["is_reasoning"] = regime.map({"reasoning": True, "instruct": False, "code/math": False})
+    df["reasoning_name_hint"] = df["model"].str.contains(_REASON_RE)
     tc = df.get("tools_capable", pd.Series(index=df.index)).astype("string").str.lower()
     df["is_tools"] = tc.map({"true": True, "false": False})  # missing metadata -> NaN (unknown-preserving)
     return df
+
+
+def eligibility_table(df: pd.DataFrame, lock: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Frozen run roster intersected with model-lock inclusion and integer <=5B.
+
+    No outcome/check/metadata complete-case filter defines membership. Discrepancies
+    are columns in the audit, never mutations of the lock or silently repaired tiers.
+    """
+    if lock is None:
+        lock = pd.read_json(REPO / "data/models.lock.jsonl", lines=True)
+    if lock.model_id.duplicated().any():
+        raise ValueError("duplicate model in model lock")
+    if df.groupby("model").params_b.nunique(dropna=False).gt(1).any():
+        raise ValueError("parameter count changes within a deployment")
+    roster = df[["model", "params_b"]].drop_duplicates("model")
+    keep = lock[["model_id", "included", "tier", "params_b"]].rename(
+        columns={"model_id": "model", "params_b": "lock_params_b", "tier": "lock_tier"})
+    t = roster.merge(keep, on="model", how="left", validate="one_to_one")
+    t["run_param_count"] = (t.params_b * 1e9).round().astype("Int64")
+    t["integer_le5b"] = t.run_param_count.between(1, 5_000_000_000).fillna(False)
+    t["run_tier"] = t.params_b.map(
+        lambda p: f"T{max(1, int(np.ceil(p)))}" if pd.notna(p) and 0 < p <= 5 else None)
+    locked = t.included.eq(True) & t.lock_tier.isin(["T1", "T2", "T3", "T4", "T5"])
+    t["eligible"] = locked & t.integer_le5b
+    t["membership_discrepancy"] = locked.ne(t.integer_le5b)
+    t["tier_discrepancy"] = t.run_tier.fillna("outside_or_unknown").ne(
+        t.lock_tier.fillna("outside_or_unknown"))
+    t["lock_minus_run_params_b"] = t.lock_params_b - t.params_b
+    t["exclusion"] = np.select(
+        [t.eligible, t.params_b.isna(), ~t.integer_le5b, ~t.included.eq(True)],
+        ["", "unknown_run_integer", "above_5b", "not_lock_included"],
+        default="invalid_or_missing_lock_tier")
+    return t.sort_values("model").reset_index(drop=True)
+
+
+def primary_frame(df: pd.DataFrame) -> pd.DataFrame:
+    audit = eligibility_table(df)
+    return df[df.model.isin(audit.loc[audit.eligible, "model"])].copy()
 
 
 def _scenario_class_map() -> dict:
@@ -170,7 +221,7 @@ def _scenario_class_map() -> dict:
     p = REPO / "data" / "scenario_sets" / "core-current.json"
     dd = json.loads(p.read_text())
     items = dd if isinstance(dd, list) else dd.get("scenarios", dd.get("items", []))
-    return {(it.get("id") or it.get("scenario")): (it.get("class") or it.get("category"))
+    return {(it.get("id") or it.get("scenario")): it.get("class")
             for it in items if (it.get("id") or it.get("scenario"))}
 
 
@@ -182,6 +233,11 @@ def _assert_join_integrity(res: pd.DataFrame, jud: pd.DataFrame, cons: pd.DataFr
     is computed on a fan-out or a hole. The 152-run invariants are exact -- enforce them so
     a repointed/partial/re-judged source cannot degrade a claim without stopping the run.
     """
+    # This reduced key is compatibility for this hash-bound single-condition
+    # study only, not a replacement for canonical condition identity at promotion.
+    assert set(jud["judge_model"]) == EXPECTED_JUDGES, (
+        "join-integrity: observed judge identities differ from the fixed named policy "
+        f"{EVALUATION_POLICY}")
     # 1. results cell keys are unique -> the left merge cannot fan out.
     dup_res = int(res.duplicated(_CELL).sum())
     assert dup_res == 0, (
@@ -226,7 +282,11 @@ def load_full() -> pd.DataFrame:
     _assert_join_integrity(res, jud, cons)  # left_join can run clean but be wrong -- guard it
     df = res.merge(cons, on=_CELL, how="left", validate="one_to_one")
 
-    df["scenario_class"] = df["scenario"].map(_scenario_class_map()).fillna(df["scenario"].str.split("-").str[0])
+    df["scenario_class"] = df["scenario"].map(_scenario_class_map())
+    valid_class = df["scenario_class"].map(lambda value: isinstance(value, str) and bool(value.strip()))
+    if not valid_class.all():
+        missing = sorted(df.loc[~valid_class, "scenario"].unique())
+        raise ValueError(f"Missing or invalid authoritative scenario class: {missing}")
     df["is_safety"] = df["scenario_class"].isin(SAFETY_CLASSES)
 
     df = _join_metadata(df)
@@ -279,7 +339,8 @@ if __name__ == "__main__":
     print(f"rows={len(df)} | models={df.model.nunique()} | scenarios={df.scenario.nunique()} | reps={sorted(df.rep.unique())}")
     print(f"judge_score {df.judge_score.min():.2f}..{df.judge_score.max():.2f} (mean {df.judge_score.mean():.2f}) matched {df.judge_score.notna().mean()*100:.1f}%")
     print(f"det_score mean {df.det_score.mean():.3f} | energy_wh mean {df.energy_wh.mean():.4f} | energy_comparable {df.energy_comparable.mean()*100:.0f}%")
-    print(f"is_reasoning models: {df[df.is_reasoning].model.nunique()} | is_tools models: {df[df.is_tools == True].model.nunique()}")
+    print(f"known reasoning-trained models: {df[df.is_reasoning.eq(True)].model.nunique()} | "
+          f"is_tools models: {df[df.is_tools.eq(True)].model.nunique()}")
     mt = model_table_full(df)
     out = REPO / "deep-dive" / "out"
     out.mkdir(parents=True, exist_ok=True)

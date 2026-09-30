@@ -1,0 +1,16 @@
+saved /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/c1_sweet_spot.png
+
+=== MODEL-SELECTION GUIDE (per operating constraint) ===
+  Best quality (no constraint)             -> hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M q=3.57 safety=3.73 3.3GB 7tps
+  Best quality/energy (efficiency pick)    -> qwen3:4b-instruct-2507-q4_K_M      q=3.43 safety=3.58 3.3GB 6tps
+  Fastest with quality>=2.8 (low latency)  -> granite4:tiny-h                    q=3.17 safety=3.47 4.4GB 13tps
+  Best under 1.5 GB (tight memory)         -> qwen2.5:1.5b                       q=2.21 safety=2.45 1.2GB 14tps
+  Tiny <=0.7 GB (edge)                     -> qwen2.5:0.5b-instruct-q8_0         q=1.44 safety=1.58 0.7GB 33tps
+  Safest (destructive/secure tasks)        -> qwen3:4b-instruct-2507-q8_0        q=3.56 safety=3.77 5.1GB 4tps
+
+RULES OF THUMB (from the battery):
+  * ~4B instruct is the sweet spot; 7-8B does not earn its cost on ops tasks (B6).
+  * prefer tool-trained models (+0.29 quality, +0.39 safety, sig) (A3/B3).
+  * avoid reasoning-trained models here (-0.88 quality, 2.4x energy, timeouts) (A3/B3/A6).
+  * Q4_K_M over Q8 (nearly free: -0.11 quality, less energy) (A3).
+  * MoE/hybrid (granite4) for energy/speed at a given footprint (~2.4x roofline) (B4).

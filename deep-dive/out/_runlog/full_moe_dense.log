@@ -1,0 +1,24 @@
+=== MoE vs dense (metadata-tagged) ===
+  MoE    n=  2  quality=2.33  decode_tps= 15.6  energy_wh=0.044  tps/GB=5.2
+  dense  n= 88  quality=2.11  decode_tps= 11.6  energy_wh=0.079  tps/GB=12.8
+
+=== within Granite (same org/lineage): MoE vs dense ===
+  MoE    n= 2  quality=2.33  tps/GB=5.2  e.g. ['granite3.1-moe:3b', 'granite4:tiny-h']
+  dense  n= 7  quality=2.50  tps/GB=3.7  e.g. ['granite3.1-dense:2b', 'granite3.1-dense:2b-instruct-q8_0', 'granite3.2:2b']
+
+=== roofline: log(decode_tps) ~ log(size)  slope=-0.84 R^2=0.87 ===
+  mean residual (positive = decodes FASTER than its footprint predicts):
+    MoE   = +0.87  (n=2)
+    dense = -0.02  (n=86)
+    (n_MoE=2 is far too few for a valid significance test;
+     residuals are reported descriptively as a case study, no p-value)
+
+=== ADVERSARIAL: is this a quality win? NO; and n is small. ===
+  MoE-minus-dense quality = +0.22 (confounded: different models) -> NOT the claim.
+  Robust claim = EFFICIENCY at footprint: positive roofline residual + higher within-Granite
+  tps/GB. CAVEATS: (1) only 2 small MoE models are reliably tagged (few exist; is_moe is
+  under-populated and 'hybrid' != MoE, so uncertain labels are NOT forced) -> directional,
+  underpowered. (2) Raw overall tps/GB is size-confounded (MoE store all params on disk);
+  the size-controlled roofline residual is the correct metric.
+
+saved /Users/dragoshont/Repo/apprenticeops/deep-dive/out/moe_roofline.csv

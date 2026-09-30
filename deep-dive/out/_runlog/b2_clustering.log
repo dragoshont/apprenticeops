@@ -1,0 +1,47 @@
+=== metric correlation structure (Pearson, standardized) ===
+                 quality  safety  det_score  decode_tps  wall_s  membw_peak_mb_s  quality_sd  trunc_rate  dnf_rate  size_gb  params_b
+quality             1.00    0.97       0.86       -0.59    0.43             0.31        0.77       -0.19     -0.20     0.64      0.61
+safety              0.97    1.00       0.84       -0.62    0.47             0.35        0.80       -0.12     -0.20     0.65      0.63
+det_score           0.86    0.84       1.00       -0.47    0.30             0.41        0.76       -0.14     -0.51     0.43      0.40
+decode_tps         -0.59   -0.62      -0.47        1.00   -0.50            -0.40       -0.65        0.03     -0.08    -0.64     -0.60
+wall_s              0.43    0.47       0.30       -0.50    1.00             0.26        0.43        0.46      0.22     0.67      0.73
+membw_peak_mb_s     0.31    0.35       0.41       -0.40    0.26             1.00        0.46        0.07     -0.38     0.44      0.22
+quality_sd          0.77    0.80       0.76       -0.65    0.43             0.46        1.00       -0.12     -0.35     0.56      0.52
+trunc_rate         -0.19   -0.12      -0.14        0.03    0.46             0.07       -0.12        1.00     -0.04    -0.06     -0.01
+dnf_rate           -0.20   -0.20      -0.51       -0.08    0.22            -0.38       -0.35       -0.04      1.00     0.14      0.23
+size_gb             0.64    0.65       0.43       -0.64    0.67             0.44        0.56       -0.06      0.14     1.00      0.82
+params_b            0.61    0.63       0.40       -0.60    0.73             0.22        0.52       -0.01      0.23     0.82      1.00
+
+notable:
+  quality~safety     +0.97 (collinear -> not an independent tradeoff)
+  quality~size_gb    +0.64
+  quality~decode_tps -0.59 (bigger/better = slower)
+  size~decode_tps    -0.64 (bigger = slower decode)
+  quality~quality_sd +0.77 (are better models more stochastic?)
+
+=== PCA: explained variance [0.51 0.18 0.12 0.07] ===
+                  PC1   PC2   PC3
+quality          0.38 -0.13 -0.17
+safety           0.39 -0.11 -0.11
+det_score        0.34 -0.33  0.02
+decode_tps      -0.32 -0.14  0.05
+wall_s           0.27  0.43  0.30
+membw_peak_mb_s  0.22 -0.17  0.38
+quality_sd       0.36 -0.18  0.01
+trunc_rate      -0.02  0.26  0.75
+dnf_rate        -0.07  0.59 -0.37
+size_gb          0.34  0.26 -0.07
+params_b         0.33  0.34 -0.12
+
+=== archetypes: k=3 (silhouette=0.36) ===
+
+cluster 0 (n=44): quality=2.81 size=3.41GB decode=7.6tps  [quality+, safety+; decode_tps-, dnf_rate-]
+  members: hf.co/unsloth/Qwen3-4B-GGUF:Q4_K_M, qwen3:4b-instruct-2507-q8_0, qwen3:4b-q8_0, qwen3:4b-instruct-2507-q4_K_M, qwen2.5:7b, granite4:tiny-h
+
+cluster 1 (n=49): quality=1.71 size=1.55GB decode=20.8tps  [trunc_rate+, decode_tps+; safety-, quality-]
+  members: granite4:1b-h, qwen2.5:1.5b, qwen2.5:1.5b-instruct-q4_K_M, hf.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M, qwen2.5-coder:1.5b, qwen2.5:1.5b-instruct-q8_0
+
+cluster 2 (n=2): quality=1.29 size=5.22GB decode=3.7tps  [params_b+, dnf_rate+; det_score-, membw_peak_mb_s-]
+  members: deepseek-r1:7b, phi:2.7b
+
+saved figure /Users/dragoshont/Repo/apprenticeops/deep-dive/figures/b2_archetypes.png and out/b2_clusters.csv

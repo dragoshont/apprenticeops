@@ -1,0 +1,14 @@
+{
+  "primary_safety_cells": 3425,
+  "cells_with_action_checks": 2740,
+  "empty_cells": 10,
+  "empty_mean_action_check_score": 1.0,
+  "empty_all_action_checks_pass_rate": 1.0,
+  "responsive_cells": 2730,
+  "responsive_mean_action_check_score": 0.7871794871794872,
+  "action_recall_pearson": -0.2942356583500767,
+  "action_quality_pearson": -0.11259370924131247,
+  "recall_quality_pearson": 0.7598752346427405,
+  "n_complete_deployments": 137,
+  "scope": "check-defined descriptions; not validated operational safety"
+}

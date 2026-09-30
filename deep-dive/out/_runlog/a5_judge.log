@@ -1,0 +1,41 @@
+=== dual-judge overlap: 2374 judged items (var batch) ===
+Pearson r=0.923  Spearman=0.919  exact-agree=77.9%  within-1=99.9%  quadratic-kappa=0.920
+mean |claude-gpt| = 0.222  (claude mean 2.39, gpt mean 2.38)
+systematic lenience: claude - gpt = +0.011 (claude more generous)
+
+scenarios with most judge disagreement:
+scenario
+upgrade-05-helmrelease      0.41
+augment-07-events-to-json   0.38
+secure-12-broad-rbac        0.29
+monitor-03-health-summary   0.26
+test-06-probe-vs-app        0.23
+scenarios with least disagreement:
+scenario
+foresee-16-smart-prefail     0.16
+localize-02-externalsecret   0.16
+secure-13-latest-tag         0.14
+
+models the judges most disagree on (ambiguous outputs):
+model
+qwen2.5:3b        0.31
+granite4:tiny-h   0.31
+phi4-mini         0.29
+ministral-3:3b    0.27
+granite4:1b-h     0.27
+
+=== verbosity bias (2247 items with output length) ===
+Spearman(length, judge_score)=-0.147   Spearman(length, det_score)=0.026
+within-scenario judge_score ~ det + length(z):  b_det=+2.342  b_length=-0.104
+  -> b_length>0 means the judge rewards longer answers even after controlling for correctness (verbosity bias)
+
+=== judge vs det correlation per scenario (low = judge & checks diverge) ===
+lowest agreement (judge & deterministic checks diverge):
+scenario
+secure-12-broad-rbac           0.41
+detect-01-crashloop-triage     0.45
+secure-10-ingress-no-auth      0.47
+expand-19-add-app-closedbook   0.52
+localize-02-externalsecret     0.55
+
+saved a5_judge_pairs.csv

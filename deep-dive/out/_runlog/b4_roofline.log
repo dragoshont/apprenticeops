@@ -1,0 +1,36 @@
+=== roofline: decode_tps vs size (log-log) ===
+slope=-0.90 (memory-bound predicts -1.0), R^2=0.86
+  -> strongly memory-bandwidth-bound; bigger models decode proportionally slower because more bytes stream per token.
+
+median effective bandwidth (size x tps) = 23.0 GB/s
+measured peak bandwidth (median) = 17.1 GB/s
+
+=== models that BEAT the size-roofline (decode faster than size predicts) ===
+                            model  size_gb  decode_tps  log_tps_resid is_moe  quant
+                granite3.1-moe:3b     2.46       24.79           0.93   True Q4_K_M
+                  granite4:tiny-h     4.43       13.11           0.82   True Q4_K_M
+                  qwen3:0.6b-q8_0     1.40       26.12           0.47  False   Q8_0
+              deepseek-coder:1.3b     1.74       21.25           0.46  False   Q4_0
+       smollm2:135m-instruct-q8_0     0.29       93.65           0.34  False   Q8_0
+                        phi3:3.8b     4.04        8.52           0.31  False   Q4_0
+deepseek-coder:1.3b-instruct-q8_0     2.40       13.46           0.30  False   Q8_0
+                      phi3.5:3.8b     4.04        8.41           0.29  False   Q4_0
+=== models BELOW the roofline (slower than size predicts -> overhead/compute-bound) ===
+           model  size_gb  decode_tps  log_tps_resid is_moe  quant
+    qwen2.5:0.5b     0.53       25.51          -0.42  False Q4_K_M
+  ministral-3:3b     2.85        5.93          -0.37  False Q4_K_M
+       gemma2:2b     1.96        8.37          -0.36  False   Q4_0
+   granite4:1b-h     1.75        9.32          -0.36  False   Q8_0
+      qwen2.5:3b     2.26        7.51          -0.34  False Q4_K_M
+gemma3:4b-it-qat     3.60        5.05          -0.32  False   Q4_0
+
+MoE/hybrid roofline residual mean = +0.87 vs dense -0.02  (positive = decodes faster than a dense model of the same footprint)
+
+=== decode speed by quant bit-width ===
+        n   tps  size
+qbits                
+4      55 13.66  2.29
+8      33 14.87  2.74
+16      4 25.42  2.03
+
+saved out/b4_roofline.csv

@@ -26,6 +26,24 @@ ApprenticeOps is a reproducible CPU-local small-model benchmark for homelab oper
     depth is the main novelty pressure, while adaptation, specialist routing, and
     executed recovery remain separate studies.
 - Parent recovery bundle index: `data/completed-runs/full-chatok-core20-r5-ollama-20260705-150053-dd262a5c94593cb4b35bbb3554cc7ed1d608fab8b16160a3215329637c614baa.summary.json`; full bytes remain in two verified archives.
+- Analysis-closure programme:
+  [152-analysis-closure.md](../../docs/sdd/152-analysis-closure.md).
+  P1/P2 retained machine calculations now pass parent tests/replay and independent
+  GPT/Claude review. [Core repairs](../../docs/sdd/152-analysis-repair-results.md),
+  [selection stability](../../docs/sdd/152-selection-stability-results.md), and
+  [sensitivity closure](../../docs/sdd/152-selection-sensitivity-results.md)
+  preserve provisional status and explicit non-identifiability. Human validation,
+  verified lineage, hardware scope, claim locking and publication remain separate
+  evidence/approval requirements.
+- Local reviewer: [guide](../../docs/HUMAN_REVIEW.md) and
+  [portal instruction page](../../docs/analysis/human-review.qmd). Full-text
+  operator pilot, tri-state ratings, persistent private saves and resume, no
+  automatic independent-validation claim. Reviewer tests are configured.
+- Latest bounded candidate-evidence radar:
+  [2026-09-08 report](../../docs/analysis/research-radar/2026-09-08.md) and
+  [ten-source shortlist](../../docs/analysis/research-radar/2026-09-08-shortlist.md).
+  New methods and releases are separated from older context and social leads;
+  no canonical literature or provisional study claim was promoted.
 
 ## Build And Test
 
@@ -64,10 +82,12 @@ synthesis without changing the experiment or canonical paper evidence.
 | Architrave kit copied at v0.10.3 | `gates/.kit-version` | 2026-07-12 |
 | Initial research radar validates 29 queries, 42 immutable source versions, 42 scoped claims, and zero promotions | `scripts/validate-literature-radar.py complete --scan-id radar-20260713-initial` | 2026-07-13 |
 | Research radar and paper-impact packet are locally preserved with dual-family PASS; canon and active timeout evidence remain unchanged | commits `27ab2c7` and `18ba9c9`; run judge and gate artifacts | 2026-07-13 |
+| The real 152 x 20 x 5 frame passes join integrity; lane, summary and condition-verifier tests pass | Existing test entry points and `.architrave/runs/analysis-closure-20260908/deterministic-gates.md` | 2026-09-08 |
+| The human 66-item slot is blank; machine labels are separate, and the packet generator caps displayed context/answer text | `data/human_eval/paper-152-model-v1-250/AI-REVIEW-PROVENANCE.md`; `deep-dive/human_validation_packet.py` | 2026-09-08 |
+| Configured checks pass with terminal-injected Git configuration removed from the test subprocess; whole-tree privacy scanning separately flags ignored third-party dependencies | `analysis-closure-20260908/deterministic-gates.md`; no runtime script or scanner changed | 2026-09-08 |
 
 ## Last Reviewed
 
-2026-07-13 during Architrave runs `timeout-recovery-20260712` and
-`literature-radar-20260713`. Validate facts against the current branch before
-reuse.
-
+2026-09-08 for analysis-closure planning. July recovery/runtime observations
+above were not refreshed; their individual dates remain authoritative. Validate
+facts against the current branch before reuse.

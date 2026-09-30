@@ -1,0 +1,12 @@
+{
+  "judge_a": "claude-opus-4.6",
+  "judge_b": "gpt-5.4",
+  "n": 13700,
+  "exact_agreement": 0.6854744525547445,
+  "within_one": 0.9871532846715328,
+  "pearson": 0.8535865262034745,
+  "quadratic_kappa": 0.8468387828678281,
+  "mean_a": 2.1260583941605837,
+  "mean_b": 1.994087591240876,
+  "scope": "descriptive fixed-corpus agreement, not accuracy or human validity"
+}

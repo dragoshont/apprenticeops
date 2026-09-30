@@ -26,14 +26,9 @@ FIG = REPO / "deep-dive" / "figures"
 
 def pareto_mask(quality: np.ndarray, cost: np.ndarray) -> np.ndarray:
     """True where a point is Pareto-optimal: maximise quality, minimise cost."""
-    order = np.lexsort((cost, -quality))  # high quality first, then low cost
-    best_cost = np.inf
-    keep = np.zeros(len(quality), dtype=bool)
-    for i in order:
-        if cost[i] <= best_cost:
-            keep[i] = True
-            best_cost = cost[i]
-    return keep
+    return np.array([not np.any((quality >= q) & (cost <= c) &
+                               ((quality > q) | (cost < c)))
+                     for q, c in zip(quality, cost)])
 
 
 def frontier_report(mt: pd.DataFrame, qcol: str, ccol: str, name: str, lo_is_better=True):
@@ -60,25 +55,30 @@ def main() -> None:
     print(top("quality_per_gb").to_string(index=False, float_format=lambda x: f"{x:.3f}"))
     print("\n=== quality per second (throughput-adjusted quality) ===")
     print(top("quality_per_sec").to_string(index=False, float_format=lambda x: f"{x:.3f}"))
-    print("\n=== quality per Wh (controlled-energy 25) ===")
+    print(f"\n=== quality per Wh (controlled-energy n={mt.energy_wh_controlled.notna().sum()}) ===")
     print(mt.dropna(subset=["quality_per_wh_controlled"]).sort_values("quality_per_wh_controlled", ascending=False)[
         ["model", "quality_per_wh_controlled", "quality", "energy_wh_controlled", "size_gb"]].head(8).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
     # ---- Pareto frontiers ----
     frontier_report(mt, "quality", "size_gb", "Quality vs size (GB)")
     frontier_report(mt, "quality", "wall_s", "Quality vs latency (wall_s)")
-    en = frontier_report(mt.dropna(subset=["energy_wh_controlled"]), "quality", "energy_wh_controlled", "Quality vs energy (controlled 25)")
+    en = frontier_report(mt.dropna(subset=["energy_wh_controlled"]), "quality", "energy_wh_controlled", "Quality vs energy (observed controlled set)")
 
-    # 3-axis Pareto on controlled set (quality up, safety up, energy down) -> matches site's 7/24
+    # Descriptive score-slice axis, not independent or validated operational safety.
     c = mt.dropna(subset=["energy_wh_controlled", "safety", "quality"]).copy()
     Q, S, E = c["quality"].values, c["safety"].values, c["energy_wh_controlled"].values
     dom = np.zeros(len(c), dtype=bool)
     for i in range(len(c)):
         dom[i] = np.any((Q >= Q[i]) & (S >= S[i]) & (E <= E[i]) & ((Q > Q[i]) | (S > S[i]) | (E < E[i])))
     c["pareto3"] = ~dom
-    print(f"\n=== 3-axis Pareto (quality up, safety up, energy down), controlled {len(c)} ===")
+    print("\n=== 3-axis descriptive Pareto (mean judged quality up, "
+          "unvalidated safety-scenario judge score up, measured energy/attempt down), "
+          f"controlled n={len(c)} ===")
     print(f"Pareto-optimal: {int(c.pareto3.sum())}  |  dominated: {int((~c.pareto3).sum())}")
-    print(c[c.pareto3].sort_values("quality", ascending=False)[["model", "quality", "safety", "energy_wh_controlled"]].to_string(index=False, float_format=lambda x: f"{x:.3f}"))
+    print(c[c.pareto3].sort_values("quality", ascending=False)[
+        ["model", "quality", "safety", "energy_wh_controlled"]].rename(
+            columns={"safety": "safety_scenario_judge_score_unvalidated"}
+        ).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
     # ---- energy controlling for size (Luccioni) ----
     e = mt.dropna(subset=["energy_wh_controlled", "size_gb", "quality"]).copy()
@@ -103,11 +103,11 @@ def main() -> None:
     ax[0].scatter(en["energy_wh_controlled"], en["quality"], c=np.where(en.pareto, "crimson", "gray"), s=28)
     for _, r in en[en.pareto].iterrows():
         ax[0].annotate(r["model"].split("/")[-1][:16], (r["energy_wh_controlled"], r["quality"]), fontsize=6)
-    ax[0].set(xlabel="energy per answer (Wh, controlled)", ylabel="quality (judge 1-5)", title="Quality vs energy (controlled 25)")
+    ax[0].set(xlabel="energy per attempt (Wh, RAPL package-0)", ylabel="quality (judge 1-5)", title=f"Quality vs energy (n={len(en)})")
     allm = mt.dropna(subset=["quality", "size_gb"])
     pm = pareto_mask(allm["quality"].values, allm["size_gb"].values)
     ax[1].scatter(allm["size_gb"], allm["quality"], c=np.where(pm, "crimson", "gray"), s=22)
-    ax[1].set(xlabel="model size (GB)", ylabel="quality (judge 1-5)", title="Quality vs size (all 95)")
+    ax[1].set(xlabel="model size (GB)", ylabel="quality (judge 1-5)", title=f"Quality vs size (observed n={len(allm)})")
     fig.tight_layout()
     FIG.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIG / "a2_efficiency_frontiers.png", dpi=130)

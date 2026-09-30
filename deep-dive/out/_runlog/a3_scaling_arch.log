@@ -1,0 +1,63 @@
+=== quantization effect (within-model families with >1 quant) ===
+paired bases with Q8 and Q4: 18
+  mean quality Δ (Q8 - Q4): +0.114  (median +0.051)
+  Wilcoxon p (quality Q8 vs Q4): 0.024
+  mean energy Δ (Q8 - Q4): +0.049 Wh   mean speed Δ: -2.7 tok/s
+               base  dq_q8_minus_q4  denergy  dspeed
+           qwen3:4b           0.932      NaN  -0.778
+         falcon3:3b           0.274      NaN  -4.100
+         qwen3:0.6b           0.258      NaN  -0.686
+         qwen2:1.5b           0.195      NaN  -6.967
+granite3.1-dense:2b           0.189      NaN  -2.442
+      qwen3:4b-2507           0.132    0.049  -1.912
+
+=== MoE/hybrid vs dense ===
+  quality          MoE(2)=2.64  dense(93)=2.20  Δ=+0.44 [-0.18,+1.06] p=0.306 ns
+  energy_wh_controlled MoE(2)=0.05  dense(93)=0.09  Δ=+nan [+nan,+nan] p=nan ns
+  decode_tps       MoE(2)=18.95  dense(93)=14.33  Δ=+4.62 [-2.99,+12.09] p=0.264 ns
+  safety           MoE(2)=2.86  dense(93)=2.48  Δ=+0.38 [-0.32,+1.09] p=0.357 ns
+
+=== thinking-capable vs not ===
+  quality          think(9)=2.50  no-think(86)=2.18  Δ=+0.32 [-0.22,+0.86] p=0.258 ns
+  safety           think(9)=2.64  no-think(86)=2.47  Δ=+0.17 [-0.42,+0.75] p=0.525 ns
+  energy_wh_controlled think(9)=0.14  no-think(86)=0.07  Δ=+0.06 [-0.01,+0.15] p=0.178 ns
+  decode_tps       think(9)=10.38  no-think(86)=14.85  Δ=-4.48 [-9.54,+1.19] p=0.165 ns
+
+=== tools-capable vs not ===
+  quality          tools(22)=2.54  no-tools(73)=2.11  Δ=+0.43 [+0.12,+0.74] p=0.007 **
+  safety           tools(22)=2.78  no-tools(73)=2.39  Δ=+0.39 [+0.03,+0.73] p=0.032 *
+
+=== training regime (quality, safety) ===
+  instruct   n=82  quality=2.26  safety=2.54  energy=0.085
+  code/math  n= 7  quality=2.20  safety=2.56  energy=nan
+  reasoning  n= 5  quality=1.61  safety=1.78  energy=0.205
+
+=== per-family (n>=3) mean quality / safety / size ===
+                n  quality  safety  size_gb  params_b
+family                                               
+qwen3          12     2.89    3.07     3.13      2.71
+granite4        3     2.84    3.13     2.93      3.93
+qwen2.5-coder   5     2.48    2.89     2.26      2.47
+gemma3          7     2.46    2.95     2.48      2.89
+qwen2.5        12     2.29    2.50     1.94      2.35
+llama3.2        5     2.13    2.50     2.21      2.03
+falcon3         5     1.97    2.19     2.72      2.60
+nemotron-mini   3     1.82    2.08     3.61      4.19
+qwen2           3     1.68    1.96     1.26      1.19
+smollm2         6     1.50    1.77     1.32      0.74
+stablelm2       3     1.47    1.56     1.46      1.64
+deepseek-r1     4     1.43    1.53     2.54      3.24
+
+=== per-org (n>=3) mean quality ===
+               n  quality  safety
+org                              
+IBM            9     2.74    3.04
+Microsoft      7     2.57    3.00
+Alibaba/Qwen  32     2.49    2.72
+Google        11     2.37    2.83
+Meta           5     2.13    2.50
+TII            5     1.97    2.19
+NVIDIA         3     1.82    2.08
+Stability AI   3     1.47    1.56
+DeepSeek       6     1.45    1.60
+Hugging Face   8     1.42    1.66

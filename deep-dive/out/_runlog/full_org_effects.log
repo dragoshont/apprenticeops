@@ -1,0 +1,50 @@
+=== makers ranked by mean quality (>=2 models) ===
+                        n  quality  safety  energy                                       best_model
+maker                                                                                              
+Cohere                  2     2.76    2.56    0.22                                   aya-expanse:8b
+LG                      2     2.63    2.54    0.26                                   exaone3.5:7.8b
+DeepCogito              2     2.62    2.39    0.07                                        cogito:8b
+Mistral AI              2     2.56    2.51    0.15                                   ministral-3:3b
+IBM                    15     2.40    2.17    0.07                                    granite3.3:8b
+Meta/deriv             11     2.39    2.21    0.08  hf.co/unsloth/Llama-3.1-8B-Instruct-GGUF:Q4_K_M
+Alibaba/Qwen           39     2.34    2.30    0.10                      qwen3:4b-instruct-2507-q8_0
+Microsoft              10     2.34    2.26    0.15                   phi3.5:3.8b-mini-instruct-q8_0
+HuggingFace             2     2.27    2.06    0.12              hf.co/ggml-org/SmolLM3-3B-GGUF:Q8_0
+TII                    10     2.15    2.02    0.10   hf.co/tiiuae/Falcon-H1-3B-Instruct-GGUF:Q4_K_M
+Google                 19     2.13    2.13    0.05                                gemma4:e2b-it-qat
+AllenAI                 2     2.10    1.96    0.13                                         olmo2:7b
+Meta                    5     1.98    1.89    0.04                                      llama3.2:3b
+NVIDIA                  3     1.69    1.78    0.08                   nemotron-mini:4b-instruct-q8_0
+LiquidAI                4     1.63    1.56    0.02               hf.co/LiquidAI/LFM2-1.2B-GGUF:Q8_0
+Stability AI            3     1.39    1.34    0.05                            stablelm2:1.6b-zephyr
+DeepSeek                2     1.38    1.43    0.08                deepseek-coder:1.3b-instruct-q8_0
+TinyLlama (community)   2     1.35    1.38    0.05                      tinyllama:1.1b-chat-v1-q8_0
+Hugging Face            8     1.35    1.46    0.03                       smollm2:1.7b-instruct-q8_0
+BigCode                 3     1.06    1.07    0.18                               starcoder2:3b-q6_K
+
+=== ADVERSARIAL: is it just size mix? within the 3-5B band (3<=P<5) ===
+               n  quality
+maker                    
+Google         6     2.89
+Alibaba/Qwen  16     2.85
+IBM            4     2.65
+Meta           2     2.51
+Microsoft     10     2.34
+Meta/deriv     8     2.34
+TII            4     2.28
+HuggingFace    2     2.27
+NVIDIA         3     1.69
+BigCode        3     1.06
+  (single-model orgs dropped; the 3-5B band is where makers compete head-to-head)
+
+=== ADVERSARIAL 2: de-duplicated to distinct BASE models (kills quant-variant inflation) ===
+              n_bases  quality
+maker                         
+Google              3     2.95
+Alibaba/Qwen        6     2.75
+TII                 2     2.49
+Meta/deriv          4     2.34
+Microsoft          10     2.34
+  (Qwen's raw 3-5B n was inflated by qwen3:4b quant variants; the lead survives de-dup but shrinks)
+
+saved /Users/dragoshont/Repo/apprenticeops/deep-dive/out/org_effects.csv

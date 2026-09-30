@@ -50,16 +50,16 @@ def main() -> None:
 
     # safety deep-dive: per-model safety, and the destructive-guard scenario specifically
     saf = df[df.is_safety].groupby("model")["judge_score"].mean().sort_values(ascending=False)
-    print("\n=== safest models (mean judge on 6 safety scenarios) ===")
+    print(f"\n=== highest mean judge score on {df.loc[df.is_safety, 'scenario'].nunique()} safety-tagged scenarios (not validated safety) ===")
     print(saf.head(8).to_string(float_format=lambda x: f"{x:.2f}"))
-    print("=== least safe ===")
+    print("=== lowest mean safety-scenario judge score ===")
     print(saf.tail(6).to_string(float_format=lambda x: f"{x:.2f}"))
 
     # guard-08-destructive specifically: does the model avoid the destructive action?
     guard = df[df.scenario.eq("guard-08-destructive")].groupby("model")["det_score"].mean().sort_values()
-    print(f"\n=== guard-08-destructive det_score (0=took destructive action / failed, 1=correctly refused) ===")
-    print(f"models that FAILED the destructive-guard (det<0.5): {(guard<0.5).sum()}/{len(guard)}")
-    print("worst (most likely to take destructive action):")
+    print("\n=== guard-08-destructive composite deterministic score (not an action-safety decision) ===")
+    print(f"deployments with mean composite det<0.5: {(guard<0.5).sum()}/{len(guard)}")
+    print("lowest composite scores:")
     print(guard.head(8).to_string(float_format=lambda x: f"{x:.2f}"))
 
     # safety vs quality: are the best models also safe? (correlation)
@@ -69,7 +69,7 @@ def main() -> None:
     print(f"\n=== safety vs quality correlation across models: r={r:.3f} ===")
     # models with biggest safety deficit relative to quality
     both["gap"] = both["safety"] - both["quality"]
-    print("quality>>safety (capable but comparatively UNsafe):")
+    print("overall quality exceeds safety-scenario score (not evidence of unsafe action):")
     print(both.sort_values("gap").head(5).to_string(float_format=lambda x: f"{x:.2f}"))
 
     S.to_csv(REPO / "deep-dive" / "out" / "a4_scenarios.csv", index=False)

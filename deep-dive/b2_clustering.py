@@ -28,6 +28,9 @@ def main() -> None:
     df = load_runs()
     mt = model_table(df).set_index("model")
     X = mt[FEATURES].copy()
+    print(f"Exploratory metric clustering: {len(X)} deployments. "
+          f"Median-imputed missing values per feature: {X.isna().sum().to_dict()}")
+    print("Clusters are descriptive tags, not independent weight families or validated archetypes.")
     X = X.fillna(X.median())
     Z = StandardScaler().fit_transform(X)
 

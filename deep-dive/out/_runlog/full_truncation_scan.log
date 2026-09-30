@@ -1,0 +1,21 @@
+=== heavy truncators (>= 30%) or high-lift models on the full run ===
+                                   trunc  q_all  q_done  n_done  lift  queued                                                      verdict
+model                                                                                                                                     
+qwen3:4b                            1.00   2.80     NaN     NaN   NaN   False  BUDGET-VICTIM (100% truncated, cannot infer -> must re-run)
+qwen3:4b-thinking-2507-q4_K_M       1.00   2.87     NaN     NaN   NaN    True                                               already-queued
+qwen3:4b-thinking-2507-q8_0         0.99   3.04    3.50    1.00  0.46    True                                               already-queued
+hf.co/Qwen/Qwen3-4B-GGUF:Q4_K_M     0.93   2.88    3.21    7.00  0.34    True                                               already-queued
+phi4-mini-reasoning                 0.92   2.46    3.00    8.00  0.54    True                                               already-queued
+smallthinker:3b-preview-q4_K_M      0.66   2.47    2.68   34.00  0.21    True                                               already-queued
+starcoder2:3b-q6_K                  0.59   1.10    1.07   41.00 -0.03   False                                weak (bad even when finished)
+starcoder2:3b                       0.57   1.02    1.02   43.00  0.00    True                                               already-queued
+codegemma:2b                        0.51   1.07    1.06   49.00 -0.01   False                                weak (bad even when finished)
+starcoder2:3b-q8_0                  0.51   1.05    1.00   49.00 -0.05    True                                               already-queued
+deepseek-coder:1.3b-instruct-q8_0   0.45   1.40    1.46   55.00  0.07   False                                weak (bad even when finished)
+falcon3:1b                          0.44   1.54    1.52   56.00 -0.03   False                                weak (bad even when finished)
+falcon3:1b-instruct-q8_0            0.44   1.54    1.52   56.00 -0.02   False                                weak (bad even when finished)
+deepseek-coder:1.3b                 0.37   1.37    1.42   63.00  0.05   False                                weak (bad even when finished)
+smollm:360m                         0.30   1.06    1.07   70.00  0.01   False                                weak (bad even when finished)
+
+NEW budget victims to queue : ['qwen3:4b']
+weak controls (predict no gain): ['starcoder2:3b-q6_K', 'codegemma:2b', 'deepseek-coder:1.3b-instruct-q8_0', 'falcon3:1b', 'falcon3:1b-instruct-q8_0', 'deepseek-coder:1.3b', 'smollm:360m']

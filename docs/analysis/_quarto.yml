@@ -13,6 +13,7 @@ project:
     - reviewer.ipynb
     - reviewers.qmd
     - research-updates.qmd
+    - human-review.qmd
 
 # Use the committed cell outputs — do NOT re-execute on render (the systems
 # telemetry needs the specific node; re-run locally with build-analysis-site.sh).
@@ -49,6 +50,8 @@ website:
             href: wave_analysis.ipynb
           - text: "Judge agreement"
             href: judge_comparison.ipynb
+          - text: "Human review"
+            href: human-review.qmd
       - text: "Method & paper"
         href: paper.qmd
       - text: "Reproduce"

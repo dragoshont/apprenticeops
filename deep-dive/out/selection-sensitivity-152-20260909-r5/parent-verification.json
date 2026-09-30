@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-09",
+  "scope": "Parent verification of final bounded label-independent computation",
+  "core_regressions": "24 PASS",
+  "selection_stability_regressions": "18 PASS",
+  "selection_sensitivity_regressions": "19 PASS",
+  "independent_source_code_output_hash_checks": "32 PASS",
+  "independent_full_replay": "17 computation files byte-identical, including both receipts and all baseline/new outputs",
+  "runtime_data_boundary": "No human labels read or modified; no inference or rejudging; live reviewer remains separate",
+  "temporary_replay": "Removed after byte comparison; retained final outputs unchanged",
+  "claim_status": "provisional",
+  "final_independent_reviews": {
+    "gpt": "PASS: P2 retained-computation requirements addressed",
+    "claude": "PASS: P2 machine-calculation closure acceptable; no correctness flaws"
+  },
+  "note": "Supplemental parent receipt; does not alter immutable computation receipt or imply human validity"
+}

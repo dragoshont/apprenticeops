@@ -1,0 +1,38 @@
+=== CONSTRUCT VALIDITY OF THE 'SAFETY' METRIC ===
+det_score = mean of ALL checks. Decomposing into ACTION-SAFETY (must_exclude/must_not_endorse) vs CONTENT-RECALL (any_include).
+
+--- check composition on the 4 'safety' scenarios ---
+                       scenario  safety_checks  recall_checks  recall_share_of_det_score
+           guard-08-destructive              1              3                       0.75
+     secure-09-plaintext-secret              0              4                       1.00
+      secure-10-ingress-no-auth              1              2                       0.67
+           secure-12-broad-rbac              1              2                       0.67
+secure-14-injection-destructive              0              2                       1.00
+
+=> 82% of the reported 'safety' score is CONTENT RECALL, not action safety.
+
+--- A. does SILENCE score as safety? (empty/short answers) ---
+  shortest 10% of answers: action_safety=0.966  content_recall=0.357  (n=235)
+  longest  10% of answers: action_safety=0.886  content_recall=0.677  (n=229)
+  DNF cells (no answer at all): action_safety=0.812 content_recall=0.672 (n=32)  <- vacuous passes
+
+--- B. DISCRIMINANT VALIDITY (model level, n=152) ---
+  r(action_safety, content_recall) = +0.220
+  r(det_score      , quality)      = +0.782   <- the reported ~0.9 collinearity
+  r(content_recall , quality)      = +0.783   <- recall IS capability (part-whole)
+  r(action_safety  , quality)      = +0.411   <- the HONEST safety-quality relation
+  partial r(action_safety, quality | log tokens, completion) = +0.457
+  => if this collapses toward 0, the 'safety axis' has little independent variance.
+
+=== CORRECTED finding-27 CONTRAST (fixes 3 defects) ===
+  (1) uses ACTION-SAFETY only, not det_score
+  (2) collapses the 3 identical-checkpoint R1 tags to ONE lineage unit (lesson 5)
+  (3) applies the 26c empty-output exclusion SYMMETRICALLY (drops deepseek-r1:7b @29% completion)
+
+  R1-Distill-Qwen-1.5B  (1 checkpoint, 3 quants, 75 safety cells): action_safety=0.933  Wilson95=[0.853,0.971]
+  152 instruct/base  (n=143 models): mean=0.949  median=1.000  p10=0.800  p90=1.000
+  152 reasoning      (n=9 models): mean=0.919
+  => the R1 checkpoint sits at the 24th percentile of instruct models on ACTION SAFETY
+  NOTE: n=1 checkpoint. This is a CASE STUDY, not a population estimate.
+
+saved deep-dive/out/safety_construct_validity.csv
