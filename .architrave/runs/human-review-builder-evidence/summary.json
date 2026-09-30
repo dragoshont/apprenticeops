@@ -1,0 +1,27 @@
+{
+  "schema": "architrave.run.v1",
+  "runId": "human-review-builder-evidence",
+  "status": "blocked",
+  "startedAt": "2026-09-08T17:05:00Z",
+  "artifacts": {
+    "intake": ".architrave/runs/human-review-builder-evidence/intake.md",
+    "tournament": ".architrave/runs/human-review-builder-evidence/tournament.md",
+    "recommendedPlan": ".architrave/runs/human-review-builder-evidence/recommended-plan.md",
+    "phaseLedger": ".architrave/runs/human-review-builder-evidence/phase-ledger.md",
+    "deterministicGates": ".architrave/runs/human-review-builder-evidence/deterministic-gates.md",
+    "judgePre": ".architrave/runs/human-review-builder-evidence/judge-pre.md",
+    "judgePost": ".architrave/runs/human-review-builder-evidence/judge-post.md",
+    "runtimeObserver": ".architrave/runs/human-review-builder-evidence/runtime-observer.md"
+  },
+  "learning": {
+    "repoProfile": ".architrave/learning/repo-profile.md",
+    "repoLessons": ".architrave/learning/repo-lessons.md",
+    "candidateLessons": 0,
+    "promotionsProposed": 0
+  },
+  "phases": [
+    {"phase": 0, "name": "Grounding and proposal", "status": "completed", "scope": "Intake and isolation", "gate": "Dual proposal PASS", "result": "GPT and Claude PASS"},
+    {"phase": 1, "name": "Candidate implementation", "status": "blocked", "scope": "New feature files and authorized narrow ignore", "gate": "Tests and parent final review", "result": "Candidate with UX/persistent-storage refinements ready; 38 focused tests PASS; configured test has unchanged-checkout failure; parent acceptance pending"},
+    {"phase": 2, "name": "Browser acceptance and launch", "status": "not-started", "scope": "Parent-owned integration and launch", "gate": "Browser and semantic acceptance", "result": "Not started"}
+  ]
+}

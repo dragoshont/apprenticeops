@@ -28,6 +28,7 @@ results/
 outputs/
 logs/
 data/collected/
+data/human-review-local/
 data/run-batches/
 data/completed-runs/.staging/
 data/completed-runs/.state/

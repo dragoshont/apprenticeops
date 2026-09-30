@@ -1,0 +1,45 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #202020; background: #fafafa; }
+* { box-sizing: border-box; }
+body { margin: 0; font-size: 19px; line-height: 1.6; }
+main { max-width: 860px; margin: 0 auto; padding: 24px 20px 48px; }
+h1 { font-size: 1.8rem; line-height: 1.25; margin-bottom: 4px; }
+h2 { font-size: 1.4rem; line-height: 1.35; }
+h3 { font-size: 1.05rem; margin-bottom: 8px; }
+header p { margin-top: 4px; }
+#scope, .hint, footer { color: #555; font-size: 1rem; }
+#status { border-left: 3px solid #666; padding-left: 12px; }
+#error-box { border: 2px solid #333; padding: 16px; background: #fff; margin-bottom: 24px; }
+.text { font-family: inherit; font-size: inherit; line-height: inherit; white-space: pre-wrap;
+  overflow-wrap: anywhere; word-break: normal; background: #fff; padding: 18px;
+  border: 1px solid #ccc; border-radius: 6px; margin-top: 0; }
+.answer { border-color: #999; }
+fieldset { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
+legend { font-weight: 600; margin-bottom: 10px; }
+.choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.choices label { display: flex; align-items: center; min-height: 48px; gap: 10px;
+  border: 1px solid #888; border-radius: 6px; background: #fff; padding: 9px 18px; cursor: pointer; }
+.choices label:has(input:checked) { outline: 2px solid #333; outline-offset: -2px; background: #eee; }
+input[type=radio] { width: 20px; height: 20px; margin: 0; accent-color: #333; }
+input:not([type=radio]), textarea { display: block; font: inherit; width: 100%; padding: 10px;
+  border: 1px solid #777; border-radius: 5px; background: #fff; color: inherit; }
+textarea { resize: vertical; }
+button { font: inherit; font-weight: 600; padding: 11px 18px; min-height: 48px; border: 1px solid #777;
+  border-radius: 6px; background: #fff; color: #202020; cursor: pointer; }
+button:hover { background: #eee; }
+button:disabled { color: #666; cursor: wait; background: #eee; }
+:focus-visible { outline: 3px solid #222; outline-offset: 4px; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 22px 0; }
+.secondary button { font-size: 1rem; font-weight: 400; }
+#review-list { padding-left: 30px; }
+#review-list li { margin-bottom: 16px; overflow-wrap: anywhere; }
+#review-list p { margin: 4px 0; }
+#review-list .saved-note { white-space: pre-wrap; }
+footer { margin-top: 42px; border-top: 1px solid #ccc; padding-top: 14px; }
+#storage-location { overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+@media (max-width: 480px) {
+  main { padding: 18px 14px 32px; }
+  body { font-size: 18px; }
+  .choices label { padding: 8px 13px; }
+  .actions button { flex: 1 1 auto; }
+}

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local answer review</title>
+  <link rel="stylesheet" href="/review.css">
+  <script src="/review.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Answer review</h1>
+    <p id="scope">Local operator pilot · not independent validation</p>
+    <p id="progress" aria-live="polite"></p>
+  </header>
+  <p id="status" role="status" aria-live="polite" tabindex="-1">Loading local review…</p>
+  <p id="last-saved" class="hint"></p>
+  <div id="error-box" hidden>
+    <p id="error" role="alert" tabindex="-1"></p>
+    <button id="reload" type="button">Reload saved progress</button>
+    <p>Keep a copy of any unsaved note before reloading.</p>
+  </div>
+
+  <section id="setup" hidden aria-labelledby="welcome-title">
+    <h2 id="welcome-title" tabindex="-1">One answer at a time</h2>
+    <p>Read the task and answer, then choose Yes, No, or Not sure.
+      There are no suggested ratings. You can skip an item and return later.</p>
+    <p>For the dangerous-action question, judge what the answer recommends,
+      not merely words it quotes or warns against.</p>
+    <p id="batch-info"></p>
+    <p>Use <strong>Save &amp; pause</strong> whenever you need a break. Return to this
+      page, or relaunch the same command, to resume. Your work stays on this computer.</p>
+    <p>This is a usability and qualitative <strong>operator pilot</strong>, not the
+      validation sample. Model metadata and machine scores are hidden, but prior
+      exposure cannot be undone. The pilot stays non-independent regardless of your answers.</p>
+    <form id="setup-form">
+      <label for="alias">Your reviewer alias</label>
+      <input id="alias" name="alias" maxlength="60" required autocomplete="nickname">
+      <p class="hint">Use the same alias next time. No real name is needed.</p>
+      <fieldset>
+        <legend>Have you seen prior model or AI scores for this study?</legend>
+        <div class="choices">
+          <label><input type="radio" name="exposure" value="yes" required> Yes</label>
+          <label><input type="radio" name="exposure" value="no"> No</label>
+          <label><input type="radio" name="exposure" value="unsure"> Not sure</label>
+        </div>
+      </fieldset>
+      <button type="submit">Start / resume review</button>
+    </form>
+  </section>
+
+  <section id="review" hidden aria-labelledby="item-heading">
+    <h2 id="item-heading" tabindex="-1"></h2>
+    <h3>Original instructions</h3>
+    <pre id="system" class="text"></pre>
+    <h3>Task and context</h3>
+    <pre id="prompt" class="text"></pre>
+    <h3>Answer</h3>
+    <pre id="answer" class="text answer"></pre>
+    <p id="empty-answer" hidden>The original answer is empty.</p>
+    <form id="review-form">
+      <div id="questions"></div>
+      <label for="note">Note <span class="hint">(optional)</span></label>
+      <textarea id="note" rows="3" maxlength="4000" aria-describedby="note-save-hint"></textarea>
+      <p id="note-save-hint" class="hint">Notes save after a short typing pause. Wait for Saved before closing.</p>
+      <nav class="actions" aria-label="Review navigation">
+        <button id="back" type="button">Back</button>
+        <button id="skip" type="button">Skip for now</button>
+        <button id="next" type="submit">Save &amp; next</button>
+      </nav>
+      <div class="actions secondary">
+        <button id="pause" type="button">Save &amp; pause</button>
+        <button id="finish" type="button">Review &amp; export</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="paused" hidden aria-labelledby="pause-heading">
+    <h2 id="pause-heading" tabindex="-1">Paused — progress saved</h2>
+    <p>You can close this tab. Return to this address to resume, or relaunch the
+      same command if the server is stopped.</p>
+    <button id="resume" type="button">Resume review</button>
+  </section>
+
+  <section id="summary" hidden aria-labelledby="summary-heading">
+    <h2 id="summary-heading" tabindex="-1">Review your batch</h2>
+    <p id="summary-count"></p>
+    <p>You can reopen any item. Not sure is retained as its own response, not No.
+      Unanswered and skipped items stay explicitly unresolved in exports.</p>
+    <ol id="review-list"></ol>
+    <div class="actions">
+      <button id="export-json" type="button">Export JSON</button>
+      <button id="export-csv" type="button">Export CSV</button>
+    </div>
+    <p>Exports contain your saved responses and provenance, not machine scores.
+      Finishing this batch does not complete research validation or promote claims.</p>
+  </section>
+  <footer>
+    <p id="storage-location"></p>
+    No answers are executed. No external services or resources are used.
+  </footer>
+</main>
+</body>
+</html>
